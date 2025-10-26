@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Emergent Ice Formation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #00bfff, #87ceeb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin: 10px 0;
+        }
+
+        .simulation-area {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        #iceCanvas {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #87ceeb 0%, #4682b4 100%);
+            cursor: crosshair;
+        }
+
+        .controls-panel {
+            width: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #87ceeb;
+            font-size: 1.2em;
+        }
+
+        .temperature-display {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .temp-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00bfff;
+            text-shadow: 0 0 10px rgba(0,191,255,0.5);
+        }
+
+        .temp-unit {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #b8e6ff;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.2);
+            outline: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00bfff, #87ceeb);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,191,255,0.5);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00bfff, #87ceeb);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0,191,255,0.5);
+        }
+
+        .button {
+            background: linear-gradient(45deg, #00bfff, #1e90ff);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,191,255,0.3);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,191,255,0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #87ceeb;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .phase-indicator {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .phase-liquid {
+            background: rgba(0,191,255,0.3);
+            color: #87ceeb;
+        }
+
+        .phase-transition {
+            background: rgba(255,215,0,0.3);
+            color: #ffd700;
+            animation: pulse 1s infinite;
+        }
+
+        .phase-solid {
+            background: rgba(255,255,255,0.3);
+            color: #f0f8ff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .ucf-info {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .ucf-equation {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 8px 0;
+            font-size: 0.85em;
+            color: #b8e6ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CRR Emergent Ice Formation</h1>
+            <p>Watch water molecules organize into ice crystals through Unified Coherence Function dynamics</p>
+            <p><em>Click on the simulation to add nucleation points and observe emergent crystallization patterns</em></p>
+        </div>
+
+        <div class="simulation-area">
+            <div class="canvas-container">
+                <canvas id="iceCanvas" width="800" height="500"></canvas>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>Temperature Control</h3>
+                    <div class="temperature-display">
+                        <span class="temp-value" id="tempDisplay">25.0</span>
+                        <span class="temp-unit">°C</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="tempSlider">Temperature: -20°C to 40°C</label>
+                        <input type="range" id="tempSlider" class="slider" min="-20" max="40" value="25" step="0.1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>CRR Parameters</h3>
+                    <div class="slider-container">
+                        <label for="coherenceSlider">Coherence Coupling (λ)</label>
+                        <input type="range" id="coherenceSlider" class="slider" min="0.001" max="0.05" value="0.008" step="0.001">
+                    </div>
+                    <div class="slider-container">
+                        <label for="nucleationSlider">Nucleation Threshold</label>
+                        <input type="range" id="nucleationSlider" class="slider" min="0.3" max="0.9" value="0.6" step="0.05">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Simulation Control</h3>
+                    <button class="button" id="resetBtn">Reset Simulation</button>
+                    <button class="button" id="pauseBtn">Pause/Resume</button>
+                    <button class="button" id="fastForwardBtn">Fast Forward</button>
+                </div>
+
+                <div class="phase-indicator" id="phaseIndicator">
+                    Liquid Phase - H₂O
+                </div>
+
+                <div class="ucf-info">
+                    <strong>CRR Ice Formation:</strong>
+                    <div class="ucf-equation">C(x,t) = ∫ L(x,τ)·e^(-λ(t-τ)) dτ</div>
+                    <p>Coherence field drives molecular organization. Below 0°C, water molecules achieve crystalline coherence through UCF-mediated phase transitions.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <span class="stat-value" id="moleculeCount">5000</span>
+                <div class="stat-label">H₂O Molecules</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="crystalCount">0</span>
+                <div class="stat-label">Ice Crystals</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="coherenceLevel">0.45</span>
+                <div class="stat-label">Coherence</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="freezingRate">0.0</span>
+                <div class="stat-label">Crystallization Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class UCFIceSimulation {
+            constructor() {
+                this.canvas = document.getElementById('iceCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = 800;
+                this.canvas.height = 500;
+                
+                // UCF Parameters
+                this.temperature = 25.0;
+                this.coherenceDecay = 0.008;
+                this.nucleationThreshold = 0.6;
+                this.timeStep = 0.016; // 60fps
+                this.currentTime = 0;
+                
+                // Simulation state
+                this.isRunning = true;
+                this.fastForward = false;
+                this.molecules = [];
+                this.crystals = [];
+                this.coherenceField = [];
+                this.nucleationPoints = [];
+                
+                // Statistics
+                this.stats = {
+                    moleculeCount: 5000,
+                    crystalCount: 0,
+                    coherenceLevel: 0.45,
+                    freezingRate: 0.0
+                };
+                
+                this.initializeSimulation();
+                this.setupEventListeners();
+                this.animate();
+            }
+            
+            initializeSimulation() {
+                this.molecules = [];
+                this.crystals = [];
+                this.coherenceField = [];
+                this.nucleationPoints = [];
+                
+                // Initialize water molecules
+                for (let i = 0; i < this.stats.moleculeCount; i++) {
+                    this.molecules.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2,
+                        coherence: Math.random() * 0.5,
+                        phase: 'liquid',
+                        neighborCount: 0,
+                        crystallized: false,
+                        crystalId: -1
+                    });
+                }
+                
+                // Initialize coherence field grid
+                const gridSize = 20;
+                for (let i = 0; i < this.canvas.width / gridSize; i++) {
+                    this.coherenceField[i] = [];
+                    for (let j = 0; j < this.canvas.height / gridSize; j++) {
+                        this.coherenceField[i][j] = {
+                            coherence: Math.random() * 0.3,
+                            memoryTrace: 0,
+                            temperature: this.temperature,
+                            nucleationPotential: 0
+                        };
+                    }
+                }
+            }
+            
+            setupEventListeners() {
+                // Temperature slider
+                document.getElementById('tempSlider').addEventListener('input', (e) => {
+                    this.temperature = parseFloat(e.target.value);
+                    document.getElementById('tempDisplay').textContent = this.temperature.toFixed(1);
+                    this.updatePhaseIndicator();
+                });
+                
+                // UCF parameter sliders
+                document.getElementById('coherenceSlider').addEventListener('input', (e) => {
+                    this.coherenceDecay = parseFloat(e.target.value);
+                });
+                
+                document.getElementById('nucleationSlider').addEventListener('input', (e) => {
+                    this.nucleationThreshold = parseFloat(e.target.value);
+                });
+                
+                // Control buttons
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.initializeSimulation();
+                });
+                
+                document.getElementById('pauseBtn').addEventListener('click', () => {
+                    this.isRunning = !this.isRunning;
+                });
+                
+                document.getElementById('fastForwardBtn').addEventListener('click', () => {
+                    this.fastForward = !this.fastForward;
+                });
+                
+                // Canvas click for nucleation points
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                    const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                    
+                    this.nucleationPoints.push({
+                        x: x,
+                        y: y,
+                        strength: 0.8,
+                        radius: 50,
+                        age: 0
+                    });
+                });
+            }
+            
+            updatePhaseIndicator() {
+                const indicator = document.getElementById('phaseIndicator');
+                const crystallizedCount = this.molecules.filter(m => m.crystallized).length;
+                const crystallizationRatio = crystallizedCount / this.molecules.length;
+                
+                if (this.temperature > 5 || crystallizationRatio < 0.1) {
+                    indicator.className = 'phase-indicator phase-liquid';
+                    indicator.textContent = 'Liquid Phase - H₂O (Mobile)';
+                } else if (this.temperature > -2 || (crystallizationRatio > 0.1 && crystallizationRatio < 0.7)) {
+                    indicator.className = 'phase-indicator phase-transition';
+                    if (this.temperature > 0) {
+                        indicator.textContent = 'Phase Transition - Melting';
+                    } else {
+                        indicator.textContent = 'Phase Transition - Crystallizing';
+                    }
+                } else {
+                    indicator.className = 'phase-indicator phase-solid';
+                    indicator.textContent = 'Solid Phase - Ice Crystals';
+                }
+            }
+            
+            updateUCFCoherence() {
+                const gridSize = 20;
+                const decayFactor = Math.exp(-this.coherenceDecay * this.timeStep);
+                
+                // Update coherence field using UCF equations
+                for (let i = 0; i < this.coherenceField.length; i++) {
+                    for (let j = 0; j < this.coherenceField[i].length; j++) {
+                        const field = this.coherenceField[i][j];
+                        
+                        // UCF Coherence State Function: C(x,t) = ∫ L(x,τ)·e^(-λ(t-τ)) dτ
+                        field.memoryTrace = field.memoryTrace * decayFactor + field.coherence * this.timeStep;
+                        
+                        // Temperature-dependent coherence coupling
+                        const tempFactor = Math.max(0, (5 - this.temperature) / 25);
+                        const meltingFactor = this.temperature > 2 ? -0.02 * (this.temperature - 2) : 0;
+                        field.coherence += tempFactor * 0.01 + meltingFactor;
+                        field.coherence = Math.max(0, Math.min(1.0, field.coherence));
+                        
+                        // Neighbor influence (Mnemonic Entanglement Density)
+                        let neighborInfluence = 0;
+                        const neighbors = this.getFieldNeighbors(i, j);
+                        neighbors.forEach(neighbor => {
+                            neighborInfluence += neighbor.coherence * 0.1;
+                        });
+                        
+                        field.coherence = Math.min(1.0, field.coherence + neighborInfluence * this.timeStep);
+                        
+                        // Update nucleation potential
+                        if (this.temperature < 0) {
+                            field.nucleationPotential += field.coherence * 0.05;
+                        } else {
+                            // Rapid decay during melting
+                            const decayRate = this.temperature > 2 ? 0.9 : 0.98;
+                            field.nucleationPotential *= decayRate;
+                        }
+                    }
+                }
+                
+                // Check for rupture events (nucleation)
+                this.checkForNucleation();
+            }
+            
+            getFieldNeighbors(i, j) {
+                const neighbors = [];
+                for (let di = -1; di <= 1; di++) {
+                    for (let dj = -1; dj <= 1; dj++) {
+                        if (di === 0 && dj === 0) continue;
+                        const ni = i + di;
+                        const nj = j + dj;
+                        if (ni >= 0 && ni < this.coherenceField.length && 
+                            nj >= 0 && nj < this.coherenceField[ni].length) {
+                            neighbors.push(this.coherenceField[ni][nj]);
+                        }
+                    }
+                }
+                return neighbors;
+            }
+            
+            checkForNucleation() {
+                const gridSize = 20;
+                
+                for (let i = 0; i < this.coherenceField.length; i++) {
+                    for (let j = 0; j < this.coherenceField[i].length; j++) {
+                        const field = this.coherenceField[i][j];
+                        
+                        // Rupture Detection Function: R(x,t) = Θ(|∇C(x,t)| - threshold)
+                        if (field.nucleationPotential > this.nucleationThreshold && 
+                            this.temperature < 0 && 
+                            Math.random() < 0.01) {
+                            
+                            // Create new crystal (Rebirth State Reconstruction)
+                            this.crystals.push({
+                                x: i * gridSize + gridSize/2,
+                                y: j * gridSize + gridSize/2,
+                                size: 2,
+                                growth: 0,
+                                coherence: field.coherence,
+                                branches: [],
+                                id: this.crystals.length
+                            });
+                            
+                            // Reset field after nucleation
+                            field.nucleationPotential = 0;
+                            field.coherence = 0.8;
+                        }
+                    }
+                }
+            }
+            
+            updateMolecules() {
+                this.molecules.forEach(molecule => {
+                    // Check for melting first
+                    if (molecule.crystallized && this.temperature > 2) {
+                        this.checkMoleculeMelting(molecule);
+                    }
+                    
+                    if (molecule.crystallized) {
+                        // Crystallized molecules have limited movement but can vibrate
+                        const thermalVibration = Math.max(0, (this.temperature + 10) / 50) * 0.5;
+                        molecule.vx += (Math.random() - 0.5) * thermalVibration * 0.05;
+                        molecule.vy += (Math.random() - 0.5) * thermalVibration * 0.05;
+                        
+                        // Much stronger damping for crystallized molecules
+                        molecule.vx *= 0.9;
+                        molecule.vy *= 0.9;
+                        
+                        // Limited position updates (vibration only)
+                        molecule.x += molecule.vx * 0.2;
+                        molecule.y += molecule.vy * 0.2;
+                        return;
+                    }
+                    
+                    // Temperature-dependent movement for liquid molecules
+                    const agitation = Math.max(0.1, (this.temperature + 20) / 60);
+                    molecule.vx += (Math.random() - 0.5) * agitation * 0.1;
+                    molecule.vy += (Math.random() - 0.5) * agitation * 0.1;
+                    
+                    // Velocity damping
+                    molecule.vx *= 0.98;
+                    molecule.vy *= 0.98;
+                    
+                    // Update position
+                    molecule.x += molecule.vx;
+                    molecule.y += molecule.vy;
+                    
+                    // Boundary conditions
+                    if (molecule.x < 0 || molecule.x > this.canvas.width) molecule.vx *= -0.8;
+                    if (molecule.y < 0 || molecule.y > this.canvas.height) molecule.vy *= -0.8;
+                    molecule.x = Math.max(0, Math.min(this.canvas.width, molecule.x));
+                    molecule.y = Math.max(0, Math.min(this.canvas.height, molecule.y));
+                    
+                    // Check for crystallization
+                    if (this.temperature < 0) {
+                        this.checkMoleculeCrystallization(molecule);
+                    }
+                });
+            }
+            
+            checkMoleculeMelting(molecule) {
+                // UCF-based melting: higher temperature reduces coherence field strength
+                const meltingProbability = Math.min(0.05, (this.temperature - 2) * 0.01);
+                
+                if (Math.random() < meltingProbability) {
+                    // Return molecule to liquid state
+                    molecule.crystallized = false;
+                    molecule.phase = 'liquid';
+                    molecule.crystalId = -1;
+                    molecule.coherence = Math.random() * 0.3; // Reset coherence
+                    
+                    // Add thermal energy (increased velocity)
+                    const thermalEnergy = (this.temperature + 20) / 40;
+                    molecule.vx += (Math.random() - 0.5) * thermalEnergy;
+                    molecule.vy += (Math.random() - 0.5) * thermalEnergy;
+                    
+                    // Reduce crystal growth when molecules leave
+                    const crystal = this.crystals.find(c => c.id === molecule.crystalId);
+                    if (crystal) {
+                        crystal.growth = Math.max(0, crystal.growth - 0.2);
+                        crystal.size = Math.max(5, crystal.size - 1);
+                    }
+                }
+            }
+            
+            checkMoleculeCrystallization(molecule) {
+                // Check proximity to existing crystals
+                this.crystals.forEach(crystal => {
+                    const dx = molecule.x - crystal.x;
+                    const dy = molecule.y - crystal.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (distance < crystal.size + 10 && Math.random() < 0.02) {
+                        molecule.crystallized = true;
+                        molecule.crystalId = crystal.id;
+                        molecule.phase = 'solid';
+                        crystal.growth += 0.1;
+                        crystal.size = Math.min(50, crystal.size + 0.5);
+                    }
+                });
+                
+                // Check nucleation points
+                this.nucleationPoints.forEach(point => {
+                    const dx = molecule.x - point.x;
+                    const dy = molecule.y - point.y;
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (distance < point.radius && Math.random() < 0.05) {
+                        molecule.crystallized = true;
+                        molecule.phase = 'solid';
+                    }
+                });
+            }
+            
+            updateCrystals() {
+                // Filter out completely melted crystals
+                this.crystals = this.crystals.filter(crystal => {
+                    // Crystal melting when temperature rises
+                    if (this.temperature > 1) {
+                        const meltingRate = (this.temperature - 1) * 0.02;
+                        crystal.growth -= meltingRate;
+                        crystal.size = Math.max(2, crystal.size - meltingRate * 2);
+                        
+                        // Melt branches
+                        crystal.branches.forEach(branch => {
+                            branch.length = Math.max(0, branch.length - meltingRate * 3);
+                            branch.growth = Math.max(0, branch.growth - meltingRate * 2);
+                        });
+                        
+                        // Remove branches that have completely melted
+                        crystal.branches = crystal.branches.filter(branch => branch.length > 1);
+                        
+                        // Remove crystal if it's too small
+                        return crystal.size > 2 && crystal.growth > 0;
+                    }
+                    
+                    // Crystal growth based on coherence (only when freezing)
+                    if (this.temperature < 0) {
+                        crystal.growth += crystal.coherence * 0.01;
+                        crystal.size = Math.min(60, 5 + crystal.growth);
+                        
+                        // Generate fractal branches
+                        if (crystal.branches.length < 6 && Math.random() < 0.02) {
+                            const angle = (crystal.branches.length * Math.PI / 3) + Math.random() * 0.2;
+                            crystal.branches.push({
+                                angle: angle,
+                                length: 0,
+                                growth: 0
+                            });
+                        }
+                        
+                        // Grow branches
+                        crystal.branches.forEach(branch => {
+                            branch.growth += 0.05;
+                            branch.length = Math.min(crystal.size * 0.8, branch.growth);
+                        });
+                    }
+                    
+                    return true; // Keep crystal
+                });
+                
+                // Update nucleation points
+                this.nucleationPoints = this.nucleationPoints.filter(point => {
+                    point.age += this.timeStep;
+                    point.strength *= 0.995;
+                    return point.strength > 0.1 && point.age < 10;
+                });
+            }
+            
+            updateStatistics() {
+                const crystallizedMolecules = this.molecules.filter(m => m.crystallized).length;
+                const avgCoherence = this.coherenceField.flat()
+                    .reduce((sum, field) => sum + field.coherence, 0) / 
+                    (this.coherenceField.length * this.coherenceField[0].length);
+                
+                this.stats.crystalCount = this.crystals.length;
+                this.stats.coherenceLevel = avgCoherence;
+                this.stats.freezingRate = crystallizedMolecules / this.stats.moleculeCount;
+                
+                // Update UI
+                document.getElementById('crystalCount').textContent = this.stats.crystalCount;
+                document.getElementById('coherenceLevel').textContent = this.stats.coherenceLevel.toFixed(3);
+                document.getElementById('freezingRate').textContent = (this.stats.freezingRate * 100).toFixed(1) + '%';
+            }
+            
+            render() {
+                // Clear canvas with temperature-dependent background
+                const tempRatio = Math.max(0, Math.min(1, (this.temperature + 20) / 60));
+                const bgColor = `hsl(${200 + tempRatio * 40}, 70%, ${30 + tempRatio * 20}%)`;
+                this.ctx.fillStyle = bgColor;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Render coherence field (optional visualization)
+                if (this.temperature < 5) {
+                    this.renderCoherenceField();
+                }
+                
+                // Render molecules
+                this.renderMolecules();
+                
+                // Render crystals
+                this.renderCrystals();
+                
+                // Render nucleation points
+                this.renderNucleationPoints();
+                
+                // Render effects
+                this.renderEffects();
+            }
+            
+            renderCoherenceField() {
+                const gridSize = 20;
+                this.ctx.globalAlpha = 0.3;
+                
+                for (let i = 0; i < this.coherenceField.length; i++) {
+                    for (let j = 0; j < this.coherenceField[i].length; j++) {
+                        const field = this.coherenceField[i][j];
+                        const intensity = field.coherence;
+                        
+                        if (intensity > 0.3) {
+                            this.ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.5})`;
+                            this.ctx.fillRect(i * gridSize, j * gridSize, gridSize, gridSize);
+                        }
+                    }
+                }
+                
+                this.ctx.globalAlpha = 1.0;
+            }
+            
+            renderMolecules() {
+                this.molecules.forEach(molecule => {
+                    this.ctx.save();
+                    this.ctx.translate(molecule.x, molecule.y);
+                    
+                    if (molecule.crystallized) {
+                        // Crystallized molecules (part of ice structure)
+                        const vibration = Math.max(0, (this.temperature + 10) / 50) * 0.3;
+                        this.ctx.fillStyle = `rgba(220, 240, 255, ${0.9 - vibration})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, 2 + vibration, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        
+                        // Add melting glow effect when warm
+                        if (this.temperature > 1) {
+                            this.ctx.strokeStyle = `rgba(100, 200, 255, ${(this.temperature - 1) * 0.2})`;
+                            this.ctx.lineWidth = 1;
+                            this.ctx.beginPath();
+                            this.ctx.arc(0, 0, 3 + vibration, 0, Math.PI * 2);
+                            this.ctx.stroke();
+                        }
+                    } else {
+                        // Liquid water molecules
+                        const agitation = Math.max(0.1, (this.temperature + 20) / 60);
+                        this.ctx.fillStyle = `rgba(100, 200, 255, ${0.6 + agitation * 0.4})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        
+                        // Motion trail for high temperature
+                        if (this.temperature > 20) {
+                            this.ctx.strokeStyle = `rgba(150, 220, 255, 0.3)`;
+                            this.ctx.lineWidth = 1;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(-molecule.vx * 2, -molecule.vy * 2);
+                            this.ctx.lineTo(0, 0);
+                            this.ctx.stroke();
+                        }
+                    }
+                    
+                    this.ctx.restore();
+                });
+            }
+            
+            renderCrystals() {
+                this.crystals.forEach(crystal => {
+                    this.ctx.save();
+                    this.ctx.translate(crystal.x, crystal.y);
+                    
+                    // Main crystal body
+                    this.ctx.fillStyle = `rgba(240, 248, 255, 0.8)`;
+                    this.ctx.strokeStyle = `rgba(173, 216, 230, 0.9)`;
+                    this.ctx.lineWidth = 2;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, crystal.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    
+                    // Render fractal branches
+                    this.ctx.strokeStyle = `rgba(200, 230, 255, 0.8)`;
+                    this.ctx.lineWidth = 1.5;
+                    
+                    crystal.branches.forEach(branch => {
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, 0);
+                        const endX = Math.cos(branch.angle) * branch.length;
+                        const endY = Math.sin(branch.angle) * branch.length;
+                        this.ctx.lineTo(endX, endY);
+                        this.ctx.stroke();
+                        
+                        // Sub-branches
+                        for (let i = 0; i < 3; i++) {
+                            const subAngle = branch.angle + (i - 1) * Math.PI / 6;
+                            const subLength = branch.length * 0.6;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(endX * 0.7, endY * 0.7);
+                            this.ctx.lineTo(
+                                endX * 0.7 + Math.cos(subAngle) * subLength * 0.3,
+                                endY * 0.7 + Math.sin(subAngle) * subLength * 0.3
+                            );
+                            this.ctx.stroke();
+                        }
+                    });
+                    
+                    this.ctx.restore();
+                });
+            }
+            
+            renderNucleationPoints() {
+                this.nucleationPoints.forEach(point => {
+                    this.ctx.save();
+                    this.ctx.translate(point.x, point.y);
+                    
+                    // Pulsing nucleation effect
+                    const pulse = Math.sin(this.currentTime * 5) * 0.3 + 0.7;
+                    this.ctx.fillStyle = `rgba(255, 255, 100, ${point.strength * pulse * 0.5})`;
+                    this.ctx.strokeStyle = `rgba(255, 255, 150, ${point.strength})`;
+                    this.ctx.lineWidth = 2;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, point.radius * pulse, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    this.ctx.restore();
+                });
+            }
+            
+            renderEffects() {
+                // Add shimmer effect for ice
+                if (this.temperature < 0 && this.crystals.length > 0) {
+                    this.ctx.globalAlpha = 0.2;
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    
+                    for (let i = 0; i < 20; i++) {
+                        const x = Math.random() * this.canvas.width;
+                        const y = Math.random() * this.canvas.height;
+                        const shimmer = Math.sin(this.currentTime * 3 + i) * 0.5 + 0.5;
+                        
+                        this.ctx.globalAlpha = shimmer * 0.3;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, 1, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                    
+                    this.ctx.globalAlpha = 1.0;
+                }
+            }
+            
+            animate() {
+                if (this.isRunning) {
+                    const iterations = this.fastForward ? 5 : 1;
+                    
+                    for (let i = 0; i < iterations; i++) {
+                        this.currentTime += this.timeStep;
+                        this.updateUCFCoherence();
+                        this.updateMolecules();
+                        this.updateCrystals();
+                    }
+                    
+                    this.updateStatistics();
+                }
+                
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // Initialize simulation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new UCFIceSimulation();
+        });
+    </script>
+</body>
+</html>

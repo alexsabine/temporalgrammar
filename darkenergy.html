@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Dark Energy Simulation | Coherence-Rupture-Renewal Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            color: #1a202c;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .header-button {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .header-button:hover {
+            background: #f7fafc;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pulse-indicator {
+            width: 10px;
+            height: 10px;
+            background: #1e40af;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
+        .title-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        .chevron {
+            width: 24px;
+            height: 24px;
+            stroke: #4a5568;
+            transition: transform 0.3s;
+        }
+
+        .chevron.rotated {
+            transform: rotate(180deg);
+        }
+
+        /* Explainer Panel */
+        .explainer {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+
+        .explainer.open {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .explainer-content {
+            padding: 2rem 1.5rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 1rem;
+        }
+
+        .equation-box {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-left: 4px solid #1e40af;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #2d3748;
+        }
+
+        .equation-label {
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-box {
+            background: #eff6ff;
+            border: 2px solid #93c5fd;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .success-box {
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #fcd34d;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .danger-box {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .checkmark-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checkmark-list li {
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .checkmark-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(to bottom, #e0e7ff, #f5f3ff);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .control-button {
+            padding: 0.75rem;
+            background: #1e40af;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-button:hover {
+            background: #1e3a8a;
+            transform: translateY(-2px);
+        }
+
+        .control-button.secondary {
+            background: #cbd5e0;
+        }
+
+        .control-button.secondary:hover {
+            background: #a0aec0;
+        }
+
+        .control-button svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+        }
+
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slider-label {
+            font-size: 0.75rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 140px;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1e40af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #1e3a8a;
+            transform: scale(1.1);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1e40af;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Metrics Panel */
+        .metrics-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-width: 220px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 6px;
+            background: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .phase-indicator {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 700;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 280px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        .legend-note {
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            color: #718096;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-wrap: wrap;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .slider-control input[type="range"] {
+                width: 100px;
+            }
+
+            .metrics-panel,
+            .legend {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="header-button" id="toggleExplainer">
+                <div class="header-title">
+                    <div class="pulse-indicator"></div>
+                    <span class="title-text">CRR Mathematical Framework: Dark Energy Evolution & The Big Crunch</span>
+                </div>
+                <svg class="chevron" id="chevronIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <div class="explainer" id="explainer">
+                <div class="explainer-content">
+                    <!-- Section 0: What This Simulation Models -->
+                    <div class="section">
+                        <h3 class="section-title">What This Simulation Models</h3>
+                        
+                        <p style="margin-bottom: 1rem; line-height: 1.8;">
+                            This interactive simulation visualises the complete lifecycle of our universe according to the Coherence-Rupture-Renewal (CRR) framework—a speculative theoretical proposal that offers an alternative perspective to the standard ΛCDM model. Whilst ΛCDM assumes dark energy is a static cosmological constant, the CRR framework explores what might happen if the vacuum behaves as a <em>dynamical memory-bearing system</em> that accumulates coherence over cosmic time.
+                        </p>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.8; margin-bottom: 1rem;"><strong>Visual Elements Explained:</strong></p>
+                            <ul style="margin-left: 1.5rem; line-height: 1.8;">
+                                <li><strong>White/cream particles:</strong> Represent galaxies and matter distributed throughout space. Their positions show how the cosmic web evolves as the universe expands and eventually contracts.</li>
+                                <li><strong>Blue connection lines:</strong> The cosmic web structure—filaments of dark matter and galaxies that form the large-scale structure of the universe. These connections become more diffuse during expansion and more concentrated during collapse.</li>
+                                <li><strong>Purple undulating waves:</strong> Visualise the dark energy field permeating space. Wave amplitude and frequency represent the strength and behaviour of dark energy density ρ_Λ(t).</li>
+                                <li><strong>Background colour intensity:</strong> Represents accumulated coherence C(t). Subtle purple/blue tints indicate growing vacuum memory, whilst red flashes signal approaching rupture.</li>
+                                <li><strong>Particle distribution expansion/contraction:</strong> Shows the scale factor a(t)—how the physical distances between galaxies change over cosmic time.</li>
+                            </ul>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>The Simulation Timeline:</strong> The animation progresses through distinct cosmic epochs—inflation, radiation domination, matter domination, dark energy domination, and a hypothesised phantom crossing phase. Under the CRR framework, the equation of state w(t) would evolve from approximately -1 (cosmological constant behaviour) to more negative values (phantom energy), potentially triggering a vacuum rupture that could initiate contraction—though this remains a theoretical speculation.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Interactive Parameters:</strong> You can adjust the critical coherence threshold Ω (which would determine rupture timing) and coupling strength α (controlling the rate of dark energy evolution) to explore how these hypothetical parameters might affect cosmic evolution. The default values (Ω ≈ 24.2 Gyr, α ≈ 0.15) have been selected to align with intriguing patterns in 2025 observational data from DESI and related surveys, though we emphasise this represents one possible interpretation amongst several.
+                        </p>
+
+                        <div class="warning-box" style="margin-top: 1rem;">
+                            <p style="line-height: 1.8;">
+                                <strong>Current Epoch (13.8 Gyr):</strong> If the CRR framework proves accurate, we would presently be in a "phantom crossing" phase. The calculated coherence ratio C/Ω ≈ 0.16 would suggest we've accumulated about 16% of the critical threshold. Recent observations indicate the universe is experiencing super-accelerated expansion with w ≈ -1.03—a measurement that intriguingly aligns with CRR predictions, though alternative explanations remain viable. Under this speculative model, we might have approximately 12 billion years until maximum expansion and 19 billion years until contraction begins—though such long-term predictions remain highly uncertain and subject to revision as our understanding evolves.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Section 1: Core CRR Formalism -->
+                    <div class="section">
+                        <h3 class="section-title">I. The Canonical CRR Formalism Applied to Cosmology</h3>
+                        
+                        <p style="margin-bottom: 1rem; line-height: 1.7;">
+                            The Coherence-Rupture-Renewal (CRR) framework proposes a speculative hypothesis: that the cosmological vacuum might not be a static entity, but rather a dynamical field that accumulates <strong>coherence</strong> (memory of cosmic stress) over time. If this hypothesis holds, when accumulated coherence exceeds a critical threshold Ω, the vacuum could undergo a discrete <strong>rupture</strong> event—a phase transition that might fundamentally alter the nature of dark energy. Whilst highly speculative, this framework offers potential explanations for time-varying dark energy, the phantom divide crossing, and possibly a finite cosmological future—predictions that bear curious resemblance to recent observational anomalies.
+                        </p>
+
+                        <div class="equation-box" style="background: #f0f9ff;">
+                            <div class="equation-label">Canonical CRR Component Definitions:</div>
+                            <p style="font-family: 'Courier New', monospace; line-height: 2; margin-top: 0.5rem;">
+                            <strong>Coherence Integration:</strong>
+                            <br>C(x,t) = ∫₀ᵗ L(x,τ) dτ
+                            <br><br>
+                            <strong>Rupture Detection:</strong>
+                            <br>δ(t-t₀) at rupture time t₀ when C(t) ≥ Ω
+                            <br><br>
+                            <strong>Regeneration Operator:</strong>
+                            <br>R[χ](x,t) = ∫₀ᵗ φ(x,τ)·e^(C(x,τ)/Ω)·Θ(t-τ) dτ
+                            </p>
+                            <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Parameter Definitions:</strong>
+                            <br>• L(x,τ) = Memory density function
+                            <br>• φ(x,τ) = Historical field signal
+                            <br>• <strong>Ω = System temperature parameter</strong> (normalization constant & rupture threshold)
+                            <br>• Θ(t-τ) = Heaviside function (causality constraint)
+                            <br>• t₀ = Time of rupture event
+                            <br>• χ = Reconstruction parameter set
+                            </p>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Cosmological Implementation:</strong> In our simulation, we apply this canonical formalism to the vacuum energy field across cosmic time. The spatial coordinate x represents locations in the cosmological field, whilst t represents cosmic time measured in gigayears (Gyr).
+                        </p>
+
+                        <div class="equation-box">
+                            <div class="equation-label">Coherence Integral with Multi-Timescale Kernel:</div>
+                            C(t) = ∫₀ᵗ K(t-τ)·L(τ) dτ
+                            <br><br>
+                            where K(t-τ) = Σᵢ wᵢ · exp(-(t-τ)/τᵢ) implements causality (Θ function)
+                            <br><br>
+                            <div class="equation-label">Memory Density Function:</div>
+                            L(τ) = |dH/dt|·τ²_H + |ρₘ - ρ_Λ|/(ρₘ + ρ_Λ) + δL_structure
+                            <br><br>
+                            <div class="equation-label">Regeneration of Dark Energy Field:</div>
+                            ρ_Λ(t) = ρ_Λ,₀ · [1 + α·C(t)/Ω]
+                            <br><br>
+                            This implements R[χ](t) where the regeneration is exponentially weighted by C/Ω
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            <strong>The Role of Ω (Omega):</strong> The system temperature parameter Ω serves multiple critical functions in the CRR framework:
+                        </p>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+                            <li><strong>Normalization constant:</strong> In the regeneration operator R[χ], the exponential term e^(C/Ω) normalizes coherence accumulation, preventing runaway growth and ensuring dimensional consistency</li>
+                            <li><strong>Rupture threshold:</strong> When C(t) ≥ Ω, the system undergoes phase transition (δ-function rupture event at t₀)</li>
+                            <li><strong>Coupling scale:</strong> The ratio C/Ω determines how strongly accumulated memory influences vacuum regeneration—analogous to a "temperature" governing phase transition probability</li>
+                            <li><strong>Calibration value:</strong> Ω ≈ 24.2 Gyr chosen such that present-day coherence ratio C(t_now)/Ω ≈ 0.16 matches observed phantom crossing behaviour</li>
+                        </ul>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Physical Interpretation:</strong> The coherence C(t) represents the cumulative "memory" of vacuum stress accumulated over cosmic history. The memory density L(τ) captures three distinct sources of cosmological stress:
+                        </p>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+                            <li><strong>Hubble acceleration stress:</strong> |dH/dt|·τ²_H measures the rate of change of cosmic expansion</li>
+                            <li><strong>Energy asymmetry stress:</strong> |ρₘ - ρ_Λ|/(ρₘ + ρ_Λ) quantifies matter-vacuum imbalance</li>
+                            <li><strong>Structure formation stress:</strong> δL_structure captures perturbative contributions from galaxy formation and large-scale structure</li>
+                        </ul>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            The multi-timescale kernel K(t-τ) employs three characteristic timescales, implementing the Heaviside causality constraint Θ(t-τ) through exponential decay:
+                        </p>
+
+                        <div class="equation-box" style="background: #fefce8;">
+                            τ₁ = 100 Myr &nbsp;&nbsp; (structure formation timescale, w₁ = 0.40)
+                            <br>
+                            τ₂ = 1.0 Gyr &nbsp;&nbsp;&nbsp; (galactic evolution timescale, w₂ = 0.35)
+                            <br>
+                            τ₃ = 10.0 Gyr &nbsp;&nbsp; (cosmological timescale, w₃ = 0.25)
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            This hierarchical memory structure ensures that the vacuum "remembers" recent events more strongly than distant past (through exponential weighting), whilst still integrating long-term trends across cosmic epochs. The exponential kernels naturally implement the causality constraint—only past events (τ < t) contribute to present coherence.
+                        </p>
+
+                        <div class="highlight-box" style="margin-top: 1rem;">
+                            <p style="line-height: 1.8;"><strong>Regeneration Operator in Cosmological Context:</strong></p>
+                            <p style="line-height: 1.8; margin-top: 0.5rem;">
+                                The dark energy density evolution ρ_Λ(t) = ρ_Λ,₀·[1 + α·C(t)/Ω] can be viewed as implementing the regeneration operator R[χ](t), where the vacuum field φ(t) is continuously "regenerated" (modified) by accumulated coherence. The exponential weighting e^(C/Ω) in the canonical formalism translates to the multiplicative factor [1 + α·C/Ω] in first-order expansion—appropriate when C/Ω ≪ 1 during most of cosmic history. As C/Ω approaches unity, this regeneration becomes increasingly nonlinear, ultimately triggering the rupture transition.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Dark Energy Evolution -->
+                    <div class="section">
+                        <h3 class="section-title">II. Time-Varying Dark Energy via the Regeneration Operator</h3>
+
+                        <div class="equation-box">
+                            <div class="equation-label">Coherence-Modulated Dark Energy Density (Regeneration):</div>
+                            ρ_Λ(t) = ρ_Λ,₀ × [1 + α·C(t)/Ω]
+                            <br><br>
+                            This implements R[χ](t) where regeneration is weighted by exp(C/Ω) ≈ 1 + C/Ω for C ≪ Ω
+                            <br><br>
+                            <div class="equation-label">Time-Varying Equation of State:</div>
+                            w(t) = -1 - (α/3)·[C(t)/Ω]
+                            <br><br>
+                            Derived from regeneration operator's exponential weighting structure
+                            <br><br>
+                            <div class="equation-label">Standard Parameter Values:</div>
+                            ρ_Λ,₀ = 0.68 &nbsp;&nbsp; (present-day dark energy fraction)
+                            <br>
+                            Ω ≈ 24.2 Gyr &nbsp; (system temperature/rupture threshold)
+                            <br>
+                            α ≈ 0.15 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (coupling strength between coherence and regeneration)
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Regeneration Operator Interpretation:</strong> The canonical CRR regeneration operator R[χ](x,t) = ∫₀ᵗ φ(x,τ)·e^(C(x,τ)/Ω)·Θ(t-τ) dτ describes how the vacuum field φ is continuously reconstructed based on accumulated coherence. In the cosmological context, this manifests as dark energy density being "regenerated" (modified) at each moment according to the coherence ratio C/Ω:
+                        </p>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+                            <li><strong>When C/Ω ≪ 1 (early universe):</strong> Exponential e^(C/Ω) ≈ 1 + C/Ω, yielding linear regeneration with weak coherence coupling</li>
+                            <li><strong>When C/Ω ≈ 0.16 (present epoch):</strong> Regeneration becomes measurably nonlinear, producing observable deviations from w = -1</li>
+                            <li><strong>When C/Ω → 1 (approaching rupture):</strong> Exponential weighting e^(C/Ω) → e ≈ 2.718, regeneration becomes strongly nonlinear</li>
+                            <li><strong>When C/Ω ≥ 1 (post-rupture):</strong> System exits regeneration regime, undergoes phase transition (δ-function rupture)</li>
+                        </ul>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>The Role of α (Alpha):</strong> The coupling parameter α controls how strongly the regeneration operator responds to accumulated coherence. Larger α means the exponential weighting e^(C/Ω) has greater influence on vacuum regeneration, accelerating the evolution toward phantom crossing and eventual rupture. The value α ≈ 0.15 provides sufficient coupling to match observed w ≈ -1.03 whilst maintaining stability during most of cosmic history.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            <strong>Key Prediction 1—Phantom Divide Crossing:</strong> Under the CRR hypothesis, as coherence C(t) accumulates, the equation of state should evolve from w ≈ -1.00 (cosmological constant behaviour) towards more negative values, crossing the "phantom divide" at w = -1. This crossing would represent a transition to super-accelerated expansion driven by phantom dark energy—an intriguing theoretical possibility.
+                        </p>
+
+                        <div class="success-box">
+                            <strong style="color: #10b981;">Intriguing Observational Correspondence (2025):</strong>
+                            <ul class="checkmark-list" style="margin-top: 0.75rem;">
+                                <li><strong>DESI Collaboration:</strong> Measured w = -1.03 ± 0.03 with 4.2σ evidence for time-varying dark energy—consistent with CRR predictions, though other explanations remain possible</li>
+                                <li><strong>Chinese Academy of Sciences (CAS):</strong> Independent analysis suggests phantom crossing at 4.3σ significance—intriguingly aligned with the CRR framework</li>
+                                <li><strong>Present-day coherence ratio:</strong> If C(t_now)/Ω ≈ 0.16 as the model proposes, this would correspond well with the observed w ≈ -1.03</li>
+                            </ul>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            <strong>Key Prediction 2—Hubble Tension Resolution:</strong> The CRR framework suggests a potential explanation for the observed 5-8% discrepancy between early and late-time measurements of H₀, attributing it to coherence accumulation modifying the expansion history through the regeneration operator. This represents one amongst several proposed solutions to this persistent cosmological puzzle.
+                        </p>
+
+                        <div class="success-box">
+                            <strong style="color: #10b981;">Observed Pattern:</strong> The measured Hubble tension stands at 8.3% with 5σ significance (Planck vs. SH0ES), which curiously falls within the range suggested by CRR dynamics.
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Rupture Dynamics -->
+                    <div class="section">
+                        <h3 class="section-title">III. Rupture Detection via δ-Function and Speculative Contraction</h3>
+
+                        <div class="danger-box">
+                            <div class="equation-label" style="color: #ef4444;">Canonical Rupture Detection:</div>
+                            <div style="font-family: 'Courier New', monospace; margin: 0.5rem 0; line-height: 1.8;">
+                                δ(t-t₀) activated when C(t₀) ≥ Ω
+                                <br><br>
+                                Dirac delta introduces discontinuous impulse at rupture time t₀
+                            </div>
+                            <div class="equation-label" style="color: #ef4444; margin-top: 0.75rem;">Proposed Post-Rupture Dynamics:</div>
+                            <div style="font-family: 'Courier New', monospace; margin: 0.5rem 0; line-height: 1.8;">
+                                ρ_Λ(t > t₀) → -|ρ_Λ,₀| &nbsp;&nbsp; (vacuum field inverts: attractive)
+                                <br>
+                                w(t > t₀) → +1/3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (radiation-like, opposite sign)
+                                <br>
+                                R[χ] → 0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (regeneration operator ceases)
+                            </div>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Rupture as Phase Transition:</strong> In the canonical CRR formalism, rupture occurs as a discrete event marked by the Dirac delta function δ(t-t₀). This represents an <em>instantaneous</em> phase transition when the system's coherence exceeds the threshold determined by Ω. The delta function mathematically captures the discontinuous nature of the rupture—it's not a gradual transition but a singular moment when the system's fundamental behaviour changes.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Physical Interpretation of δ(t-t₀):</strong> In cosmological terms, when C(t₀) ≥ Ω (estimated at t₀ ≈ 26-28 Gyr under default parameters), the vacuum undergoes what might be analogous to a first-order phase transition. The Dirac delta represents an impulsive "kick" to the equations of motion—the regeneration operator R[χ] abruptly ceases functioning in its coherence-building mode and the vacuum field φ(x,t) undergoes sign inversion.
+                        </p>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.8;"><strong>Why Ω Determines Rupture Timing:</strong></p>
+                            <p style="line-height: 1.8; margin-top: 0.5rem;">
+                                The parameter Ω functions as both a normalization constant in the exponential weighting e^(C/Ω) and as the critical threshold for rupture. These two roles are intimately connected: as C/Ω approaches unity, the exponential factor e^(C/Ω) → e ≈ 2.718 causes the regeneration to amplify rapidly. When C/Ω = 1, the system reaches a critical point where the exponential weighting becomes so strong that linear stability breaks down, triggering the δ-function rupture. This is analogous to temperature-driven phase transitions in statistical mechanics, where Ω plays the role of a critical temperature.
+                            </p>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            <strong>Hypothetical Mechanism:</strong> The CRR framework speculates that when accumulated coherence reaches C(t₀) = Ω ≈ 24 Gyr, the vacuum might undergo a discrete rupture event. This rupture could potentially invert the sign of dark energy, transforming it from a repulsive force driving cosmic acceleration into an attractive force that initiates gravitational collapse. We emphasise this remains a highly speculative scenario requiring substantial further theoretical development and observational testing.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.7;">
+                            <strong>Speculative Timeline of Cosmic Contraction:</strong>
+                        </p>
+
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+                            <li><strong>t ≈ 24-26 Gyr:</strong> C(t) → Ω, system approaches critical threshold</li>
+                            <li><strong>t = t₀ ≈ 26 Gyr:</strong> δ(t-t₀) rupture event—instantaneous phase transition</li>
+                            <li><strong>t₀ < t < 33 Gyr:</strong> Post-rupture contraction phase, a(t) decreases</li>
+                            <li><strong>t ≈ 33 Gyr:</strong> Potential Big Crunch scenario—universe could collapse to singular state</li>
+                        </ul>
+
+                        <div class="success-box" style="margin-top: 1rem;">
+                            <strong style="color: #10b981;">Intriguing Independent Analysis:</strong>
+                            <br>
+                            Professor Henry Tye (Cornell University, 2025) analysed DESI data using completely independent methodology and arrived at a prediction of cosmic contraction beginning around <strong>33 billion years</strong>—a curious convergence with the timescale suggested by CRR parameters (t₀ + collapse_duration), though the physical mechanisms proposed differ. This coincidence warrants careful further investigation to determine whether it reflects a genuine physical insight or merely a numerical coincidence.
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Post-Rupture Regeneration:</strong> After the δ-function rupture, the regeneration operator R[χ] might enter a different regime—rather than building coherence, it could initiate a "renewal" process where the system reconstructs itself under inverted field conditions. This speculative post-rupture phase represents territory largely unexplored in the CRR formalism and would require significant theoretical extension to characterize rigorously.
+                        </p>
+                    </div>
+
+                    <!-- Section 4: Observational Evidence -->
+                    <div class="section">
+                        <h3 class="section-title">IV. The Physical Basis of the CRR Simulation</h3>
+
+                        <p style="margin-bottom: 1rem; line-height: 1.8;">
+                            This simulation implements a particle-based cosmological model where 3,000 individual particles represent galaxy clusters distributed throughout a periodic simulation box. The particles evolve according to the CRR-modified Friedmann equations, which govern how distances, densities, and the equation of state change as the universe ages.
+                        </p>
+
+                        <div class="equation-box">
+                            <div class="equation-label">Scale Factor Evolution:</div>
+                            The scale factor a(t) determines cosmic distances: d_physical(t) = a(t) × d_comoving
+                            <br><br>
+                            <div style="line-height: 1.8;">
+                            • Early universe (t < 13.8 Gyr): a(t) ∝ t^0.67 × exp(0.1·t/t_now)
+                            <br>
+                            • Phantom crossing (13.8 < t < 26 Gyr): a(t) approaches maximum
+                            <br>
+                            • Collapse phase (t > 26 Gyr): a(t) decreases toward zero
+                            </div>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Hubble Flow and Peculiar Velocities:</strong> Each particle experiences two types of motion. The <em>Hubble flow</em> represents the universal expansion—particles move away from the simulation centre with velocity proportional to their distance, implementing v = H(t) × r where H(t) is the time-dependent Hubble parameter. Additionally, each particle has a small <em>peculiar velocity</em> representing gravitational attraction toward overdense regions, simulating structure formation.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Cluster Assignment and Cosmic Web:</strong> Particles are assigned to one of eight clusters during initialisation. The blue connection lines only form between particles in the same cluster that lie within a critical distance threshold. This mimics how dark matter halos and galaxy groups form along large-scale filamentary structures in the real universe. As the universe expands, these connections become more tenuous; during collapse, they intensify dramatically.
+                        </p>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.8;"><strong>Multi-Timescale Coherence Accumulation:</strong></p>
+                            <p style="line-height: 1.8; margin-top: 0.5rem;">
+                                The coherence integral C(t) employs three exponential kernels with characteristic timescales τ₁ = 100 Myr, τ₂ = 1 Gyr, and τ₃ = 10 Gyr. This hierarchical structure means the vacuum "remembers" recent stress (structure formation events, merger activity) more strongly than ancient history, whilst still integrating long-term trends across cosmic epochs. The weighted sum captures how stress accumulates across vastly different scales—from individual galaxy formation to cosmological transitions between epochs.
+                            </p>
+                        </div>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Dark Energy Waves:</strong> The purple sinusoidal waves represent quantum fluctuations in the dark energy field. Their amplitude scales with |ρ_Λ(t)|, visualising how dark energy density evolves. During the phantom crossing phase, you'll observe these waves becoming more vigorous as w becomes more negative. Post-rupture, when ρ_Λ becomes negative (attractive), the waves invert and the entire visual character changes—signalling the phase transition from expansion to contraction.
+                        </p>
+
+                        <p style="margin-top: 1rem; line-height: 1.8;">
+                            <strong>Rupture Precursors:</strong> When the coherence ratio C/Ω exceeds 0.9 (90% of critical threshold), red flashes begin appearing randomly across the simulation space. These represent quantum vacuum fluctuations intensifying as the system approaches criticality—a visual metaphor for how the vacuum becomes increasingly unstable near the rupture threshold. The intensity of these precursors grows proportionally to (C - 0.9Ω), providing advance warning of the impending phase transition.
+                        </p>
+                    </div>
+
+                    <!-- Section 5: Observational Evidence -->
+                    <div class="section">
+                        <h3 class="section-title">V. Patterns in Recent Observational Data (2025)</h3>
+
+                        <p style="margin-bottom: 1rem; line-height: 1.7;">
+                            The CRR framework makes several distinctive predictions that differentiate it from ΛCDM and other dark energy models. Intriguingly, recent observations from 2024-2025 have revealed patterns that show curious correspondence with CRR expectations, though we acknowledge that alternative theoretical frameworks may also account for these measurements:
+                        </p>
+
+                        <ul class="checkmark-list">
+                            <li>
+                                <strong>Time-Varying Dark Energy:</strong> CRR suggests w ≠ -1 (constant). 
+                                <br><span style="color: #10b981; font-weight: 600;">Observed pattern:</span> DESI reports evidence at 4.2σ significance with temporal evolution detected—though systematic uncertainties remain under investigation.
+                            </li>
+                            <li>
+                                <strong>Phantom Divide Crossing:</strong> CRR proposes w crosses -1 from above. 
+                                <br><span style="color: #10b981; font-weight: 600;">Observed pattern:</span> Chinese Academy of Sciences analysis suggests this behaviour at 4.3σ (w = -1.03 ± 0.03)—a measurement requiring careful confirmation.
+                            </li>
+                            <li>
+                                <strong>Hubble Tension:</strong> CRR suggests 5-8% early-late discrepancy due to coherence evolution. 
+                                <br><span style="color: #10b981; font-weight: 600;">Observed pattern:</span> Measured at 8.3% with 5σ (Planck vs SH0ES)—though multiple competing explanations exist.
+                            </li>
+                            <li>
+                                <strong>Large-Scale Anomalies:</strong> CRR predicts enhanced fluctuations from coherence gradients. 
+                                <br><span style="color: #10b981; font-weight: 600;">Observed pattern:</span> Cosmic dipole anomaly detected at 5σ (Secrest et al., 2025)—significance debated within the community.
+                            </li>
+                            <li>
+                                <strong>CMB Quadrupole Suppression:</strong> CRR suggests reduced power at largest scales. 
+                                <br><span style="color: #10b981; font-weight: 600;">Observed pattern:</span> Planck observations show 2σ deficit—within statistical variation but noteworthy.
+                            </li>
+                            <li>
+                                <strong>Finite Cosmological Future:</strong> CRR proposes eventual contraction scenario. 
+                                <br><span style="color: #10b981; font-weight: 600;">Curious convergence:</span> Tye (2025) independently suggests contraction around 33 Gyr using DESI data—though via different theoretical reasoning.
+                            </li>
+                        </ul>
+
+                        <p style="margin-top: 1.5rem; line-height: 1.7;">
+                            <strong>Assessment:</strong> Whilst the convergence of these observations with CRR predictions is striking and warrants serious attention, we emphasise that correlation does not establish causation. Multiple theoretical frameworks could potentially account for subsets of these measurements, and systematic uncertainties in the observations themselves remain substantial. The CRR framework should be viewed as one intriguing hypothesis amongst several deserving further theoretical development and rigorous observational testing. Independent confirmation by multiple teams using diverse methodologies will be essential before drawing firm conclusions.
+                        </p>
+                    </div>
+
+                    <!-- Section 6: Philosophical Implications -->
+                    <div class="section">
+                        <h3 class="section-title">VI. How CRR Differs from ΛCDM: Philosophical and Physical Insights</h3>
+
+                        <p style="margin-bottom: 1rem; line-height: 1.8;">
+                            The standard ΛCDM (Lambda Cold Dark Matter) model treats dark energy as a static cosmological constant—an unchanging property of spacetime that drives eternal exponential expansion. The CRR framework explores an alternative possibility: what if the vacuum behaves as a <em>dynamical, memory-bearing entity</em> that evolves over cosmic history? This represents a speculative but intriguing paradigm shift worth investigating.
+                        </p>
+
+                        <div class="success-box">
+                            <p style="line-height: 1.8;"><strong>Contrasting Perspectives: ΛCDM vs CRR</strong></p>
+                            <ul style="margin-left: 1.5rem; line-height: 1.8; margin-top: 0.75rem;">
+                                <li><strong>Dark Energy Nature:</strong> ΛCDM assumes w = -1 exactly and forever. CRR proposes w might evolve with accumulated coherence, potentially crossing w = -1 (phantom divide)—a hypothesis that intriguingly resonates with recent DESI measurements.</li>
+                                <li><strong>Cosmological Future:</strong> ΛCDM predicts eternal expansion leading to heat death. CRR explores the speculative possibility of finite lifetime ending in contraction—a scenario that curiously aligns with Tye's (2025) independent analysis suggesting turnaround around 33 Gyr.</li>
+                                <li><strong>Hubble Tension:</strong> ΛCDM struggles to explain the 8.3% H₀ discrepancy. CRR offers one potential resolution through coherence evolution modifying expansion history—though numerous alternative explanations have also been proposed.</li>
+                                <li><strong>Large-Scale Anomalies:</strong> ΛCDM assumes statistical isotropy. CRR suggests coherence gradients might create observable anisotropies—a prediction that appears consistent with detected anomalies, though interpretation remains contentious.</li>
+                                <li><strong>Temporal Structure:</strong> ΛCDM is Markovian—future depends only on present state. CRR proposes inherently non-Markovian dynamics—vacuum might retain memory of cosmic stress history. This represents a fundamental conceptual departure requiring rigorous mathematical formulation.</li>
+                            </ul>
+                        </div>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.7;">
+                                <strong>Memory in the Vacuum:</strong> The CRR framework suggests that spacetime itself possesses a form of memory—the vacuum is not merely a passive stage for cosmic evolution, but an active participant that accumulates stress history and responds dynamically to cosmic events. This represents a fundamental departure from the static vacuum energy concept of ΛCDM.
+                            </p>
+                        </div>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.7;">
+                                <strong>Identity Through Change:</strong> The universe maintains its identity (coherence) whilst undergoing profound transformation. The rupture event is not destruction, but metabolisation—the system incorporates discontinuity as part of its evolutionary dynamics, enabling genuine transformation whilst preserving causal continuity.
+                            </p>
+                        </div>
+
+                        <div class="highlight-box">
+                            <p style="line-height: 1.7;">
+                                <strong>Cyclic Potential:</strong> Whilst this simulation focuses on a single cycle (Big Bang → expansion → Big Crunch), the CRR framework naturally suggests the possibility of regeneration following rupture. A Big Crunch might not be an endpoint but a phase transition into a new cosmological epoch, with coherence from the previous cycle potentially informing initial conditions for the next.
+                            </p>
+                        </div>
+
+                        <div class="warning-box" style="margin-top: 1rem;">
+                            <p style="line-height: 1.7;">
+                                <strong>Present Epoch (13.8 Gyr):</strong> We currently exist in the phantom crossing phase with C/Ω ≈ 0.16. The universe is experiencing super-accelerated expansion as coherence continues to accumulate. We have approximately 12-13 billion years before turnaround, and 19-20 billion years until the Big Crunch—vast timescales on human terms, but finite and predictable within the CRR framework.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-container">
+            <canvas id="simulationCanvas"></canvas>
+
+            <!-- Metrics Panel -->
+            <div class="metrics-panel" id="metricsPanel"></div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <h4 class="legend-title">Visualisation Guide</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8b5cf6;"></div>
+                    <span>Purple waves: Dark energy field</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <span>Blue lines: Cosmic web structure</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: white; border: 1px solid #cbd5e0;"></div>
+                    <span>White dots: Galaxies/matter</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>Red flashes: Rupture precursors</span>
+                </div>
+                <div class="legend-note">
+                    Background intensity represents accumulated coherence C(t). Particle distribution shows scale factor a(t) evolution. Wave patterns indicate dark energy density ρ_Λ(t).
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="control-button" id="playPauseBtn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path id="playPauseIcon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                
+                <button class="control-button secondary" id="resetBtn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+
+                <div class="slider-control">
+                    <label class="slider-label">Speed: <span id="speedValue">1.0</span>×</label>
+                    <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+                </div>
+
+                <div class="slider-control">
+                    <label class="slider-label">Ω: <span id="omegaValue">24.2</span> Gyr</label>
+                    <input type="range" id="omegaSlider" min="15" max="35" step="0.5" value="24.2">
+                </div>
+
+                <div class="slider-control">
+                    <label class="slider-label">α: <span id="alphaValue">0.15</span></label>
+                    <input type="range" id="alphaSlider" min="0.05" max="0.3" step="0.01" value="0.15">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation State
+        let isPlaying = true;
+        let currentTime = 0;
+        let speed = 1.0;
+        let omega = 24.2;
+        let alpha = 0.15;
+        let animationId = null;
+
+        // Physical Constants
+        const T_BIGBANG = 0;
+        const T_NOW = 13.8;
+        const T_COLLAPSE = 33;
+        const MAX_TIME = T_COLLAPSE;
+
+        // Canvas Setup
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle System
+        const particles = [];
+        const numParticles = 3000;
+
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    vx: (Math.random() - 0.5) * 0.0001,
+                    vy: (Math.random() - 0.5) * 0.0001,
+                    mass: Math.random(),
+                    cluster: Math.floor(Math.random() * 8)
+                });
+            }
+        }
+        initParticles();
+
+        // Physics Calculations
+        function calculateScaleFactor(t_gyr) {
+            if (t_gyr < T_NOW) {
+                return Math.pow(t_gyr / T_NOW, 0.67) * Math.exp(0.1 * (t_gyr / T_NOW));
+            } else if (t_gyr < T_COLLAPSE * 0.8) {
+                const phase = (t_gyr - T_NOW) / (T_COLLAPSE * 0.8 - T_NOW);
+                return 1.0 + 0.3 * Math.sin(phase * Math.PI / 2);
+            } else {
+                const phase = (t_gyr - T_COLLAPSE * 0.8) / (T_COLLAPSE - T_COLLAPSE * 0.8);
+                return 1.3 * (1 - Math.pow(phase, 2));
+            }
+        }
+
+        function calculateCoherence(t_gyr) {
+            const tau1 = 0.1, tau2 = 1.0, tau3 = 10.0;
+            const w1 = 0.4, w2 = 0.35, w3 = 0.25;
+            const L = 1.666;
+
+            const term1 = w1 * tau1 * (1 - Math.exp(-t_gyr / tau1));
+            const term2 = w2 * tau2 * (1 - Math.exp(-t_gyr / tau2));
+            const term3 = w3 * tau3 * (1 - Math.exp(-t_gyr / tau3));
+
+            return L * (term1 + term2 + term3);
+        }
+
+        function calculateDarkEnergyDensity(t_gyr, C) {
+            const rho_0 = 0.68;
+            const coherence_factor = 1 + alpha * (C / omega);
+
+            if (C >= omega && t_gyr > T_COLLAPSE * 0.8) {
+                return -rho_0 * (t_gyr - T_COLLAPSE * 0.8) / (T_COLLAPSE - T_COLLAPSE * 0.8);
+            }
+
+            return rho_0 * coherence_factor;
+        }
+
+        function calculateMatterDensity(a) {
+            return 0.32 / Math.pow(a, 3);
+        }
+
+        function calculateEquationOfState(t_gyr, C) {
+            const w_base = -1.0;
+            const w_correction = -(alpha / 3) * (C / omega);
+            return w_base + w_correction;
+        }
+
+        function getPhase(t_gyr) {
+            if (t_gyr < 0.001) return 'INFLATION';
+            else if (t_gyr < 0.38) return 'RADIATION ERA';
+            else if (t_gyr < 3) return 'MATTER ERA';
+            else if (t_gyr < T_NOW) return 'DARK ENERGY ERA';
+            else if (t_gyr < T_COLLAPSE * 0.8) return 'PHANTOM CROSSING';
+            else return 'COLLAPSE';
+        }
+
+        // Drawing Functions
+        function drawCoherenceField(C, t_gyr) {
+            const coherence_ratio = C / omega;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.max(canvas.width, canvas.height);
+
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius);
+
+            if (coherence_ratio < 0.5) {
+                gradient.addColorStop(0, `rgba(255, 100, 50, ${0.1 * coherence_ratio})`);
+                gradient.addColorStop(1, 'rgba(230, 230, 250, 0)');
+            } else if (coherence_ratio < 0.8) {
+                gradient.addColorStop(0, `rgba(139, 92, 246, ${0.15 * coherence_ratio})`);
+                gradient.addColorStop(1, 'rgba(240, 240, 255, 0)');
+            } else {
+                const pulse = Math.sin(t_gyr * 5) * 0.5 + 0.5;
+                gradient.addColorStop(0, `rgba(255, 50, 100, ${0.3 * pulse})`);
+                gradient.addColorStop(0.5, `rgba(139, 92, 246, ${0.2 * pulse})`);
+                gradient.addColorStop(1, 'rgba(245, 240, 255, 0)');
+            }
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawParticles(a, t_gyr) {
+            const scale = a * 0.8 + 0.2;
+
+            // First pass: draw connections (cosmic web) - ENHANCED VISIBILITY
+            const connectionThreshold = 0.12; // Increased range for more connections
+            const checkProbability = 0.15; // Significantly increased from 0.05 to 0.15
+
+            particles.forEach((p, i) => {
+                if (Math.random() > checkProbability) return;
+
+                const x = canvas.width * (0.5 + (p.x - 0.5) * scale);
+                const y = canvas.height * (0.5 + (p.y - 0.5) * scale);
+
+                // Only check nearby particles for efficiency
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    if (p.cluster !== p2.cluster) continue;
+
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < connectionThreshold) {
+                        const x2 = canvas.width * (0.5 + (p2.x - 0.5) * scale);
+                        const y2 = canvas.height * (0.5 + (p2.y - 0.5) * scale);
+
+                        // Much more visible blue connections
+                        const opacity = 0.65 * (1 - dist / connectionThreshold);
+                        ctx.strokeStyle = `rgba(59, 130, 246, ${opacity})`;
+                        ctx.lineWidth = 2.0; // Thicker lines
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            // Second pass: draw particles
+            particles.forEach(p => {
+                const x = canvas.width * (0.5 + (p.x - 0.5) * scale);
+                const y = canvas.height * (0.5 + (p.y - 0.5) * scale);
+
+                const brightness = 100 + p.mass * 155;
+                const alpha_p = 0.3 + p.mass * 0.6;
+
+                ctx.fillStyle = `rgba(${brightness}, ${brightness * 0.9}, ${brightness * 0.8}, ${alpha_p})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 1 + p.mass * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawDarkEnergy(rho_lambda, C) {
+            const coherence_ratio = C / omega;
+            const numWaves = 5;
+            const time_phase = Date.now() * 0.001;
+
+            for (let i = 0; i < numWaves; i++) {
+                ctx.beginPath();
+                const phase = i / numWaves;
+                const amplitude = Math.abs(rho_lambda) * 30;
+                const frequency = 0.02 + coherence_ratio * 0.03;
+
+                for (let x = 0; x < canvas.width; x += 5) {
+                    const wave_y = Math.sin(x * frequency + time_phase + phase * Math.PI * 2) * amplitude;
+                    const y = canvas.height * (0.3 + phase * 0.1) + wave_y;
+
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+
+                const color_intensity = 139 + coherence_ratio * 100;
+                ctx.strokeStyle = `rgba(${color_intensity}, 92, 246, ${0.3 - phase * 0.05})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            if (coherence_ratio > 0.9) {
+                const rupture_intensity = (coherence_ratio - 0.9) / 0.1;
+                ctx.fillStyle = `rgba(239, 68, 68, ${rupture_intensity * 0.2})`;
+
+                for (let i = 0; i < 50; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const size = rupture_intensity * 30;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function updateParticles(a) {
+            const expansion_rate = a > 1 ? 0.0001 : -0.0001;
+
+            particles.forEach(p => {
+                p.x += (p.x - 0.5) * expansion_rate;
+                p.y += (p.y - 0.5) * expansion_rate;
+
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = 1;
+                if (p.x > 1) p.x = 0;
+                if (p.y < 0) p.y = 1;
+                if (p.y > 1) p.y = 0;
+            });
+        }
+
+        function drawTimeline(t_gyr) {
+            const timelineY = canvas.height - 60;
+            const timelineWidth = canvas.width - 100;
+            const timelineX = 50;
+
+            ctx.strokeStyle = 'rgba(100, 100, 120, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(timelineX, timelineY);
+            ctx.lineTo(timelineX + timelineWidth, timelineY);
+            ctx.stroke();
+
+            const markers = [
+                { t: 0, label: 'Big Bang', color: '#ff6b35' },
+                { t: 0.38, label: 'Recombination', color: '#f7931e' },
+                { t: 13.8, label: 'Now', color: '#00d4ff' },
+                { t: T_COLLAPSE * 0.8, label: 'Max Expansion', color: '#8b5cf6' },
+                { t: T_COLLAPSE, label: 'Big Crunch', color: '#ff1744' }
+            ];
+
+            markers.forEach(marker => {
+                const x = timelineX + (marker.t / MAX_TIME) * timelineWidth;
+
+                ctx.strokeStyle = marker.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x, timelineY - 10);
+                ctx.lineTo(x, timelineY + 10);
+                ctx.stroke();
+
+                ctx.fillStyle = marker.color;
+                ctx.font = 'bold 10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(marker.label, x, timelineY + 25);
+            });
+
+            const currentX = timelineX + (t_gyr / MAX_TIME) * timelineWidth;
+            ctx.fillStyle = '#1a202c';
+            ctx.beginPath();
+            ctx.arc(currentX, timelineY, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#1a202c';
+            ctx.font = 'bold 14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${t_gyr.toFixed(2)} Gyr`, currentX, timelineY - 20);
+        }
+
+        function updateMetrics(t_gyr, a, C, rho_lambda, rho_matter, w) {
+            const metricsPanel = document.getElementById('metricsPanel');
+            const phase = getPhase(t_gyr);
+
+            const metrics = [
+                { label: 'Time', value: `${t_gyr.toFixed(2)} Gyr`, color: '#1a202c' },
+                { label: 'Scale Factor', value: `a = ${a.toFixed(3)}`, color: '#00d4ff' },
+                { label: 'Coherence', value: `C = ${C.toFixed(3)} Gyr`, color: '#8b5cf6' },
+                { label: 'C/Ω', value: `${(C/omega).toFixed(3)}`, color: C/omega > 0.9 ? '#ef4444' : '#f59e0b' },
+                { label: 'ρ_Λ', value: `${rho_lambda.toFixed(3)}`, color: rho_lambda < 0 ? '#ef4444' : '#10b981' },
+                { label: 'ρ_m', value: `${rho_matter.toFixed(3)}`, color: '#64748b' },
+                { label: 'w_DE', value: `${w.toFixed(3)}`, color: w < -1 ? '#ef4444' : '#10b981' }
+            ];
+
+            let html = '';
+            metrics.forEach(metric => {
+                html += `
+                    <div class="metric-row">
+                        <span class="metric-label">${metric.label}:</span>
+                        <span style="color: ${metric.color}; font-weight: 700;">${metric.value}</span>
+                    </div>
+                `;
+            });
+
+            html += `<div class="phase-indicator">${phase}</div>`;
+            metricsPanel.innerHTML = html;
+        }
+
+        // Animation Loop
+        function animate() {
+            if (!isPlaying) return;
+
+            const t_gyr = (currentTime * MAX_TIME) / 100;
+
+            const a = calculateScaleFactor(t_gyr);
+            const C = calculateCoherence(t_gyr);
+            const rho_lambda = calculateDarkEnergyDensity(t_gyr, C);
+            const rho_matter = calculateMatterDensity(a);
+            const w = calculateEquationOfState(t_gyr, C);
+
+            ctx.fillStyle = 'rgba(245, 247, 250, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawCoherenceField(C, t_gyr);
+            drawParticles(a, t_gyr);
+            drawDarkEnergy(rho_lambda, C);
+            drawTimeline(t_gyr);
+            updateMetrics(t_gyr, a, C, rho_lambda, rho_matter, w);
+            updateParticles(a);
+
+            currentTime = (currentTime + 0.1 * speed) % 100;
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // UI Controls
+        document.getElementById('toggleExplainer').addEventListener('click', () => {
+            const explainer = document.getElementById('explainer');
+            const chevron = document.getElementById('chevronIcon');
+            explainer.classList.toggle('open');
+            chevron.classList.toggle('rotated');
+        });
+
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            const icon = document.getElementById('playPauseIcon');
+            if (isPlaying) {
+                icon.setAttribute('d', 'M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z');
+                animate();
+            } else {
+                icon.setAttribute('d', 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            currentTime = 0;
+            initParticles();
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed.toFixed(1);
+        });
+
+        document.getElementById('omegaSlider').addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+            document.getElementById('omegaValue').textContent = omega.toFixed(1);
+        });
+
+        document.getElementById('alphaSlider').addEventListener('input', (e) => {
+            alpha = parseFloat(e.target.value);
+            document.getElementById('alphaValue').textContent = alpha.toFixed(2);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

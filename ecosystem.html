@@ -1,0 +1,2938 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Forest Ecosystem: Enhanced with Moss Ground Layer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times', serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(101, 67, 33, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(34, 53, 34, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #f5f3ec 0%, #ede8d8 30%, #e5e0d0 60%, #d8d0c0 100%);
+            color: #3a342e;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 243, 236, 0.95) 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(139, 115, 85, 0.2);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .header-section h1 {
+            font-size: 2.2rem;
+            color: #4a4136;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .ucf-formula {
+            text-align: center;
+            font-family: 'Times', serif;
+            font-size: 1.1rem;
+            color: #6b5b4d;
+            font-style: italic;
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            border: 1px solid rgba(139, 115, 85, 0.15);
+        }
+        
+        .organism-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .organism-btn {
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            color: #555;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-width: 100px;
+        }
+        
+        .organism-btn.active {
+            background: #8b7355;
+            color: white;
+            border-color: #8b7355;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+        }
+        
+        .organism-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .description {
+            text-align: center;
+            font-size: 1rem;
+            color: #5a4a3d;
+            margin-top: 15px;
+        }
+        
+        .simulation-container {
+            background: linear-gradient(180deg, 
+                #87CEEB 0%,           /* Sky blue at top */
+                #98FB98 20%,          /* Light green for upper canopy */
+                #228B22 30%,          /* Forest green */
+                #8FBC8F 35%,          /* Ground level green */
+                #8B4513 37%,          /* Brown for soil surface */
+                #654321 50%,          /* Dark brown for deeper soil */
+                #2F1B14 100%          /* Very dark brown for deep soil */
+            );
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 6px solid rgba(68, 68, 68, 0.8);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 60px rgba(0, 0, 0, 0.2);
+            position: relative;
+            min-height: 750px;
+        }
+        
+        .substrate-container {
+            position: relative;
+            width: 700px;
+            height: 700px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 4px solid #444;
+            box-shadow: 
+                0 0 30px rgba(0,0,0,0.6),
+                inset 0 0 40px rgba(0,0,0,0.3);
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+        
+        .ground-line {
+            position: absolute;
+            top: 35%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(139, 69, 19, 0.6);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.3);
+        }
+        
+        .sun-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 35px;
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 70%, rgba(255, 215, 0, 0.3) 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 40px rgba(255, 215, 0, 0.4),
+                0 0 60px rgba(255, 215, 0, 0.2);
+            opacity: 0.95;
+        }
+        
+        .zone-labels {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+        
+        .sim-instructions {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-style: italic;
+            font-size: 0.8rem;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+            max-width: 600px;
+        }
+        
+        .sim-reset {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .reset-btn {
+            background: rgba(139, 115, 85, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        .reset-btn:hover {
+            background: rgba(122, 99, 69, 0.9);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(139, 115, 85, 0.2);
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-panel h3 {
+            color: #4a4136;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid rgba(139, 115, 85, 0.2);
+            padding-bottom: 8px;
+        }
+        
+        .param-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+        
+        .param-slider {
+            width: 100px;
+            height: 4px;
+            background: #ddd;
+            outline: none;
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+        
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #8b7355;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(139, 115, 85, 0.1);
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #8b7355;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        
+        .status-optimal { background: #4CAF50; }
+        .status-good { background: #2196F3; }
+        .status-poor { background: #FF9800; }
+        .status-critical { background: #F44336; }
+        
+        .mycorrhizal-panel {
+            background: linear-gradient(135deg, rgba(101, 67, 33, 0.1) 0%, rgba(139, 115, 85, 0.1) 100%);
+            border: 2px solid rgba(101, 67, 33, 0.3);
+        }
+        
+        .moss-panel {
+            background: linear-gradient(135deg, rgba(34, 139, 34, 0.1) 0%, rgba(85, 139, 47, 0.1) 100%);
+            border: 2px solid rgba(34, 139, 34, 0.3);
+        }
+        
+        .mycorrhizal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .mycorrhizal-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 6px;
+            border: 1px solid rgba(101, 67, 33, 0.2);
+        }
+        
+        .moss-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 6px;
+            border: 1px solid rgba(34, 139, 34, 0.2);
+        }
+        
+        /* Environmental stress warning */
+        .stress-warning {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #d32f2f;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .substrate-container {
+                width: 100%;
+                max-width: 500px;
+                height: 500px;
+            }
+            
+            .controls-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .organism-selector {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <section class="header-section">
+            <h1>CRR Forest Ecosystem</h1>
+            
+            <div class="ucf-formula">
+                Forest(t) = Light × L-Trees × Moss × Photosynthesis × RD(Roots + Mycelium) × Emergence × Environmental_Stress
+            </div>
+            
+            <div class="organism-selector">
+                <button class="organism-btn active" data-organism="trees">L-System Trees</button>
+                <button class="organism-btn" data-organism="moss">Moss Layer</button>
+                <button class="organism-btn" data-organism="roots">Root Networks</button>
+                <button class="organism-btn" data-organism="mycelium">Mycelium Web</button>
+                <button class="organism-btn" data-organism="ecosystem">Full Forest</button>
+            </div>
+            
+            <div class="description">
+                <span id="organismDescription">Multi-layered forest ecosystem with moss ground layer, mycorrhizal networks, and realistic environmental sensitivity.</span>
+            </div>
+        </section>
+
+        <!-- Simulation -->
+        <section class="simulation-container">
+            <div class="substrate-container">
+                <div class="sun-indicator" id="sunIndicator"></div>
+                <div class="ground-line"></div>
+                <div class="zone-labels">
+                    <div>☀️ Atmosphere</div>
+                    <div style="margin-top: 60px;">🌲 Canopy</div>
+                    <div style="margin-top: 100px;">🌿 Moss Layer</div>
+                    <div style="margin-top: 120px;">🌱 Ground</div>
+                    <div style="margin-top: 160px;">🕳️ Underground</div>
+                </div>
+                
+                <canvas id="canvas"></canvas>
+            </div>
+            
+            <div class="sim-instructions">
+                <em id="simInstructions">Left Click: Plant trees • Right Click: Add nutrients • Alt+Click: Add mycelium • Ctrl+Click: Add moisture • Shift+Click: Add moss spores • Space: Pause • R: Reset</em>
+            </div>
+            
+            <div class="sim-reset">
+                <button class="reset-btn" onclick="resetEcosystem()">Reset Forest</button>
+            </div>
+        </section>
+
+        <!-- Controls and Metrics -->
+        <div class="controls-section">
+            <!-- Environmental Controls -->
+            <div class="control-panel">
+                <h3>Environmental Parameters</h3>
+                <div id="environmentalStressWarning" style="display: none;" class="stress-warning">
+                    Environmental stress detected! Ecosystem health compromised.
+                </div>
+                <div class="param-row">
+                    <span>Sunlight:</span>
+                    <input type="range" class="param-slider" id="sunIntensity" min="10" max="100" value="75">
+                    <span id="sunVal">75%</span>
+                </div>
+                <div class="param-row">
+                    <span>Temperature:</span>
+                    <input type="range" class="param-slider" id="temperature" min="5" max="35" value="18">
+                    <span id="tempVal">18°C</span>
+                </div>
+                <div class="param-row">
+                    <span>Soil Moisture:</span>
+                    <input type="range" class="param-slider" id="moisture" min="20" max="95" value="70">
+                    <span id="moistureVal">70%</span>
+                </div>
+                <div class="param-row">
+                    <span>Soil pH:</span>
+                    <input type="range" class="param-slider" id="ph" min="4" max="9" step="0.1" value="6.2">
+                    <span id="phVal">6.2</span>
+                </div>
+                <div class="param-row">
+                    <span>CO₂ Level:</span>
+                    <input type="range" class="param-slider" id="co2" min="300" max="800" value="420">
+                    <span id="co2Val">420ppm</span>
+                </div>
+                <div class="param-row">
+                    <span>Growth Speed:</span>
+                    <input type="range" class="param-slider" id="growthSpeed" min="1" max="10" value="3">
+                    <span id="speedVal">3x</span>
+                </div>
+            </div>
+
+            <!-- Forest Metrics -->
+            <div class="control-panel">
+                <h3 id="metricsTitle">Forest Ecosystem Metrics</h3>
+                <div class="metrics-grid" id="metricsGrid">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Health Status -->
+            <div class="control-panel">
+                <h3>Ecosystem Health</h3>
+                <div style="font-size: 0.9rem;">
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="sunStatus"></span>Sunlight</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="tempStatus"></span>Temperature</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="moistStatus"></span>Soil Moisture</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="phStatus"></span>Soil pH</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="co2Status"></span>CO₂ Level</div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.85rem;">
+                    <strong>Overall Health: <span id="overallHealth">Optimal</span></strong>
+                </div>
+            </div>
+
+            <!-- Moss Ground Layer -->
+            <div class="control-panel moss-panel">
+                <h3>Moss Ground Layer</h3>
+                <div class="mycorrhizal-grid">
+                    <div class="moss-item">
+                        <span>Moss Colonies:</span>
+                        <span class="metric-value" id="mossColonies">0</span>
+                    </div>
+                    <div class="moss-item">
+                        <span>Protonema Length:</span>
+                        <span class="metric-value" id="protonemaLength">0μm</span>
+                    </div>
+                    <div class="moss-item">
+                        <span>Gametophores:</span>
+                        <span class="metric-value" id="gametophores">0</span>
+                    </div>
+                    <div class="moss-item">
+                        <span>Moisture Retention:</span>
+                        <span class="metric-value" id="mossWater">Low</span>
+                    </div>
+                    <div class="moss-item">
+                        <span>Moss-Mycelium Links:</span>
+                        <span class="metric-value" id="mossMyceliumLinks">0</span>
+                    </div>
+                    <div class="moss-item">
+                        <span>Coverage:</span>
+                        <span class="metric-value" id="mossCoverage">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mycorrhizal Networks -->
+            <div class="control-panel mycorrhizal-panel">
+                <h3>Wood Wide Web Status</h3>
+                <div class="mycorrhizal-grid">
+                    <div class="mycorrhizal-item">
+                        <span>Active Connections:</span>
+                        <span class="metric-value" id="connections">0</span>
+                    </div>
+                    <div class="mycorrhizal-item">
+                        <span>Carbon Flow:</span>
+                        <span class="metric-value" id="carbonFlow">Low</span>
+                    </div>
+                    <div class="mycorrhizal-item">
+                        <span>Nutrient Exchange:</span>
+                        <span class="metric-value" id="nutrientExchange">Minimal</span>
+                    </div>
+                    <div class="mycorrhizal-item">
+                        <span>Network Health:</span>
+                        <span class="metric-value" id="networkHealth">Growing</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            // Core simulation parameters
+            const GRID_SIZE = 700;
+            const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
+            const ATMOSPHERE_HEIGHT = Math.floor(GRID_SIZE * 0.12);
+            const CANOPY_START = Math.floor(GRID_SIZE * 0.12);
+            const GROUND_LINE = Math.floor(GRID_SIZE * 0.35);
+            const MOSS_ZONE_START = GROUND_LINE - 20;
+            const MOSS_ZONE_END = GROUND_LINE + 30;
+            const UNDERGROUND_START = GROUND_LINE;
+            
+            // Current state
+            let currentMode = 'trees';
+            let simulationTime = 0;
+            let isPlaying = true;
+            let growthSpeedMultiplier = 3;
+            let seasonalCycle = 0;
+            
+            // Environmental parameters
+            let sunIntensity = 75;
+            let temperature = 18;
+            let moisture = 70;
+            let phLevel = 6.2;
+            let co2Level = 420;
+            
+            // Environmental stress tracking
+            let environmentalStressLevel = 0;
+            let consecutiveStressFrames = 0;
+            
+            // Canvas setup
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = canvas.height = GRID_SIZE;
+            
+            // Reaction-diffusion fields
+            let lightField = new Float32Array(TOTAL_CELLS);
+            let co2Field = new Float32Array(TOTAL_CELLS);
+            let o2Field = new Float32Array(TOTAL_CELLS);
+            let treeBiomass = new Float32Array(TOTAL_CELLS);
+            let leafDensity = new Float32Array(TOTAL_CELLS);
+            let chlorophyllDensity = new Float32Array(TOTAL_CELLS);
+            let branchDensity = new Float32Array(TOTAL_CELLS);
+            let rootDensity = new Float32Array(TOTAL_CELLS);
+            let rootTips = new Float32Array(TOTAL_CELLS);
+            let mycorrhizal = new Float32Array(TOTAL_CELLS);
+            let hyphalDensity = new Float32Array(TOTAL_CELLS);
+            let carbonFlow = new Float32Array(TOTAL_CELLS);
+            let nutrients = new Float32Array(TOTAL_CELLS);
+            let sugarField = new Float32Array(TOTAL_CELLS);
+            let moistureField = new Float32Array(TOTAL_CELLS);
+            let memory = new Float32Array(TOTAL_CELLS);
+            let temp = new Float32Array(TOTAL_CELLS);
+            
+            // Moss-specific fields
+            let protonemal = new Float32Array(TOTAL_CELLS);
+            let gametophore = new Float32Array(TOTAL_CELLS);
+            let rhizoids = new Float32Array(TOTAL_CELLS);
+            let mossBuds = new Float32Array(TOTAL_CELLS);
+            let mossChloroplasts = new Float32Array(TOTAL_CELLS);
+            let mossCellWalls = new Float32Array(TOTAL_CELLS);
+            let mossAge = new Float32Array(TOTAL_CELLS);
+            let mossMyceliumConnections = new Float32Array(TOTAL_CELLS);
+            
+            // Organism arrays
+            let lSystemTrees = [];
+            let rootTipAgents = [];
+            let hyphalAgents = [];
+            let mycorrhizalNodes = [];
+            let mossCells = [];
+            
+            // Enhanced environmental stress functions
+            function calculateEnvironmentalStress() {
+                const sunStress = getSunStress();
+                const tempStress = getTemperatureStress();
+                const moistureStress = getMoistureStress();
+                const phStress = getPhStress();
+                const co2Stress = getCo2Stress();
+                
+                return (sunStress + tempStress + moistureStress + phStress + co2Stress) / 5;
+            }
+            
+            function getSunStress() {
+                if (sunIntensity < 30) return 1.0;
+                if (sunIntensity < 50) return 0.6;
+                if (sunIntensity > 95) return 0.8;
+                if (sunIntensity > 85) return 0.3;
+                return 0.0;
+            }
+            
+            function getTemperatureStress() {
+                if (temperature < 8) return 1.0;
+                if (temperature < 12) return 0.7;
+                if (temperature > 30) return 1.0;
+                if (temperature > 25) return 0.6;
+                if (temperature < 15) return 0.3;
+                if (temperature > 22) return 0.2;
+                return 0.0;
+            }
+            
+            function getMoistureStress() {
+                if (moisture < 30) return 1.0;
+                if (moisture < 45) return 0.7;
+                if (moisture > 90) return 0.8;
+                if (moisture > 85) return 0.4;
+                if (moisture < 55) return 0.2;
+                return 0.0;
+            }
+            
+            function getPhStress() {
+                if (phLevel < 4.5) return 1.0;
+                if (phLevel < 5.0) return 0.8;
+                if (phLevel > 8.5) return 1.0;
+                if (phLevel > 8.0) return 0.7;
+                if (phLevel < 5.5) return 0.4;
+                if (phLevel > 7.5) return 0.3;
+                return 0.0;
+            }
+            
+            function getCo2Stress() {
+                if (co2Level < 350) return 0.6;
+                if (co2Level > 700) return 0.4;
+                if (co2Level > 600) return 0.1;
+                return 0.0;
+            }
+            
+            function getPhotosynthesisEfficiency() {
+                let efficiency = 1.0;
+                
+                if (sunIntensity < 30) efficiency *= 0.1;
+                else if (sunIntensity < 50) efficiency *= 0.4;
+                else if (sunIntensity > 95) efficiency *= 0.3;
+                else efficiency *= sunIntensity / 100;
+                
+                if (temperature < 8) efficiency *= 0.0;
+                else if (temperature < 12) efficiency *= 0.2;
+                else if (temperature > 30) efficiency *= 0.1;
+                else if (temperature > 25) efficiency *= 0.4;
+                else efficiency *= Math.max(0.3, 1.0 - Math.abs(temperature - 18) / 10);
+                
+                if (moisture < 30) efficiency *= 0.1;
+                else if (moisture > 90) efficiency *= 0.3;
+                else efficiency *= moisture / 100;
+                
+                efficiency *= Math.min(1.5, co2Level / 420);
+                
+                return Math.max(0, efficiency);
+            }
+            
+            function getRootGrowthEfficiency() {
+                let efficiency = 1.0;
+                
+                if (moisture < 30) efficiency *= 0.1;
+                else if (moisture > 90) efficiency *= 0.2;
+                else efficiency *= moisture / 100;
+                
+                if (temperature < 8) efficiency *= 0.0;
+                else if (temperature > 30) efficiency *= 0.2;
+                else efficiency *= Math.max(0.2, 1.0 - Math.abs(temperature - 18) / 15);
+                
+                if (phLevel < 4.5 || phLevel > 8.5) efficiency *= 0.1;
+                else if (phLevel < 5.0 || phLevel > 8.0) efficiency *= 0.3;
+                else efficiency *= Math.max(0.4, 1.0 - Math.abs(phLevel - 6.5) / 2);
+                
+                return Math.max(0, efficiency);
+            }
+            
+            function getMycorrhizalEfficiency() {
+                let efficiency = 1.0;
+                
+                if (phLevel < 4.5 || phLevel > 8.5) efficiency *= 0.0;
+                else if (phLevel < 5.0 || phLevel > 8.0) efficiency *= 0.2;
+                else efficiency *= Math.max(0.3, 1.0 - Math.abs(phLevel - 6.0) / 2);
+                
+                if (moisture < 25) efficiency *= 0.1;
+                else if (moisture > 95) efficiency *= 0.4;
+                else efficiency *= Math.min(1.0, moisture / 80);
+                
+                if (temperature < 5) efficiency *= 0.0;
+                else if (temperature > 32) efficiency *= 0.1;
+                else efficiency *= Math.max(0.2, 1.0 - Math.abs(temperature - 15) / 20);
+                
+                return Math.max(0, efficiency);
+            }
+            
+            function getMossGrowthEfficiency() {
+                let efficiency = 1.0;
+                
+                // Moss loves high humidity
+                if (moisture < 40) efficiency *= 0.1;
+                else if (moisture < 60) efficiency *= 0.4;
+                else efficiency *= Math.min(1.2, moisture / 80);
+                
+                // Temperature sensitivity
+                if (temperature < 5) efficiency *= 0.0;
+                else if (temperature > 28) efficiency *= 0.1;
+                else efficiency *= Math.max(0.3, 1.0 - Math.abs(temperature - 16) / 12);
+                
+                // pH tolerance
+                if (phLevel < 4.8 || phLevel > 7.5) efficiency *= 0.2;
+                else efficiency *= Math.max(0.4, 1.0 - Math.abs(phLevel - 6.0) / 1.5);
+                
+                // Light needs (less than trees)
+                if (sunIntensity < 15) efficiency *= 0.2;
+                else if (sunIntensity > 80) efficiency *= 0.3;
+                else efficiency *= Math.min(1.0, sunIntensity / 60);
+                
+                return Math.max(0, efficiency);
+            }
+            
+            // Moss Cell class adapted for forest ecosystem
+            class MossCell {
+                constructor(x, y, type = 'protonema') {
+                    this.x = x;
+                    this.y = Math.max(MOSS_ZONE_START, Math.min(y, MOSS_ZONE_END));
+                    this.vx = (Math.random() - 0.5) * 0.08;
+                    this.vy = (Math.random() - 0.5) * 0.08;
+                    this.type = type;
+                    this.age = 0;
+                    this.energy = 0.9 + Math.random() * 0.2;
+                    this.divisionCooldown = 0;
+                    this.size = this.getTypeSize();
+                    this.phase = Math.random() * Math.PI * 2;
+                    this.branchAngle = Math.atan2(this.vy, this.vx);
+                    this.generation = 0;
+                    this.chlorophyllLevel = 0.1;
+                    this.stressAccumulation = 0;
+                    this.mycorrhizalPartners = [];
+                }
+                
+                getTypeSize() {
+                    switch(this.type) {
+                        case 'protonema': return 0.3 + Math.random() * 0.2;
+                        case 'bud': return 0.8 + Math.random() * 0.4;
+                        case 'gametophore': return 1.2 + Math.random() * 0.6;
+                        case 'rhizoid': return 0.2 + Math.random() * 0.1;
+                        default: return 0.5;
+                    }
+                }
+                
+                update() {
+                    this.age += growthSpeedMultiplier;
+                    this.phase += 0.03;
+                    
+                    const stress = calculateEnvironmentalStress();
+                    const mossEfficiency = getMossGrowthEfficiency();
+                    const growthRate = mossEfficiency * growthSpeedMultiplier;
+                    
+                    this.stressAccumulation += stress * 0.01;
+                    
+                    if (stress > 0.9 || this.stressAccumulation > 40) {
+                        this.energy *= 0.9;
+                        return [];
+                    }
+                    
+                    // Chlorophyll development
+                    if (this.type !== 'rhizoid') {
+                        this.chlorophyllLevel = Math.min(1, this.chlorophyllLevel + 0.002 * growthRate);
+                    }
+                    
+                    const newCells = [];
+                    
+                    switch(this.type) {
+                        case 'protonema':
+                            newCells.push(...this.updateProtonema(stress, growthRate));
+                            break;
+                        case 'bud':
+                            newCells.push(...this.updateBud(stress, growthRate));
+                            break;
+                        case 'gametophore':
+                            newCells.push(...this.updateGametophore(stress, growthRate));
+                            break;
+                        case 'rhizoid':
+                            this.updateRhizoid(stress, growthRate);
+                            break;
+                    }
+                    
+                    this.energy *= 0.999;
+                    return newCells;
+                }
+                
+                updateProtonema(stress, growthRate) {
+                    const sensor = this.senseEnvironment(3);
+                    this.adjustDirection(sensor, 0.15);
+                    this.move(0.1 * growthRate);
+                    
+                    this.depositMaterial('protonema', 0.015 * growthRate);
+                    
+                    const newCells = [];
+                    this.divisionCooldown = Math.max(0, this.divisionCooldown - growthSpeedMultiplier);
+                    
+                    // Branch
+                    if (this.energy > 0.7 && this.divisionCooldown <= 0 && Math.random() < 0.005 * growthRate) {
+                        const branchAngle = this.branchAngle + (Math.random() - 0.5) * Math.PI * 0.3;
+                        const branch = new MossCell(this.x, this.y, 'protonema');
+                        branch.vx = Math.cos(branchAngle) * 0.08;
+                        branch.vy = Math.sin(branchAngle) * 0.08;
+                        branch.branchAngle = branchAngle;
+                        branch.generation = this.generation + 1;
+                        newCells.push(branch);
+                        
+                        this.divisionCooldown = 30;
+                        this.energy *= 0.8;
+                    }
+                    
+                    // Form buds
+                    if (this.age > 150 && this.energy > 0.8 && Math.random() < 0.002 * growthRate) {
+                        const bud = new MossCell(this.x, this.y, 'bud');
+                        newCells.push(bud);
+                        this.energy *= 0.7;
+                    }
+                    
+                    return newCells;
+                }
+                
+                updateBud(stress, growthRate) {
+                    this.depositMaterial('bud', 0.02 * growthRate);
+                    
+                    const newCells = [];
+                    
+                    if (this.age > 80 && this.energy > 0.6) {
+                        const gametophore = new MossCell(this.x, this.y, 'gametophore');
+                        gametophore.energy = this.energy * 0.9;
+                        newCells.push(gametophore);
+                        
+                        // Create rhizoids
+                        for (let i = 0; i < 2; i++) {
+                            const rhizoid = new MossCell(this.x, this.y, 'rhizoid');
+                            const angle = Math.random() * Math.PI * 2;
+                            rhizoid.vx = Math.cos(angle) * 0.04;
+                            rhizoid.vy = Math.sin(angle) * 0.04;
+                            newCells.push(rhizoid);
+                        }
+                        
+                        this.energy = 0;
+                    }
+                    
+                    return newCells;
+                }
+                
+                updateGametophore(stress, growthRate) {
+                    this.move(0.03 * growthRate);
+                    this.depositMaterial('gametophore', 0.025 * growthRate);
+                    
+                    const newCells = [];
+                    
+                    // Create leaf structures
+                    if (this.age > 40 && Math.random() < 0.003 * growthRate) {
+                        const leaf = new MossCell(
+                            this.x + (Math.random() - 0.5) * 3,
+                            this.y + (Math.random() - 0.5) * 3,
+                            'gametophore'
+                        );
+                        leaf.size = 0.6;
+                        leaf.generation = this.generation + 1;
+                        newCells.push(leaf);
+                        this.energy *= 0.95;
+                    }
+                    
+                    return newCells;
+                }
+                
+                updateRhizoid(stress, growthRate) {
+                    // Rhizoids grow toward soil and connect with mycelium
+                    this.vy = Math.abs(this.vy) + 0.01;
+                    this.move(0.06 * growthRate);
+                    this.depositMaterial('rhizoid', 0.012 * growthRate);
+                    
+                    // Absorb nutrients and potentially connect with mycelium
+                    const idx = Math.floor(this.x) + Math.floor(this.y) * GRID_SIZE;
+                    if (idx >= 0 && idx < TOTAL_CELLS) {
+                        this.energy = Math.min(1.2, this.energy + nutrients[idx] * 0.015);
+                        
+                        // Moss-mycelium symbiosis
+                        if (hyphalDensity[idx] > 0.2 && Math.random() < 0.01) {
+                            mossMyceliumConnections[idx] = Math.min(1, mossMyceliumConnections[idx] + 0.3);
+                            this.energy = Math.min(1.5, this.energy + 0.1);
+                        }
+                    }
+                }
+                
+                senseEnvironment(radius) {
+                    let bestSignal = -1;
+                    let bestAngle = this.branchAngle;
+                    
+                    const numSensors = 6;
+                    for (let i = 0; i < numSensors; i++) {
+                        const angle = (i * Math.PI * 2) / numSensors;
+                        const sx = this.x + Math.cos(angle) * radius;
+                        const sy = this.y + Math.sin(angle) * radius;
+                        
+                        if (sx >= 0 && sx < GRID_SIZE && sy >= MOSS_ZONE_START && sy <= MOSS_ZONE_END) {
+                            const idx = Math.floor(sx) + Math.floor(sy) * GRID_SIZE;
+                            let signal = moistureField[idx] * 3 + nutrients[idx] * 1.5;
+                            
+                            // Avoid overcrowding
+                            const density = protonemal[idx] + gametophore[idx] + mossBuds[idx];
+                            signal -= density * 2;
+                            
+                            // Light seeking
+                            if (this.type !== 'rhizoid') {
+                                signal += lightField[idx] * 0.8;
+                            }
+                            
+                            // Attracted to mycelium for symbiosis
+                            signal += hyphalDensity[idx] * 1.2;
+                            
+                            if (signal > bestSignal) {
+                                bestSignal = signal;
+                                bestAngle = angle;
+                            }
+                        }
+                    }
+                    
+                    return { signal: bestSignal, angle: bestAngle };
+                }
+                
+                adjustDirection(sensor, turnRate) {
+                    const angleDiff = this.normalizeAngle(sensor.angle - this.branchAngle);
+                    this.branchAngle += angleDiff * turnRate;
+                    
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    this.vx = Math.cos(this.branchAngle) * speed;
+                    this.vy = Math.sin(this.branchAngle) * speed;
+                }
+                
+                move(speed) {
+                    this.x += this.vx * speed;
+                    this.y += this.vy * speed;
+                    this.x = Math.max(5, Math.min(GRID_SIZE - 5, this.x));
+                    this.y = Math.max(MOSS_ZONE_START, Math.min(MOSS_ZONE_END, this.y));
+                }
+                
+                depositMaterial(type, amount) {
+                    const radius = this.size + 0.4;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(this.x + dx);
+                            const py = Math.floor(this.y + dy);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius));
+                                    
+                                    switch(type) {
+                                        case 'protonema':
+                                            protonemal[idx] = Math.min(1, protonemal[idx] + amount * strength);
+                                            mossChloroplasts[idx] = Math.min(1, mossChloroplasts[idx] + amount * 0.5 * strength);
+                                            break;
+                                        case 'bud':
+                                            mossBuds[idx] = Math.min(1, mossBuds[idx] + amount * strength);
+                                            break;
+                                        case 'gametophore':
+                                            gametophore[idx] = Math.min(1, gametophore[idx] + amount * strength);
+                                            mossChloroplasts[idx] = Math.min(1, mossChloroplasts[idx] + amount * 0.8 * strength);
+                                            break;
+                                        case 'rhizoid':
+                                            rhizoids[idx] = Math.min(1, rhizoids[idx] + amount * strength);
+                                            break;
+                                    }
+                                    
+                                    mossCellWalls[idx] = Math.min(1, mossCellWalls[idx] + amount * 0.3 * strength);
+                                    mossAge[idx] = Math.min(1000, mossAge[idx] + 0.5 * strength);
+                                    
+                                    // Moss retains moisture
+                                    moistureField[idx] = Math.min(1, moistureField[idx] + amount * 0.1 * strength);
+                                    
+                                    // Consume resources
+                                    nutrients[idx] = Math.max(0, nutrients[idx] - 0.0003 * strength);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                normalizeAngle(angle) {
+                    while (angle > Math.PI) angle -= 2 * Math.PI;
+                    while (angle < -Math.PI) angle += 2 * Math.PI;
+                    return angle;
+                }
+            }
+            
+            // Enhanced L-System Tree with environmental sensitivity (keeping original)
+            class LSystemTree {
+                constructor(x, y, species = 'oak') {
+                    this.x = x;
+                    this.y = Math.min(y, GROUND_LINE - 15);
+                    this.species = species;
+                    this.age = 0;
+                    this.generation = 0;
+                    this.segments = [];
+                    this.leaves = [];
+                    this.photosynthesisRate = 0;
+                    this.carbonProduction = 0;
+                    this.leafCycle = 0;
+                    this.health = 1.0;
+                    this.stressAccumulation = 0;
+                    this.isDead = false;
+                    
+                    this.axiom = "F";
+                    this.rules = this.getSpeciesRules(species);
+                    this.currentString = this.axiom;
+                    this.angle = 25;
+                    this.length = 10;
+                    this.thickness = 2.5;
+                    
+                    this.generateTree();
+                    this.createRootSystem();
+                }
+                
+                getSpeciesRules(species) {
+                    const rulesets = {
+                        oak: { 'F': 'F[+F]F[-F]F' },
+                        pine: { 'F': 'F[++F][--F]F' }, 
+                        birch: { 'F': 'F[+F][-F]' }
+                    };
+                    return rulesets[species] || rulesets.oak;
+                }
+                
+                update() {
+                    if (this.isDead) return;
+                    
+                    this.age++;
+                    this.leafCycle += 0.02;
+                    
+                    const currentStress = calculateEnvironmentalStress();
+                    this.stressAccumulation += currentStress * 0.01;
+                    
+                    if (currentStress > 0.3) {
+                        this.health -= currentStress * 0.005;
+                    } else {
+                        this.health = Math.min(1.0, this.health + 0.001);
+                    }
+                    
+                    if (this.health <= 0 || this.stressAccumulation > 50) {
+                        this.isDead = true;
+                        this.killTree();
+                        return;
+                    }
+                    
+                    const healthFactor = Math.max(0.1, this.health);
+                    
+                    if (this.age % Math.floor(60 / healthFactor) === 0 && this.generation < 5) {
+                        this.evolveTree();
+                    }
+                    
+                    this.updateLeafCycle();
+                    this.performPhotosynthesis();
+                    this.transportCarbon();
+                    this.depositTreeMaterial();
+                }
+                
+                killTree() {
+                    for (let leaf of this.leaves) {
+                        leaf.chlorophyll = 0;
+                        leaf.photosynthesis = 0;
+                    }
+                    
+                    setTimeout(() => {
+                        const index = lSystemTrees.indexOf(this);
+                        if (index > -1) {
+                            lSystemTrees.splice(index, 1);
+                        }
+                    }, 300);
+                }
+                
+                updateLeafCycle() {
+                    const stressFactor = Math.max(0.1, 1.0 - calculateEnvironmentalStress());
+                    const cyclePeriod = Math.PI * 2;
+                    const currentPhase = (this.leafCycle % cyclePeriod) / cyclePeriod;
+                    
+                    for (let leaf of this.leaves) {
+                        leaf.age += 0.005;
+                        
+                        if (currentPhase < 0.7 && stressFactor > 0.5) {
+                            leaf.chlorophyll = Math.min(1, leaf.chlorophyll + 0.008 * stressFactor);
+                        } else {
+                            const senescenceRate = 0.012 * (2 - stressFactor);
+                            leaf.chlorophyll = Math.max(0, leaf.chlorophyll - senescenceRate);
+                        }
+                        
+                        if (leaf.chlorophyll < 0.1 && (Math.random() < 0.02 || stressFactor < 0.3)) {
+                            if (stressFactor > 0.6) {
+                                leaf.chlorophyll = 0.1;
+                                leaf.age = 0;
+                                leaf.size = 1.5 + Math.random() * 1.5;
+                            }
+                        }
+                        
+                        if (leaf.chlorophyll > 0.3 && this.health > 0.5) {
+                            leaf.size = Math.min(4, leaf.size + 0.002 * this.health);
+                        }
+                    }
+                }
+                
+                evolveTree() {
+                    let newString = '';
+                    for (let char of this.currentString) {
+                        newString += this.rules[char] || char;
+                    }
+                    this.currentString = newString;
+                    this.generation++;
+                    this.generateTree();
+                }
+                
+                generateTree() {
+                    this.segments = [];
+                    this.leaves = [];
+                    
+                    let stack = [];
+                    let currentX = this.x;
+                    let currentY = this.y;
+                    let currentAngle = -90;
+                    let segmentLength = this.length * Math.pow(0.75, this.generation) * this.health;
+                    let currentThickness = this.thickness * this.health;
+                    
+                    for (let char of this.currentString) {
+                        switch (char) {
+                            case 'F':
+                                let newX = currentX + Math.cos(currentAngle * Math.PI / 180) * segmentLength;
+                                let newY = currentY + Math.sin(currentAngle * Math.PI / 180) * segmentLength;
+                                
+                                if (newY < GROUND_LINE && newY > CANOPY_START) {
+                                    this.segments.push({
+                                        x1: currentX, y1: currentY,
+                                        x2: newX, y2: newY,
+                                        thickness: currentThickness,
+                                        generation: this.generation
+                                    });
+                                    
+                                    if (this.generation >= 2 && Math.random() < this.health) {
+                                        this.leaves.push({
+                                            x: newX,
+                                            y: newY,
+                                            size: (2.5 + Math.random() * 1.5) * this.health,
+                                            chlorophyll: Math.min(0.8, 0.2 + this.health * 0.6),
+                                            photosynthesis: 0,
+                                            age: Math.random() * 100
+                                        });
+                                    }
+                                    
+                                    currentX = newX;
+                                    currentY = newY;
+                                }
+                                currentThickness *= 0.85;
+                                break;
+                                
+                            case '+':
+                                currentAngle -= this.angle + (Math.random() - 0.5) * 8;
+                                break;
+                                
+                            case '-':
+                                currentAngle += this.angle + (Math.random() - 0.5) * 8;
+                                break;
+                                
+                            case '[':
+                                stack.push({
+                                    x: currentX, y: currentY,
+                                    angle: currentAngle, thickness: currentThickness
+                                });
+                                break;
+                                
+                            case ']':
+                                if (stack.length > 0) {
+                                    let state = stack.pop();
+                                    currentX = state.x;
+                                    currentY = state.y;
+                                    currentAngle = state.angle;
+                                    currentThickness = state.thickness;
+                                }
+                                break;
+                        }
+                    }
+                }
+                
+                performPhotosynthesis() {
+                    const photoEfficiency = getPhotosynthesisEfficiency();
+                    this.photosynthesisRate = 0;
+                    
+                    for (let leaf of this.leaves) {
+                        const leafIdx = Math.floor(leaf.x) + Math.floor(leaf.y) * GRID_SIZE;
+                        if (leafIdx >= 0 && leafIdx < TOTAL_CELLS) {
+                            const lightAvailable = lightField[leafIdx];
+                            const co2Available = co2Field[leafIdx];
+                            
+                            const photosynthesis = lightAvailable * Math.min(1, co2Available * 2.5) * 
+                                                 photoEfficiency * leaf.chlorophyll * 0.08;
+                            
+                            leaf.photosynthesis = photosynthesis;
+                            this.photosynthesisRate += photosynthesis;
+                            
+                            if (photosynthesis > 0.001) {
+                                o2Field[leafIdx] = Math.min(0.25, o2Field[leafIdx] + photosynthesis * 0.08);
+                                co2Field[leafIdx] = Math.max(0, co2Field[leafIdx] - photosynthesis * 0.04);
+                                sugarField[leafIdx] = Math.min(0.4, sugarField[leafIdx] + photosynthesis * 0.6);
+                            }
+                        }
+                    }
+                    
+                    this.carbonProduction = this.photosynthesisRate;
+                }
+                
+                transportCarbon() {
+                    if (this.carbonProduction > 0.005) {
+                        const rootZoneY = GROUND_LINE + 25;
+                        const transportRadius = 35 * this.health;
+                        
+                        for (let dy = 0; dy <= transportRadius; dy++) {
+                            for (let dx = -transportRadius; dx <= transportRadius; dx++) {
+                                const px = Math.floor(this.x + dx);
+                                const py = rootZoneY + dy;
+                                
+                                if (px >= 0 && px < GRID_SIZE && py >= GROUND_LINE && py < GRID_SIZE) {
+                                    const dist = Math.sqrt(dx * dx + dy * dy);
+                                    if (dist <= transportRadius) {
+                                        const idx = px + py * GRID_SIZE;
+                                        const strength = Math.exp(-dist * dist / (transportRadius * transportRadius * 0.5));
+                                        
+                                        sugarField[idx] = Math.min(0.4, sugarField[idx] + 
+                                                        this.carbonProduction * 0.12 * strength * this.health);
+                                        carbonFlow[idx] = Math.min(0.3, carbonFlow[idx] + 
+                                                        this.carbonProduction * 0.15 * strength * this.health);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                createRootSystem() {
+                    const rootEfficiency = getRootGrowthEfficiency();
+                    if (rootEfficiency > 0.1) {
+                        const primaryRoot = new RootTip(this.x, GROUND_LINE + 18, null, 'primary', this);
+                        rootTipAgents.push(primaryRoot);
+                        
+                        const numLaterals = Math.floor(5 * rootEfficiency);
+                        for (let i = 0; i < numLaterals; i++) {
+                            const angle = (Math.PI * 2 * i / numLaterals) + Math.random() * 0.4;
+                            const lateralRoot = new RootTip(
+                                this.x + Math.cos(angle) * 25,
+                                GROUND_LINE + 20 + Math.sin(angle) * 6,
+                                primaryRoot, 'lateral', this
+                            );
+                            lateralRoot.vx = Math.cos(angle) * 0.6 * rootEfficiency;
+                            lateralRoot.vy = Math.sin(angle) * 0.6 * rootEfficiency;
+                            rootTipAgents.push(lateralRoot);
+                        }
+                    }
+                }
+                
+                depositTreeMaterial() {
+                    const healthFactor = this.isDead ? 0.1 : this.health;
+                    
+                    for (let segment of this.segments) {
+                        const segmentLength = Math.sqrt((segment.x2 - segment.x1) ** 2 + (segment.y2 - segment.y1) ** 2);
+                        const steps = Math.max(1, Math.floor(segmentLength));
+                        
+                        for (let step = 0; step <= steps; step++) {
+                            const t = steps > 0 ? step / steps : 0;
+                            const x = segment.x1 + (segment.x2 - segment.x1) * t;
+                            const y = segment.y1 + (segment.y2 - segment.y1) * t;
+                            
+                            const px = Math.floor(x);
+                            const py = Math.floor(y);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GROUND_LINE) {
+                                const radius = Math.max(1, segment.thickness / 2);
+                                
+                                for (let dy = -radius; dy <= radius; dy++) {
+                                    for (let dx = -radius; dx <= radius; dx++) {
+                                        const nx = px + dx;
+                                        const ny = py + dy;
+                                        
+                                        if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GROUND_LINE) {
+                                            const dist = Math.sqrt(dx * dx + dy * dy);
+                                            if (dist <= radius) {
+                                                const nIdx = nx + ny * GRID_SIZE;
+                                                const strength = Math.exp(-dist * dist / (radius * radius));
+                                                treeBiomass[nIdx] = Math.min(0.8, treeBiomass[nIdx] + 0.06 * strength * healthFactor);
+                                                branchDensity[nIdx] = Math.min(0.6, branchDensity[nIdx] + 0.04 * strength * healthFactor);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    for (let leaf of this.leaves) {
+                        const px = Math.floor(leaf.x);
+                        const py = Math.floor(leaf.y);
+                        
+                        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GROUND_LINE) {
+                            const radius = leaf.size;
+                            
+                            for (let dy = -radius; dy <= radius; dy++) {
+                                for (let dx = -radius; dx <= radius; dx++) {
+                                    const nx = px + dx;
+                                    const ny = py + dy;
+                                    
+                                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GROUND_LINE) {
+                                        const dist = Math.sqrt(dx * dx + dy * dy);
+                                        if (dist <= radius) {
+                                            const nIdx = nx + ny * GRID_SIZE;
+                                            const strength = Math.exp(-dist * dist / (radius * radius));
+                                            leafDensity[nIdx] = Math.min(0.7, leafDensity[nIdx] + 0.08 * strength * healthFactor);
+                                            chlorophyllDensity[nIdx] = Math.min(0.8, chlorophyllDensity[nIdx] + 
+                                                                      leaf.chlorophyll * 0.1 * strength * healthFactor);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Enhanced Root system with environmental sensitivity (keeping original)
+            class RootTip {
+                constructor(x, y, parent, type, parentTree) {
+                    this.x = x;
+                    this.y = Math.max(y, GROUND_LINE);
+                    this.vx = (Math.random() - 0.5) * 0.7;
+                    this.vy = type === 'primary' ? Math.abs(Math.random() * 0.9) : (Math.random() - 0.5) * 0.7;
+                    this.age = 0;
+                    this.energy = 1.0;
+                    this.type = type;
+                    this.parent = parent;
+                    this.parentTree = parentTree;
+                    this.generation = parent ? parent.generation + 1 : 0;
+                    this.diameter = type === 'primary' ? 2.2 : 0.9;
+                    this.branchCooldown = 0;
+                    this.mycorrhizalPartners = [];
+                    this.colonized = false;
+                    this.stressAccumulation = 0;
+                }
+                
+                update() {
+                    this.age++;
+                    
+                    const rootEfficiency = getRootGrowthEfficiency();
+                    const stressFactor = calculateEnvironmentalStress();
+                    
+                    this.stressAccumulation += stressFactor * 0.02;
+                    this.energy *= (0.9998 + rootEfficiency * 0.0002);
+                    
+                    if (this.stressAccumulation > 30 || this.energy < 0.1) {
+                        return [];
+                    }
+                    
+                    const sensorDistance = 18 * rootEfficiency;
+                    const numSensors = 8;
+                    let bestSignal = -1;
+                    let bestDirection = Math.atan2(this.vy, this.vx);
+                    
+                    for (let i = 0; i < numSensors; i++) {
+                        const angle = (i * Math.PI * 2) / numSensors;
+                        const sx = this.x + Math.cos(angle) * sensorDistance;
+                        const sy = this.y + Math.sin(angle) * sensorDistance;
+                        
+                        if (sx >= 0 && sx < GRID_SIZE && sy >= GROUND_LINE && sy < GRID_SIZE) {
+                            const idx = Math.floor(sx) + Math.floor(sy) * GRID_SIZE;
+                            let signal = moistureField[idx] * 3.2 + nutrients[idx] * 2.8;
+                            signal += sugarField[idx] * 2.2;
+                            signal += hyphalDensity[idx] * 2.0;
+                            signal -= rootDensity[idx] * 0.8;
+                            signal *= rootEfficiency;
+                            
+                            if (signal > bestSignal) {
+                                bestSignal = signal;
+                                bestDirection = angle;
+                            }
+                        }
+                    }
+                    
+                    const speed = this.energy * 0.8 * rootEfficiency;
+                    const currentAngle = Math.atan2(this.vy, this.vx);
+                    const turnRate = 0.25;
+                    const newAngle = currentAngle + this.normalizeAngle(bestDirection - currentAngle) * turnRate;
+                    
+                    this.vx = Math.cos(newAngle) * speed;
+                    this.vy = Math.sin(newAngle) * speed;
+                    
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    this.x = Math.max(5, Math.min(GRID_SIZE - 5, this.x));
+                    this.y = Math.max(GROUND_LINE, Math.min(GRID_SIZE - 5, this.y));
+                    
+                    this.depositRootMaterial();
+                    this.checkMycorrhization();
+                    
+                    const branches = this.createBranches();
+                    
+                    return branches;
+                }
+                
+                depositRootMaterial() {
+                    const radius = this.diameter;
+                    const healthFactor = Math.max(0.1, 1.0 - this.stressAccumulation * 0.02);
+                    
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(this.x + dx);
+                            const py = Math.floor(this.y + dy);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= GROUND_LINE && py < GRID_SIZE) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius));
+                                    
+                                    rootDensity[idx] = Math.min(0.6, rootDensity[idx] + 0.035 * strength * healthFactor);
+                                    
+                                    if (this.age < 80) {
+                                        rootTips[idx] = Math.min(0.5, rootTips[idx] + 0.05 * strength * healthFactor);
+                                    }
+                                    
+                                    memory[idx] = Math.min(0.3, memory[idx] + 0.003 * strength * healthFactor);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                checkMycorrhization() {
+                    const mycorrhizalEfficiency = getMycorrhizalEfficiency();
+                    
+                    if (!this.colonized && Math.random() < 0.015 * mycorrhizalEfficiency) {
+                        const searchRadius = 15;
+                        let nearbyFungi = [];
+                        
+                        for (let hyphal of hyphalAgents) {
+                            if (!hyphal.mycorrhizalPartner) {
+                                const dx = this.x - hyphal.x;
+                                const dy = this.y - hyphal.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                
+                                if (dist < searchRadius) {
+                                    nearbyFungi.push({hyphal, distance: dist});
+                                }
+                            }
+                        }
+                        
+                        if (nearbyFungi.length > 0) {
+                            nearbyFungi.sort((a, b) => a.distance - b.distance);
+                            const partner = nearbyFungi[0].hyphal;
+                            
+                            this.colonized = true;
+                            this.mycorrhizalPartners.push(partner);
+                            partner.mycorrhizalPartner = this;
+                            
+                            mycorrhizalNodes.push({
+                                x: (this.x + partner.x) / 2,
+                                y: (this.y + partner.y) / 2,
+                                root: this,
+                                fungus: partner,
+                                age: 0,
+                                exchangeRate: 0.7 * mycorrhizalEfficiency
+                            });
+                            
+                            const idx = Math.floor(this.x) + Math.floor(this.y) * GRID_SIZE;
+                            if (idx >= 0 && idx < TOTAL_CELLS) {
+                                mycorrhizal[idx] = Math.min(0.8, mycorrhizal[idx] + 0.6 * mycorrhizalEfficiency);
+                            }
+                        }
+                    }
+                }
+                
+                createBranches() {
+                    const branches = [];
+                    this.branchCooldown = Math.max(0, this.branchCooldown - 1);
+                    
+                    const rootEfficiency = getRootGrowthEfficiency();
+                    
+                    if (this.energy > 0.8 && this.branchCooldown <= 0 && this.generation < 6 && rootEfficiency > 0.3) {
+                        let branchProbability = (this.type === 'primary' ? 0.004 : 0.003) * rootEfficiency;
+                        
+                        if (Math.random() < branchProbability) {
+                            const numBranches = Math.random() < 0.3 ? 2 : 1;
+                            
+                            for (let i = 0; i < numBranches; i++) {
+                                const branchAngle = Math.atan2(this.vy, this.vx) + (Math.random() - 0.5) * Math.PI * 0.6;
+                                const branchType = this.type === 'primary' ? 'lateral' : 'feeder';
+                                
+                                const branch = new RootTip(this.x, this.y, this, branchType, this.parentTree);
+                                branch.vx = Math.cos(branchAngle) * 0.5 * rootEfficiency;
+                                branch.vy = Math.sin(branchAngle) * 0.5 * rootEfficiency;
+                                branch.diameter = this.diameter * 0.8;
+                                branches.push(branch);
+                            }
+                            
+                            this.branchCooldown = 160 + Math.random() * 220;
+                            this.energy *= 0.8;
+                        }
+                    }
+                    
+                    return branches;
+                }
+                
+                normalizeAngle(angle) {
+                    while (angle > Math.PI) angle -= 2 * Math.PI;
+                    while (angle < -Math.PI) angle += 2 * Math.PI;
+                    return angle;
+                }
+            }
+            
+            // Enhanced Mycelium with environmental sensitivity (keeping original)
+            class HyphalTip {
+                constructor(x, y, parent) {
+                    this.x = x;
+                    this.y = Math.max(y, GROUND_LINE);
+                    this.vx = (Math.random() - 0.5) * 1.8;
+                    this.vy = (Math.random() - 0.5) * 1.8;
+                    this.age = 0;
+                    this.energy = 1.0;
+                    this.diameter = 0.3 + Math.random() * 0.2;
+                    this.parent = parent;
+                    this.generation = parent ? parent.generation + 1 : 0;
+                    this.branchCooldown = 0;
+                    this.mycorrhizalPartner = null;
+                    this.carbonUptake = 0;
+                    this.nutrientDelivery = 0;
+                    this.stressAccumulation = 0;
+                }
+                
+                update() {
+                    this.age++;
+                    
+                    const mycorrhizalEfficiency = getMycorrhizalEfficiency();
+                    const stressFactor = calculateEnvironmentalStress();
+                    
+                    this.stressAccumulation += stressFactor * 0.02;
+                    this.energy *= (0.9997 + mycorrhizalEfficiency * 0.0003);
+                    
+                    if (this.stressAccumulation > 25 || this.energy < 0.1) {
+                        return [];
+                    }
+                    
+                    const sensorDistance = 20 * mycorrhizalEfficiency;
+                    const numSensors = 8;
+                    let bestSignal = -1;
+                    let bestDirection = Math.atan2(this.vy, this.vx);
+                    
+                    for (let i = 0; i < numSensors; i++) {
+                        const angle = (i * Math.PI * 2) / numSensors;
+                        const sx = this.x + Math.cos(angle) * sensorDistance;
+                        const sy = this.y + Math.sin(angle) * sensorDistance;
+                        
+                        if (sx >= 0 && sx < GRID_SIZE && sy >= GROUND_LINE && sy < GRID_SIZE) {
+                            const idx = Math.floor(sx) + Math.floor(sy) * GRID_SIZE;
+                            
+                            let signal = nutrients[idx] * 2.6 + moistureField[idx] * 0.9;
+                            signal += sugarField[idx] * 4.5;
+                            signal += carbonFlow[idx] * 3.8;
+                            signal += rootTips[idx] * 3.6;
+                            signal += rootDensity[idx] * 2.4;
+                            signal -= hyphalDensity[idx] * 0.6;
+                            
+                            // Attraction to moss for potential symbiosis
+                            signal += (protonemal[idx] + rhizoids[idx]) * 1.8;
+                            
+                            signal *= mycorrhizalEfficiency;
+                            
+                            if (signal > bestSignal) {
+                                bestSignal = signal;
+                                bestDirection = angle;
+                            }
+                        }
+                    }
+                    
+                    const speed = (this.mycorrhizalPartner ? 1.2 : 1.0) * mycorrhizalEfficiency;
+                    const currentAngle = Math.atan2(this.vy, this.vx);
+                    const turnRate = 0.35;
+                    const newAngle = currentAngle + this.normalizeAngle(bestDirection - currentAngle) * turnRate;
+                    
+                    this.vx = Math.cos(newAngle) * speed;
+                    this.vy = Math.sin(newAngle) * speed;
+                    
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    this.x = Math.max(5, Math.min(GRID_SIZE - 5, this.x));
+                    this.y = Math.max(GROUND_LINE, Math.min(GRID_SIZE - 5, this.y));
+                    
+                    this.depositHyphalMaterial();
+                    this.performCarbonExchange();
+                    
+                    const branches = this.createBranches();
+                    
+                    return branches;
+                }
+                
+                depositHyphalMaterial() {
+                    const radius = this.diameter + 0.8;
+                    const healthFactor = Math.max(0.1, 1.0 - this.stressAccumulation * 0.02);
+                    
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(this.x + dx);
+                            const py = Math.floor(this.y + dy);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= GROUND_LINE && py < GRID_SIZE) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius));
+                                    
+                                    hyphalDensity[idx] = Math.min(0.7, hyphalDensity[idx] + 0.04 * strength * healthFactor);
+                                    memory[idx] = Math.min(0.3, memory[idx] + 0.004 * strength * healthFactor);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                performCarbonExchange() {
+                    if (this.mycorrhizalPartner) {
+                        const mycorrhizalEfficiency = getMycorrhizalEfficiency();
+                        const idx = Math.floor(this.x) + Math.floor(this.y) * GRID_SIZE;
+                        
+                        if (idx >= 0 && idx < TOTAL_CELLS) {
+                            this.carbonUptake = sugarField[idx] * 0.25 * mycorrhizalEfficiency;
+                            sugarField[idx] = Math.max(0, sugarField[idx] - 0.008 * mycorrhizalEfficiency);
+                            
+                            this.nutrientDelivery = nutrients[idx] * 0.15 * mycorrhizalEfficiency;
+                            nutrients[idx] = Math.max(0, nutrients[idx] - 0.006 * mycorrhizalEfficiency);
+                            
+                            this.energy = Math.min(1.8, this.energy + this.carbonUptake * 0.12);
+                            
+                            const flowRadius = 8;
+                            for (let dy = -flowRadius; dy <= flowRadius; dy++) {
+                                for (let dx = -flowRadius; dx <= flowRadius; dx++) {
+                                    const px = Math.floor(this.x + dx);
+                                    const py = Math.floor(this.y + dy);
+                                    
+                                    if (px >= 0 && px < GRID_SIZE && py >= GROUND_LINE && py < GRID_SIZE) {
+                                        const dist = Math.sqrt(dx * dx + dy * dy);
+                                        if (dist <= flowRadius) {
+                                            const flowIdx = px + py * GRID_SIZE;
+                                            const strength = Math.exp(-dist * dist / (flowRadius * flowRadius * 0.7));
+                                            carbonFlow[flowIdx] = Math.min(0.3, carbonFlow[flowIdx] + 
+                                                                  this.carbonUptake * strength * 0.3);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                createBranches() {
+                    const branches = [];
+                    this.branchCooldown = Math.max(0, this.branchCooldown - 1);
+                    
+                    const mycorrhizalEfficiency = getMycorrhizalEfficiency();
+                    let branchRate = (this.mycorrhizalPartner ? 0.007 : 0.004) * mycorrhizalEfficiency;
+                    
+                    if (this.energy > 0.9 && this.branchCooldown <= 0 && 
+                        Math.random() < branchRate && this.generation < 5 && mycorrhizalEfficiency > 0.2) {
+                        
+                        const numBranches = Math.random() < 0.3 ? 2 : 1;
+                        for (let i = 0; i < numBranches; i++) {
+                            const branchAngle = Math.atan2(this.vy, this.vx) + (Math.random() - 0.5) * Math.PI * 0.7;
+                            const branch = new HyphalTip(this.x, this.y, this);
+                            branch.vx = Math.cos(branchAngle) * 0.8 * mycorrhizalEfficiency;
+                            branch.vy = Math.sin(branchAngle) * 0.8 * mycorrhizalEfficiency;
+                            branch.diameter = this.diameter * 0.9;
+                            branches.push(branch);
+                        }
+                        
+                        this.branchCooldown = 180 + Math.random() * 260;
+                        this.energy *= 0.75;
+                    }
+                    
+                    return branches;
+                }
+                
+                normalizeAngle(angle) {
+                    while (angle > Math.PI) angle -= 2 * Math.PI;
+                    while (angle < -Math.PI) angle += 2 * Math.PI;
+                    return angle;
+                }
+            }
+            
+            // Core simulation functions
+            function resetEcosystem() {
+                lSystemTrees = [];
+                rootTipAgents = [];
+                hyphalAgents = [];
+                mycorrhizalNodes = [];
+                mossCells = [];
+                simulationTime = 0;
+                seasonalCycle = 0;
+                environmentalStressLevel = 0;
+                consecutiveStressFrames = 0;
+                
+                // Initialize fields
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    const y = Math.floor(i / GRID_SIZE);
+                    
+                    if (y < ATMOSPHERE_HEIGHT) {
+                        lightField[i] = sunIntensity / 100;
+                        co2Field[i] = co2Level / 10000;
+                        o2Field[i] = 0.21;
+                    } else if (y < GROUND_LINE) {
+                        lightField[i] = (sunIntensity / 100) * 0.7;
+                        co2Field[i] = co2Level / 10000;
+                        o2Field[i] = 0.21;
+                    } else {
+                        lightField[i] = 0;
+                        co2Field[i] = (co2Level / 10000) * 0.4;
+                        o2Field[i] = 0.16;
+                        
+                        nutrients[i] = 0.35 + Math.random() * 0.4;
+                        moistureField[i] = (moisture / 100) * (0.6 + Math.random() * 0.5);
+                    }
+                    
+                    treeBiomass[i] = 0;
+                    leafDensity[i] = 0;
+                    chlorophyllDensity[i] = 0;
+                    branchDensity[i] = 0;
+                    rootDensity[i] = 0;
+                    rootTips[i] = 0;
+                    mycorrhizal[i] = 0;
+                    hyphalDensity[i] = 0;
+                    carbonFlow[i] = 0;
+                    sugarField[i] = 0;
+                    memory[i] = 0;
+                    
+                    // Reset moss fields
+                    protonemal[i] = 0;
+                    gametophore[i] = 0;
+                    rhizoids[i] = 0;
+                    mossBuds[i] = 0;
+                    mossChloroplasts[i] = 0;
+                    mossCellWalls[i] = 0;
+                    mossAge[i] = 0;
+                    mossMyceliumConnections[i] = 0;
+                }
+                
+                if (currentMode === 'trees' || currentMode === 'ecosystem') {
+                    addLSystemTree(GRID_SIZE * 0.3, GROUND_LINE - 25);
+                    addLSystemTree(GRID_SIZE * 0.7, GROUND_LINE - 30);
+                }
+                
+                if (currentMode === 'moss' || currentMode === 'ecosystem') {
+                    addMossSpores(GRID_SIZE * 0.25, MOSS_ZONE_START + 15);
+                    addMossSpores(GRID_SIZE * 0.75, MOSS_ZONE_START + 20);
+                }
+                
+                if (currentMode === 'mycelium' || currentMode === 'ecosystem') {
+                    addMyceliumNetwork(GRID_SIZE * 0.45, GROUND_LINE + 70);
+                    addMyceliumNetwork(GRID_SIZE * 0.65, GROUND_LINE + 90);
+                }
+            }
+            
+            function addLSystemTree(x, y) {
+                const treeY = Math.min(y, GROUND_LINE - 15);
+                const tree = new LSystemTree(x, treeY, 'oak');
+                lSystemTrees.push(tree);
+            }
+            
+            function addMossSpores(x, y) {
+                const mossY = Math.max(MOSS_ZONE_START, Math.min(y, MOSS_ZONE_END));
+                const numSpores = Math.floor(8 * getMossGrowthEfficiency());
+                
+                for (let i = 0; i < numSpores; i++) {
+                    const moss = new MossCell(
+                        x + (Math.random() - 0.5) * 15,
+                        mossY + (Math.random() - 0.5) * 10,
+                        'protonema'
+                    );
+                    moss.energy = 1.0;
+                    mossCells.push(moss);
+                }
+            }
+            
+            function addMyceliumNetwork(x, y) {
+                const hyphalY = Math.max(y, GROUND_LINE + 8);
+                const numHyphae = Math.floor(15 * getMycorrhizalEfficiency());
+                
+                for (let i = 0; i < numHyphae; i++) {
+                    const hyphal = new HyphalTip(
+                        x + (Math.random() - 0.5) * 22,
+                        hyphalY + (Math.random() - 0.5) * 16
+                    );
+                    hyphalAgents.push(hyphal);
+                }
+            }
+            
+            function addNutrients(x, y) {
+                if (y >= MOSS_ZONE_START) {
+                    const radius = 28;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(x + dx);
+                            const py = Math.floor(y + dy);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= MOSS_ZONE_START && py < GRID_SIZE) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius * 0.4));
+                                    nutrients[idx] = Math.min(0.8, nutrients[idx] + 0.4 * strength);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function addMoisture(x, y) {
+                if (y >= MOSS_ZONE_START) {
+                    const radius = 30;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(x + dx);
+                            const py = Math.floor(y + dy);
+                            
+                            if (px >= 0 && px < GRID_SIZE && py >= MOSS_ZONE_START && py < GRID_SIZE) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius * 0.4));
+                                    moistureField[idx] = Math.min(0.9, moistureField[idx] + 0.3 * strength);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function simulationStep() {
+                if (!isPlaying) return;
+                
+                seasonalCycle += 0.001;
+                
+                // Calculate environmental stress
+                environmentalStressLevel = calculateEnvironmentalStress();
+                if (environmentalStressLevel > 0.3) {
+                    consecutiveStressFrames++;
+                } else {
+                    consecutiveStressFrames = Math.max(0, consecutiveStressFrames - 2);
+                }
+                
+                // Enhanced sun with stress indicators
+                const sunElement = document.getElementById('sunIndicator');
+                if (sunElement) {
+                    const intensity = (sunIntensity / 100) * (1 - environmentalStressLevel * 0.3);
+                    sunElement.style.opacity = Math.max(0.3, intensity);
+                    const breathe = 1 + Math.sin(simulationTime * 0.02) * 0.05;
+                    sunElement.style.transform = `translateX(-50%) scale(${breathe})`;
+                    
+                    if (environmentalStressLevel > 0.5) {
+                        sunElement.style.filter = 'hue-rotate(15deg) saturate(0.7)';
+                    } else {
+                        sunElement.style.filter = 'none';
+                    }
+                }
+                
+                distributeSunlight();
+                
+                // Update organisms
+                for (let tree of lSystemTrees) {
+                    tree.update();
+                }
+                
+                // Update moss cells
+                const newMossCells = [];
+                for (let moss of mossCells) {
+                    const offspring = moss.update();
+                    newMossCells.push(...offspring);
+                }
+                mossCells.push(...newMossCells);
+                mossCells = mossCells.filter(m => m.energy > 0.05 && m.stressAccumulation < 40);
+                
+                // Filter dead organisms
+                lSystemTrees = lSystemTrees.filter(t => !t.isDead);
+                
+                const newRoots = [];
+                for (let root of rootTipAgents) {
+                    const branches = root.update();
+                    newRoots.push(...branches);
+                }
+                rootTipAgents.push(...newRoots);
+                rootTipAgents = rootTipAgents.filter(r => r.energy > 0.18 && r.stressAccumulation < 30);
+                
+                const newHyphae = [];
+                for (let hyphal of hyphalAgents) {
+                    const branches = hyphal.update();
+                    newHyphae.push(...branches);
+                }
+                hyphalAgents.push(...newHyphae);
+                hyphalAgents = hyphalAgents.filter(h => h.energy > 0.18 && h.stressAccumulation < 25);
+                
+                // Update mycorrhizal connections
+                for (let node of mycorrhizalNodes) {
+                    node.age++;
+                    if (node.root && node.fungus) {
+                        const mycorrhizalEfficiency = getMycorrhizalEfficiency();
+                        node.exchangeRate = Math.min(1, node.exchangeRate + 0.015 * mycorrhizalEfficiency);
+                    }
+                }
+                
+                // Remove dead mycorrhizal connections
+                mycorrhizalNodes = mycorrhizalNodes.filter(node => 
+                    node.root && node.fungus && 
+                    rootTipAgents.includes(node.root) && 
+                    hyphalAgents.includes(node.fungus)
+                );
+                
+                // Environmental diffusion
+                diffuse(lightField, 0.008);
+                diffuse(co2Field, 0.010);
+                diffuse(o2Field, 0.010);
+                diffuse(sugarField, 0.015);
+                diffuse(carbonFlow, 0.018);
+                diffuse(nutrients, 0.012);
+                diffuse(moistureField, 0.008);
+                diffuse(memory, 0.006);
+                diffuse(chlorophyllDensity, 0.005);
+                diffuse(mossChloroplasts, 0.004);
+                diffuse(mossMyceliumConnections, 0.003);
+                
+                // Natural decay (affected by environmental conditions)
+                const decayRate = 1 + environmentalStressLevel * 0.5;
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    memory[i] *= 0.998 / decayRate;
+                    sugarField[i] *= 0.997 / decayRate;
+                    carbonFlow[i] *= 0.994 / decayRate;
+                    chlorophyllDensity[i] *= 0.9995 / decayRate;
+                    mossChloroplasts[i] *= 0.9996 / decayRate;
+                    mossAge[i] *= 0.9998;
+                    
+                    // Moss helps retain moisture
+                    const mossPresence = protonemal[i] + gametophore[i] + rhizoids[i];
+                    if (mossPresence > 0.1) {
+                        moistureField[i] = Math.min(1, moistureField[i] + mossPresence * 0.002);
+                    }
+                }
+                
+                simulationTime += 0.1;
+                updateUI();
+            }
+            
+            function distributeSunlight() {
+                const lightIntensity = (sunIntensity / 100) * (1 - environmentalStressLevel * 0.2);
+                
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    let currentLight = lightIntensity;
+                    
+                    for (let y = 0; y < GRID_SIZE; y++) {
+                        const idx = x + y * GRID_SIZE;
+                        
+                        if (y < ATMOSPHERE_HEIGHT) {
+                            lightField[idx] = currentLight * (0.95 + Math.random() * 0.05);
+                        } 
+                        else if (y < GROUND_LINE) {
+                            const leafAttenuation = leafDensity[idx] * 0.6 + treeBiomass[idx] * 0.3;
+                            currentLight *= Math.max(0.1, 1 - leafAttenuation);
+                            lightField[idx] = currentLight;
+                            
+                            // Moss gets filtered light
+                            if (y >= MOSS_ZONE_START && y <= MOSS_ZONE_END) {
+                                const mossLight = currentLight * 0.8;  // Moss prefers filtered light
+                                lightField[idx] = mossLight;
+                            }
+                        }
+                        else {
+                            lightField[idx] = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            function diffuse(field, rate) {
+                temp.fill(0);
+                
+                for (let y = 1; y < GRID_SIZE - 1; y++) {
+                    for (let x = 1; x < GRID_SIZE - 1; x++) {
+                        const idx = x + y * GRID_SIZE;
+                        const neighbors = field[idx - 1] + field[idx + 1] + 
+                                        field[idx - GRID_SIZE] + field[idx + GRID_SIZE];
+                        temp[idx] = field[idx] + rate * (neighbors - 4 * field[idx]);
+                    }
+                }
+                
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    field[i] = Math.max(0, temp[i]);
+                }
+            }
+            
+            function updateUI() {
+                updateMetrics();
+                updateMossMetrics();
+                updateMycorrhizalMetrics();
+                updateStatusIndicators();
+                updateEnvironmentalWarning();
+            }
+            
+            function updateEnvironmentalWarning() {
+                const warningElement = document.getElementById('environmentalStressWarning');
+                if (environmentalStressLevel > 0.4 || consecutiveStressFrames > 100) {
+                    warningElement.style.display = 'block';
+                    if (environmentalStressLevel > 0.7) {
+                        warningElement.textContent = 'CRITICAL: Severe environmental stress! Ecosystem collapse imminent!';
+                        warningElement.style.borderColor = '#d32f2f';
+                        warningElement.style.backgroundColor = 'rgba(211, 47, 47, 0.15)';
+                    } else {
+                        warningElement.textContent = 'WARNING: Environmental stress detected! Ecosystem health compromised.';
+                        warningElement.style.borderColor = '#ff9800';
+                        warningElement.style.backgroundColor = 'rgba(255, 152, 0, 0.1)';
+                    }
+                } else {
+                    warningElement.style.display = 'none';
+                }
+            }
+            
+            function updateMossMetrics() {
+                let totalProtonema = 0, totalGametophores = 0, totalRhizoids = 0;
+                let totalMossMyceliumLinks = 0, totalMossArea = 0;
+                
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    totalProtonema += protonemal[i];
+                    totalGametophores += gametophore[i];
+                    totalRhizoids += rhizoids[i];
+                    totalMossMyceliumLinks += mossMyceliumConnections[i];
+                    totalMossArea += protonemal[i] + gametophore[i] + rhizoids[i];
+                }
+                
+                const coverage = (totalMossArea / (GRID_SIZE * (MOSS_ZONE_END - MOSS_ZONE_START))) * 100;
+                
+                document.getElementById('mossColonies').textContent = mossCells.length;
+                document.getElementById('protonemaLength').textContent = Math.floor(totalProtonema * 1000);
+                document.getElementById('gametophores').textContent = Math.floor(totalGametophores * 50);
+                document.getElementById('mossWater').textContent = 
+                    totalMossArea > 20 ? 'High' : totalMossArea > 8 ? 'Medium' : 'Low';
+                document.getElementById('mossMyceliumLinks').textContent = Math.floor(totalMossMyceliumLinks * 10);
+                document.getElementById('mossCoverage').textContent = coverage.toFixed(1);
+            }
+            
+            function updateMetrics() {
+                const metricsGrid = document.getElementById('metricsGrid');
+                
+                if (currentMode === 'trees') {
+                    let totalPhotosynthesis = lSystemTrees.reduce((sum, t) => sum + t.photosynthesisRate, 0);
+                    let totalLeaves = lSystemTrees.reduce((sum, t) => sum + t.leaves.length, 0);
+                    let avgChlorophyll = 0;
+                    let leafCount = 0;
+                    let avgHealth = 0;
+                    
+                    for (let tree of lSystemTrees) {
+                        avgHealth += tree.health;
+                        for (let leaf of tree.leaves) {
+                            avgChlorophyll += leaf.chlorophyll;
+                            leafCount++;
+                        }
+                    }
+                    avgChlorophyll = leafCount > 0 ? avgChlorophyll / leafCount : 0;
+                    avgHealth = lSystemTrees.length > 0 ? avgHealth / lSystemTrees.length : 0;
+                    
+                    let avgTreeAge = lSystemTrees.reduce((sum, t) => sum + t.age, 0) / Math.max(1, lSystemTrees.length);
+                    let maxGeneration = Math.max(...lSystemTrees.map(t => t.generation), 0);
+                    
+                    metricsGrid.innerHTML = `
+                        <div class="metric-item">
+                            <span>L-System Trees:</span>
+                            <span class="metric-value">${lSystemTrees.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Average Health:</span>
+                            <span class="metric-value">${(avgHealth * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Total Leaves:</span>
+                            <span class="metric-value">${totalLeaves}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Avg Chlorophyll:</span>
+                            <span class="metric-value">${(avgChlorophyll * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Photosynthesis:</span>
+                            <span class="metric-value">${totalPhotosynthesis.toFixed(3)}/s</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Max Generation:</span>
+                            <span class="metric-value">${maxGeneration}</span>
+                        </div>
+                    `;
+                } else if (currentMode === 'moss') {
+                    let totalMossChlorophyll = 0, totalMossArea = 0;
+                    for (let i = 0; i < TOTAL_CELLS; i++) {
+                        totalMossChlorophyll += mossChloroplasts[i];
+                        totalMossArea += protonemal[i] + gametophore[i] + rhizoids[i];
+                    }
+                    
+                    const avgMossHealth = mossCells.length > 0 ? 
+                        mossCells.reduce((sum, m) => sum + Math.max(0, 1 - m.stressAccumulation * 0.025), 0) / mossCells.length : 0;
+                    
+                    const protonemaCells = mossCells.filter(m => m.type === 'protonema').length;
+                    const budCells = mossCells.filter(m => m.type === 'bud').length;
+                    const gametophoreCells = mossCells.filter(m => m.type === 'gametophore').length;
+                    
+                    metricsGrid.innerHTML = `
+                        <div class="metric-item">
+                            <span>Active Moss Cells:</span>
+                            <span class="metric-value">${mossCells.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Moss Health:</span>
+                            <span class="metric-value">${(avgMossHealth * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Protonema:</span>
+                            <span class="metric-value">${protonemaCells}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Buds:</span>
+                            <span class="metric-value">${budCells}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Gametophores:</span>
+                            <span class="metric-value">${gametophoreCells}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Coverage Area:</span>
+                            <span class="metric-value">${totalMossArea.toFixed(1)}m²</span>
+                        </div>
+                    `;
+                } else if (currentMode === 'roots') {
+                    let totalRootLength = 0;
+                    for (let i = 0; i < TOTAL_CELLS; i++) {
+                        totalRootLength += rootDensity[i];
+                    }
+                    
+                    const rootCounts = {
+                        primary: rootTipAgents.filter(r => r.type === 'primary').length,
+                        lateral: rootTipAgents.filter(r => r.type === 'lateral').length,
+                        feeder: rootTipAgents.filter(r => r.type === 'feeder').length,
+                        hair: rootTipAgents.filter(r => r.type === 'hair').length
+                    };
+                    
+                    const colonizedRoots = rootTipAgents.filter(r => r.colonized).length;
+                    const avgRootHealth = rootTipAgents.length > 0 ? 
+                        rootTipAgents.reduce((sum, r) => sum + Math.max(0, 1 - r.stressAccumulation * 0.02), 0) / rootTipAgents.length : 0;
+                    
+                    metricsGrid.innerHTML = `
+                        <div class="metric-item">
+                            <span>Active Roots:</span>
+                            <span class="metric-value">${rootTipAgents.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Root Health:</span>
+                            <span class="metric-value">${(avgRootHealth * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Primary Roots:</span>
+                            <span class="metric-value">${rootCounts.primary}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Lateral Roots:</span>
+                            <span class="metric-value">${rootCounts.lateral}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Colonized Roots:</span>
+                            <span class="metric-value">${colonizedRoots}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Total Network:</span>
+                            <span class="metric-value">${(totalRootLength * 0.25).toFixed(1)}m</span>
+                        </div>
+                    `;
+                } else if (currentMode === 'mycelium') {
+                    let totalHyphae = 0, totalCarbonFlow = 0;
+                    for (let i = 0; i < TOTAL_CELLS; i++) {
+                        totalHyphae += hyphalDensity[i];
+                        totalCarbonFlow += carbonFlow[i];
+                    }
+                    
+                    const totalCarbonUptake = hyphalAgents.reduce((sum, h) => sum + h.carbonUptake, 0);
+                    const totalNutrientDelivery = hyphalAgents.reduce((sum, h) => sum + h.nutrientDelivery, 0);
+                    const mycorrhizalHyphae = hyphalAgents.filter(h => h.mycorrhizalPartner).length;
+                    const avgHyphalHealth = hyphalAgents.length > 0 ? 
+                        hyphalAgents.reduce((sum, h) => sum + Math.max(0, 1 - h.stressAccumulation * 0.02), 0) / hyphalAgents.length : 0;
+                    
+                    metricsGrid.innerHTML = `
+                        <div class="metric-item">
+                            <span>Active Hyphae:</span>
+                            <span class="metric-value">${hyphalAgents.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Hyphal Health:</span>
+                            <span class="metric-value">${(avgHyphalHealth * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Mycorrhizal:</span>
+                            <span class="metric-value">${mycorrhizalHyphae}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Network Length:</span>
+                            <span class="metric-value">${(totalHyphae * 0.18).toFixed(1)}cm</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Carbon Uptake:</span>
+                            <span class="metric-value">${totalCarbonUptake.toFixed(3)}/s</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Nutrient Delivery:</span>
+                            <span class="metric-value">${totalNutrientDelivery.toFixed(3)}/s</span>
+                        </div>
+                    `;
+                } else { // ecosystem
+                    let totalBiomass = 0, totalMossArea = 0;
+                    for (let i = 0; i < TOTAL_CELLS; i++) {
+                        totalBiomass += treeBiomass[i] + rootDensity[i] + hyphalDensity[i] + leafDensity[i];
+                        totalMossArea += protonemal[i] + gametophore[i] + rhizoids[i];
+                    }
+                    
+                    const totalPhotosynthesis = lSystemTrees.reduce((sum, t) => sum + t.photosynthesisRate, 0);
+                    const networkConnections = mycorrhizalNodes.length;
+                    const avgEcosystemHealth = calculateOverallEcosystemHealth();
+                    
+                    metricsGrid.innerHTML = `
+                        <div class="metric-item">
+                            <span>Trees:</span>
+                            <span class="metric-value">${lSystemTrees.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Moss Colonies:</span>
+                            <span class="metric-value">${mossCells.length}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Ecosystem Health:</span>
+                            <span class="metric-value">${(avgEcosystemHealth * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Total Biomass:</span>
+                            <span class="metric-value">${(totalBiomass + totalMossArea).toFixed(1)}kg</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Photosynthesis:</span>
+                            <span class="metric-value">${totalPhotosynthesis.toFixed(3)}/s</span>
+                        </div>
+                        <div class="metric-item">
+                            <span>Network Links:</span>
+                            <span class="metric-value">${networkConnections}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            function calculateOverallEcosystemHealth() {
+                let totalHealth = 0;
+                let healthCount = 0;
+                
+                // Tree health
+                for (let tree of lSystemTrees) {
+                    totalHealth += tree.health;
+                    healthCount++;
+                }
+                
+                // Moss health
+                for (let moss of mossCells) {
+                    totalHealth += Math.max(0, 1 - moss.stressAccumulation * 0.025);
+                    healthCount++;
+                }
+                
+                // Root health
+                for (let root of rootTipAgents) {
+                    totalHealth += Math.max(0, 1 - root.stressAccumulation * 0.02);
+                    healthCount++;
+                }
+                
+                // Hyphal health
+                for (let hyphal of hyphalAgents) {
+                    totalHealth += Math.max(0, 1 - hyphal.stressAccumulation * 0.02);
+                    healthCount++;
+                }
+                
+                // Environmental factor
+                const envHealth = 1 - environmentalStressLevel;
+                totalHealth += envHealth;
+                healthCount++;
+                
+                return healthCount > 0 ? totalHealth / healthCount : 0;
+            }
+            
+            function updateMycorrhizalMetrics() {
+                const totalConnections = mycorrhizalNodes.length;
+                const totalCarbonFlow = mycorrhizalNodes.reduce((sum, n) => sum + (n.exchangeRate || 0), 0);
+                const totalNutrientExchange = totalConnections * 0.8 * getMycorrhizalEfficiency();
+                
+                document.getElementById('connections').textContent = totalConnections;
+                
+                document.getElementById('carbonFlow').textContent = 
+                    totalCarbonFlow > 4 ? 'High' : totalCarbonFlow > 1.5 ? 'Medium' : 'Low';
+                
+                document.getElementById('nutrientExchange').textContent = 
+                    totalNutrientExchange > 5 ? 'Active' : totalNutrientExchange > 2 ? 'Moderate' : 'Minimal';
+                
+                const networkHealthScore = Math.min(1, totalConnections / 10) * getMycorrhizalEfficiency();
+                document.getElementById('networkHealth').textContent = 
+                    networkHealthScore > 0.7 ? 'Thriving' : 
+                    networkHealthScore > 0.4 ? 'Healthy' : 
+                    networkHealthScore > 0.1 ? 'Struggling' : 'Critical';
+            }
+            
+            function updateStatusIndicators() {
+                const sunRange = [60, 90];
+                const tempRange = [12, 28];
+                const moistureRange = [55, 80];
+                const phRange = [5.5, 7.5];
+                const co2Range = [380, 600];
+                
+                updateStatusIndicator('sunStatus', sunIntensity, sunRange);
+                updateStatusIndicator('tempStatus', temperature, tempRange);
+                updateStatusIndicator('moistStatus', moisture, moistureRange);
+                updateStatusIndicator('phStatus', phLevel, phRange);
+                updateStatusIndicator('co2Status', co2Level, co2Range);
+                
+                // Overall health indicator
+                const overallHealthElement = document.getElementById('overallHealth');
+                const avgHealth = calculateOverallEcosystemHealth();
+                
+                if (avgHealth > 0.8) {
+                    overallHealthElement.textContent = 'Optimal';
+                    overallHealthElement.style.color = '#4CAF50';
+                } else if (avgHealth > 0.6) {
+                    overallHealthElement.textContent = 'Good';
+                    overallHealthElement.style.color = '#2196F3';
+                } else if (avgHealth > 0.4) {
+                    overallHealthElement.textContent = 'Stressed';
+                    overallHealthElement.style.color = '#FF9800';
+                } else if (avgHealth > 0.2) {
+                    overallHealthElement.textContent = 'Poor';
+                    overallHealthElement.style.color = '#F44336';
+                } else {
+                    overallHealthElement.textContent = 'Critical';
+                    overallHealthElement.style.color = '#D32F2F';
+                }
+            }
+            
+            function updateStatusIndicator(elementId, value, optimalRange) {
+                const element = document.getElementById(elementId);
+                if (value >= optimalRange[0] && value <= optimalRange[1]) {
+                    element.className = 'status-indicator status-optimal';
+                } else if (value >= optimalRange[0] * 0.8 && value <= optimalRange[1] * 1.2) {
+                    element.className = 'status-indicator status-good';
+                } else if (value >= optimalRange[0] * 0.6 && value <= optimalRange[1] * 1.4) {
+                    element.className = 'status-indicator status-poor';
+                } else {
+                    element.className = 'status-indicator status-critical';
+                }
+            }
+            
+            function render() {
+                const imageData = context.createImageData(GRID_SIZE, GRID_SIZE);
+                const pixels = imageData.data;
+                
+                // Environmental stress affects rendering
+                const stressEffect = environmentalStressLevel;
+                
+                // Enhanced sun radiance with stress effects
+                const sunX = GRID_SIZE / 2;
+                const sunY = 25;
+                const sunRadius = 50;
+                
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const idx = x + y * GRID_SIZE;
+                        const pixelIdx = idx * 4;
+                        
+                        let r, g, b;
+                        
+                        if (y < ATMOSPHERE_HEIGHT) {
+                            // Atmosphere with stress effects
+                            const sunDistance = Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2);
+                            const sunGlow = Math.max(0, 1 - sunDistance / sunRadius);
+                            const lightScatter = lightField[idx];
+                            
+                            r = (135 + lightScatter * 80 + sunGlow * 120) * (1 - stressEffect * 0.3);
+                            g = (206 + lightScatter * 40 + sunGlow * 49) * (1 - stressEffect * 0.2);
+                            b = (235 + lightScatter * 15) * (1 - stressEffect * 0.1);
+                            
+                            if (stressEffect > 0.5) {
+                                r += stressEffect * 50;
+                                g *= (1 - stressEffect * 0.4);
+                                b *= (1 - stressEffect * 0.6);
+                            }
+                            
+                        } else if (y < GROUND_LINE) {
+                            // Above ground with stress effects
+                            const tree = treeBiomass[idx];
+                            const branch = branchDensity[idx];
+                            const leaf = leafDensity[idx];
+                            const chloro = chlorophyllDensity[idx];
+                            const light = lightField[idx];
+                            
+                            // Base atmosphere color with stress
+                            r = (152 + light * 60) * (1 - stressEffect * 0.2);
+                            g = (251 - leaf * 40) * (1 - stressEffect * 0.1);
+                            b = (152 + light * 30) * (1 - stressEffect * 0.1);
+                            
+                            // MOSS LAYER RENDERING - positioned between canopy and underground
+                            if (y >= MOSS_ZONE_START && y <= MOSS_ZONE_END) {
+                                const proto = protonemal[idx];
+                                const gameto = gametophore[idx];
+                                const bud = mossBuds[idx];
+                                const rhiz = rhizoids[idx];
+                                const mossChlo = mossChloroplasts[idx];
+                                const mossWall = mossCellWalls[idx];
+                                const mossAgeVal = mossAge[idx];
+                                const totalMoss = proto + gameto + bud + rhiz;
+                                
+                                if (totalMoss > 0.01) {
+                                    // Moss rendering with natural muted greens
+                                    let mossR = 8 + mossChlo * 12 + mossAgeVal * 0.04;
+                                    let mossG = 35 + mossChlo * 55 + gameto * 28 + proto * 15;
+                                    let mossB = 18 + mossChlo * 12 - mossAgeVal * 0.02;
+                                    
+                                    // Cell walls
+                                    if (mossWall > 0.3) {
+                                        const wallEffect = mossWall * 0.3;
+                                        mossR += wallEffect * 15;
+                                        mossG += wallEffect * 10;
+                                        mossB += wallEffect * 5;
+                                    }
+                                    
+                                    // Protonema - thread-like moss
+                                    if (proto > 0.2) {
+                                        const protoIntensity = Math.min(1, proto * 2);
+                                        mossG += protoIntensity * 35;
+                                        mossR += protoIntensity * 10;
+                                        mossB += protoIntensity * 8;
+                                    }
+                                    
+                                    // Gametophores - mature moss
+                                    if (gameto > 0.3) {
+                                        const gametoIntensity = Math.min(1, gameto * 1.5);
+                                        mossG += gametoIntensity * 45;
+                                        mossR += gametoIntensity * 8;
+                                        mossB += gametoIntensity * 12;
+                                    }
+                                    
+                                    // Moss-mycelium symbiosis coloring
+                                    const symbiosis = mossMyceliumConnections[idx];
+                                    if (symbiosis > 0.2) {
+                                        mossR += symbiosis * 20;
+                                        mossG += symbiosis * 15;
+                                        mossB += symbiosis * 25;
+                                    }
+                                    
+                                    // Microscopic texture
+                                    const microDetail = Math.sin(x * 1.5) * Math.cos(y * 1.2) * totalMoss * 15;
+                                    mossR += microDetail;
+                                    mossG += microDetail;
+                                    mossB += microDetail * 0.6;
+                                    
+                                    // Stress effects on moss
+                                    if (stressEffect > 0.3) {
+                                        const mossStress = stressEffect * 0.4;
+                                        mossR += mossStress * 60;
+                                        mossG *= (1 - mossStress * 0.5);
+                                        mossB *= (1 - mossStress * 0.3);
+                                    }
+                                    
+                                    // Blend moss with background
+                                    const mossIntensity = Math.min(1, totalMoss * 1.8);
+                                    r = mossR * mossIntensity + r * (1 - mossIntensity);
+                                    g = mossG * mossIntensity + g * (1 - mossIntensity);
+                                    b = mossB * mossIntensity + b * (1 - mossIntensity);
+                                }
+                            }
+                            
+                            // Tree trunks and branches
+                            if (tree > 0.08) {
+                                const treeIntensity = Math.min(1, tree * 2.2);
+                                r = 101 * treeIntensity + r * (1 - treeIntensity);
+                                g = 67 * treeIntensity + g * (1 - treeIntensity);
+                                b = 33 * treeIntensity + b * (1 - treeIntensity);
+                                
+                                // Stress makes trees darker/grayer
+                                if (stressEffect > 0.3) {
+                                    const grayFactor = stressEffect * 0.5;
+                                    const avgColor = (r + g + b) / 3;
+                                    r = r * (1 - grayFactor) + avgColor * grayFactor;
+                                    g = g * (1 - grayFactor) + avgColor * grayFactor;
+                                    b = b * (1 - grayFactor) + avgColor * grayFactor;
+                                }
+                            }
+                            
+                            if (branch > 0.06) {
+                                const branchIntensity = Math.min(1, branch * 2.5) * (1 - stressEffect * 0.3);
+                                r = Math.min(255, r + branchIntensity * 25);
+                                g = Math.min(255, g + branchIntensity * 18);
+                                b = Math.min(255, b + branchIntensity * 8);
+                            }
+                            
+                            // Enhanced leaves with stress-based coloring
+                            if (leaf > 0.04) {
+                                const leafIntensity = Math.min(1, leaf * 2.8) * (1 - stressEffect * 0.4);
+                                
+                                if (chloro > 0.5 && stressEffect < 0.4) {
+                                    // Green healthy leaves
+                                    r = 34 * leafIntensity + r * (1 - leafIntensity);
+                                    g = (100 + chloro * 50) * leafIntensity + g * (1 - leafIntensity);
+                                    b = 34 * leafIntensity + b * (1 - leafIntensity);
+                                } else {
+                                    // Stressed/senescent leaves
+                                    const stressColor = Math.max(stressEffect, 1 - chloro);
+                                    r = (34 + stressColor * 120) * leafIntensity + r * (1 - leafIntensity);
+                                    g = (100 + stressColor * 60) * leafIntensity + g * (1 - leafIntensity);
+                                    b = (34 + stressColor * 20) * leafIntensity + b * (1 - leafIntensity);
+                                }
+                            }
+                            
+                        } else {
+                            // Underground with environmental effects
+                            const root = rootDensity[idx];
+                            const rootTip = rootTips[idx];
+                            const mycorrhiza = mycorrhizal[idx];
+                            const hyphal = hyphalDensity[idx];
+                            const carbon = carbonFlow[idx];
+                            const nutrient = nutrients[idx];
+                            const moist = moistureField[idx];
+                            
+                            const depth = (y - GROUND_LINE) / (GRID_SIZE - GROUND_LINE);
+                            const soilBase = Math.max(20, 85 - depth * 60);
+                            const moistureEffect = 1 - moist * 0.3;
+                            const stressedSoil = 1 - stressEffect * 0.3;
+                            
+                            r = (soilBase + Math.sin(x * 0.12) * 12) * moistureEffect * stressedSoil;
+                            g = (soilBase * 0.7 + Math.cos(y * 0.08) * 10) * moistureEffect * stressedSoil;
+                            b = (soilBase * 0.4 + Math.sin((x + y) * 0.05) * 6) * moistureEffect * stressedSoil;
+                            
+                            // Tree roots (affected by stress)
+                            if (root > 0.04) {
+                                const rootIntensity = Math.min(1, root * 3) * (1 - stressEffect * 0.4);
+                                r += rootIntensity * 55;
+                                g += rootIntensity * 38;
+                                b += rootIntensity * 20;
+                                
+                                if (rootTip > 0.12) {
+                                    const tipIntensity = rootTip * (1 - stressEffect * 0.5);
+                                    r += tipIntensity * 20;
+                                    g += tipIntensity * 18;
+                                    b += tipIntensity * 12;
+                                }
+                            }
+                            
+                            // Mycelium networks (sensitive to stress)
+                            if (hyphal > 0.04) {
+                                const hyphalIntensity = Math.min(1, hyphal * 3) * (1 - stressEffect * 0.6);
+                                r += hyphalIntensity * 85;
+                                g += hyphalIntensity * 75;
+                                b += hyphalIntensity * 65;
+                            }
+                            
+                            // Mycorrhizal zones
+                            if (mycorrhiza > 0.15) {
+                                const mycIntensity = Math.min(1, mycorrhiza * 0.8) * (1 - stressEffect * 0.5);
+                                r += mycIntensity * 25;
+                                g += mycIntensity * 20;
+                                b += mycIntensity * 8;
+                            }
+                        }
+                        
+                        pixels[pixelIdx] = Math.max(0, Math.min(255, r));
+                        pixels[pixelIdx + 1] = Math.max(0, Math.min(255, g));
+                        pixels[pixelIdx + 2] = Math.max(0, Math.min(255, b));
+                        pixels[pixelIdx + 3] = 255;
+                    }
+                }
+                
+                context.putImageData(imageData, 0, 0);
+                
+                // Draw L-system trees with health-based appearance
+                for (let tree of lSystemTrees) {
+                    const healthAlpha = Math.max(0.3, tree.health);
+                    
+                    // Tree segments with health coloring
+                    for (let segment of tree.segments) {
+                        if (tree.isDead) {
+                            context.strokeStyle = `rgba(80, 50, 30, ${healthAlpha * 0.6})`;
+                        } else {
+                            const stressRed = Math.min(255, 101 + (1 - tree.health) * 100);
+                            context.strokeStyle = `rgba(${stressRed}, 67, 33, ${healthAlpha})`;
+                        }
+                        
+                        context.lineWidth = segment.thickness * tree.health;
+                        context.beginPath();
+                        context.moveTo(segment.x1, segment.y1);
+                        context.lineTo(segment.x2, segment.y2);
+                        context.stroke();
+                    }
+                    
+                    // Leaves with stress-based coloring
+                    for (let leaf of tree.leaves) {
+                        const size = leaf.size * tree.health;
+                        
+                        let leafColor;
+                        if (tree.isDead || tree.health < 0.3) {
+                            leafColor = `rgba(101, 67, 33, ${healthAlpha * 0.5})`;
+                        } else if (leaf.chlorophyll > 0.6 && tree.health > 0.7) {
+                            leafColor = `rgba(34, ${100 + leaf.chlorophyll * 80}, 34, ${healthAlpha})`;
+                        } else if (leaf.chlorophyll > 0.3) {
+                            leafColor = `rgba(${60 + (1 - leaf.chlorophyll) * 80}, ${120 + leaf.chlorophyll * 60}, 34, ${healthAlpha})`;
+                        } else {
+                            leafColor = `rgba(${120 + (1 - leaf.chlorophyll) * 60}, ${80 + leaf.chlorophyll * 40}, 30, ${healthAlpha})`;
+                        }
+                        
+                        context.fillStyle = leafColor;
+                        context.beginPath();
+                        context.arc(leaf.x, leaf.y, size, 0, Math.PI * 2);
+                        context.fill();
+                    }
+                }
+                
+                // Draw moss cells with detailed rendering
+                for (let moss of mossCells) {
+                    const healthFactor = Math.max(0.2, 1 - moss.stressAccumulation * 0.025);
+                    const size = moss.size * healthFactor;
+                    const alpha = Math.min(0.9, moss.energy * healthFactor);
+                    
+                    let mossColor;
+                    switch(moss.type) {
+                        case 'protonema':
+                            // Thread-like moss - olive green
+                            mossColor = `rgba(${20 + moss.chlorophyllLevel * 15}, ${45 + moss.chlorophyllLevel * 60}, ${25 + moss.chlorophyllLevel * 10}, ${alpha})`;
+                            break;
+                        case 'bud':
+                            // Developing buds - yellowish green
+                            mossColor = `rgba(${30 + moss.chlorophyllLevel * 25}, ${60 + moss.chlorophyllLevel * 70}, ${20 + moss.chlorophyllLevel * 15}, ${alpha})`;
+                            break;
+                        case 'gametophore':
+                            // Mature moss - deep green
+                            mossColor = `rgba(${15 + moss.chlorophyllLevel * 10}, ${50 + moss.chlorophyllLevel * 80}, ${30 + moss.chlorophyllLevel * 15}, ${alpha})`;
+                            break;
+                        case 'rhizoid':
+                            // Root-like structures - brownish
+                            mossColor = `rgba(${40 + moss.age * 0.1}, ${25 + moss.age * 0.05}, ${15}, ${alpha * 0.7})`;
+                            break;
+                        default:
+                            mossColor = `rgba(30, 60, 25, ${alpha})`;
+                    }
+                    
+                    // Environmental stress coloring
+                    if (environmentalStressLevel > 0.4) {
+                        const stressFactor = environmentalStressLevel * 0.6;
+                        context.fillStyle = mossColor.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),/, 
+                            (match, r, g, b) => {
+                                const newR = Math.min(255, parseInt(r) + stressFactor * 80);
+                                const newG = Math.max(0, parseInt(g) * (1 - stressFactor * 0.5));
+                                return `rgba(${newR}, ${newG}, ${b},`;
+                            });
+                    } else {
+                        context.fillStyle = mossColor;
+                    }
+                    
+                    context.beginPath();
+                    context.arc(moss.x, moss.y, size, 0, Math.PI * 2);
+                    context.fill();
+                    
+                    // Draw connecting threads for protonema
+                    if (moss.type === 'protonema' && moss.generation > 0) {
+                        context.strokeStyle = mossColor.replace(/[\d\.]+\)$/g, '0.3)');
+                        context.lineWidth = 0.5;
+                        context.beginPath();
+                        const threadLength = 3;
+                        context.moveTo(moss.x, moss.y);
+                        context.lineTo(
+                            moss.x + Math.cos(moss.branchAngle) * threadLength,
+                            moss.y + Math.sin(moss.branchAngle) * threadLength
+                        );
+                        context.stroke();
+                    }
+                }
+                
+                // Draw mycorrhizal connections with health effects
+                for (let node of mycorrhizalNodes) {
+                    const efficiency = getMycorrhizalEfficiency();
+                    const intensity = Math.min(1, node.exchangeRate) * efficiency;
+                    const size = (2 + intensity * 2.5) * efficiency;
+                    const alpha = (0.4 + intensity * 0.3) * efficiency;
+                    
+                    if (efficiency > 0.2) {
+                        context.fillStyle = `rgba(180, 140, 80, ${alpha})`;
+                        context.beginPath();
+                        context.arc(node.x, node.y, size, 0, Math.PI * 2);
+                        context.fill();
+                        
+                        if (node.root && node.fungus && intensity > 0.4) {
+                            context.strokeStyle = `rgba(160, 120, 70, ${alpha * 0.6})`;
+                            context.lineWidth = 1;
+                            context.beginPath();
+                            context.moveTo(node.root.x, node.root.y);
+                            context.lineTo(node.fungus.x, node.fungus.y);
+                            context.stroke();
+                        }
+                    }
+                }
+                
+                // Draw moss-mycelium symbiotic connections
+                let mossMyceliumDrawn = 0;
+                for (let i = 0; i < TOTAL_CELLS && mossMyceliumDrawn < 20; i++) {
+                    if (mossMyceliumConnections[i] > 0.3) {
+                        const x = i % GRID_SIZE;
+                        const y = Math.floor(i / GRID_SIZE);
+                        
+                        if (y >= MOSS_ZONE_START && y <= UNDERGROUND_START + 50) {
+                            const intensity = mossMyceliumConnections[i];
+                            const alpha = intensity * 0.4;
+                            
+                            context.fillStyle = `rgba(100, 180, 120, ${alpha})`;
+                            context.beginPath();
+                            context.arc(x, y, 1 + intensity * 1.5, 0, Math.PI * 2);
+                            context.fill();
+                            
+                            mossMyceliumDrawn++;
+                        }
+                    }
+                }
+            }
+            
+            // Event handlers with multi-organism interaction
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * GRID_SIZE / rect.width;
+                const y = (e.clientY - rect.top) * GRID_SIZE / rect.height;
+                
+                if (e.shiftKey) {
+                    // Add moss spores
+                    if (y >= MOSS_ZONE_START && y <= MOSS_ZONE_END) {
+                        addMossSpores(x, y);
+                    }
+                } else if (e.altKey) {
+                    addMyceliumNetwork(x, Math.max(y, GROUND_LINE + 15));
+                } else if (e.ctrlKey) {
+                    addMoisture(x, y);
+                } else {
+                    switch(currentMode) {
+                        case 'trees':
+                            if (y < GROUND_LINE) {
+                                addLSystemTree(x, Math.min(y, GROUND_LINE - 20));
+                            }
+                            break;
+                        case 'moss':
+                            if (y >= MOSS_ZONE_START && y <= MOSS_ZONE_END) {
+                                addMossSpores(x, y);
+                            } else {
+                                addNutrients(x, y);
+                            }
+                            break;
+                        case 'roots':
+                            if (y < GROUND_LINE) {
+                                addLSystemTree(x, Math.min(y, GROUND_LINE - 20));
+                            } else {
+                                addNutrients(x, y);
+                            }
+                            break;
+                        case 'mycelium':
+                            addMyceliumNetwork(x, Math.max(y, GROUND_LINE + 15));
+                            break;
+                        case 'ecosystem':
+                        default:
+                            if (y < MOSS_ZONE_START) {
+                                addLSystemTree(x, Math.min(y, GROUND_LINE - 20));
+                            } else if (y >= MOSS_ZONE_START && y <= MOSS_ZONE_END) {
+                                addMossSpores(x, y);
+                            } else {
+                                addMyceliumNetwork(x, y);
+                            }
+                            break;
+                    }
+                }
+            });
+            
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * GRID_SIZE / rect.width;
+                const y = (e.clientY - rect.top) * GRID_SIZE / rect.height;
+                addNutrients(x, y);
+            });
+            
+            function setupControls() {
+                document.querySelectorAll('.organism-btn').forEach(btn => {
+                    btn.onclick = function() {
+                        document.querySelectorAll('.organism-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        currentMode = this.dataset.organism;
+                        updateOrganismUI();
+                    };
+                });
+                
+                const paramMap = {
+                    'sunIntensity': 'sunVal',
+                    'temperature': 'tempVal',
+                    'moisture': 'moistureVal',
+                    'ph': 'phVal',
+                    'co2': 'co2Val',
+                    'growthSpeed': 'speedVal'
+                };
+                
+                Object.keys(paramMap).forEach(param => {
+                    const slider = document.getElementById(param);
+                    const display = document.getElementById(paramMap[param]);
+                    
+                    slider.oninput = function() {
+                        const value = parseFloat(this.value);
+                        switch(param) {
+                            case 'sunIntensity':
+                                sunIntensity = value;
+                                display.textContent = value + '%';
+                                break;
+                            case 'temperature':
+                                temperature = value;
+                                display.textContent = value + '°C';
+                                break;
+                            case 'moisture':
+                                moisture = value;
+                                display.textContent = value + '%';
+                                break;
+                            case 'ph':
+                                phLevel = value;
+                                display.textContent = value.toFixed(1);
+                                break;
+                            case 'co2':
+                                co2Level = value;
+                                display.textContent = value + 'ppm';
+                                break;
+                            case 'growthSpeed':
+                                growthSpeedMultiplier = value;
+                                display.textContent = value + 'x';
+                                break;
+                        }
+                    };
+                });
+            }
+            
+            function updateOrganismUI() {
+                const description = document.getElementById('organismDescription');
+                const instructions = document.getElementById('simInstructions');
+                const metricsTitle = document.getElementById('metricsTitle');
+                
+                switch(currentMode) {
+                    case 'trees':
+                        description.textContent = 'L-system trees with enhanced environmental sensitivity. Extreme conditions cause visible stress, chlorophyll loss, and death.';
+                        instructions.innerHTML = '<em>Left Click: Plant L-system trees • Right Click: Add nutrients • Alt+Click: Add mycelium • Space: Pause</em>';
+                        metricsTitle.textContent = 'L-System Tree Metrics';
+                        break;
+                    case 'moss':
+                        description.textContent = 'Moss ground layer with protonema, buds, and gametophores. Forms symbiotic connections with mycelial networks.';
+                        instructions.innerHTML = '<em>Left Click: Add moss spores • Right Click: Add nutrients • Shift+Click: Add moss spores • Ctrl+Click: Moisture</em>';
+                        metricsTitle.textContent = 'Moss Layer Metrics';
+                        break;
+                    case 'roots':
+                        description.textContent = 'Root networks highly sensitive to soil conditions. pH, moisture, and temperature dramatically affect growth and survival.';
+                        instructions.innerHTML = '<em>Left Click: Add trees (creates roots) • Right Click: Add nutrients • Alt+Click: Add mycelium • Ctrl+Click: Moisture</em>';
+                        metricsTitle.textContent = 'Root Network Metrics';
+                        break;
+                    case 'mycelium':
+                        description.textContent = 'Fungal networks extremely sensitive to environmental conditions. Forms symbiotic relationships with both trees and moss.';
+                        instructions.innerHTML = '<em>Left Click: Add mycelium • Right Click: Add nutrients • Ctrl+Click: Add moisture • Trees create carbon sources</em>';
+                        metricsTitle.textContent = 'Mycelial Network Metrics';
+                        break;
+                    case 'ecosystem':
+                        description.textContent = 'Complete multi-layered ecosystem with trees, moss ground layer, and underground networks. Watch cross-species interactions.';
+                        instructions.innerHTML = '<em>Left Click: Trees/Moss/Mycelium (context-sensitive) • Right Click: Nutrients • Shift+Click: Moss spores • Space: Pause</em>';
+                        metricsTitle.textContent = 'Complete Ecosystem Metrics';
+                        break;
+                }
+            }
+            
+            window.addEventListener('keydown', (e) => {
+                switch (e.key.toLowerCase()) {
+                    case 'r':
+                        resetEcosystem();
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        isPlaying = !isPlaying;
+                        break;
+                }
+            });
+            
+            function animationLoop() {
+                simulationStep();
+                render();
+                requestAnimationFrame(animationLoop);
+            }
+            
+            window.resetEcosystem = resetEcosystem;
+            setupControls();
+            updateOrganismUI();
+            resetEcosystem();
+            animationLoop();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Atomic Physics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .explanation {
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            padding: 0;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .explanation-header {
+            background: #f8f9fa;
+            padding: 18px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .explanation-header:hover {
+            background: #e9ecef;
+        }
+
+        .explanation-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .expand-icon {
+            color: #495057;
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        .explanation-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .explanation-content.expanded {
+            max-height: 4000px;
+        }
+
+        .explanation-inner {
+            padding: 24px;
+            color: #495057;
+            line-height: 1.7;
+        }
+
+        .explanation-inner h4 {
+            color: #212529;
+            font-size: 0.95rem;
+            margin: 20px 0 12px 0;
+            font-weight: 600;
+        }
+
+        .explanation-inner p {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .explanation-inner strong {
+            color: #212529;
+        }
+
+        .equation-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 12px 16px;
+            margin: 12px 0;
+            font-family: 'Courier New', monospace;
+            color: #0d6efd;
+            font-size: 0.9rem;
+        }
+
+        .element-info {
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .element-symbol {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+            margin-bottom: 8px;
+        }
+
+        .element-name {
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 12px;
+        }
+
+        .element-details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .element-detail {
+            background: #f8f9fa;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .detail-label {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 0.95rem;
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .visualization-panel {
+            position: relative;
+            background: #000000;
+            border: 2px solid #dee2e6;
+            overflow: hidden;
+            height: 700px;
+        }
+
+        #atomCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #dee2e6;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .controls-title {
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #212529;
+            font-size: 0.95rem;
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+            gap: 12px;
+        }
+
+        .control-row label {
+            min-width: 110px;
+            font-size: 0.85rem;
+            color: #495057;
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #0d6efd;
+            cursor: pointer;
+        }
+
+        .control-row input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #0d6efd;
+            cursor: pointer;
+            border: none;
+        }
+
+        .control-value {
+            min-width: 55px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .view-mode {
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 2px solid #dee2e6;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .view-mode-title {
+            font-size: 0.85rem;
+            color: #495057;
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .view-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .view-btn {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .view-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .view-btn.active {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: #ffffff;
+        }
+
+        .metrics {
+            margin-top: 18px;
+            padding-top: 15px;
+            border-top: 2px solid #dee2e6;
+            font-size: 0.8rem;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            color: #495057;
+        }
+
+        .metric-value {
+            color: #198754;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #f8f9fa;
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+
+        .status-panel {
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            padding: 20px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            padding: 15px;
+        }
+
+        .status-card h4 {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .status-label {
+            color: #6c757d;
+        }
+
+        .status-value {
+            color: #212529;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Coherence-Rupture-Regeneration: Atomic Physics</h1>
+            <div class="subtitle">A Working Theory of CRR Mathematics to Quantum Electronic Structure</div>
+        </div>
+
+        <div class="explanation">
+            <div class="explanation-header" onclick="toggleExplanation()">
+                <h3>Complete Mathematical Framework: CRR Components and Atomic Physics</h3>
+                <span class="expand-icon" id="expandIcon">▼</span>
+            </div>
+            <div class="explanation-content" id="explanationContent">
+                <div class="explanation-inner">
+                    <h4>I. Fundamental CRR Equation for Atomic Systems</h4>
+                    <p>The complete dynamics of electrons in atoms are described by three coupled operators:</p>
+                    
+                    <div class="equation-box">
+dx/dt = F(x) + ∫₀ᵗ K(t-τ)x(τ)dτ + δ(t-tᵢ)ρᵢ(x) + ∫₀ᵗ φ(x,τ)exp(C(x,τ)/Ω)dτ
+                    </div>
+                    
+                    <p>Where each term has precise physical meaning in atomic physics:</p>
+                    
+                    <p><strong>F(x):</strong> Hamiltonian evolution ∂ψ/∂t = -iĤψ/ℏ describing smooth orbital evolution between quantum jumps.</p>
+                    
+                    <p><strong>Memory kernel ∫K(t-τ)x(τ)dτ:</strong> Non-Markovian electron-nucleus coupling accounting for past orbital configurations influencing present dynamics.</p>
+                    
+                    <p><strong>δ(t-tᵢ)ρᵢ(x):</strong> Instantaneous electronic transition (quantum jump) at discrete time tᵢ.</p>
+                    
+                    <p><strong>Rebirth ∫φ exp(C/Ω)dτ:</strong> Radiative decay weighted by accumulated coherence, implementing Boltzmann statistics.</p>
+
+                    <h4>II. Coherence Functional C(t): Orbital Stability Measure</h4>
+                    <p>The coherence accumulates via integration of the stability functional:</p>
+                    
+                    <div class="equation-box">
+C(t) = ∫₀ᵗ L(x,τ)dτ<br><br>
+where L(x,t) = |⟨ψ(t)|Ĥ|ψ(t)⟩ - E_ground| + thermal_fluctuations
+                    </div>
+                    
+                    <p><strong>Physical interpretation:</strong> L measures deviation of current electronic state from ground state equilibrium. When electrons occupy stable ground state orbitals (ψ = ψ_ground), the expectation value ⟨Ĥ⟩ equals E_ground, so L ≈ 0 and dC/dt ≈ 0. The system maintains low coherence.</p>
+                    
+                    <p>When electrons are perturbed (thermal excitation, photon absorption), ⟨Ĥ⟩ deviates from E_ground, L increases, and C accumulates. High C indicates the system has absorbed significant energy and is far from equilibrium.</p>
+                    
+                    <p><strong>Quantum mechanical basis:</strong> For hydrogen-like atoms with Hamiltonian Ĥ = -ℏ²∇²/2mₑ - Ze²/r, the ground state has E₀ = -Z²(13.6 eV). Excited states have higher energies E_n = E₀/n². The energy gap ΔE = E_n - E₀ integrated over time gives accumulated coherence.</p>
+                    
+                    <p><strong>Implementation:</strong> In this simulation, L is computed as (E_binding/E_Rydberg) × stability_factor, where E_binding = Z²×13.6eV/n² and stability_factor = sin(ωt)/2 + 0.5 models oscillating perturbations. This produces dC/dt ≈ 0.001 eV/frame in stable configurations.</p>
+
+                    <h4>III. Critical Coherence Threshold C_crit: Rupture Condition</h4>
+                    <p>Electronic transitions occur when accumulated coherence reaches critical value:</p>
+                    
+                    <div class="equation-box">
+C(t_transition) ≥ C_crit = Ω · ln(E_ionization/E_thermal)<br><br>
+Derived from: P(no transition up to t) = exp(-∫₀ᵗ Γ(τ)dτ) = exp(-C(t)/Ω)
+                    </div>
+                    
+                    <p><strong>Statistical mechanics derivation:</strong> The probability of remaining in ground state decreases exponentially with accumulated energy. When ∫L dt reaches Ω·ln(E_ion/kT), the transition probability approaches unity. This is the condition for forced rupture.</p>
+                    
+                    <p><strong>Numerical values:</strong> For neon (Z=10): E_ionization = 21.6 eV, kT ≈ 0.026 eV at room temperature. Thus C_crit = 0.026 × ln(21.6/0.026) ≈ 0.026 × 6.7 ≈ 0.17 eV·s. The simulation aims to model these thresholds.</p>
+                    
+                    <p><strong>Physical meaning:</strong> C_crit represents the maximum "memory" of perturbations the atom can accumulate before being forced into a transition. It scales logarithmically with ionization energy, meaning tightly bound electrons (high E_ion) can tolerate more accumulated coherence before rupturing.</p>
+
+                    <h4>IV. The Dirac Delta δ(t-tᵢ): Instantaneous Quantum Jump</h4>
+                    <p>The rupture operator implements Born's quantum jump postulate:</p>
+                    
+                    <div class="equation-box">
+δ(t-tᵢ): Dirac delta function at transition time tᵢ<br><br>
+Physical meaning: |ψ(tᵢ⁻)⟩ → |ψ(tᵢ⁺)⟩ instantaneously<br><br>
+Applied via: x(tᵢ⁺) = x(tᵢ⁻) + ρᵢ(x(tᵢ⁻))
+                    </div>
+                    
+                    <p><strong>Why a delta function?</strong> Quantum transitions are non-adiabatic processes occurring on timescales τ_trans ≪ τ_orbital. For atomic transitions: τ_trans ~ 10⁻¹⁵ s (femtoseconds) while τ_orbital ~ 10⁻¹⁶ s (attoseconds). Since τ_trans is effectively instantaneous compared to measurement timescales, it is mathematically represented as δ(t-tᵢ).</p>
+                    
+                    <p><strong>The rupture operator ρᵢ(x):</strong> This function determines the post-transition state. In atomic physics:</p>
+                    
+                    <div class="equation-box">
+ρᵢ(x) = x_excited - x_ground = Δr_orbital<br><br>
+For n → n+1 transition: Δr = (n+1)²a₀ - n²a₀ = (2n+1)a₀
+                    </div>
+                    
+                    <p><strong>Implementation in simulation:</strong> When C(t) ≥ C_crit, the delta function triggers: (1) isExcited flag set to true, (2) coherence collapses C → 0.15C (representing post-transition relaxation), (3) electron cloud radius increases by factor ~1.4 (corresponding to n → n+1), (4) probability density becomes diffuse (Δp increases via uncertainty principle).</p>
+                    
+                    <p><strong>Energy-time uncertainty relation:</strong> The instantaneous transition via δ(t-tᵢ) means Δt → 0, which by ΔE·Δt ≥ ℏ/2 implies ΔE → ∞. This is possibly why quantum jumps can access excited states: the energy uncertainty during the infinitesimal transition time is unbounded. After the jump, the system relaxes to a definite excited state energy.</p>
+                    
+                    <p><strong>Connection to measurement:</strong> The δ-function rupture also models wavefunction collapse. When C is low (unmeasured system), electrons exist as superposition (wave-like). When C → C_crit (interaction accumulates), the delta function projects ψ onto an eigenstate (particle-like measurement outcome).</p>
+
+                    <h4>V. Rebirth Operator R[χ]: Radiative Decay via Fermi's Golden Rule</h4>
+                    <p>After rupture, the system regenerates to ground state through spontaneous emission:</p>
+                    
+                    <div class="equation-box">
+R[χ](x,t) = ∫₀ᵗ φ(x,τ) exp(C(x,τ)/Ω) x(τ) dτ<br><br>
+Transition rate: Γ = (2π/ℏ)|⟨f|Ĥ_int|i⟩|² ρ(E_f) × exp(-ΔE/kT)
+                    </div>
+                    
+                    <p><strong>Exact correspondence:</strong> The exponential factor exp(C/Ω) in CRR is mathematically equivalent to the Boltzmann factor exp(-ΔE/kT) in Fermi's Golden Rule. Setting Ω = kT provides the bridge:</p>
+                    
+                    <div class="equation-box">
+C/Ω = (∫L dt)/(kT) = (∫ΔE dt)/(kT) = ΔE_total/kT<br><br>
+Therefore: exp(C/Ω) = exp(ΔE/kT) exactly
+                    </div>
+                    
+                    <p><strong>Physical mechanism:</strong> φ(x,τ) represents electromagnetic field coupling strength (photon interaction). For atomic transitions, φ ~ |⟨f|er|i⟩| (electric dipole matrix element). The memory integral ∫φ(τ)dτ sums over all past electromagnetic interactions that can induce decay.</p>
+                    
+                    <p><strong>Regeneration dynamics:</strong> As time evolves post-rupture, the integral accumulates contributions from past states weighted by their Boltzmann factors. States with higher accumulated coherence (higher C) have exponentially larger weights, making decay to those states exponentially more probable. This is possibly why ground state (highest accumulated stability C) is the most probable final state.</p>
+                    
+                    <p><strong>Implementation:</strong> The simulation computes rebirth rate = (Σ_memories φ·exp(C_memory/Ω))/Σ_weights. This rate increases exponentially as C rebuilds. When C > 0.6×C_crit, the system exits excited state (isExcited → false) and returns to ground state visualisation (sharp orbitals, blue color, defined particle positions).</p>
+
+                    <h4>VI. Wave-Particle Duality from Coherence</h4>
+                    <p>The visualisation mode mixing implements Bohr's complementarity:</p>
+                    
+                    <div class="equation-box">
+ρ_observed(r,t) = α·ρ_particle(r,t) + (1-α)·ρ_wave(r)<br><br>
+where α = tanh(C(t)/C_crit)
+                    </div>
+                    
+                    <p><strong>Interpretation:</strong> Low C (immediately post-rupture): α ≈ 0, system appears wave-like (diffuse probability clouds, no defined positions). High C (approaching C_crit): α ≈ 1, system appears particle-like (discrete electrons with definite trajectories).</p>
+                    
+                    <p>This captures decoherence theory: accumulated interactions (high C) suppress quantum superposition, projecting system into quasi-classical state. The tanh function ensures smooth interpolation with proper asymptotic behavior.</p>
+
+                    <h4>VII. Orbital Shell Structure and Quantum Numbers</h4>
+                    <p>Electron distribution follows Pauli exclusion and aufbau principles:</p>
+                    
+                    <div class="equation-box">
+Shell n: radius r_n = n² × a₀ = n² × 0.529 Å<br>
+Capacity: 2n² electrons (2×l+1 for each l, summed over l=0 to n-1)<br>
+Orbital velocity: ω_n ∝ 1/n³ (Kepler's third law applied to Bohr model)
+                    </div>
+                    
+                    <p><strong>Wave rendering:</strong> s-orbitals (l=0) as spherical gradients ρ(r) ∝ exp(-r/na₀). p-orbitals (l=1) as dumbbell lobes ρ(r,θ) ∝ r·exp(-r/2a₀)·cos(θ). These aim to match solutions to Schrödinger equation for hydrogen-like atoms.</p>
+                    
+                    <p><strong>Particle rendering:</strong> Discrete electron positions updated via r_n(t+dt) = r_n(t) + ω_n r_n dt + noise·(1-C/C_crit). The noise term implements quantum uncertainty: when C is low, position fluctuations are large (Δx ~ ℏ/Δp). When C is high, positions are well-defined (approaching classical limit).</p>
+
+                    <h4>VIII. Summary: CRR as Quantum Framework</h4>
+                    <p><strong>Possibilities:</strong></p>
+                    <p>1. Coherence C(t) = ∫L dt correctly accumulates energy deviation from ground state.</p>
+                    <p>2. Critical threshold C_crit = Ω·ln(E_ion/kT) derived from statistical mechanics.</p>
+                    <p>3. Dirac delta δ(t-tᵢ) accurately models instantaneous quantum jumps (Born postulate).</p>
+                    <p>4. Rupture operator ρᵢ implements orbital radius change Δr = (2n+1)a₀ for transitions.</p>
+                    <p>5. Rebirth exp(C/Ω) is equivalent to Boltzmann factor in Fermi's Golden Rule.</p>
+                    <p>6. Wave-particle mixing α = tanh(C/C_crit) implements decoherence theory.</p>
+                    
+                    <p><strong>What remains approximate:</strong></p>
+                    <p>1. Multi-electron interactions simplified (hydrogen-like approximation).</p>
+                    <p>2. L-functional phenomenological (exact form requires full density matrix formalism).</p>
+                    <p>3. 2D projection of 3D orbitals (visualization constraint).</p>
+                    <p>4. Classical particle trajectories (true quantum mechanics has no trajectories).</p>
+                    
+                    <p><strong>Philosophical significance:</strong> One possible explanation for undestanding both the wave-like and particle properties of matter. This is not a grand claim, it is a model to help platform further enquiry and discussion</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="element-info">
+            <div class="element-symbol" id="elementSymbol">Ne</div>
+            <div class="element-name" id="elementName">Neon</div>
+            <div class="element-details">
+                <div class="element-detail">
+                    <div class="detail-label">Atomic Number</div>
+                    <div class="detail-value" id="atomicNumber">10</div>
+                </div>
+                <div class="element-detail">
+                    <div class="detail-label">Electrons</div>
+                    <div class="detail-value" id="electronCount">10</div>
+                </div>
+                <div class="element-detail">
+                    <div class="detail-label">Configuration</div>
+                    <div class="detail-value" id="electronConfig">1s² 2s² 2p⁶</div>
+                </div>
+                <div class="element-detail">
+                    <div class="detail-label">Shells</div>
+                    <div class="detail-value" id="shellStructure">2, 8</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="visualization-panel">
+                <canvas id="atomCanvas"></canvas>
+                
+                <div class="controls-overlay">
+                    <div class="controls-title">CRR Parameters</div>
+                    
+                    <div class="control-row">
+                        <label>Field Ω (eV):</label>
+                        <input type="range" id="omegaSlider" min="0.01" max="0.1" step="0.001" value="0.026">
+                        <span class="control-value" id="omegaValue">0.026</span>
+                    </div>
+                    
+                    <div class="control-row">
+                        <label>Excitation Rate:</label>
+                        <input type="range" id="excitationSlider" min="0.0001" max="0.005" step="0.0001" value="0.0008">
+                        <span class="control-value" id="excitationValue">0.0008</span>
+                    </div>
+                    
+                    <div class="control-row">
+                        <label>Electrons (Z):</label>
+                        <input type="range" id="electronSlider" min="1" max="36" step="1" value="10">
+                        <span class="control-value" id="electronValue">10</span>
+                    </div>
+                    
+                    <div class="control-row">
+                        <label>Time Scale:</label>
+                        <input type="range" id="timeSlider" min="0.5" max="3" step="0.1" value="1.0">
+                        <span class="control-value" id="timeValue">1.0</span>
+                    </div>
+                    
+                    <div class="view-mode">
+                        <div class="view-mode-title">Visualisation Mode</div>
+                        <div class="view-buttons">
+                            <button class="view-btn" id="waveBtn" onclick="setViewMode('wave')">Wave</button>
+                            <button class="view-btn" id="particleBtn" onclick="setViewMode('particle')">Particle</button>
+                            <button class="view-btn active" id="hybridBtn" onclick="setViewMode('hybrid')">Hybrid</button>
+                            <button class="view-btn" id="bothBtn" onclick="setViewMode('both')">Both</button>
+                        </div>
+                    </div>
+                    
+                    <div class="metrics">
+                        <div class="metric-row">
+                            <span>Coherence C(t):</span>
+                            <span class="metric-value" id="coherenceDisplay">0.000</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>C_crit:</span>
+                            <span class="metric-value" id="critDisplay">0.072</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>State:</span>
+                            <span class="metric-value" id="stateDisplay">Ground</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Transitions:</span>
+                            <span class="metric-value" id="transitionDisplay">0</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>Decays:</span>
+                            <span class="metric-value" id="decayDisplay">0</span>
+                        </div>
+                        <div class="metric-row">
+                            <span>exp(C/Ω):</span>
+                            <span class="metric-value" id="boltzmannDisplay">1.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn" onclick="triggerExcitation()">Excite System</button>
+            <button class="action-btn" onclick="stabilize()">Stabilize Orbitals</button>
+            <button class="action-btn" onclick="forceDecay()">Force Decay</button>
+            <button class="action-btn" onclick="resetSystem()">Reset</button>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-grid">
+                <div class="status-card">
+                    <h4>CRR Dynamics</h4>
+                    <div class="status-item">
+                        <span class="status-label">Phase:</span>
+                        <span class="status-value" id="phaseStatus">Building</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">∫ L dτ:</span>
+                        <span class="status-value" id="integralStatus">0.000</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">δ(t-tᵢ):</span>
+                        <span class="status-value" id="deltaStatus">0</span>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h4>Quantum Properties</h4>
+                    <div class="status-item">
+                        <span class="status-label">Binding E:</span>
+                        <span class="status-value" id="bindingStatus">0.00 eV</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Definition:</span>
+                        <span class="status-value" id="definitionStatus">Sharp</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Cloud R:</span>
+                        <span class="status-value" id="radiusStatus">1.0 a₀</span>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <h4>System State</h4>
+                    <div class="status-item">
+                        <span class="status-label">Stability:</span>
+                        <span class="status-value" id="stabilityStatus">Stable</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Excitation:</span>
+                        <span class="status-value" id="excitationStatus">0%</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">View α:</span>
+                        <span class="status-value" id="alphaStatus">0.50</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('atomCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let systemTime = 0;
+        let coherence = 0;
+        let omega = 0.026;
+        let excitationRate = 0.0008;
+        let numElectrons = 10;
+        let timeScale = 1.0;
+        let isExcited = false;
+        let transitionCount = 0;
+        let decayCount = 0;
+        let viewMode = 'hybrid';
+        let memoryBuffer = [];
+        let electrons = [];
+        let animationFrameId = null;
+
+        const RYDBERG = 13.6;
+        const BRIGHTNESS_BOOST = 2.0;
+
+        const elements = {
+            1: { symbol: 'H', name: 'Hydrogen', config: '1s¹', shells: [1], ionization: 13.6 },
+            2: { symbol: 'He', name: 'Helium', config: '1s²', shells: [2], ionization: 24.6 },
+            6: { symbol: 'C', name: 'Carbon', config: '1s² 2s² 2p²', shells: [2,4], ionization: 11.3 },
+            8: { symbol: 'O', name: 'Oxygen', config: '1s² 2s² 2p⁴', shells: [2,6], ionization: 13.6 },
+            10: { symbol: 'Ne', name: 'Neon', config: '1s² 2s² 2p⁶', shells: [2,8], ionization: 21.6 },
+            18: { symbol: 'Ar', name: 'Argon', config: '[Ne] 3s² 3p⁶', shells: [2,8,8], ionization: 15.8 },
+            36: { symbol: 'Kr', name: 'Krypton', config: '[Ar] 3d¹⁰ 4s² 4p⁶', shells: [2,8,18,8], ionization: 14.0 }
+        };
+
+        function getElement(n) {
+            if (elements[n]) return elements[n];
+            let closest = 1;
+            let minDiff = Math.abs(n - 1);
+            for (let num in elements) {
+                let diff = Math.abs(n - parseInt(num));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closest = parseInt(num);
+                }
+            }
+            return elements[closest];
+        }
+
+        function updateElementDisplay() {
+            const elem = getElement(numElectrons);
+            document.getElementById('elementSymbol').textContent = elem.symbol;
+            document.getElementById('elementName').textContent = elem.name;
+            document.getElementById('atomicNumber').textContent = numElectrons;
+            document.getElementById('electronCount').textContent = numElectrons;
+            document.getElementById('electronConfig').textContent = elem.config;
+            document.getElementById('shellStructure').textContent = elem.shells.join(', ');
+        }
+
+        function initializeElectrons() {
+            electrons = [];
+            const elem = getElement(numElectrons);
+            
+            for (let shellIdx = 0; shellIdx < elem.shells.length; shellIdx++) {
+                const n = shellIdx + 1;
+                const numInShell = elem.shells[shellIdx];
+                const radius = 60 + shellIdx * 70;
+                const angularVelocity = 0.02 / Math.pow(n, 1.5);
+                
+                for (let i = 0; i < numInShell; i++) {
+                    const angle = (i / numInShell) * Math.PI * 2 + Math.random() * 0.3;
+                    electrons.push({
+                        shell: shellIdx,
+                        angle: angle,
+                        radius: radius,
+                        baseRadius: radius,
+                        omega: angularVelocity,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+        }
+
+        function calculateBindingEnergy() {
+            const Z = numElectrons;
+            const n = Math.ceil(Math.sqrt(numElectrons));
+            return (Z * Z * RYDBERG) / (n * n);
+        }
+
+        function calculateCriticalCoherence() {
+            const elem = getElement(numElectrons);
+            return omega * Math.log(elem.ionization / omega);
+        }
+
+        function calculateL() {
+            const binding = calculateBindingEnergy();
+            const stability = Math.sin(systemTime * 0.001 * timeScale) * 0.5 + 0.5;
+            return (binding / RYDBERG) * stability * 0.001;
+        }
+
+        function updateCoherence() {
+            const dt = 0.016;
+            const L = calculateL();
+            coherence += L * dt;
+            
+            memoryBuffer.push({
+                coherence: coherence,
+                timestamp: systemTime,
+                binding: calculateBindingEnergy()
+            });
+            
+            if (memoryBuffer.length > 100) memoryBuffer.shift();
+        }
+
+        function checkTransition() {
+            const C_crit = calculateCriticalCoherence();
+            if (coherence >= C_crit || (Math.random() < excitationRate && !isExcited)) {
+                isExcited = true;
+                coherence *= 0.15;
+                transitionCount++;
+                return true;
+            }
+            return false;
+        }
+
+        function computeDecay() {
+            if (!isExcited) return;
+            
+            let decayPotential = 0;
+            let weightSum = 0;
+            
+            for (let mem of memoryBuffer) {
+                const phi = mem.binding / RYDBERG;
+                const boltzmann = Math.exp(Math.min(mem.coherence / omega, 10));
+                decayPotential += phi * boltzmann;
+                weightSum += boltzmann;
+            }
+            
+            const decayRate = weightSum > 0 ? (decayPotential / weightSum) * omega : 0;
+            coherence += decayRate * 0.05;
+            
+            const C_target = calculateCriticalCoherence() * 0.6;
+            if (coherence >= C_target) {
+                isExcited = false;
+                decayCount++;
+            }
+        }
+
+        function updateElectrons() {
+            if (electrons.length === 0) return;
+            
+            const C_crit = calculateCriticalCoherence();
+            const coherenceRatio = Math.min(coherence / C_crit, 1.0);
+            const noise = (1 - coherenceRatio) * (isExcited ? 0.5 : 0.2);
+            
+            for (let e of electrons) {
+                e.angle += e.omega * timeScale;
+                const radiusNoise = (Math.random() - 0.5) * noise * 30;
+                e.radius = e.baseRadius * (isExcited ? 1.4 : 1.0) + radiusNoise;
+            }
+        }
+
+        function renderWaveView(cx, cy) {
+            const C_crit = calculateCriticalCoherence();
+            const coherenceRatio = Math.min(coherence / C_crit, 1.0);
+            const elem = getElement(numElectrons);
+            
+            for (let shellIdx = 0; shellIdx < elem.shells.length; shellIdx++) {
+                const n = shellIdx + 1;
+                const numInShell = elem.shells[shellIdx];
+                const baseRadius = 60 + shellIdx * 70;
+                const radiusModulation = isExcited ? 1.4 : 1.0;
+                const radius = baseRadius * radiusModulation * (1 + (1-coherenceRatio) * 0.3);
+                
+                let r, g, b;
+                if (isExcited) {
+                    r = 255;
+                    g = 100 + coherenceRatio * 100;
+                    b = 50;
+                } else {
+                    r = 50 + (1-coherenceRatio) * 100;
+                    g = 150 + coherenceRatio * 50;
+                    b = 255;
+                }
+                
+                const baseAlpha = (0.12 + coherenceRatio * 0.20) * BRIGHTNESS_BOOST;
+                
+                if (shellIdx === 0) {
+                    renderSorbital(cx, cy, radius * 0.7, r, g, b, baseAlpha, coherenceRatio);
+                } else if (shellIdx === 1) {
+                    renderSorbital(cx, cy, radius * 0.8, r, g, b, baseAlpha * 0.6, coherenceRatio);
+                    if (numInShell > 2) {
+                        renderPorbitals(cx, cy, radius, r, g, b, baseAlpha * 0.9, coherenceRatio);
+                    }
+                } else {
+                    renderSorbital(cx, cy, radius, r, g, b, baseAlpha * 0.5, coherenceRatio);
+                    if (numInShell > 2) {
+                        renderPorbitals(cx, cy, radius * 1.05, r, g, b, baseAlpha * 0.7, coherenceRatio);
+                    }
+                }
+            }
+        }
+
+        function renderSorbital(cx, cy, radius, r, g, b, alpha, coherence) {
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+            grad.addColorStop(0, `rgba(${r},${g},${b},${Math.min(alpha * 1.1, 1)})`);
+            grad.addColorStop(0.6, `rgba(${r},${g},${b},${Math.min(alpha * 0.5, 1)})`);
+            grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function renderPorbitals(cx, cy, radius, r, g, b, alpha, coherence) {
+            const lobeLength = radius * 0.75;
+            const lobeWidth = radius * 0.35;
+            const angles = [0, Math.PI * 2/3, Math.PI * 4/3];
+            
+            for (let angle of angles) {
+                const wobble = Math.sin(systemTime * 0.002 * timeScale + angle) * 0.08;
+                const effectiveAngle = angle + wobble;
+                
+                for (let dir of [-1, 1]) {
+                    const lx = cx + Math.cos(effectiveAngle) * lobeLength * dir;
+                    const ly = cy + Math.sin(effectiveAngle) * lobeLength * dir;
+                    
+                    const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, lobeWidth);
+                    grad.addColorStop(0, `rgba(${r},${g},${b},${Math.min(alpha * 0.85, 1)})`);
+                    grad.addColorStop(0.7, `rgba(${r},${g},${b},${Math.min(alpha * 0.3, 1)})`);
+                    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, lobeWidth, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function renderParticleView(cx, cy) {
+            if (electrons.length === 0) return;
+            
+            for (let e of electrons) {
+                const x = cx + Math.cos(e.angle) * e.radius;
+                const y = cy + Math.sin(e.angle) * e.radius;
+                
+                let r, g, b;
+                if (isExcited) {
+                    r = 255;
+                    g = 120;
+                    b = 60;
+                } else {
+                    r = 100;
+                    g = 180;
+                    b = 255;
+                }
+                
+                const size = isExcited ? 6 : 5;
+                const glow = isExcited ? 25 : 20;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, glow);
+                grad.addColorStop(0, `rgba(${r},${g},${b},0.9)`);
+                grad.addColorStop(0.3, `rgba(${r},${g},${b},0.5)`);
+                grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, glow, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `rgb(${Math.min(255, r+50)},${Math.min(255, g+50)},${Math.min(255, b+50)})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function renderNucleus(cx, cy) {
+            const size = 18 + numElectrons * 0.25;
+            const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size);
+            grad.addColorStop(0, 'rgba(255,220,100,1)');
+            grad.addColorStop(0.6, 'rgba(255,180,80,0.9)');
+            grad.addColorStop(1, 'rgba(255,200,100,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = 'source-over';
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            const C_crit = calculateCriticalCoherence();
+            const coherenceRatio = Math.min(coherence / C_crit, 1.0);
+            const alpha = Math.tanh(coherenceRatio);
+            
+            if (viewMode === 'wave') {
+                renderWaveView(cx, cy);
+            } else if (viewMode === 'particle') {
+                renderParticleView(cx, cy);
+            } else if (viewMode === 'hybrid') {
+                ctx.globalAlpha = 1 - alpha;
+                renderWaveView(cx, cy);
+                ctx.globalAlpha = alpha;
+                renderParticleView(cx, cy);
+                ctx.globalAlpha = 1.0;
+            } else if (viewMode === 'both') {
+                ctx.globalAlpha = 0.7;
+                renderWaveView(cx, cy);
+                ctx.globalAlpha = 0.6;
+                renderParticleView(cx, cy);
+                ctx.globalAlpha = 1.0;
+            }
+            
+            renderNucleus(cx, cy);
+        }
+
+        function updateDisplays() {
+            const C_crit = calculateCriticalCoherence();
+            const coherenceRatio = Math.max(0, Math.min(coherence / C_crit, 1.0));
+            const boltzmann = Math.exp(Math.min(coherence / omega, 10));
+            const alpha = Math.tanh(coherenceRatio);
+            
+            document.getElementById('coherenceDisplay').textContent = coherence.toFixed(3);
+            document.getElementById('critDisplay').textContent = C_crit.toFixed(3);
+            document.getElementById('stateDisplay').textContent = isExcited ? 'Excited' : 'Ground';
+            document.getElementById('transitionDisplay').textContent = transitionCount;
+            document.getElementById('decayDisplay').textContent = decayCount;
+            document.getElementById('boltzmannDisplay').textContent = Math.min(boltzmann, 999).toFixed(2);
+            
+            document.getElementById('phaseStatus').textContent = 
+                coherenceRatio > 0.8 ? 'Critical' : coherenceRatio > 0.5 ? 'High' : 'Building';
+            document.getElementById('integralStatus').textContent = coherence.toFixed(3);
+            document.getElementById('deltaStatus').textContent = isExcited ? '1' : '0';
+            
+            document.getElementById('bindingStatus').textContent = calculateBindingEnergy().toFixed(2) + ' eV';
+            document.getElementById('definitionStatus').textContent = 
+                coherenceRatio > 0.7 ? 'Sharp' : coherenceRatio > 0.4 ? 'Moderate' : 'Diffuse';
+            document.getElementById('radiusStatus').textContent = 
+                (1.0 + (1-coherenceRatio) * (isExcited ? 0.6 : 0.25)).toFixed(2) + ' a₀';
+            
+            document.getElementById('stabilityStatus').textContent = 
+                isExcited ? 'Excited' : coherenceRatio > 0.8 ? 'Near Threshold' : 'Stable';
+            document.getElementById('excitationStatus').textContent = 
+                Math.floor((1 - coherenceRatio) * 100) + '%';
+            document.getElementById('alphaStatus').textContent = alpha.toFixed(2);
+        }
+
+        function updateSystem() {
+            systemTime++;
+            
+            updateCoherence();
+            checkTransition();
+            computeDecay();
+            updateElectrons();
+            
+            updateDisplays();
+            render();
+            
+            animationFrameId = requestAnimationFrame(updateSystem);
+        }
+
+        function toggleExplanation() {
+            const content = document.getElementById('explanationContent');
+            const icon = document.getElementById('expandIcon');
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(mode + 'Btn');
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        function setupControls() {
+            document.getElementById('omegaSlider').addEventListener('input', (e) => {
+                omega = parseFloat(e.target.value);
+                document.getElementById('omegaValue').textContent = omega.toFixed(3);
+            });
+            
+            document.getElementById('excitationSlider').addEventListener('input', (e) => {
+                excitationRate = parseFloat(e.target.value);
+                document.getElementById('excitationValue').textContent = excitationRate.toFixed(4);
+            });
+            
+            document.getElementById('electronSlider').addEventListener('input', (e) => {
+                numElectrons = parseInt(e.target.value);
+                document.getElementById('electronValue').textContent = numElectrons;
+                updateElementDisplay();
+                initializeElectrons();
+            });
+            
+            document.getElementById('timeSlider').addEventListener('input', (e) => {
+                timeScale = parseFloat(e.target.value);
+                document.getElementById('timeValue').textContent = timeScale.toFixed(1);
+            });
+        }
+
+        function triggerExcitation() {
+            if (!isExcited) {
+                isExcited = true;
+                coherence *= 0.15;
+                transitionCount++;
+            }
+        }
+
+        function stabilize() {
+            const C_target = calculateCriticalCoherence() * 0.7;
+            coherence = Math.min(C_target, coherence + 0.05);
+        }
+
+        function forceDecay() {
+            if (isExcited) {
+                coherence = calculateCriticalCoherence() * 0.6;
+                isExcited = false;
+                decayCount++;
+            }
+        }
+
+        function resetSystem() {
+            systemTime = 0;
+            coherence = 0;
+            isExcited = false;
+            transitionCount = 0;
+            decayCount = 0;
+            memoryBuffer = [];
+            initializeElectrons();
+        }
+
+        setupControls();
+        updateElementDisplay();
+        initializeElectrons();
+        console.log('CRR Atomic Physics Visualization Initialized');
+        updateSystem();
+    </script>
+</body>
+</html>

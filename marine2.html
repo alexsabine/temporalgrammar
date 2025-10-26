@@ -1,0 +1,2806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Ecosystem: Full CRR Implementation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+    }
+    
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px 30px;
+      border-bottom: 3px solid #34495e;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .math-explanation {
+      background: #ecf0f1;
+      border-bottom: 1px solid #bdc3c7;
+    }
+    
+    .math-toggle {
+      width: 100%;
+      padding: 15px 30px;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #2c3e50;
+      transition: background 0.2s;
+    }
+    
+    .math-toggle:hover {
+      background: #d5dbdb;
+    }
+    
+    .math-toggle-icon {
+      transition: transform 0.3s;
+    }
+    
+    .math-toggle-icon.open {
+      transform: rotate(180deg);
+    }
+    
+    .math-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    
+    .math-content.open {
+      max-height: 5000px;
+    }
+    
+    .math-inner {
+      padding: 20px 30px 30px;
+      font-size: 14px;
+    }
+    
+    .math-section {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: white;
+      border-radius: 6px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .math-section h3 {
+      font-size: 17px;
+      color: #2c3e50;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .math-section h4 {
+      font-size: 15px;
+      color: #34495e;
+      margin: 15px 0 10px 0;
+      font-weight: 600;
+    }
+    
+    .math-section p {
+      margin-bottom: 10px;
+      line-height: 1.7;
+    }
+    
+    .math-equation {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    
+    .implementation-note {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 12px 15px;
+      margin: 12px 0;
+      border-radius: 4px;
+    }
+    
+    .limitation-note {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+      padding: 12px 15px;
+      margin: 12px 0;
+      border-radius: 4px;
+    }
+    
+    .code-snippet {
+      background: #282c34;
+      color: #abb2bf;
+      padding: 12px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+    }
+    
+    .code-comment {
+      color: #5c6370;
+    }
+    
+    .canvas-container {
+      padding: 0;
+      background: #0d1b2a;
+      position: relative;
+      width: 100%;
+      height: 70vh;
+      min-height: 500px;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #1a3a52 0%, #0d1b2a 100%);
+      cursor: crosshair;
+    }
+    
+    .overlay-controls {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10;
+      max-height: calc(100% - 30px);
+      overflow-y: auto;
+      min-width: 220px;
+      transition: background 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+    
+    .overlay-controls:hover {
+      background: rgba(255, 255, 255, 0.8);
+    }
+    
+    .overlay-controls h4 {
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: #2c3e50;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+      transition: color 0.3s ease;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+    
+    .overlay-controls:hover h4 {
+      text-shadow: none;
+    }
+    
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .control-section-title {
+      font-size: 11px;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 4px 0;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    
+    .checkbox-item label {
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+    
+    .slider-group {
+      margin-top: 10px;
+    }
+    
+    .slider-item {
+      margin-bottom: 12px;
+    }
+    
+    .slider-label {
+      font-size: 12px;
+      color: #2c3e50;
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .slider-value {
+      font-weight: 600;
+      color: #3498db;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #d5dbdb;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #3498db;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #2980b9;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #3498db;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .controls {
+      padding: 20px 30px;
+      background: white;
+      border-top: 1px solid #ecf0f1;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn:hover {
+      background: #2980b9;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn.danger {
+      background: #e74c3c;
+    }
+    
+    .btn.danger:hover {
+      background: #c0392b;
+    }
+    
+    .btn.warning {
+      background: #f39c12;
+    }
+    
+    .btn.warning:hover {
+      background: #e67e22;
+    }
+    
+    .btn.secondary {
+      background: #95a5a6;
+    }
+    
+    .btn.secondary:hover {
+      background: #7f8c8d;
+    }
+    
+    .btn.active {
+      background: #27ae60;
+    }
+    
+    .btn.active:hover {
+      background: #229954;
+    }
+    
+    .metrics {
+      padding: 20px 30px;
+      background: #f8f9fa;
+      border-top: 1px solid #ecf0f1;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .metric-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .metric-label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    
+    .metric-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .metric-value.stress {
+      color: #e74c3c;
+    }
+    
+    .metric-value.good {
+      color: #27ae60;
+    }
+    
+    .metric-subtext {
+      font-size: 11px;
+      color: #95a5a6;
+      margin-top: 3px;
+    }
+    
+    .perf-indicator {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #0f0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 10;
+    }
+    
+    .warning-indicator {
+      position: absolute;
+      top: 50px;
+      left: 15px;
+      background: rgba(231, 76, 60, 0.9);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-family: -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 10;
+      max-width: 250px;
+      line-height: 1.4;
+      display: none;
+      border-left: 4px solid #c0392b;
+    }
+    
+    .warning-indicator.show {
+      display: block;
+    }
+    
+    .warning-indicator.caution {
+      background: rgba(243, 156, 18, 0.9);
+      border-left-color: #e67e22;
+    }
+    
+    @media (max-width: 768px) {
+      .header, .controls, .metrics, .math-inner {
+        padding: 15px;
+      }
+      
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .canvas-container {
+        height: 50vh;
+        min-height: 400px;
+      }
+      
+      .overlay-controls {
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+        font-size: 12px;
+        min-width: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Marine Ecosystem: Full CRR Implementation</h1>
+      <p>Coherence-Rupture-Regeneration Framework with Validated Memory</p>
+    </div>
+    
+    <div class="math-explanation">
+      <button class="math-toggle" id="mathToggle">
+        <span>CRR Mathematical Framework & Implementation</span>
+        <span class="math-toggle-icon" id="mathIcon">▼</span>
+      </button>
+      <div class="math-content" id="mathContent">
+        <div class="math-inner">
+          
+          <div class="math-section">
+            <h3>I. Canonical CRR Formalism</h3>
+            <p>The Coherence-Rupture-Regeneration framework describes systems that maintain identity through discontinuous transformations via three coupled operators:</p>
+            
+            <h4>1. Coherence Integration</h4>
+            <div class="math-equation">
+C(x,t) = ∫₀ᵗ L(x,τ) dτ
+            </div>
+            <p>where L(x,τ) is the memory density function measuring how environmental conditions and system state contribute to accumulated temporal structure at time τ.</p>
+            
+            <h4>2. Rupture Detection</h4>
+            <div class="math-equation">
+δ(t - t₀) when C(x,t) exceeds threshold or degradation detected
+            </div>
+            <p>Ruptures occur at discrete times {t₀, t₁, t₂, ...} with amplitudes ρᵢ(x) scaled by pre-rupture coherence.</p>
+            
+            <h4>3. Regeneration Operator</h4>
+            <div class="math-equation">
+R[χ](x,t) = ∫₀ᵗ K(t-τ) · φ(x,τ) · exp(C(τ)/Ω) · Θ(t-τ) dτ
+            </div>
+            <p>where:</p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><strong>K(t-τ)</strong>: Memory kernel (temporal weighting function)</li>
+              <li><strong>φ(x,τ)</strong>: Historical field signal (environmental state at time τ)</li>
+              <li><strong>C(τ)</strong>: Coherence at time τ (from history)</li>
+              <li><strong>Ω</strong>: System temperature parameter (normalization constant)</li>
+              <li><strong>Θ(t-τ)</strong>: Heaviside function ensuring causality (only past influences future)</li>
+            </ul>
+          </div>
+
+          <div class="math-section">
+            <h3>II. Implementation in This Simulation</h3>
+            
+            <h4>A. Coherence Integration (Coral Polyps)</h4>
+            <p>The memory density L is computed from multiple environmental factors:</p>
+            <div class="math-equation">
+L(x,t) = L_nutrition + L_stability + L_flow - L_stress
+
+L_nutrition = nutrientField[x] × 0.5
+L_stability = (1 - tempStress) × (1 - oxygenStress) × lightLevel × 0.3
+L_flow = min(1, flowSpeed × 5) × 0.2
+L_stress = crowding × 0.2
+            </div>
+            
+            <div class="code-snippet">
+// Discrete-time integration: C(t+Δt) = C(t) + L·Δt
+const L = nutritionTerm + stabilityTerm + flowBenefit - stressTerm;
+this.coherence += L;  <span class="code-comment">// Accumulates over time</span>
+            </div>
+            
+            <div class="implementation-note">
+              <strong>Implementation Detail:</strong> The coherence integral is approximated using Euler's method with timestep Δt = 1 frame. This discrete summation converges to the continuous integral as Δt → 0.
+            </div>
+
+            <h4>B. Historical Memory Storage</h4>
+            <p>To implement the full regeneration operator R[χ], the system maintains history buffers:</p>
+            <div class="code-snippet">
+<span class="code-comment">// Stored every 5 frames to balance memory vs. performance</span>
+this.coherenceHistory = [];  <span class="code-comment">// Array of {time, coherence}</span>
+this.fieldHistory = [];       <span class="code-comment">// Array of {time, nutrients, temp, flow, oxygen}</span>
+            </div>
+            <p>These buffers enable non-Markovian dynamics: future regeneration depends on the entire past trajectory, not just the current state.</p>
+
+            <h4>C. Rupture Detection</h4>
+            <div class="math-equation">
+Rupture triggered when: C(x,t) > Ω × ln(10) ≈ 2.3Ω
+            </div>
+            <div class="code-snippet">
+const RUPTURE_THRESHOLD = OMEGA * Math.log(10);
+
+if (this.coherence > RUPTURE_THRESHOLD && 
+    this.age - this.lastRuptureTime > 80) {  <span class="code-comment">// Refractory period</span>
+  this.rupture();
+}
+            </div>
+            <p>The refractory period prevents pathological rapid-fire ruptures, implementing a minimum timescale for reorganization.</p>
+
+            <h4>D. Validated Memory Regeneration</h4>
+            <p>The core CRR principle: regeneration draws on historically validated states (high C(τ)) rather than merely recent states.</p>
+            <div class="math-equation">
+R = ∑ τ∈history  K(t-τ) × φ_quality(τ) × exp(C(τ)/Ω)
+            </div>
+            <div class="code-snippet">
+<span class="code-comment">// Find best validated historical state</span>
+let regenerationPotential = 0;
+const tau_memory = 50;  <span class="code-comment">// Memory timescale parameter</span>
+
+for (let i = 0; i < this.fieldHistory.length; i++) {
+  const hist = this.fieldHistory[i];
+  const cohHist = this.coherenceHistory[i];
+  
+  <span class="code-comment">// Temporal kernel: K(t-τ) = exp(-(t-τ)/τ_memory)</span>
+  const dt = this.age - hist.time;
+  const kernel = Math.exp(-dt / tau_memory);
+  
+  <span class="code-comment">// Historical field quality: φ(x,τ)</span>
+  const fieldQuality = hist.nutrients * (1 - Math.abs(hist.temp - 26) / 10);
+  
+  <span class="code-comment">// Exponential coherence weighting: exp(C(τ)/Ω)</span>
+  const coherenceWeight = Math.exp(cohHist.coherence / this.omega);
+  
+  <span class="code-comment">// Integrate components</span>
+  regenerationPotential += kernel * fieldQuality * coherenceWeight;
+}
+
+<span class="code-comment">// Normalize and use for branching</span>
+regenerationPotential /= this.fieldHistory.length || 1;
+const numBranches = regenerationPotential > 1.5 ? 2 : 
+                    regenerationPotential > 0.5 ? 1 : 0;
+            </div>
+            
+            <div class="implementation-note">
+              <strong>Key Innovation:</strong> Child polyps inherit coherence weighted by exp(C(τ)/Ω) from validated historical periods, not just the parent's current state. This implements the "validated memory principle" from the theoretical framework.
+            </div>
+
+            <h4>E. Memory Preservation Through Rupture</h4>
+            <p>During severe stress (bleaching), the system demonstrates distributed memory encoding:</p>
+            <div class="code-snippet">
+<span class="code-comment">// Store pre-rupture coherence (distributed memory)</span>
+this.preStressCoherence = this.coherence;
+this.coherence *= 0.05;  <span class="code-comment">// Local rupture</span>
+this.bleached = true;
+
+<span class="code-comment">// Recovery uses stored historical validation</span>
+if (conditions_improve) {
+  const recoveryRate = Math.exp(this.preStressCoherence / this.omega) * 0.0015;
+  this.coherence += recoveryRate;  <span class="code-comment">// Regeneration from memory</span>
+}
+            </div>
+            <p>This demonstrates how the scalar coherence C(t) can reset locally (enabling plasticity) while the field structure {C(τ)}τ<t persists non-locally (maintaining identity).</p>
+          </div>
+
+          <div class="math-section">
+            <h3>III. Environmental Field Dynamics</h3>
+            
+            <h4>Navier-Stokes Inspired Fluid Flow</h4>
+            <div class="math-equation">
+∂u/∂t = -u·∇u - ∇p + ν∇²u + f_external
+            </div>
+            <p>Implemented via operator splitting: advection → diffusion → vorticity confinement</p>
+            
+            <h4>Coherence-Flow Coupling</h4>
+            <div class="math-equation">
+L(x,t) = L_intrinsic + κ_flow·|u(x)| + κ_temp·(T_opt - T(x))²
+            </div>
+            <p>Coral coherence directly modulates local current velocities, creating feedback between biological and physical processes.</p>
+          </div>
+
+          <div class="math-section">
+            <h3>IV. Performance Optimizations</h3>
+            <p>To maintain 60 FPS with full CRR dynamics, several computational strategies are employed:</p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><strong>History Sampling:</strong> Field states recorded every 5 frames (12 Hz) rather than every frame (60 Hz)</li>
+              <li><strong>Sliding Window:</strong> History buffers limited to 200 entries (~16 seconds) to bound memory usage</li>
+              <li><strong>Spatial Hashing:</strong> O(n) neighbor queries using grid-based spatial partitioning</li>
+              <li><strong>LOD System:</strong> Visual detail scales with coherence level (low/medium/high)</li>
+              <li><strong>Partial Updates:</strong> Coral children updated every 2 frames, not every frame</li>
+              <li><strong>Object Pooling:</strong> Plankton particles reused from fixed pool (zero garbage collection)</li>
+            </ul>
+          </div>
+
+          <div class="math-section">
+            <h3>V. Theoretical Limitations & Approximations</h3>
+            
+            <div class="limitation-note">
+              <strong>Limitation 1: Discretization Error</strong><br>
+              The continuous integral C(x) = ∫₀ᵗ L(x,τ) dτ is approximated by discrete summation. Error scales as O(Δt) = O(1/60 s). For slowly varying L, this is acceptable; for rapidly fluctuating L, higher-order integration schemes would be needed.
+            </div>
+            
+            <div class="limitation-note">
+              <strong>Limitation 2: Finite History Window</strong><br>
+              The theoretical formalism requires integration over all past time. Due to memory constraints, only the most recent ~16 seconds are stored. This truncates long-term memory effects beyond this horizon. A full implementation would use hierarchical temporal summarization or compression.
+            </div>
+            
+            <div class="limitation-note">
+              <strong>Limitation 3: Simplified Memory Kernel</strong><br>
+              The exponential kernel K(t-τ) = exp(-(t-τ)/τ_memory) is a simplification. The theoretical framework allows arbitrary kernel forms. More sophisticated kernels (power-law, oscillatory) could capture multi-scale temporal dependencies.
+            </div>
+            
+            <div class="limitation-note">
+              <strong>Limitation 4: Field Resolution</strong><br>
+              Environmental fields (temperature, nutrients, flow) are discretized on a coarse grid (20px cells). Fine-scale spatial gradients are lost. Higher spatial resolution would require O(n²) computational cost.
+            </div>
+            
+            <div class="implementation-note">
+              <strong>Engineering Trade-off:</strong> This implementation prioritizes real-time interactivity and visual clarity over perfect mathematical fidelity. The approximations made preserve the essential CRR structure—coherence accumulation, threshold-triggered rupture, and validated memory regeneration—while achieving 60 FPS performance on standard hardware.
+            </div>
+          </div>
+
+          <div class="math-section">
+            <h3>VI. Memory Signatures in the Simulation</h3>
+            <p>Different agents exhibit characteristic temporal patterns (memory signatures):</p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><strong>Coral (Fragile):</strong> Long coherence buildup → catastrophic bleaching → slow recovery</li>
+              <li><strong>Fish (Resilient):</strong> Moderate coherence with frequent small ruptures (predator encounters) → rapid reorganization</li>
+              <li><strong>Predator (Oscillatory):</strong> Hunting coherence builds and decays rhythmically with feeding cycles</li>
+              <li><strong>Ecosystem (Dialectical):</strong> Multiple coherence fields interfere, creating emergent collective patterns</li>
+            </ul>
+          </div>
+
+          <div class="math-section">
+            <h3>VII. Testable Predictions</h3>
+            <p>The CRR implementation generates empirically testable predictions:</p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li>Recovery rate after bleaching should scale as exp(C_pre/Ω), not linearly with time</li>
+              <li>Branching events should cluster around high historical coherence periods, not uniform distribution</li>
+              <li>Fish school cohesion should persist for time ~ τ_memory after predator departure</li>
+              <li>Ecosystem coherence should exhibit 1/f noise spectrum (scale-free temporal correlations)</li>
+            </ul>
+            <p>These predictions distinguish CRR from alternative models (Markovian dynamics, simple threshold systems, random walk models).</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    
+    <div class="canvas-container">
+      <canvas id="ocean"></canvas>
+      
+      <div class="perf-indicator" id="perfIndicator">
+        FPS: -- | Entities: --
+      </div>
+      
+      <div class="warning-indicator" id="warningIndicator"></div>
+      
+      <div class="overlay-controls">
+        <h4>Environmental Controls</h4>
+        
+        <div class="control-section">
+          <div class="control-section-title">Climate Parameters</div>
+          <div class="slider-group">
+            <div class="slider-item">
+              <div class="slider-label">
+                <span>Heat Level</span>
+                <span class="slider-value" id="heatValue">26°C</span>
+              </div>
+              <input type="range" id="heatSlider" min="24" max="34" step="0.5" value="26">
+              <div style="font-size: 10px; color: #2c3e50; margin-top: 4px; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8); transition: text-shadow 0.3s ease;">
+                <span style="color: #3498db;">24-28°C:</span> Optimal &nbsp;
+                <span style="color: #f39c12;">28-30°C:</span> Warm &nbsp;
+                <span style="color: #e74c3c;">30+°C:</span> Bleaching
+              </div>
+            </div>
+            <div class="slider-item">
+              <div class="slider-label">
+                <span>Current Strength</span>
+                <span class="slider-value" id="currentValue">1.0x</span>
+              </div>
+              <input type="range" id="currentSlider" min="0" max="3" step="0.1" value="1.0">
+              <div style="font-size: 10px; color: #2c3e50; margin-top: 4px; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8); transition: text-shadow 0.3s ease;">
+                <span style="color: #3498db;">0.5-1.5x:</span> Optimal &nbsp;
+                <span style="color: #f39c12;">1.5-2.0x:</span> Strong &nbsp;
+                <span style="color: #e74c3c;">2.0+x:</span> Extreme
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="control-section-title">Visualizations</div>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="showCurrents" onchange="toggleProcess('currents')">
+              <label for="showCurrents">Water Currents</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showTemp" onchange="toggleProcess('temperature')">
+              <label for="showTemp">Temperature Field</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showLight" onchange="toggleProcess('light')">
+              <label for="showLight">Light Penetration</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showPlankton" checked onchange="toggleProcess('plankton')">
+              <label for="showPlankton">Plankton Drift</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showCoherence" onchange="toggleProcess('coherence')">
+              <label for="showCoherence">Coherence Fields</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showConnections" onchange="toggleProcess('connections')">
+              <label for="showConnections">Social Networks</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="btn" onclick="addCoral()">Plant Coral</button>
+      <button class="btn" onclick="addFishSchool()">Add Fish School</button>
+      <button class="btn" onclick="addNutrients()">Add Nutrients</button>
+      <button class="btn danger" onclick="addPredator()">Release Predator</button>
+      <button class="btn secondary" onclick="resetEcosystem()">Reset Ecosystem</button>
+      <button class="btn secondary" id="soundBtn" onclick="toggleSound()">Enable Sound</button>
+    </div>
+    
+    <div class="metrics">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Coral Polyps</div>
+          <div class="metric-value" id="coralCount">0</div>
+          <div class="metric-subtext">Avg coherence: <span id="avgCoralC">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fish Population</div>
+          <div class="metric-value" id="fishCount">0</div>
+          <div class="metric-subtext">School coherence: <span id="schoolC">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Plankton Density</div>
+          <div class="metric-value" id="planktonCount">0</div>
+          <div class="metric-subtext">Active particles</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Water Temperature</div>
+          <div class="metric-value" id="waterTemp">26°C</div>
+          <div class="metric-subtext">Stratification: <span id="stratification">Low</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Flow Velocity</div>
+          <div class="metric-value" id="flowVelocity">0.5</div>
+          <div class="metric-subtext">m/s average</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ecosystem Coherence</div>
+          <div class="metric-value" id="ecoCoherence">0</div>
+          <div class="metric-subtext">Rupture events: <span id="ruptureCount">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const mathToggle = document.getElementById('mathToggle');
+  const mathContent = document.getElementById('mathContent');
+  const mathIcon = document.getElementById('mathIcon');
+  
+  mathToggle.addEventListener('click', () => {
+    mathContent.classList.toggle('open');
+    mathIcon.classList.toggle('open');
+  });
+  
+  // Environmental controls
+  const heatSlider = document.getElementById('heatSlider');
+  const currentSlider = document.getElementById('currentSlider');
+  const heatValue = document.getElementById('heatValue');
+  const currentValue = document.getElementById('currentValue');
+  
+  let targetTemp = 26;
+  let currentMultiplier = 1.0;
+  
+  heatSlider.addEventListener('input', (e) => {
+    targetTemp = parseFloat(e.target.value);
+    heatValue.textContent = targetTemp.toFixed(1) + '°C';
+    
+    // Visual warning for dangerous temperatures
+    if (targetTemp > 30) {
+      heatValue.style.color = '#e74c3c';
+      heatValue.style.fontWeight = 'bold';
+    } else if (targetTemp > 28) {
+      heatValue.style.color = '#f39c12';
+      heatValue.style.fontWeight = 'bold';
+    } else {
+      heatValue.style.color = '#3498db';
+      heatValue.style.fontWeight = '600';
+    }
+  });
+  
+  currentSlider.addEventListener('input', (e) => {
+    currentMultiplier = parseFloat(e.target.value);
+    currentValue.textContent = currentMultiplier.toFixed(1) + 'x';
+    
+    // Visual warning for extreme currents
+    if (currentMultiplier > 2.0) {
+      currentValue.style.color = '#e74c3c';
+      currentValue.style.fontWeight = 'bold';
+    } else if (currentMultiplier > 1.5) {
+      currentValue.style.color = '#f39c12';
+      currentValue.style.fontWeight = 'bold';
+    } else {
+      currentValue.style.color = '#3498db';
+      currentValue.style.fontWeight = '600';
+    }
+  });
+  
+  // Process toggles
+  let processToggles = {
+    currents: false,
+    temperature: false,
+    light: false,
+    plankton: true,
+    coherence: false,
+    connections: false
+  };
+  
+  window.toggleProcess = function(process) {
+    const checkbox = document.getElementById(`show${process.charAt(0).toUpperCase() + process.slice(1)}`);
+    if (checkbox) {
+      processToggles[process] = checkbox.checked;
+    }
+  };
+  
+  // Performance monitoring
+  let lastFrameTime = performance.now();
+  let frameCount = 0;
+  let fps = 60;
+  
+  function updatePerformance() {
+    const now = performance.now();
+    frameCount++;
+    
+    if (now - lastFrameTime >= 1000) {
+      fps = Math.round(frameCount * 1000 / (now - lastFrameTime));
+      frameCount = 0;
+      lastFrameTime = now;
+      
+      const totalEntities = coralPolyps.length + fishSchools.length + predators.length + activePlankton;
+      document.getElementById('perfIndicator').textContent = `FPS: ${fps} | Entities: ${totalEntities}`;
+    }
+  }
+  
+  function updateWarnings() {
+    const warningEl = document.getElementById('warningIndicator');
+    const warnings = [];
+    
+    // Check temperature
+    if (waterTemp > 32) {
+      warnings.push({
+        level: 'danger',
+        text: '⚠️ CRITICAL: Mass coral bleaching in progress'
+      });
+    } else if (waterTemp > 30) {
+      warnings.push({
+        level: 'danger',
+        text: '⚠️ HEAT STRESS: Coral bleaching likely'
+      });
+    } else if (waterTemp > 28) {
+      warnings.push({
+        level: 'caution',
+        text: '⚠️ Elevated temperature: Monitor coral health'
+      });
+    }
+    
+    // Check current strength
+    if (currentMultiplier > 2.5) {
+      warnings.push({
+        level: 'danger',
+        text: '⚠️ EXTREME CURRENTS: Ecosystem disruption'
+      });
+    } else if (currentMultiplier > 2.0) {
+      warnings.push({
+        level: 'caution',
+        text: '⚠️ Strong currents: Fish stress elevated'
+      });
+    }
+    
+    // Check coral health
+    const bleachedCount = coralPolyps.filter(c => c.bleached).length;
+    const bleachedPercent = coralPolyps.length > 0 ? (bleachedCount / coralPolyps.length) * 100 : 0;
+    
+    if (bleachedPercent > 50) {
+      warnings.push({
+        level: 'danger',
+        text: `⚠️ ${Math.round(bleachedPercent)}% coral bleached`
+      });
+    } else if (bleachedPercent > 25) {
+      warnings.push({
+        level: 'caution',
+        text: `⚠️ ${Math.round(bleachedPercent)}% coral bleached`
+      });
+    }
+    
+    // Display most severe warning
+    if (warnings.length > 0) {
+      const severest = warnings.find(w => w.level === 'danger') || warnings[0];
+      warningEl.textContent = severest.text;
+      warningEl.className = 'warning-indicator show';
+      if (severest.level === 'caution') {
+        warningEl.classList.add('caution');
+      }
+    } else {
+      warningEl.className = 'warning-indicator';
+    }
+  }
+  
+  // Audio system
+  let audioContext;
+  let soundEnabled = false;
+  let masterGain;
+  
+  function initAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.15;
+      masterGain.connect(audioContext.destination);
+      
+      const ambientOsc = audioContext.createOscillator();
+      const ambientGain = audioContext.createGain();
+      ambientOsc.type = 'sine';
+      ambientOsc.frequency.value = 45;
+      ambientGain.gain.value = 0.06;
+      
+      ambientOsc.connect(ambientGain);
+      ambientGain.connect(masterGain);
+      ambientOsc.start();
+      
+      const lfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+      lfo.frequency.value = 0.15;
+      lfoGain.gain.value = 4;
+      lfo.connect(lfoGain);
+      lfoGain.connect(ambientOsc.frequency);
+      lfo.start();
+    }
+  }
+  
+  function playSound(freq, duration, vol) {
+    if (!soundEnabled || !audioContext) return;
+    
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    
+    gain.gain.setValueAtTime(vol, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(masterGain);
+    
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + duration);
+  }
+  
+  window.toggleSound = function() {
+    const btn = document.getElementById('soundBtn');
+    if (!soundEnabled) {
+      initAudio();
+      soundEnabled = true;
+      btn.textContent = 'Disable Sound';
+      btn.classList.remove('secondary');
+      btn.classList.add('active');
+    } else {
+      soundEnabled = false;
+      btn.textContent = 'Enable Sound';
+      btn.classList.remove('active');
+      btn.classList.add('secondary');
+    }
+  };
+  
+  // Simulation
+  const canvas = document.getElementById('ocean');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  
+  let coralPolyps = [];
+  let fishSchools = [];
+  let predators = [];
+  
+  // Object pool for plankton
+  const PLANKTON_POOL_SIZE = 500;
+  let planktonPool = [];
+  let activePlankton = 0;
+  
+  // Typed arrays for fields - STAGGERED GRID for fluid dynamics
+  let nutrientField;
+  let velocityU;
+  let velocityV;
+  let pressure;
+  let temperatureField;
+  let oxygenField;
+  let vorticityField;
+  
+  let simulationTime = 0;
+  let waterTemp = 26;
+  let surfaceTemp = 26;
+  let bottomTemp = 24;
+  let totalRuptures = 0;
+  let ecosystemCoherence = 0;
+  let avgFlowSpeed = 0;
+  
+  const OMEGA = 50;
+  const RUPTURE_THRESHOLD = OMEGA * Math.log(10);
+  const MEMORY_TIMESCALE = 50;
+  const MAX_HISTORY_LENGTH = 200;
+  
+  // Coral stability safeguards
+  const MAX_COHERENCE = OMEGA * 3; // Prevent runaway coherence
+  const MAX_GENERATION = 10; // Limit growth depth
+  const MAX_CHILDREN_PER_PARENT = 8; // Prevent exponential explosion
+  const COHERENCE_DECAY_RATE = 0; // No decay - matches original
+  const MIN_BRANCH_SPACING = 15; // Minimum distance between polyps
+  
+  let gridSize = 20;
+  let gridWidth, gridHeight;
+  
+  // Spatial hash grid
+  class SpatialHash {
+    constructor(cellSize) {
+      this.cellSize = cellSize;
+      this.grid = new Map();
+    }
+    
+    clear() {
+      this.grid.clear();
+    }
+    
+    hash(x, y) {
+      const cellX = Math.floor(x / this.cellSize);
+      const cellY = Math.floor(y / this.cellSize);
+      return `${cellX},${cellY}`;
+    }
+    
+    insert(entity) {
+      const key = this.hash(entity.x, entity.y);
+      if (!this.grid.has(key)) {
+        this.grid.set(key, []);
+      }
+      this.grid.get(key).push(entity);
+    }
+    
+    queryRadius(x, y, radius) {
+      const results = [];
+      const cellRadius = Math.ceil(radius / this.cellSize);
+      const centerCellX = Math.floor(x / this.cellSize);
+      const centerCellY = Math.floor(y / this.cellSize);
+      
+      for (let dy = -cellRadius; dy <= cellRadius; dy++) {
+        for (let dx = -cellRadius; dx <= cellRadius; dx++) {
+          const key = `${centerCellX + dx},${centerCellY + dy}`;
+          const cell = this.grid.get(key);
+          if (cell) {
+            results.push(...cell);
+          }
+        }
+      }
+      return results;
+    }
+  }
+  
+  const spatialHash = new SpatialHash(60);
+  
+  // Plankton with object pooling
+  class Plankton {
+    constructor() {
+      this.reset(0, 0);
+    }
+    
+    reset(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 0.5;
+      this.vy = (Math.random() - 0.5) * 0.5;
+      this.size = 1 + Math.random() * 2;
+      this.energy = 1.0;
+      this.age = 0;
+      this.opacity = 0.3 + Math.random() * 0.4;
+      this.active = true;
+    }
+    
+    update() {
+      if (!this.active) return false;
+      
+      this.age++;
+      
+      const gridX = Math.floor(this.x / gridSize);
+      const gridY = Math.floor(this.y / gridSize);
+      
+      if (gridX >= 0 && gridX < gridWidth && gridY >= 0 && gridY < gridHeight) {
+        const idx = gridX + gridY * gridWidth;
+        
+        const u = velocityU[idx] || 0;
+        const v = velocityV[idx] || 0;
+        
+        this.vx += u * 0.4;
+        this.vy += v * 0.4;
+      }
+      
+      this.vx += (Math.random() - 0.5) * 0.1;
+      this.vy += (Math.random() - 0.5) * 0.1;
+      
+      this.vy -= 0.02;
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      this.vx *= 0.98;
+      this.vy *= 0.98;
+      
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
+      
+      this.energy -= 0.0002;
+      
+      if (this.energy <= 0) {
+        this.active = false;
+        activePlankton--;
+        return false;
+      }
+      return true;
+    }
+    
+    draw(ctx) {
+      if (!this.active) return;
+      ctx.fillStyle = `rgba(200, 255, 200, ${this.opacity * this.energy})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  function getPlankton(x, y) {
+    for (let p of planktonPool) {
+      if (!p.active) {
+        p.reset(x, y);
+        activePlankton++;
+        return p;
+      }
+    }
+    return null;
+  }
+  
+  function resizeCanvas() {
+    const container = canvas.parentElement;
+    width = container.clientWidth;
+    height = container.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    
+    gridWidth = Math.ceil(width / gridSize);
+    gridHeight = Math.ceil(height / gridSize);
+    
+    const fieldSize = gridWidth * gridHeight;
+    nutrientField = new Float32Array(fieldSize).fill(0.7);
+    velocityU = new Float32Array(fieldSize);
+    velocityV = new Float32Array(fieldSize);
+    pressure = new Float32Array(fieldSize);
+    temperatureField = new Float32Array(fieldSize).fill(26);
+    oxygenField = new Float32Array(fieldSize).fill(8.2);
+    vorticityField = new Float32Array(fieldSize);
+    
+    if (planktonPool.length === 0) {
+      for (let i = 0; i < PLANKTON_POOL_SIZE; i++) {
+        planktonPool.push(new Plankton());
+      }
+      
+      for (let i = 0; i < 300; i++) {
+        getPlankton(Math.random() * width, Math.random() * height);
+      }
+    }
+  }
+  
+  const LOD = {
+    HIGH: 2,
+    MEDIUM: 1,
+    LOW: 0
+  };
+  
+  function getLOD(coherence) {
+    if (coherence > 80) return LOD.HIGH;
+    if (coherence > 20) return LOD.MEDIUM;
+    return LOD.LOW;
+  }
+  
+  // Enhanced Coral with full CRR implementation
+  class CoralPolyp {
+    constructor(x, y, parent = null, species = 'branching') {
+      this.x = x;
+      this.y = y;
+      this.parent = parent;
+      this.children = [];
+      this.species = species;
+      this.size = 3 + Math.random() * 5;
+      this.health = 0.8 + Math.random() * 0.2;
+      this.age = 0;
+      this.generation = parent ? parent.generation + 1 : 0;
+      
+      this.coherence = 0;
+      this.omega = OMEGA * (0.8 + Math.random() * 0.4);
+      this.lastRuptureTime = 0;
+      this.bleached = false;
+      this.preStressCoherence = 0;
+      
+      // CRR ENHANCEMENT: History buffers for validated memory
+      this.coherenceHistory = [];
+      this.fieldHistory = [];
+      this.historySampleCounter = 0;
+      
+      this.color = this.getSpeciesColor();
+      this.feedingTentacles = [];
+      const tentacleCount = 8 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < tentacleCount; i++) {
+        this.feedingTentacles.push({
+          angle: (i / tentacleCount) * Math.PI * 2,
+          length: 4 + Math.random() * 6,
+          activity: 0
+        });
+      }
+      
+      this.pulsatePhase = Math.random() * Math.PI * 2;
+      this.lod = LOD.MEDIUM;
+      
+      this.lastGridUpdate = 0;
+      this.gridX = 0;
+      this.gridY = 0;
+      this.gridIdx = 0;
+    }
+    
+    getSpeciesColor() {
+      if (this.bleached) {
+        return { r: 220, g: 220, b: 215 };
+      }
+      
+      const colors = {
+        branching: { r: 255, g: 120, b: 80 },
+        table: { r: 255, g: 160, b: 180 },
+        brain: { r: 140, g: 90, b: 255 },
+        staghorn: { r: 255, g: 190, b: 60 },
+      };
+      const base = colors[this.species] || colors.branching;
+      const intensity = 0.4 + this.health * 0.6;
+      
+      return {
+        r: Math.floor(base.r * intensity),
+        g: Math.floor(base.g * intensity),
+        b: Math.floor(base.b * intensity)
+      };
+    }
+    
+    update() {
+      this.age++;
+      
+      // Safeguard: Check for numerical stability
+      if (!isFinite(this.coherence) || !isFinite(this.health)) {
+        this.coherence = 0;
+        this.health = 0.1;
+      }
+      
+      if (this.age - this.lastGridUpdate > 5) {
+        this.gridX = Math.floor(this.x / gridSize);
+        this.gridY = Math.floor(this.y / gridSize);
+        this.gridIdx = this.gridX + this.gridY * gridWidth;
+        this.lastGridUpdate = this.age;
+      }
+      
+      if (this.gridIdx >= 0 && this.gridIdx < nutrientField.length) {
+        const localNutrients = nutrientField[this.gridIdx];
+        const localTemp = temperatureField[this.gridIdx];
+        const localOxygen = oxygenField[this.gridIdx];
+        const flowSpeed = Math.hypot(velocityU[this.gridIdx], velocityV[this.gridIdx]);
+        
+        // CRR: Store historical states every 5 frames (balances memory vs performance)
+        this.historySampleCounter++;
+        if (this.historySampleCounter >= 5) {
+          this.historySampleCounter = 0;
+          
+          this.coherenceHistory.push({
+            time: this.age,
+            coherence: this.coherence
+          });
+          
+          this.fieldHistory.push({
+            time: this.age,
+            nutrients: localNutrients,
+            temp: localTemp,
+            flow: flowSpeed,
+            oxygen: localOxygen
+          });
+          
+          // Sliding window to limit memory usage
+          if (this.coherenceHistory.length > MAX_HISTORY_LENGTH) {
+            this.coherenceHistory.shift();
+            this.fieldHistory.shift();
+          }
+        }
+        
+        const nutritionTerm = localNutrients * 0.5;
+        const tempStress = Math.abs(localTemp - 26) * 0.3;
+        const oxygenStress = Math.max(0, 5 - localOxygen) * 0.2;
+        const flowBenefit = Math.min(1, flowSpeed * 5) * 0.2;
+        
+        const nearby = spatialHash.queryRadius(this.x, this.y, 35);
+        const crowding = Math.min(1, nearby.length / 6);
+        
+        const lightLevel = Math.exp(-1.5 * (this.y / height));
+        const stabilityTerm = (1 - tempStress) * (1 - oxygenStress) * lightLevel * 0.3;
+        const stressTerm = crowding * 0.2;
+        
+        // Heat stress rupture
+        if (localTemp > 30) {
+          const thermalStress = (localTemp - 30) * 0.06;
+          this.coherence -= thermalStress;
+          this.health -= thermalStress * 0.015;
+          
+          if (!this.bleached && Math.random() < 0.008) {
+            this.bleached = true;
+            this.preStressCoherence = this.coherence;
+            this.coherence *= 0.05;
+            totalRuptures++;
+            playSound(100 + Math.random() * 50, 0.4, 0.03);
+          }
+        } else if (this.bleached && localTemp < 28 && this.health > 0.3) {
+          // CRR: Recovery uses exponentially weighted historical coherence
+          const recoveryRate = Math.exp(this.preStressCoherence / this.omega) * 0.0015;
+          this.coherence += recoveryRate;
+          this.health += recoveryRate * 0.7;
+          
+          if (this.health > 0.6 && Math.random() < 0.003) {
+            this.bleached = false;
+          }
+        }
+        
+        // CRR: Coherence integration L(x,τ) dτ
+        const L = nutritionTerm + stabilityTerm + flowBenefit - stressTerm;
+        this.coherence += L;
+        
+        // Safeguard: Natural coherence decay to prevent indefinite accumulation
+        if (COHERENCE_DECAY_RATE > 0) {
+          this.coherence -= this.coherence * COHERENCE_DECAY_RATE;
+        }
+        
+        // Safeguard: Cap maximum coherence
+        this.coherence = Math.max(0, Math.min(MAX_COHERENCE, this.coherence));
+        
+        this.health += L * 0.0008;
+        
+        // Safeguard: Strict health bounds
+        this.health = Math.max(0.01, Math.min(1.0, this.health));
+        
+        // CRR: Rupture detection with additional safeguards
+        if (this.coherence > RUPTURE_THRESHOLD && 
+            this.age - this.lastRuptureTime > 80 &&
+            this.generation < MAX_GENERATION &&
+            this.children.length < MAX_CHILDREN_PER_PARENT &&
+            !this.bleached &&
+            coralPolyps.length < 300) { // Prevent population explosion
+          this.rupture();
+        }
+        
+        if (Math.random() < 0.02) {
+          this.feedNearbyPlankton();
+        }
+        
+        if (this.age % 5 === 0 && localNutrients > 0.5) {
+          nutrientField[this.gridIdx] = Math.max(0.1, localNutrients - 0.003);
+        }
+      }
+      
+      this.color = this.getSpeciesColor();
+      this.lod = getLOD(this.coherence);
+      
+      // Safeguard: Die if health too low
+      if (this.health < 0.05 && Math.random() < 0.02) {
+        this.die();
+      }
+      
+      if (this.age % 2 === 0) {
+        this.children.forEach(child => child.update());
+      }
+    }
+    
+    feedNearbyPlankton() {
+      const feedRadius = 15;
+      for (let p of planktonPool) {
+        if (!p.active) continue;
+        const dist = Math.hypot(this.x - p.x, this.y - p.y);
+        if (dist < feedRadius) {
+          p.active = false;
+          activePlankton--;
+          this.coherence += 0.5;
+          this.health = Math.min(1, this.health + 0.01);
+          this.feedingTentacles.forEach(t => t.activity = Math.min(1, t.activity + 0.3));
+          if (Math.random() < 0.2) playSound(1000 + Math.random() * 500, 0.15, 0.015);
+          break;
+        }
+      }
+    }
+    
+    // CRR: Full regeneration operator implementation
+    rupture() {
+      totalRuptures++;
+      this.lastRuptureTime = this.age;
+      
+      // Safeguard: Check if already at max children
+      if (this.children.length >= MAX_CHILDREN_PER_PARENT) {
+        this.coherence *= 0.35;
+        return;
+      }
+      
+      // CRR: Compute regeneration potential from validated historical memory
+      // R[χ] = ∫ K(t-τ) · φ(x,τ) · exp(C(τ)/Ω) · Θ(t-τ) dτ
+      let regenerationPotential = 0;
+      let normalization = 0;
+      
+      if (this.fieldHistory.length > 0) {
+        for (let i = 0; i < this.fieldHistory.length; i++) {
+          const hist = this.fieldHistory[i];
+          const cohHist = this.coherenceHistory[i];
+          
+          // Memory kernel: K(t-τ) = exp(-(t-τ)/τ_memory)
+          const dt = this.age - hist.time;
+          const kernel = Math.exp(-dt / MEMORY_TIMESCALE);
+          
+          // Historical field quality: φ(x,τ)
+          const tempDev = Math.abs(hist.temp - 26);
+          const fieldQuality = hist.nutrients * (1 - tempDev / 10) * hist.oxygen / 8.2;
+          
+          // Exponential coherence weighting: exp(C(τ)/Ω)
+          const coherenceWeight = Math.exp(cohHist.coherence / this.omega);
+          
+          // Integrate: K(t-τ) · φ(x,τ) · exp(C(τ)/Ω)
+          const contribution = kernel * fieldQuality * coherenceWeight;
+          regenerationPotential += contribution;
+          normalization += kernel;
+        }
+        
+        // Normalize by total kernel weight
+        if (normalization > 0) {
+          regenerationPotential /= normalization;
+        }
+      } else {
+        // Fallback if no history yet
+        regenerationPotential = Math.exp(this.coherence / this.omega);
+      }
+      
+      // Safeguard: Cap regeneration potential
+      regenerationPotential = Math.min(3.0, regenerationPotential);
+      
+      // Branch probability weighted by regeneration potential
+      const branchProbability = regenerationPotential;
+      let numBranches = branchProbability > 2.5 ? 2 : branchProbability > 0.8 ? 1 : 0;
+      
+      // Safeguard: Respect max children limit
+      numBranches = Math.min(numBranches, MAX_CHILDREN_PER_PARENT - this.children.length);
+      
+      let successfulBranches = 0;
+      let attempts = 0;
+      const maxAttempts = numBranches * 5; // Allow multiple attempts to find good spots
+      
+      while (successfulBranches < numBranches && attempts < maxAttempts) {
+        attempts++;
+        
+        let angle;
+        if (this.parent) {
+          const parentAngle = Math.atan2(this.y - this.parent.y, this.x - this.parent.x);
+          angle = parentAngle + (Math.random() - 0.5) * Math.PI / 2.5;
+        } else {
+          angle = Math.random() * Math.PI * 2;
+        }
+        
+        const distance = 12 + Math.random() * 12;
+        const newX = this.x + Math.cos(angle) * distance;
+        const newY = this.y + Math.sin(angle) * distance;
+        
+        // Safeguard: Check bounds with margin
+        if (newX < 20 || newX > width - 20 || newY < 20 || newY > height - 20) {
+          continue;
+        }
+        
+        // Safeguard: Check for overlaps with better spacing
+        const nearby = spatialHash.queryRadius(newX, newY, MIN_BRANCH_SPACING);
+        let overlaps = false;
+        for (let other of nearby) {
+          if (other instanceof CoralPolyp) {
+            const dist = Math.hypot(newX - other.x, newY - other.y);
+            if (dist < MIN_BRANCH_SPACING) {
+              overlaps = true;
+              break;
+            }
+          }
+        }
+        
+        if (!overlaps) {
+          const child = new CoralPolyp(newX, newY, this, this.species);
+          
+          // CRR: Child inherits coherence from validated memory, not just parent's current state
+          child.coherence = Math.min(regenerationPotential * 0.4, MAX_COHERENCE * 0.5);
+          
+          // CRR: Inherit relevant history (recent validated states)
+          if (this.fieldHistory.length > 0) {
+            const inheritLength = Math.min(50, this.fieldHistory.length);
+            child.fieldHistory = this.fieldHistory.slice(-inheritLength).map(h => ({...h}));
+            child.coherenceHistory = this.coherenceHistory.slice(-inheritLength).map(c => ({...c}));
+          }
+          
+          this.children.push(child);
+          coralPolyps.push(child);
+          successfulBranches++;
+        }
+      }
+      
+      // Rupture amplitude ρᵢ(x) - reduce parent coherence
+      this.coherence *= 0.35;
+      
+      if (successfulBranches > 0) {
+        playSound(300 + Math.random() * 200, 0.2, 0.02);
+      }
+    }
+    
+    die() {
+      const index = coralPolyps.indexOf(this);
+      if (index > -1) coralPolyps.splice(index, 1);
+      if (this.parent) {
+        const childIndex = this.parent.children.indexOf(this);
+        if (childIndex > -1) this.parent.children.splice(childIndex, 1);
+      }
+      
+      // Safeguard: Clean up children references
+      this.children = [];
+      this.coherenceHistory = [];
+      this.fieldHistory = [];
+    }
+    
+    draw(ctx) {
+      if (this.parent) {
+        const alpha = this.lod === LOD.LOW ? 0.4 : 0.6;
+        ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+        ctx.lineWidth = Math.max(0.5, this.size * 0.25);
+        ctx.beginPath();
+        ctx.moveTo(this.parent.x, this.parent.y);
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+      }
+      
+      ctx.save();
+      
+      const pulsate = this.lod === LOD.HIGH ? 1 + Math.sin(this.age * 0.08 + this.pulsatePhase) * 0.1 : 1;
+      const drawSize = this.size * pulsate;
+      
+      if (this.lod >= LOD.MEDIUM) {
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, drawSize);
+        gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 1)`);
+        gradient.addColorStop(0.7, `rgba(${this.color.r * 0.8}, ${this.color.g * 0.8}, ${this.color.b * 0.8}, 0.9)`);
+        gradient.addColorStop(1, `rgba(${this.color.r * 0.5}, ${this.color.g * 0.5}, ${this.color.b * 0.5}, 0.6)`);
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.8)`;
+      }
+      
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (this.lod === LOD.HIGH) {
+        ctx.lineWidth = 0.8;
+        this.feedingTentacles.forEach(t => {
+          if (t.activity > 0.05) {
+            const wavePhase = this.age * 0.1;
+            const endX = this.x + Math.cos(t.angle + Math.sin(wavePhase) * 0.3) * t.length * t.activity;
+            const endY = this.y + Math.sin(t.angle + Math.sin(wavePhase) * 0.3) * t.length * t.activity;
+            
+            ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${t.activity * 0.7})`;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+          }
+          t.activity = Math.max(0, t.activity - 0.04);
+        });
+      }
+      
+      ctx.restore();
+    }
+  }
+  
+  // Fish class with CRR
+  class Fish {
+    constructor(x, y, schoolId) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.schoolId = schoolId;
+      this.size = 2.5 + Math.random() * 2.5;
+      this.age = 0;
+      
+      this.coherence = 0;
+      this.omega = OMEGA * 0.6;
+      this.lastRuptureTime = 0;
+      this.fear = 0;
+      this.hunger = 0.5;
+      
+      this.color = this.getFishColor(schoolId);
+      this.trail = [];
+      this.swimPhase = Math.random() * Math.PI * 2;
+      this.lod = LOD.MEDIUM;
+    }
+    
+    getFishColor(schoolId) {
+      const colors = [
+        { r: 255, g: 140, b: 40 },
+        { r: 40, g: 140, b: 255 },
+        { r: 255, g: 210, b: 40 },
+        { r: 140, g: 90, b: 255 },
+        { r: 40, g: 255, b: 140 }
+      ];
+      return colors[schoolId % colors.length];
+    }
+    
+    update(allFish, predators, corals) {
+      this.age++;
+      this.hunger += 0.0005;
+      
+      const nearby = spatialHash.queryRadius(this.x, this.y, 65);
+      const flockForces = this.computeFlocking(nearby);
+      
+      const alignmentTerm = Math.hypot(flockForces.alignment.x, flockForces.alignment.y);
+      const cohesionTerm = Math.hypot(flockForces.cohesion.x, flockForces.cohesion.y);
+      const separationTerm = Math.hypot(flockForces.separation.x, flockForces.separation.y);
+      
+      // CRR: Coherence from flocking quality
+      const L = (alignmentTerm * 0.1 + cohesionTerm * 0.05 + separationTerm * 0.05) * (1 - this.fear);
+      this.coherence += L;
+      
+      const coherenceWeight = Math.tanh(this.coherence / this.omega);
+      this.vx += flockForces.separation.x * 0.15 * coherenceWeight;
+      this.vy += flockForces.separation.y * 0.15 * coherenceWeight;
+      this.vx += flockForces.alignment.x * 0.08 * coherenceWeight;
+      this.vy += flockForces.alignment.y * 0.08 * coherenceWeight;
+      this.vx += flockForces.cohesion.x * 0.005 * coherenceWeight;
+      this.vy += flockForces.cohesion.y * 0.005 * coherenceWeight;
+      
+      const gridX = Math.floor(this.x / gridSize);
+      const gridY = Math.floor(this.y / gridSize);
+      const gridIdx = gridX + gridY * gridWidth;
+      
+      if (gridIdx >= 0 && gridIdx < velocityU.length) {
+        this.vx += velocityU[gridIdx] * 0.1;
+        this.vy += velocityV[gridIdx] * 0.1;
+      }
+      
+      this.avoidPredators(predators);
+      this.avoidObstacles(corals);
+      
+      if (this.hunger > 0.7 && this.age % 10 === 0) {
+        this.seekFood();
+      }
+      
+      if (Math.random() < 0.008) {
+        this.vx += (Math.random() - 0.5) * 0.4;
+        this.vy += (Math.random() - 0.5) * 0.4;
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      const margin = 50;
+      const returnForce = 0.9;
+      
+      if (this.x < margin) {
+        this.vx += returnForce * (margin - this.x) / margin;
+        if (this.x < 0) { this.x = 0; this.vx = Math.abs(this.vx); }
+      }
+      if (this.x > width - margin) {
+        this.vx -= returnForce * (this.x - (width - margin)) / margin;
+        if (this.x > width) { this.x = width; this.vx = -Math.abs(this.vx); }
+      }
+      if (this.y < margin) {
+        this.vy += returnForce * (margin - this.y) / margin;
+        if (this.y < 0) { this.y = 0; this.vy = Math.abs(this.vy); }
+      }
+      if (this.y > height - margin) {
+        this.vy -= returnForce * (this.y - (height - margin)) / margin;
+        if (this.y > height) { this.y = height; this.vy = -Math.abs(this.vy); }
+      }
+      
+      const speed = Math.hypot(this.vx, this.vy);
+      const maxSpeed = this.fear > 0.5 ? 5.5 : 2.8;
+      if (speed > maxSpeed) {
+        this.vx = (this.vx / speed) * maxSpeed;
+        this.vy = (this.vy / speed) * maxSpeed;
+      }
+      
+      this.lod = getLOD(this.coherence);
+      if (this.lod >= LOD.MEDIUM) {
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 10) this.trail.shift();
+      } else {
+        this.trail = [];
+      }
+      
+      this.fear = Math.max(0, this.fear - 0.025);
+    }
+    
+    seekFood() {
+      for (let p of planktonPool) {
+        if (!p.active) continue;
+        const dist = Math.hypot(this.x - p.x, this.y - p.y);
+        if (dist < 60) {
+          const dx = p.x - this.x;
+          const dy = p.y - this.y;
+          this.vx += (dx / dist) * 0.2;
+          this.vy += (dy / dist) * 0.2;
+          
+          if (dist < 5) {
+            p.active = false;
+            activePlankton--;
+            this.hunger = Math.max(0, this.hunger - 0.2);
+            this.coherence += 0.3;
+            break;
+          }
+        }
+      }
+    }
+    
+    computeFlocking(nearby) {
+      let separation = { x: 0, y: 0 };
+      let alignment = { x: 0, y: 0 };
+      let cohesion = { x: 0, y: 0 };
+      let neighborCount = 0;
+      
+      for (let other of nearby) {
+        if (!(other instanceof Fish) || other === this || other.schoolId !== this.schoolId) continue;
+        
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const distSq = dx * dx + dy * dy;
+        const distance = Math.sqrt(distSq);
+        
+        if (distance < 65) {
+          if (distance < 20 && distance > 0) {
+            separation.x -= dx / distance;
+            separation.y -= dy / distance;
+          }
+          
+          alignment.x += other.vx;
+          alignment.y += other.vy;
+          cohesion.x += other.x;
+          cohesion.y += other.y;
+          neighborCount++;
+        }
+      }
+      
+      if (neighborCount > 0) {
+        alignment.x /= neighborCount;
+        alignment.y /= neighborCount;
+        alignment.x -= this.vx;
+        alignment.y -= this.vy;
+        
+        cohesion.x /= neighborCount;
+        cohesion.y /= neighborCount;
+        cohesion.x -= this.x;
+        cohesion.y -= this.y;
+      }
+      
+      return { separation, alignment, cohesion };
+    }
+    
+    avoidPredators(predators) {
+      for (let predator of predators) {
+        const dx = this.x - predator.x;
+        const dy = this.y - predator.y;
+        const distSq = dx * dx + dy * dy;
+        const distance = Math.sqrt(distSq);
+        
+        if (distance < 130) {
+          if (distance < 90 && this.age - this.lastRuptureTime > 50) {
+            this.rupture();
+          }
+          
+          this.fear = 1.0;
+          const avoidStrength = (130 - distance) / 130;
+          
+          // CRR: Escape boost from accumulated coherence
+          const escapeBoost = 1 + Math.exp(this.coherence / this.omega) * 0.6;
+          this.vx += (dx / distance) * avoidStrength * 1.4 * escapeBoost;
+          this.vy += (dy / distance) * avoidStrength * 1.4 * escapeBoost;
+          
+          if (Math.random() < 0.03) playSound(500 + Math.random() * 300, 0.08, 0.012);
+        }
+      }
+    }
+    
+    rupture() {
+      this.lastRuptureTime = this.age;
+      totalRuptures++;
+      this.coherence *= 0.18;
+    }
+    
+    avoidObstacles(corals) {
+      const nearby = spatialHash.queryRadius(this.x, this.y, 35);
+      for (let coral of nearby) {
+        if (!(coral instanceof CoralPolyp)) continue;
+        const dx = this.x - coral.x;
+        const dy = this.y - coral.y;
+        const distSq = dx * dx + dy * dy;
+        
+        if (distSq < 1225) {
+          const distance = Math.sqrt(distSq);
+          const avoidStrength = (35 - distance) / 35;
+          this.vx += (dx / distance) * avoidStrength * 0.5;
+          this.vy += (dy / distance) * avoidStrength * 0.5;
+        }
+      }
+    }
+    
+    draw(ctx) {
+      if (this.lod >= LOD.MEDIUM && this.trail.length > 1) {
+        for (let i = 0; i < this.trail.length - 1; i++) {
+          const alpha = (i / this.trail.length) * 0.3;
+          ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(this.trail[i].x, this.trail[i].y);
+          ctx.lineTo(this.trail[i + 1].x, this.trail[i + 1].y);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Math.atan2(this.vy, this.vx));
+      
+      const intensity = this.fear > 0.5 ? 1.4 : 1.0;
+      
+      if (this.lod >= LOD.MEDIUM) {
+        const bodyGradient = ctx.createLinearGradient(-this.size * 1.5, 0, this.size * 1.5, 0);
+        bodyGradient.addColorStop(0, `rgba(${this.color.r * 0.7 * intensity}, ${this.color.g * 0.7 * intensity}, ${this.color.b * 0.7 * intensity}, 0.95)`);
+        bodyGradient.addColorStop(0.5, `rgba(${this.color.r * intensity}, ${this.color.g * intensity}, ${this.color.b * intensity}, 0.95)`);
+        bodyGradient.addColorStop(1, `rgba(${this.color.r * 0.8 * intensity}, ${this.color.g * 0.8 * intensity}, ${this.color.b * 0.8 * intensity}, 0.95)`);
+        ctx.fillStyle = bodyGradient;
+      } else {
+        ctx.fillStyle = `rgba(${this.color.r * intensity}, ${this.color.g * intensity}, ${this.color.b * intensity}, 0.9)`;
+      }
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 1.7, this.size * 0.95, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (this.lod >= LOD.MEDIUM) {
+        const swimOffset = Math.sin(this.age * 0.15 + this.swimPhase) * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(-this.size * 1.7, 0);
+        ctx.lineTo(-this.size * 2.8 + swimOffset, -this.size * 1.0);
+        ctx.lineTo(-this.size * 2.8 + swimOffset, this.size * 1.0);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.beginPath();
+        ctx.arc(this.size * 0.5, -this.size * 0.4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.beginPath();
+        ctx.arc(this.size * 0.55, -this.size * 0.4, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.restore();
+    }
+  }
+  
+  // Predator class
+  class Predator {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.size = 20;
+      this.age = 0;
+      
+      this.huntCoherence = 0;
+      this.omega = OMEGA * 0.5;
+      this.lastKillTime = 0;
+      
+      this.huntingTarget = null;
+      this.energy = 1.0;
+      this.swimPhase = Math.random() * Math.PI * 2;
+    }
+    
+    update(fish) {
+      this.age++;
+      this.energy -= 0.0007;
+      
+      let nearestFish = null;
+      let nearestDistance = Infinity;
+      
+      const nearby = spatialHash.queryRadius(this.x, this.y, 160);
+      for (let f of nearby) {
+        if (!(f instanceof Fish)) continue;
+        const distance = Math.hypot(f.x - this.x, f.y - this.y);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestFish = f;
+        }
+      }
+      
+      if (nearestFish) {
+        this.huntingTarget = nearestFish;
+        
+        const trackingAccuracy = 1 / (1 + nearestDistance / 50);
+        const proximity = Math.max(0, 1 - nearestDistance / 160);
+        const L_hunt = trackingAccuracy * 0.5 + proximity * 0.5;
+        this.huntCoherence += L_hunt;
+        
+        const dx = nearestFish.x - this.x;
+        const dy = nearestFish.y - this.y;
+        
+        const pursuitStrength = 0.22 * (1 + Math.tanh(this.huntCoherence / this.omega));
+        this.vx += (dx / nearestDistance) * pursuitStrength;
+        this.vy += (dy / nearestDistance) * pursuitStrength;
+        
+        if (nearestDistance < this.size * 0.9) {
+          const strikeProbability = 1 - Math.exp(-this.huntCoherence / this.omega);
+          if (Math.random() < strikeProbability) {
+            const fishIndex = fish.indexOf(nearestFish);
+            if (fishIndex > -1) {
+              fish.splice(fishIndex, 1);
+              this.energy = Math.min(1.0, this.energy + 0.35);
+              this.lastKillTime = this.age;
+              this.huntCoherence *= 0.25;
+              totalRuptures++;
+              playSound(180 + Math.random() * 80, 0.25, 0.025);
+            }
+          }
+        }
+      } else {
+        this.huntingTarget = null;
+        this.huntCoherence *= 0.996;
+        
+        if (Math.random() < 0.018) {
+          this.vx += (Math.random() - 0.5) * 0.5;
+          this.vy += (Math.random() - 0.5) * 0.5;
+        }
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      const margin = 65;
+      if (this.x < margin) { this.vx += 0.6; if (this.x < 0) { this.x = 0; this.vx = Math.abs(this.vx); }}
+      if (this.x > width - margin) { this.vx -= 0.6; if (this.x > width) { this.x = width; this.vx = -Math.abs(this.vx); }}
+      if (this.y < margin) { this.vy += 0.6; if (this.y < 0) { this.y = 0; this.vy = Math.abs(this.vy); }}
+      if (this.y > height - margin) { this.vy -= 0.6; if (this.y > height) { this.y = height; this.vy = -Math.abs(this.vy); }}
+      
+      const speed = Math.hypot(this.vx, this.vy);
+      const maxSpeed = this.huntingTarget ? 4.5 : 2.8;
+      if (speed > maxSpeed) {
+        this.vx = (this.vx / speed) * maxSpeed;
+        this.vy = (this.vy / speed) * maxSpeed;
+      }
+      
+      if (this.energy < 0.03) {
+        const index = predators.indexOf(this);
+        if (index > -1) predators.splice(index, 1);
+      }
+    }
+    
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Math.atan2(this.vy, this.vx));
+      
+      const bodyGradient = ctx.createLinearGradient(0, -this.size/2, 0, this.size/2);
+      bodyGradient.addColorStop(0, 'rgba(55, 55, 60, 0.97)');
+      bodyGradient.addColorStop(0.5, 'rgba(85, 85, 90, 0.97)');
+      bodyGradient.addColorStop(1, 'rgba(105, 105, 110, 0.97)');
+      
+      ctx.fillStyle = bodyGradient;
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size, this.size * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      const tailWave = Math.sin(this.age * 0.12 + this.swimPhase) * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(-this.size, 0);
+      ctx.lineTo(-this.size * 1.6 + tailWave, -this.size * 0.5);
+      ctx.lineTo(-this.size * 1.6 + tailWave, this.size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.arc(this.size * 0.42, -this.size * 0.12, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.beginPath();
+      ctx.arc(this.size * 0.45, -this.size * 0.12, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+  }
+  
+  // Fluid dynamics
+  function updateFluidDynamics() {
+    const dt = 0.1;
+    const viscosity = 0.01;
+    
+    // Clamp current multiplier to safe simulation bounds
+    currentMultiplier = Math.max(0, Math.min(3.5, currentMultiplier));
+    
+    for (let i = 0; i < gridWidth; i++) {
+      for (let j = 0; j < gridHeight; j++) {
+        const idx = i + j * gridWidth;
+        const x = i * gridSize + gridSize / 2;
+        const y = j * gridSize + gridSize / 2;
+        
+        const baseU = currentMultiplier * Math.sin(j / gridHeight * Math.PI) * 0.5;
+        const baseV = currentMultiplier * Math.cos(i / gridWidth * Math.PI * 2) * 0.3;
+        
+        velocityU[idx] = velocityU[idx] * 0.95 + baseU * 0.05;
+        velocityV[idx] = velocityV[idx] * 0.95 + baseV * 0.05;
+        
+        const nearbyCoral = spatialHash.queryRadius(x, y, 100);
+        let totalDampening = 0;
+        
+        for (let coral of nearbyCoral) {
+          if (!(coral instanceof CoralPolyp)) continue;
+          const dx = x - coral.x;
+          const dy = y - coral.y;
+          const distSq = dx * dx + dy * dy;
+          const distance = Math.sqrt(distSq);
+          
+          if (distSq > 25 && distSq < 10000) {
+            const strength = (coral.coherence / OMEGA) * currentMultiplier * 0.5 / distSq;
+            velocityU[idx] += -dy * strength;
+            velocityV[idx] += dx * strength;
+          }
+          
+          if (distance < 50) {
+            const stabilizationStrength = coral.health * coral.size / 5;
+            const dampingFactor = stabilizationStrength * Math.exp(-distance / 25);
+            totalDampening += dampingFactor;
+          }
+        }
+        
+        if (totalDampening > 0) {
+          const dampingMultiplier = 1 / (1 + totalDampening * 0.15);
+          velocityU[idx] *= dampingMultiplier;
+          velocityV[idx] *= dampingMultiplier;
+        }
+        
+        const tempDiff = temperatureField[idx] - 26;
+        velocityV[idx] -= tempDiff * 0.01 * currentMultiplier;
+        
+        // Clamp velocity to prevent simulation instability
+        const maxVelocity = 5.0;
+        velocityU[idx] = Math.max(-maxVelocity, Math.min(maxVelocity, velocityU[idx]));
+        velocityV[idx] = Math.max(-maxVelocity, Math.min(maxVelocity, velocityV[idx]));
+      }
+    }
+    
+    for (let i = 1; i < gridWidth - 1; i++) {
+      for (let j = 1; j < gridHeight - 1; j++) {
+        const idx = i + j * gridWidth;
+        const idxRight = (i + 1) + j * gridWidth;
+        const idxLeft = (i - 1) + j * gridWidth;
+        const idxUp = i + (j - 1) * gridWidth;
+        const idxDown = i + (j + 1) * gridWidth;
+        
+        const dvdx = (velocityV[idxRight] - velocityV[idxLeft]) / (2 * gridSize);
+        const dudy = (velocityU[idxDown] - velocityU[idxUp]) / (2 * gridSize);
+        
+        vorticityField[idx] = dvdx - dudy;
+      }
+    }
+    
+    for (let i = 1; i < gridWidth - 1; i++) {
+      for (let j = 1; j < gridHeight - 1; j++) {
+        const idx = i + j * gridWidth;
+        const idxRight = (i + 1) + j * gridWidth;
+        const idxLeft = (i - 1) + j * gridWidth;
+        const idxUp = i + (j - 1) * gridWidth;
+        const idxDown = i + (j + 1) * gridWidth;
+        
+        const dwdx = (Math.abs(vorticityField[idxRight]) - Math.abs(vorticityField[idxLeft])) / (2 * gridSize);
+        const dwdy = (Math.abs(vorticityField[idxDown]) - Math.abs(vorticityField[idxUp])) / (2 * gridSize);
+        
+        const length = Math.sqrt(dwdx * dwdx + dwdy * dwdy) + 1e-5;
+        
+        const confinementStrength = 0.1 * currentMultiplier;
+        velocityU[idx] += confinementStrength * (dwdy / length) * vorticityField[idx] * dt;
+        velocityV[idx] += confinementStrength * (-dwdx / length) * vorticityField[idx] * dt;
+      }
+    }
+    
+    const diffusionRate = viscosity * dt;
+    for (let i = 1; i < gridWidth - 1; i++) {
+      for (let j = 1; j < gridHeight - 1; j++) {
+        const idx = i + j * gridWidth;
+        const idxRight = (i + 1) + j * gridWidth;
+        const idxLeft = (i - 1) + j * gridWidth;
+        const idxUp = i + (j - 1) * gridWidth;
+        const idxDown = i + (j + 1) * gridWidth;
+        
+        const lapU = velocityU[idxRight] + velocityU[idxLeft] + velocityU[idxUp] + velocityU[idxDown] - 4 * velocityU[idx];
+        const lapV = velocityV[idxRight] + velocityV[idxLeft] + velocityV[idxUp] + velocityV[idxDown] - 4 * velocityV[idx];
+        
+        velocityU[idx] += diffusionRate * lapU;
+        velocityV[idx] += diffusionRate * lapV;
+      }
+    }
+  }
+  
+  function updateTemperatureField() {
+    // Clamp target temperature to safe simulation bounds
+    targetTemp = Math.max(22, Math.min(36, targetTemp));
+    
+    for (let i = 0; i < gridWidth; i++) {
+      for (let j = 0; j < gridHeight; j++) {
+        const idx = i + j * gridWidth;
+        const depthFactor = j / gridHeight;
+        
+        const localTarget = targetTemp - (targetTemp - bottomTemp) * Math.pow(depthFactor, 1.5);
+        
+        temperatureField[idx] = temperatureField[idx] * 0.98 + localTarget * 0.02;
+        
+        const flowSpeed = Math.hypot(velocityU[idx], velocityV[idx]);
+        temperatureField[idx] += flowSpeed * (Math.random() - 0.5) * 0.05;
+        
+        // Clamp to physically reasonable bounds
+        temperatureField[idx] = Math.max(20, Math.min(38, temperatureField[idx]));
+      }
+    }
+    
+    waterTemp = waterTemp * 0.95 + targetTemp * 0.05;
+    surfaceTemp = targetTemp + 1;
+    bottomTemp = targetTemp - 2;
+  }
+  
+  function drawEnhancedCurrents(ctx) {
+    if (!processToggles.currents) return;
+    
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    
+    const streamStep = 3;
+    for (let i = 0; i < gridWidth; i += streamStep) {
+      for (let j = 0; j < gridHeight; j += streamStep) {
+        const idx = i + j * gridWidth;
+        const u = velocityU[idx];
+        const v = velocityV[idx];
+        const magnitude = Math.hypot(u, v);
+        
+        if (magnitude > 0.05) {
+          const x = i * gridSize + gridSize / 2;
+          const y = j * gridSize + gridSize / 2;
+          
+          const scale = Math.min(gridSize * 2, magnitude * 80);
+          const angle = Math.atan2(v, u);
+          
+          const endX = x + Math.cos(angle) * scale;
+          const endY = y + Math.sin(angle) * scale;
+          
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+          
+          const headLen = 6;
+          const headAngle = Math.PI / 6;
+          
+          ctx.beginPath();
+          ctx.moveTo(endX, endY);
+          ctx.lineTo(
+            endX - headLen * Math.cos(angle - headAngle),
+            endY - headLen * Math.sin(angle - headAngle)
+          );
+          ctx.moveTo(endX, endY);
+          ctx.lineTo(
+            endX - headLen * Math.cos(angle + headAngle),
+            endY - headLen * Math.sin(angle + headAngle)
+          );
+          ctx.stroke();
+        }
+      }
+    }
+    
+    for (let i = 0; i < gridWidth; i++) {
+      for (let j = 0; j < gridHeight; j++) {
+        const idx = i + j * gridWidth;
+        const speed = Math.hypot(velocityU[idx], velocityV[idx]);
+        
+        if (speed > 0.1) {
+          const x = i * gridSize;
+          const y = j * gridSize;
+          const intensity = Math.min(1, speed * 2);
+          
+          ctx.fillStyle = `rgba(100, 200, 255, ${intensity * 0.15})`;
+          ctx.fillRect(x, y, gridSize, gridSize);
+        }
+      }
+    }
+  }
+  
+  function drawTemperatureGradients(ctx) {
+    if (!processToggles.temperature) return;
+    
+    // Enhanced temperature field visualization with clearer gradients
+    for (let i = 0; i < gridWidth; i++) {
+      for (let j = 0; j < gridHeight; j++) {
+        const idx = i + j * gridWidth;
+        const temp = temperatureField[idx];
+        
+        // Map temperature to color with better contrast
+        // Blue (cold 24°C) -> Cyan -> Green -> Yellow -> Orange -> Red (hot 34°C)
+        const normalizedTemp = (temp - 24) / 10; // Range 24-34°C mapped to 0-1
+        
+        let r, g, b, alpha;
+        
+        if (normalizedTemp < 0.2) {
+          // Cold: Deep blue to cyan (24-26°C)
+          const t = normalizedTemp / 0.2;
+          r = Math.floor(0 + t * 100);
+          g = Math.floor(100 + t * 150);
+          b = 255;
+          alpha = 0.35;
+        } else if (normalizedTemp < 0.4) {
+          // Optimal: Cyan to green (26-28°C)
+          const t = (normalizedTemp - 0.2) / 0.2;
+          r = Math.floor(100 - t * 50);
+          g = 250;
+          b = Math.floor(255 - t * 155);
+          alpha = 0.3;
+        } else if (normalizedTemp < 0.6) {
+          // Warm: Green to yellow (28-30°C)
+          const t = (normalizedTemp - 0.4) / 0.2;
+          r = Math.floor(50 + t * 205);
+          g = 250;
+          b = Math.floor(100 - t * 100);
+          alpha = 0.4;
+        } else if (normalizedTemp < 0.8) {
+          // Hot: Yellow to orange (30-32°C)
+          const t = (normalizedTemp - 0.6) / 0.2;
+          r = 255;
+          g = Math.floor(250 - t * 95);
+          b = 0;
+          alpha = 0.5;
+        } else {
+          // Extreme: Orange to red (32-34°C)
+          const t = (normalizedTemp - 0.8) / 0.2;
+          r = 255;
+          g = Math.floor(155 - t * 155);
+          b = 0;
+          alpha = 0.6;
+        }
+        
+        const x = i * gridSize;
+        const y = j * gridSize;
+        
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.fillRect(x, y, gridSize, gridSize);
+      }
+    }
+    
+    // Draw temperature contour lines for key thresholds
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    
+    const contourLevels = [
+      { temp: 26, color: 'rgba(100, 200, 255, 0.6)', label: '26°C (Optimal)' },
+      { temp: 28, color: 'rgba(255, 255, 100, 0.6)', label: '28°C (Warm)' },
+      { temp: 30, color: 'rgba(255, 140, 0, 0.7)', label: '30°C (Stress)' },
+      { temp: 32, color: 'rgba(255, 50, 50, 0.8)', label: '32°C (Bleaching)' }
+    ];
+    
+    contourLevels.forEach(({ temp: level, color }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let j = 0; j < gridHeight - 1; j++) {
+        for (let i = 0; i < gridWidth - 1; i++) {
+          const idx = i + j * gridWidth;
+          const temp = temperatureField[idx];
+          const tempRight = temperatureField[idx + 1];
+          const tempDown = temperatureField[idx + gridWidth];
+          
+          // Horizontal contour crossing
+          if ((temp < level && tempRight >= level) || (temp >= level && tempRight < level)) {
+            const x = (i + 0.5 + (level - temp) / (tempRight - temp)) * gridSize;
+            const y = (j + 0.5) * gridSize;
+            
+            if (i === 0 || j % 3 === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          
+          // Vertical contour crossing
+          if ((temp < level && tempDown >= level) || (temp >= level && tempDown < level)) {
+            const x = (i + 0.5) * gridSize;
+            const y = (j + 0.5 + (level - temp) / (tempDown - temp)) * gridSize;
+            
+            if (j === 0 || i % 3 === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+        }
+      }
+      ctx.stroke();
+    });
+    
+    // Draw temperature legend in bottom-right corner
+    if (processToggles.temperature) {
+      const legendX = width - 160;
+      const legendY = height - 140;
+      const legendWidth = 140;
+      const legendHeight = 120;
+      
+      // Semi-transparent background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(legendX, legendY, legendWidth, legendHeight);
+      
+      // Title
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.fillText('Temperature', legendX + 10, legendY + 18);
+      
+      // Color scale
+      const gradientBarX = legendX + 10;
+      const gradientBarY = legendY + 30;
+      const gradientBarWidth = 20;
+      const gradientBarHeight = 70;
+      
+      const gradient = ctx.createLinearGradient(0, gradientBarY + gradientBarHeight, 0, gradientBarY);
+      gradient.addColorStop(0, 'rgb(0, 100, 255)');      // 24°C
+      gradient.addColorStop(0.2, 'rgb(100, 250, 255)');  // 26°C
+      gradient.addColorStop(0.4, 'rgb(50, 250, 100)');   // 28°C
+      gradient.addColorStop(0.6, 'rgb(255, 250, 0)');    // 30°C
+      gradient.addColorStop(0.8, 'rgb(255, 155, 0)');    // 32°C
+      gradient.addColorStop(1, 'rgb(255, 0, 0)');        // 34°C
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(gradientBarX, gradientBarY, gradientBarWidth, gradientBarHeight);
+      
+      // Border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(gradientBarX, gradientBarY, gradientBarWidth, gradientBarHeight);
+      
+      // Labels
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillText('34°C', gradientBarX + gradientBarWidth + 8, gradientBarY + 5);
+      ctx.fillText('30°C', gradientBarX + gradientBarWidth + 8, gradientBarY + gradientBarHeight * 0.4 + 3);
+      ctx.fillText('26°C', gradientBarX + gradientBarWidth + 8, gradientBarY + gradientBarHeight * 0.8 + 3);
+      ctx.fillText('24°C', gradientBarX + gradientBarWidth + 8, gradientBarY + gradientBarHeight + 3);
+      
+      // Status indicators
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(100, 250, 255, 0.9)';
+      ctx.fillText('← Optimal', gradientBarX + gradientBarWidth + 45, gradientBarY + gradientBarHeight * 0.8 + 3);
+      ctx.fillStyle = 'rgba(255, 155, 0, 0.9)';
+      ctx.fillText('← Stress', gradientBarX + gradientBarWidth + 45, gradientBarY + gradientBarHeight * 0.4 + 3);
+    }
+  }
+  
+  function drawEnvironmentalProcesses(ctx) {
+    drawEnhancedCurrents(ctx);
+    drawTemperatureGradients(ctx);
+    
+    if (processToggles.light) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, 'rgba(255, 255, 200, 0.2)');
+      gradient.addColorStop(0.3, 'rgba(255, 255, 150, 0.1)');
+      gradient.addColorStop(1, 'rgba(100, 100, 150, 0.05)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+    
+    if (processToggles.plankton) {
+      for (let p of planktonPool) {
+        if (p.active) p.draw(ctx);
+      }
+    }
+    
+    if (processToggles.coherence) {
+      coralPolyps.forEach(coral => {
+        if (coral.coherence < 10) return;
+        const radius = coral.coherence / 4;
+        const gradient = ctx.createRadialGradient(coral.x, coral.y, 0, coral.x, coral.y, radius);
+        gradient.addColorStop(0, `rgba(255, 200, 100, ${0.3 * coral.coherence / OMEGA})`);
+        gradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(coral.x, coral.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      fishSchools.forEach(fish => {
+        if (fish.coherence < 10) return;
+        const radius = fish.coherence / 8;
+        const gradient = ctx.createRadialGradient(fish.x, fish.y, 0, fish.x, fish.y, radius);
+        gradient.addColorStop(0, `rgba(100, 200, 255, ${0.3 * fish.coherence / OMEGA})`);
+        gradient.addColorStop(1, 'rgba(100, 200, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(fish.x, fish.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    if (processToggles.connections) {
+      ctx.strokeStyle = 'rgba(200, 200, 255, 0.08)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      fishSchools.forEach(fish => {
+        const nearby = spatialHash.queryRadius(fish.x, fish.y, 65);
+        for (let other of nearby) {
+          if (!(other instanceof Fish) || other === fish || other.schoolId !== fish.schoolId) continue;
+          ctx.moveTo(fish.x, fish.y);
+          ctx.lineTo(other.x, other.y);
+        }
+      });
+      ctx.stroke();
+    }
+  }
+  
+  function calculateEcosystemCoherence() {
+    let totalC = 0;
+    coralPolyps.forEach(c => totalC += c.coherence);
+    fishSchools.forEach(f => totalC += f.coherence);
+    predators.forEach(p => totalC += p.huntCoherence);
+    return totalC;
+  }
+  
+  function updateMetrics() {
+    document.getElementById('coralCount').textContent = coralPolyps.length;
+    document.getElementById('fishCount').textContent = fishSchools.length;
+    document.getElementById('planktonCount').textContent = activePlankton;
+    
+    const tempEl = document.getElementById('waterTemp');
+    tempEl.textContent = waterTemp.toFixed(1) + '°C';
+    tempEl.className = 'metric-value';
+    if (waterTemp > 30) {
+      tempEl.classList.add('stress');
+    } else if (waterTemp >= 24 && waterTemp <= 28) {
+      tempEl.classList.add('good');
+    }
+    
+    const stratification = Math.abs(surfaceTemp - bottomTemp);
+    document.getElementById('stratification').textContent = 
+      stratification > 3 ? 'High' : stratification > 1.5 ? 'Medium' : 'Low';
+    
+    const flowEl = document.getElementById('flowVelocity');
+    flowEl.textContent = avgFlowSpeed.toFixed(2);
+    
+    document.getElementById('ruptureCount').textContent = totalRuptures;
+    
+    const avgCoralC = coralPolyps.length > 0 
+      ? (coralPolyps.reduce((sum, c) => sum + c.coherence, 0) / coralPolyps.length).toFixed(1)
+      : 0;
+    document.getElementById('avgCoralC').textContent = avgCoralC;
+    
+    const schoolC = fishSchools.length > 0
+      ? (fishSchools.reduce((sum, f) => sum + f.coherence, 0) / fishSchools.length).toFixed(1)
+      : 0;
+    document.getElementById('schoolC').textContent = schoolC;
+    
+    ecosystemCoherence = calculateEcosystemCoherence();
+    document.getElementById('ecoCoherence').textContent = ecosystemCoherence.toFixed(0);
+  }
+  
+  function animate() {
+    updateTemperatureField();
+    
+    if (simulationTime % 2 === 0) {
+      updateFluidDynamics();
+    }
+    
+    let totalSpeed = 0;
+    for (let i = 0; i < velocityU.length; i++) {
+      totalSpeed += Math.hypot(velocityU[i], velocityV[i]);
+    }
+    avgFlowSpeed = totalSpeed / velocityU.length;
+    
+    const backgroundGradient = ctx.createLinearGradient(0, 0, 0, height);
+    backgroundGradient.addColorStop(0, '#1a3a52');
+    backgroundGradient.addColorStop(0.65, '#15304a');
+    backgroundGradient.addColorStop(1, '#0d1b2a');
+    ctx.fillStyle = backgroundGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < 7; i++) {
+      const x = (i + 1) * width / 8 + Math.sin(simulationTime * 0.018 + i * 0.5) * 25;
+      const curve = Math.cos(simulationTime * 0.025 + i * 0.3) * 15;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.quadraticCurveTo(x + curve, height / 2, x + 70, height);
+      ctx.stroke();
+    }
+    
+    drawEnvironmentalProcesses(ctx);
+    
+    spatialHash.clear();
+    coralPolyps.forEach(c => spatialHash.insert(c));
+    fishSchools.forEach(f => spatialHash.insert(f));
+    predators.forEach(p => spatialHash.insert(p));
+    
+    coralPolyps.forEach(polyp => {
+      polyp.update();
+      polyp.draw(ctx);
+    });
+    
+    fishSchools.forEach(fish => {
+      fish.update(fishSchools, predators, coralPolyps);
+      fish.draw(ctx);
+    });
+    
+    predators.forEach(predator => {
+      predator.update(fishSchools);
+      predator.draw(ctx);
+    });
+    
+    for (let p of planktonPool) {
+      if (p.active) p.update();
+    }
+    
+    if (activePlankton < 300 && Math.random() < 0.08) {
+      getPlankton(
+        Math.random() * width,
+        height * 0.2 + Math.random() * height * 0.3
+      );
+    }
+    
+    if (simulationTime % 10 === 0) {
+      for (let i = 0; i < nutrientField.length; i++) {
+        nutrientField[i] = Math.min(1.0, nutrientField[i] + 0.002);
+        if (Math.random() < 0.0015) {
+          nutrientField[i] = Math.min(1.0, nutrientField[i] + 0.12);
+        }
+      }
+    }
+    
+    if (simulationTime % 60 === 0) {
+      updateMetrics();
+      updateWarnings();
+    }
+    
+    // Safeguard: Periodic stability check every 10 seconds
+    if (simulationTime % 600 === 0) {
+      // Remove any coral with invalid state
+      coralPolyps = coralPolyps.filter(c => {
+        if (!isFinite(c.x) || !isFinite(c.y) || !isFinite(c.coherence) || !isFinite(c.health)) {
+          return false;
+        }
+        if (c.x < 0 || c.x > width || c.y < 0 || c.y > height) {
+          return false;
+        }
+        return true;
+      });
+      
+      // Limit total population if exploding
+      if (coralPolyps.length > 500) {
+        // Remove the oldest, least healthy coral
+        coralPolyps.sort((a, b) => (a.health + a.coherence/100) - (b.health + b.coherence/100));
+        coralPolyps = coralPolyps.slice(Math.floor(coralPolyps.length * 0.2));
+      }
+    }
+    
+    simulationTime++;
+    updatePerformance();
+    requestAnimationFrame(animate);
+  }
+  
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (width / rect.width);
+    const y = (e.clientY - rect.top) * (height / rect.height);
+    
+    const gridX = Math.floor(x / gridSize);
+    const gridY = Math.floor(y / gridSize);
+    const radius = 2;
+    
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const gx = gridX + dx;
+        const gy = gridY + dy;
+        if (gx >= 0 && gx < gridWidth && gy >= 0 && gy < gridHeight) {
+          const idx = gx + gy * gridWidth;
+          if (idx < nutrientField.length) {
+            nutrientField[idx] = Math.min(1.0, nutrientField[idx] + 0.5);
+          }
+        }
+      }
+    }
+    
+    for (let i = 0; i < 10; i++) {
+      getPlankton(
+        x + (Math.random() - 0.5) * 30,
+        y + (Math.random() - 0.5) * 30
+      );
+    }
+    
+    playSound(1100 + Math.random() * 400, 0.15, 0.015);
+  });
+  
+  window.addCoral = function() {
+    const x = 40 + Math.random() * (width - 80);
+    const y = 40 + Math.random() * (height - 80);
+    const species = ['branching', 'table', 'brain', 'staghorn'][Math.floor(Math.random() * 4)];
+    coralPolyps.push(new CoralPolyp(x, y, null, species));
+    playSound(400, 0.12, 0.018);
+  };
+  
+  window.addFishSchool = function() {
+    const schoolSize = 12 + Math.floor(Math.random() * 16);
+    const centerX = 50 + Math.random() * (width - 100);
+    const centerY = 50 + Math.random() * (height - 100);
+    const schoolId = Math.floor(Math.random() * 5);
+    
+    for (let i = 0; i < schoolSize; i++) {
+      const fish = new Fish(
+        centerX + (Math.random() - 0.5) * 60,
+        centerY + (Math.random() - 0.5) * 60,
+        schoolId
+      );
+      fishSchools.push(fish);
+    }
+    playSound(600, 0.1, 0.015);
+  };
+  
+  window.addPredator = function() {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    predators.push(new Predator(x, y));
+    playSound(200, 0.3, 0.025);
+  };
+  
+  window.addNutrients = function() {
+    for (let i = 0; i < nutrientField.length; i++) {
+      if (Math.random() < 0.45) {
+        nutrientField[i] = Math.min(1.0, nutrientField[i] + 0.6);
+      }
+    }
+    
+    for (let i = 0; i < 50; i++) {
+      getPlankton(
+        Math.random() * width,
+        Math.random() * height * 0.4
+      );
+    }
+    
+    playSound(1000, 0.2, 0.02);
+  };
+  
+  window.resetEcosystem = function() {
+    coralPolyps = [];
+    fishSchools = [];
+    predators = [];
+    
+    for (let p of planktonPool) {
+      p.active = false;
+    }
+    activePlankton = 0;
+    
+    simulationTime = 0;
+    waterTemp = 26;
+    surfaceTemp = 26;
+    bottomTemp = 24;
+    targetTemp = 26;
+    totalRuptures = 0;
+    ecosystemCoherence = 0;
+    
+    heatSlider.value = 26;
+    heatValue.textContent = '26°C';
+    currentSlider.value = 1.0;
+    currentValue.textContent = '1.0x';
+    currentMultiplier = 1.0;
+    
+    nutrientField.fill(0.7);
+    velocityU.fill(0);
+    velocityV.fill(0);
+    pressure.fill(0);
+    temperatureField.fill(26);
+    oxygenField.fill(8.2);
+    vorticityField.fill(0);
+    
+    for (let i = 0; i < 12; i++) addCoral();
+    for (let i = 0; i < 5; i++) addFishSchool();
+    
+    for (let i = 0; i < 300; i++) {
+      getPlankton(
+        Math.random() * width,
+        Math.random() * height
+      );
+    }
+  };
+  
+  resizeCanvas();
+  resetEcosystem();
+  
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+  
+  animate();
+})();
+</script>
+</body>
+</html>

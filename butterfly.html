@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Butterfly Metamorphosis - Coherence Rupture Regeneration Framework</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .main-container {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: #666666;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .equation-banner {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            font-family: 'Georgia', monospace;
+            font-size: 0.95rem;
+            color: #495057;
+            margin-bottom: 30px;
+        }
+
+        .crr-status {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid #2563eb;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: left;
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .crr-status.coherence {
+            border-color: #059669;
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.03) 0%, rgba(16, 185, 129, 0.05) 100%);
+        }
+
+        .crr-status.rupture {
+            border-color: #dc2626;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.03) 0%, rgba(239, 68, 68, 0.05) 100%);
+        }
+
+        .crr-status.regeneration {
+            border-color: #7c3aed;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.03) 0%, rgba(139, 92, 246, 0.05) 100%);
+        }
+
+        .current-phase {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            color: #2563eb;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .crr-status.coherence .current-phase { color: #059669; }
+        .crr-status.rupture .current-phase { color: #dc2626; }
+        .crr-status.regeneration .current-phase { color: #7c3aed; }
+
+        .phase-description {
+            font-size: 0.9rem;
+            color: #666666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .code-snippet {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            border-left: 4px solid #2563eb;
+        }
+
+        .crr-status.coherence .code-snippet { border-left-color: #059669; }
+        .crr-status.rupture .code-snippet { border-left-color: #dc2626; }
+        .crr-status.regeneration .code-snippet { border-left-color: #7c3aed; }
+
+        .code-comment {
+            color: #94a3b8;
+        }
+
+        .code-function {
+            color: #fbbf24;
+        }
+
+        .code-variable {
+            color: #34d399;
+        }
+
+        .code-operator {
+            color: #f472b6;
+        }
+
+        .simulation-area {
+            position: relative;
+            width: 100%;
+            height: 650px;
+            background: radial-gradient(circle at center, #0a1a0f 0%, #051008 100%);
+            border: 2px solid #e5e5e5;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #f9fafb;
+            border-color: #2563eb;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .control-panel h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+
+        .slider-value {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .metrics-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .metric-card h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .metric-label {
+            color: #6c757d;
+        }
+
+        .metric-value {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .system-legend {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>CRR Butterfly Metamorphosis</h1>
+            <div class="subtitle">Coherence • Rupture • Regeneration Framework</div>
+        </div>
+
+        <div class="equation-banner">
+            CRR Core Operators: C(x,t) = ∫₀ᵗ L(x,τ) dτ • R_δ[ψ](x,t) = δ(t-t₀) • R[χ](x,t) = ∫₋∞ᵗ φ(x,τ) e^(C(x,τ)/Ω) dτ
+        </div>
+
+        <div class="crr-status coherence" id="crr-status">
+            <div class="current-phase" id="current-crr-phase">Coherence Phase: C(x,t) = ∫₀ᵗ L(x,τ) dτ</div>
+            <div class="phase-description" id="crr-description">Biological coherence building through embryonic development and memory accumulation</div>
+            <div class="code-snippet" id="code-snippet">
+<span class="code-comment">// UCF Coherence Function: C(x,t) = ∫₀ᵗ L(x,τ) dτ</span>
+<span class="code-function">updateCoherence</span>(<span class="code-variable">deltaTime</span>) {
+    <span class="code-variable">this.L</span> <span class="code-operator">=</span> Math.<span class="code-function">min</span>(<span class="code-variable">0.4</span>, <span class="code-variable">this.L</span> <span class="code-operator">+</span> <span class="code-variable">this.calculateMemoryDensity()</span> <span class="code-operator">*</span> <span class="code-variable">deltaTime</span>);
+    <span class="code-variable">this.C</span> <span class="code-operator">+=</span> <span class="code-variable">coherenceGrowth</span> <span class="code-operator">*</span> <span class="code-variable">deltaTime</span>;
+}
+            </div>
+        </div>
+
+        <div class="system-legend">
+            <h3 style="margin-bottom: 12px; font-size: 0.9rem; color: #495057;">Biological Components</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #b4dc94, #8bc34a);"></div>
+                    <span>Embryonic Cells</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #508c3c, #8bc34a);"></div>
+                    <span>Larval Form</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #654321, #8b4513);"></div>
+                    <span>Pupal Casing</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4);"></div>
+                    <span>Adult Wings</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #654321, #8b7355);"></div>
+                    <span>Tree Branches</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(45deg, #4a7c59, #7cb342);"></div>
+                    <span>Living Foliage</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="canvas" width="1000" height="650"></canvas>
+        </div>
+
+        <div class="button-row">
+            <button class="control-btn" id="start-btn">Start Evolution</button>
+            <button class="control-btn" id="add-embryo-btn">+ Add Embryo</button>
+            <button class="control-btn" id="trigger-rupture-btn">Force Metamorphosis</button>
+            <button class="control-btn" id="reset-btn">Reset Ecosystem</button>
+        </div>
+
+        <div class="controls-section">
+            <div class="control-panel">
+                <h3>Developmental System</h3>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Evolution Speed</span>
+                        <span class="slider-value" id="speed-val">1.0x</span>
+                    </div>
+                    <input type="range" id="evolution-speed" min="0.5" max="3.0" step="0.1" value="1.0">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Coherence Rate</span>
+                        <span class="slider-value" id="coherence-rate-val">0.15</span>
+                    </div>
+                    <input type="range" id="coherence-rate" min="0.05" max="0.4" step="0.01" value="0.15">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Memory Density</span>
+                        <span class="slider-value" id="memory-density-val">0.25</span>
+                    </div>
+                    <input type="range" id="memory-density" min="0.1" max="0.5" step="0.05" value="0.25">
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="show-coherence">
+                    <label>Show Coherence Fields</label>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Metamorphosis Control</h3>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Rupture Threshold</span>
+                        <span class="slider-value" id="rupture-threshold-val">0.55</span>
+                    </div>
+                    <input type="range" id="rupture-threshold" min="0.3" max="0.8" step="0.05" value="0.55">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Regeneration Power</span>
+                        <span class="slider-value" id="regeneration-power-val">0.8</span>
+                    </div>
+                    <input type="range" id="regeneration-power" min="0.3" max="1.5" step="0.1" value="0.8">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Wing RD Complexity</span>
+                        <span class="slider-value" id="wing-complexity-val">0.4</span>
+                    </div>
+                    <input type="range" id="wing-complexity" min="0.2" max="0.8" step="0.1" value="0.4">
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="enable-genetics" checked>
+                    <label>Enable Genetic Inheritance</label>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Ecosystem Parameters</h3>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Tree Growth Rate</span>
+                        <span class="slider-value" id="tree-growth-val">0.6</span>
+                    </div>
+                    <input type="range" id="tree-growth" min="0.2" max="1.2" step="0.1" value="0.6">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Photosynthesis Rate</span>
+                        <span class="slider-value" id="photosynthesis-val">0.5</span>
+                    </div>
+                    <input type="range" id="photosynthesis-rate" min="0.2" max="1.0" step="0.1" value="0.5">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Auto Spawn Rate</span>
+                        <span class="slider-value" id="spawn-rate-val">0.1</span>
+                    </div>
+                    <input type="range" id="auto-spawn" min="0.0" max="0.5" step="0.05" value="0.1">
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="enable-mating" checked>
+                    <label>Enable Reproduction</label>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Wing Pattern System</h3>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Imaginal Disc Potency</span>
+                        <span class="slider-value" id="imaginal-disc-val">0.5</span>
+                    </div>
+                    <input type="range" id="imaginal-disc-potency" min="0.3" max="2.5" step="0.1" value="0.5">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Pattern Evolution</span>
+                        <span class="slider-value" id="pattern-evolution-val">0.3</span>
+                    </div>
+                    <input type="range" id="pattern-evolution" min="0.1" max="0.8" step="0.1" value="0.3">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Color Variation</span>
+                        <span class="slider-value" id="color-variation-val">60</span>
+                    </div>
+                    <input type="range" id="color-variation" min="20" max="120" step="10" value="60">
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="show-generation" checked>
+                    <label>Show Generation Labels</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="metrics-panel">
+            <div class="metric-card">
+                <h3>CRR Framework Status</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Current Phase:</span>
+                    <span class="metric-value" id="crr-phase-status">Coherence</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Active Organisms:</span>
+                    <span class="metric-value" id="active-organisms">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Total Ruptures:</span>
+                    <span class="metric-value" id="total-ruptures">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Avg Coherence:</span>
+                    <span class="metric-value" id="avg-coherence">0.000</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Metamorphosis Dynamics</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Embryonic:</span>
+                    <span class="metric-value" id="embryonic-count">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Larval:</span>
+                    <span class="metric-value" id="larval-count">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Pupal:</span>
+                    <span class="metric-value" id="pupal-count">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Adult:</span>
+                    <span class="metric-value" id="adult-count">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Evolutionary Genetics</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Total Population:</span>
+                    <span class="metric-value" id="total-population">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Max Generation:</span>
+                    <span class="metric-value" id="max-generation">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Mating Events:</span>
+                    <span class="metric-value" id="mating-events">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Total Created:</span>
+                    <span class="metric-value" id="organisms-created">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Ecosystem State</h3>
+                <div class="metric-row">
+                    <span class="metric-label">Tree Branches:</span>
+                    <span class="metric-value" id="tree-branches">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Living Leaves:</span>
+                    <span class="metric-value" id="tree-leaves">0</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Coherence Field:</span>
+                    <span class="metric-value" id="field-strength">0.000</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">FPS:</span>
+                    <span class="metric-value" id="fps-display">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === UCF BUTTERFLY METAMORPHOSIS SYSTEM ===
+        // Coherence-Rupture-Regeneration Framework Implementation
+
+        // Canvas and WebGL setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Simulation state
+        let organisms = [];
+        let tree = null;
+        let time = 0;
+        let speed = 1.0;
+        let totalRuptures = 0;
+        let totalRebirth = 0;
+        let running = false;
+        let animationId = null;
+        
+        // Performance tracking
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 0;
+        
+        // CRR Phase tracking
+        let currentCRRPhase = 'coherence';
+        
+        // System parameters
+        let systemParams = {
+            coherenceRate: 0.15,
+            memoryDensity: 0.25,
+            ruptureThreshold: 0.55,
+            regenerationPower: 0.8,
+            wingComplexity: 0.4,
+            treeGrowth: 0.6,
+            photosynthesisRate: 0.5,
+            autoSpawnRate: 0.1,
+            patternEvolution: 0.3,
+            colorVariation: 60,
+            imaginalDiscPotency: 0.5
+        };
+        
+        // Feature flags
+        let showCoherence = false;
+        let enableGenetics = true;
+        let enableMating = true;
+        let showGeneration = true;
+        
+        // Evolutionary metrics
+        let totalMatingEvents = 0;
+        let totalOrganismsCreated = 0;
+        let generationStats = {};
+        
+        // ============= CRR MATHEMATICAL FRAMEWORK =============
+        
+        class CRRDynamics {
+            constructor() {
+                this.C = 0.15; // Initial coherence level
+                this.L = 0.1; // Memory density  
+                this.phi = 0.08; // Historical field
+                this.lambda = 0.08; // Decay parameter
+                this.omega = 2.0; // Temperature parameter
+                this.theta_rupture = systemParams.ruptureThreshold; // Dynamic rupture threshold
+                this.memory_trace = [];
+                this.last_rupture = -Infinity;
+                this.saturation_limit = 1.0;
+                this.coherence_build_rate = systemParams.coherenceRate; // Dynamic coherence rate
+            }
+            
+            // Coherence Integration: C(x,t) = ∫₀ᵗ L(x,τ) dτ
+            updateCoherence(deltaTime) {
+                this.L = Math.min(0.4, this.L + this.calculateMemoryDensity() * deltaTime * this.coherence_build_rate);
+                
+                const coherenceGrowth = this.L * Math.exp(-this.lambda * deltaTime) * deltaTime * 2.0;
+                this.C += coherenceGrowth;
+                this.C *= (1 - this.lambda * deltaTime * 1.5);
+                
+                this.C = Math.max(0, Math.min(this.saturation_limit, this.C));
+                
+                this.memory_trace.push({
+                    time: time, 
+                    coherence: this.C, 
+                    density: Math.min(0.3, this.L)
+                });
+                if (this.memory_trace.length > 30) this.memory_trace.shift();
+            }
+            
+            calculateMemoryDensity() {
+                let density = 0.08 + Math.sin(time * 0.2) * 0.03;
+                
+                if (tree) {
+                    const treeInfluence = Math.min(0.15, tree.getCoherenceInfluence());
+                    density += treeInfluence * 0.05;
+                }
+                
+                return Math.min(0.12, density) * systemParams.memoryDensity;
+            }
+            
+            // Rupture Detection: δ(t-t₀) when threshold exceeded
+            detectRupture() {
+                if (time - this.last_rupture < 4.5) return false;
+                
+                const recent = this.memory_trace.slice(-3);
+                if (recent.length < 2) return false;
+                
+                const gradient = Math.abs(recent[recent.length-1].coherence - recent[0].coherence);
+                const coherenceThreshold = systemParams.ruptureThreshold + Math.random() * 0.1;
+                
+                return gradient > 0.25 && this.C > coherenceThreshold;
+            }
+            
+            // Regeneration Operator: R[χ](x,t) = ∫₋∞ᵗ φ(x,τ) e^(C(x,τ)/Ω) dτ
+            calculateRegeneration() {
+                let regeneration = 0;
+                const maxTraces = Math.min(15, this.memory_trace.length);
+                
+                for (let i = this.memory_trace.length - maxTraces; i < this.memory_trace.length; i++) {
+                    if (i < 0) continue;
+                    const trace = this.memory_trace[i];
+                    const tau = time - trace.time;
+                    
+                    if (tau > 0) {
+                        const phi_term = Math.min(0.25, trace.density);
+                        const coherence_normalized = trace.coherence / this.omega;
+                        const exp_term = Math.exp(Math.min(1.5, coherence_normalized));
+                        const temporal_decay = Math.exp(-tau * 0.15);
+                        
+                        regeneration += phi_term * exp_term * temporal_decay * 0.01;
+                    }
+                }
+                
+                return Math.min(0.08, regeneration) * systemParams.regenerationPower;
+            }
+            
+            triggerRupture() {
+                this.last_rupture = time;
+                this.phi = Math.min(0.4, this.C);
+                this.C *= 0.25;
+                this.L *= 0.6;
+                totalRuptures++;
+                return true;
+            }
+        }
+        
+        // ============= CRR ORGANISM =============
+        
+        class CRROrganism {
+            constructor(x, y, parentA = null, parentB = null) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.size = 2;
+                this.age = 0;
+                this.crr = new CRRDynamics();
+                this.morphologyState = 0;
+                this.wingRD = null;
+                this.metamorphicPhase = 'coherence_accumulation';
+                this.bodyPlan = 'embryonic';
+                
+                // Genetic inheritance system
+                this.genetics = this.initializeGenetics(parentA, parentB);
+                this.generation = parentA ? Math.max(parentA.generation, parentB ? parentB.generation : 0) + 1 : 0;
+                
+                // Social dynamics and environmental adaptation (embryonic programming)
+                this.socialPropensity = 0.3 + Math.random() * 0.4;
+                this.matingSociability = 0.4 + Math.random() * 0.6;
+                this.territorialTendency = Math.random();
+                
+                // Emergent environmental adaptations programmed from embryo
+                this.preferredNestingHeight = Math.random(); // 0-1, affects tree height preference
+                this.canopyAffinity = Math.random(); // preference for outer vs inner canopy
+                this.microhabitatSpecialization = Math.random(); // branch junction vs leaf cluster preference
+                
+                // Mating and reproduction
+                this.reproductiveMaturity = false;
+                this.matingCooldown = 0;
+                this.lastMate = null;
+                this.explorationTarget = null;
+                this.explorationTime = 0;
+                this.territoryCenter = {x: x, y: y};
+                this.isMating = false;
+                this.matingPartner = null;
+                this.matingTimer = 0;
+                
+                // Enhanced CRR initial conditions based on genetics
+                if (enableGenetics) {
+                    this.crr.coherence_build_rate *= (0.8 + this.genetics.coherenceModifier * 0.4);
+                    this.crr.lambda *= (0.8 + this.genetics.decayModifier * 0.4);
+                }
+            }
+            
+            initializeGenetics(parentA, parentB) {
+                if (!parentA || !parentB || !enableGenetics) {
+                    return {
+                        coherenceModifier: (Math.random() - 0.5) * 0.4,
+                        decayModifier: (Math.random() - 0.5) * 0.3,
+                        rdSeedPattern: Math.random(),
+                        wingColorBase: Math.random() * 360,
+                        wingPatternComplexity: 0.3 + Math.random() * 0.4,
+                        flightStyle: Math.random(),
+                        explorationTendency: 0.4 + Math.random() * 0.6,
+                        memoryStrength: 0.5 + Math.random() * 0.3
+                    };
+                }
+                
+                const mutationRate = 0.15;
+                return {
+                    coherenceModifier: this.inheritTrait(parentA.genetics.coherenceModifier, parentB.genetics.coherenceModifier, mutationRate * 0.2),
+                    decayModifier: this.inheritTrait(parentA.genetics.decayModifier, parentB.genetics.decayModifier, mutationRate * 0.15),
+                    rdSeedPattern: this.inheritTrait(parentA.genetics.rdSeedPattern, parentB.genetics.rdSeedPattern, mutationRate),
+                    wingColorBase: this.inheritTrait(parentA.genetics.wingColorBase, parentB.genetics.wingColorBase, mutationRate * systemParams.colorVariation),
+                    wingPatternComplexity: this.inheritTrait(parentA.genetics.wingPatternComplexity, parentB.genetics.wingPatternComplexity, mutationRate * 0.3),
+                    flightStyle: this.inheritTrait(parentA.genetics.flightStyle, parentB.genetics.flightStyle, mutationRate * 0.4),
+                    explorationTendency: this.inheritTrait(parentA.genetics.explorationTendency, parentB.genetics.explorationTendency, mutationRate * 0.3),
+                    memoryStrength: Math.max(0.1, Math.min(1.0, this.inheritTrait(parentA.genetics.memoryStrength, parentB.genetics.memoryStrength, mutationRate * 0.2))),
+                    preferredNestingHeight: this.inheritTrait(parentA.genetics.preferredNestingHeight, parentB.genetics.preferredNestingHeight, mutationRate * 0.2),
+                    canopyAffinity: this.inheritTrait(parentA.genetics.canopyAffinity, parentB.genetics.canopyAffinity, mutationRate * 0.25),
+                    microhabitatSpecialization: this.inheritTrait(parentA.genetics.microhabitatSpecialization, parentB.genetics.microhabitatSpecialization, mutationRate * 0.2)
+                };
+            }
+            
+            inheritTrait(traitA, traitB, mutationAmount) {
+                const inherited = (traitA + traitB) / 2;
+                const mutation = (Math.random() - 0.5) * mutationAmount;
+                return inherited + mutation;
+            }
+            
+            update(deltaTime) {
+                this.age += deltaTime * speed;
+                
+                this.crr.updateCoherence(deltaTime);
+                
+                if (this.crr.detectRupture()) {
+                    this.triggerMetamorphosis();
+                }
+                
+                const regeneration = this.crr.calculateRegeneration();
+                this.morphologyState += regeneration * deltaTime * 8;
+                this.morphologyState = Math.min(1.0, this.morphologyState);
+                
+                this.updateCRRMorphologyWithTiming();
+                this.updateCRRBehavior(deltaTime);
+                
+                if (!this.wingRD && this.isReadyForWings()) {
+                    this.initializeWingRD();
+                }
+                
+                if (this.wingRD) {
+                    this.updateWingRD(deltaTime);
+                }
+            }
+            
+            updateCRRMorphologyWithTiming() {
+                const atmosphericPressure = this.calculateAtmosphericPressure();
+                
+                if (this.age < 5.5) {
+                    this.bodyPlan = 'embryonic';
+                    this.size = Math.min(4.0, 2.0 + this.crr.C * 2.0);
+                } else if (this.age < 16.0) {
+                    this.bodyPlan = 'larval';
+                    this.size = Math.min(8.0, 3.0 + (this.age - 5.5) * 0.5 + this.morphologyState * 2.0);
+                } else if (this.age < 21.0) {
+                    this.bodyPlan = 'pupal';
+                    this.size = Math.min(7.0, 4.0 + this.crr.phi * 2.0);
+                } else if (this.age < 26.0) {
+                    this.bodyPlan = 'soup';
+                    this.size = Math.min(6.0, 3.5 + Math.sin(this.age * 3) * 1.5);
+                } else {
+                    this.bodyPlan = 'adult';
+                    const adultSizeBoost = 5.0;
+                    this.size = Math.min(30.0, (4.0 + this.crr.C * 3.0) * adultSizeBoost * atmosphericPressure);
+                }
+            }
+            
+            isReadyForWings() {
+                const field_complexity = this.crr.C * this.crr.L * this.crr.memory_trace.length;
+                const historical_richness = this.crr.phi * this.morphologyState;
+                return field_complexity > 0.05 && historical_richness > 0.08;
+            }
+            
+            calculateAtmosphericPressure() {
+                const size_resistance = 1.0 - (this.size * 0.08);
+                const age_resistance = 1.0 - (this.age * 0.001);
+                return Math.max(0.6, size_resistance * age_resistance);
+            }
+            
+            updateCRRBehavior(deltaTime) {
+                const coherence_gradient = this.crr.C - 0.5;
+                const regeneration_force = this.crr.calculateRegeneration() * 100;
+                
+                if (this.matingCooldown > 0) {
+                    this.matingCooldown -= deltaTime;
+                }
+                
+                if (this.isMating) {
+                    this.updateMatingBehavior(deltaTime);
+                    return;
+                }
+                
+                if (this.bodyPlan === 'adult') {
+                    this.reproductiveMaturity = true;
+                    this.updateAdultExploration(deltaTime, coherence_gradient);
+                    if (enableMating) {
+                        this.checkForMating(deltaTime);
+                    }
+                } else {
+                    if (coherence_gradient < 0) {
+                        if (tree) {
+                            const dx = tree.x - this.x;
+                            const dy = tree.y - 50 - this.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist > 20) {
+                                const seek_strength = Math.abs(coherence_gradient) * 30;
+                                this.vx += (dx/dist) * seek_strength * deltaTime;
+                                this.vy += (dy/dist) * seek_strength * deltaTime;
+                            }
+                        }
+                    }
+                }
+                
+                this.vx += (Math.random() - 0.5) * regeneration_force * deltaTime;
+                this.vy += (Math.random() - 0.5) * regeneration_force * 0.7 * deltaTime;
+                
+                const drag_coefficient = 0.85 + this.morphologyState * 0.1;
+                this.vx *= drag_coefficient;
+                this.vy *= drag_coefficient;
+                
+                this.x += this.vx * deltaTime;
+                this.y += this.vy * deltaTime;
+                
+                if (this.x < 20) { this.x = 20; this.vx *= -0.5; }
+                if (this.x > canvas.width - 20) { this.x = canvas.width - 20; this.vx *= -0.5; }
+                if (this.y < 20) { this.y = 20; this.vy *= -0.3; }
+                if (this.y > canvas.height - 20) { this.y = canvas.height - 20; this.vy *= -0.7; }
+            }
+            
+            updateAdultExploration(deltaTime, coherence_gradient) {
+                this.explorationTime += deltaTime;
+                
+                // Enhanced activity levels through genetic programming
+                const exploration_strength = 20 + this.genetics.explorationTendency * 25; // Increased from 15+20 to 20+25
+                const flight_style = this.genetics.flightStyle;
+                
+                // More frequent target changes for increased activity
+                if (!this.explorationTarget || this.explorationTime > 6 + Math.random() * 4) { // Reduced from 8+6 to 6+4
+                    this.setNewExplorationTarget();
+                    this.explorationTime = 0;
+                }
+                
+                if (this.explorationTarget) {
+                    const dx = this.explorationTarget.x - this.x;
+                    const dy = this.explorationTarget.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist > 15) {
+                        const move_strength = exploration_strength * (1 + coherence_gradient * 0.7); // Increased gradient effect from 0.5 to 0.7
+                        this.vx += (dx/dist) * move_strength * deltaTime;
+                        this.vy += (dy/dist) * move_strength * deltaTime;
+                    }
+                }
+                
+                // Enhanced flutter patterns for more dynamic flight
+                const flutter_freq = 0.5 + flight_style * 1.0; // Increased from 0.4+0.8 to 0.5+1.0
+                const flutter_amplitude = 15 + flight_style * 10; // Increased from 12+8 to 15+10
+                
+                this.vx += Math.sin(this.age * flutter_freq * 2) * flutter_amplitude * deltaTime;
+                this.vy += Math.cos(this.age * flutter_freq * 1.3) * flutter_amplitude * 0.6 * deltaTime;
+                
+                // Increased baseline movement energy
+                this.vy -= (8 + coherence_gradient * 5) * deltaTime; // Increased from 6+4 to 8+5
+                this.vx += (Math.random() - 0.5) * 7 * deltaTime; // Increased from 5 to 7
+                this.vy += (Math.random() - 0.5) * 4 * deltaTime; // Increased from 3 to 4
+            }
+            
+            setNewExplorationTarget() {
+                const target_options = [];
+                
+                if (tree) {
+                    for (let i = 0; i < 5; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const radius = 80 + Math.random() * 120;
+                        target_options.push({
+                            x: tree.x + Math.cos(angle) * radius,
+                            y: tree.y - 40 + Math.sin(angle) * 60
+                        });
+                    }
+                }
+                
+                for (let i = 0; i < 3; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 60 + Math.random() * 80;
+                    target_options.push({
+                        x: this.territoryCenter.x + Math.cos(angle) * radius,
+                        y: this.territoryCenter.y + Math.sin(angle) * radius * 0.6
+                    });
+                }
+                
+                const target_index = Math.floor(Math.random() * target_options.length);
+                this.explorationTarget = target_options[target_index];
+                
+                this.explorationTarget.x = Math.max(50, Math.min(canvas.width - 50, this.explorationTarget.x));
+                this.explorationTarget.y = Math.max(50, Math.min(canvas.height - 50, this.explorationTarget.y));
+            }
+            
+            checkForMating(deltaTime) {
+                if (!this.reproductiveMaturity || this.matingCooldown > 0 || this.isMating) return;
+                
+                const potential_mates = organisms.filter(other => 
+                    other !== this &&
+                    other.bodyPlan === 'adult' &&
+                    other.reproductiveMaturity &&
+                    other.matingCooldown <= 0 &&
+                    other !== this.lastMate &&
+                    !other.isMating
+                );
+                
+                for (let mate of potential_mates) {
+                    const dx = mate.x - this.x;
+                    const dy = mate.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    const social_compatibility = (this.socialPropensity + mate.socialPropensity) / 2;
+                    const mating_probability = 0.01 * social_compatibility * this.matingSociability;
+                    
+                    if (dist < 30 && Math.random() < mating_probability) {
+                        this.initiateMating(mate);
+                        break;
+                    }
+                }
+            }
+            
+            initiateMating(mate) {
+                this.isMating = true;
+                this.matingPartner = mate;
+                this.matingTimer = 3.0;
+                
+                mate.isMating = true;
+                mate.matingPartner = this;
+                mate.matingTimer = 3.0;
+                
+                const dx = mate.x - this.x;
+                const dy = mate.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist > 15) {
+                    this.vx += (dx / dist) * 20;
+                    this.vy += (dy / dist) * 20;
+                    mate.vx -= (dx / dist) * 20;
+                    mate.vy -= (dy / dist) * 20;
+                }
+            }
+            
+            updateMatingBehavior(deltaTime) {
+                if (!this.isMating || !this.matingPartner) return;
+                
+                this.matingTimer -= deltaTime;
+                
+                if (this.matingTimer <= 0) {
+                    this.performMating(this.matingPartner);
+                    
+                    this.isMating = false;
+                    this.matingPartner.isMating = false;
+                    this.matingPartner = null;
+                    this.matingPartner = null;
+                } else {
+                    const partner = this.matingPartner;
+                    const dx = partner.x - this.x;
+                    const dy = partner.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist > 20) {
+                        this.vx += (dx / dist) * 15 * deltaTime;
+                        this.vy += (dy / dist) * 15 * deltaTime;
+                    } else if (dist < 8) {
+                        this.vx -= (dx / dist) * 10 * deltaTime;
+                        this.vy -= (dy / dist) * 10 * deltaTime;
+                    } else {
+                        const angle = Math.atan2(dy, dx) + Math.PI/2;
+                        this.vx += Math.cos(angle) * 25 * deltaTime;
+                        this.vy += Math.sin(angle) * 25 * deltaTime;
+                    }
+                }
+            }
+            
+            performMating(mate) {
+                this.matingCooldown = 15 + Math.random() * 10;
+                mate.matingCooldown = 15 + Math.random() * 10;
+                this.lastMate = mate;
+                mate.lastMate = this;
+                
+                totalMatingEvents++;
+                
+                const offspring_count = 2 + Math.floor(Math.random() * 3);
+                
+                for (let i = 0; i < offspring_count; i++) {
+                    // Emergent egg-laying behavior based on embryonic environmental programming
+                    const combined_nesting_height = (this.preferredNestingHeight + mate.preferredNestingHeight) / 2;
+                    const combined_canopy_affinity = (this.canopyAffinity + mate.canopyAffinity) / 2;
+                    const combined_microhabitat = (this.microhabitatSpecialization + mate.microhabitatSpecialization) / 2;
+                    
+                    // Calculate preferred nesting location based on genetic programming
+                    const tree_height_preference = tree.y - (combined_nesting_height * 150); // 0 = base, 1 = top
+                    const canopy_radius = 40 + combined_canopy_affinity * 80; // inner vs outer canopy
+                    
+                    // Microhabitat selection (branch junctions vs leaf clusters)
+                    let egg_x, egg_y;
+                    if (combined_microhabitat > 0.6) {
+                        // Prefer branch junctions - use actual branch locations if available
+                        if (tree.branches.length > 0) {
+                            const suitable_branches = tree.branches.filter(branch => 
+                                Math.abs(branch.y1 - tree_height_preference) < 60
+                            );
+                            if (suitable_branches.length > 0) {
+                                const chosen_branch = suitable_branches[Math.floor(Math.random() * suitable_branches.length)];
+                                egg_x = chosen_branch.x1 + (Math.random() - 0.5) * 15;
+                                egg_y = chosen_branch.y1 + (Math.random() - 0.5) * 10;
+                            } else {
+                                // Fallback to canopy edge
+                                const egg_angle = Math.random() * Math.PI * 2;
+                                egg_x = tree.x + Math.cos(egg_angle) * canopy_radius;
+                                egg_y = tree_height_preference + (Math.random() - 0.5) * 30;
+                            }
+                        } else {
+                            const egg_angle = Math.random() * Math.PI * 2;
+                            egg_x = tree.x + Math.cos(egg_angle) * canopy_radius;
+                            egg_y = tree_height_preference + (Math.random() - 0.5) * 30;
+                        }
+                    } else {
+                        // Prefer leaf clusters - find areas with high leaf density
+                        if (tree.leaves.length > 0) {
+                            const suitable_leaves = tree.leaves.filter(leaf => 
+                                Math.abs(leaf.y - tree_height_preference) < 40
+                            );
+                            if (suitable_leaves.length > 0) {
+                                const chosen_leaf = suitable_leaves[Math.floor(Math.random() * suitable_leaves.length)];
+                                egg_x = chosen_leaf.x + (Math.random() - 0.5) * 20;
+                                egg_y = chosen_leaf.y + (Math.random() - 0.5) * 15;
+                            } else {
+                                // Fallback to general canopy area
+                                const egg_angle = Math.random() * Math.PI * 2;
+                                egg_x = tree.x + Math.cos(egg_angle) * canopy_radius * 0.7;
+                                egg_y = tree_height_preference + (Math.random() - 0.5) * 25;
+                            }
+                        } else {
+                            const egg_angle = Math.random() * Math.PI * 2;
+                            egg_x = tree.x + Math.cos(egg_angle) * canopy_radius * 0.7;
+                            egg_y = tree_height_preference + (Math.random() - 0.5) * 25;
+                        }
+                    }
+                    
+                    // Ensure eggs stay within canvas bounds
+                    egg_x = Math.max(50, Math.min(canvas.width - 50, egg_x));
+                    egg_y = Math.max(50, Math.min(canvas.height - 100, egg_y));
+                    
+                    const offspring = new CRROrganism(egg_x, egg_y, this, mate);
+                    organisms.push(offspring);
+                    totalOrganismsCreated++;
+                    
+                    const gen = offspring.generation;
+                    if (!generationStats[gen]) {
+                        generationStats[gen] = { count: 0, created: 0, maxAge: 0 };
+                    }
+                    generationStats[gen].count++;
+                    generationStats[gen].created++;
+                }
+                
+                const mating_x = (this.x + mate.x) / 2;
+                const mating_y = (this.y + mate.y) / 2;
+                this.territoryCenter.x += (mating_x - this.territoryCenter.x) * 0.3;
+                this.territoryCenter.y += (mating_y - this.territoryCenter.y) * 0.3;
+            }
+            
+            triggerMetamorphosis() {
+                this.crr.triggerRupture();
+                this.metamorphicPhase = 'rupture_dissolution';
+            }
+            
+            // Wing RD System Stubs
+            initializeWingRD() {
+                this.wingRD = {
+                    active: true,
+                    patterns: this.genetics.rdSeedPattern,
+                    complexity: this.genetics.wingPatternComplexity
+                };
+            }
+            
+            updateWingRD(deltaTime) {
+                // Wing pattern evolution
+            }
+            
+            render(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                switch(this.bodyPlan) {
+                    case 'embryonic':
+                        this.renderEmbryo(ctx);
+                        break;
+                    case 'larval':
+                        this.renderLarva(ctx);
+                        break;
+                    case 'pupal':
+                        this.renderPupa(ctx);
+                        break;
+                    case 'soup':
+                        this.renderSoup(ctx);
+                        break;
+                    case 'adult':
+                        this.renderAdult(ctx);
+                        break;
+                }
+                
+                // Removed green coherence field visualization circles as requested
+                
+                ctx.restore();
+            }
+            
+            renderSoup(ctx) {
+                const soupIntensity = Math.sin(this.age * 4) * 0.5 + 0.5;
+                const morphIntensity = Math.cos(this.age * 3) * 0.3 + 0.7;
+                
+                ctx.fillStyle = `rgba(180, 120, 60, ${0.6 + soupIntensity * 0.3})`;
+                
+                const points = 8;
+                ctx.beginPath();
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const radius = this.size * (0.7 + morphIntensity * 0.5 + Math.sin(angle * 3 + this.age * 2) * 0.2);
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                const regenActivity = this.crr.calculateRegeneration() * 100;
+                if (regenActivity > 0.5) {
+                    ctx.strokeStyle = `rgba(34, 139, 34, ${regenActivity * 2})`;
+                    ctx.lineWidth = 1 + regenActivity;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size + 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                for (let i = 0; i < 5; i++) {
+                    const sparkleAngle = (i / 5) * Math.PI * 2 + this.age * 2;
+                    const sparkleRadius = this.size * 0.8;
+                    const sparkleX = Math.cos(sparkleAngle) * sparkleRadius;
+                    const sparkleY = Math.sin(sparkleAngle) * sparkleRadius;
+                    
+                    ctx.fillStyle = `rgba(255, 255, 200, ${soupIntensity * 0.8})`;
+                    ctx.beginPath();
+                    ctx.arc(sparkleX, sparkleY, 1 + soupIntensity, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            renderEmbryo(ctx) {
+                ctx.fillStyle = `rgba(180, 220, 180, 0.9)`;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            renderLarva(ctx) {
+                const segments = 6;
+                const segmentSize = this.size * 0.7;
+                
+                ctx.fillStyle = `rgba(80, 140, 60, 0.9)`;
+                ctx.strokeStyle = `rgba(60, 100, 40, 0.8)`;
+                ctx.lineWidth = 1;
+                
+                for (let i = 0; i < segments; i++) {
+                    const x = (i - segments/2) * segmentSize * 0.8;
+                    const y = Math.sin(this.age * 2.5 + i * 0.8) * 3;
+                    const radius = segmentSize * (0.9 - i * 0.05);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    if (i % 2 === 0) {
+                        ctx.fillStyle = `rgba(100, 160, 80, 0.7)`;
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius * 0.7, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = `rgba(80, 140, 60, 0.9)`;
+                    }
+                }
+                
+                const headX = (-segments/2) * segmentSize * 0.8;
+                const headY = Math.sin(this.age * 2.5) * 3;
+                
+                ctx.fillStyle = `rgba(70, 120, 50, 0.9)`;
+                ctx.beginPath();
+                ctx.arc(headX, headY, segmentSize * 1.1, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `rgba(20, 20, 20, 0.8)`;
+                ctx.beginPath();
+                ctx.arc(headX - segmentSize * 0.3, headY - segmentSize * 0.2, 1.5, 0, Math.PI * 2);
+                ctx.arc(headX + segmentSize * 0.3, headY - segmentSize * 0.2, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = `rgba(60, 100, 40, 0.6)`;
+                ctx.lineWidth = 2;
+                for (let i = 1; i < segments - 1; i++) {
+                    const legX = (i - segments/2) * segmentSize * 0.8;
+                    const legY = Math.sin(this.age * 2.5 + i * 0.8) * 3;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(legX - segmentSize * 0.7, legY);
+                    ctx.lineTo(legX - segmentSize * 1.0, legY + segmentSize * 0.5);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(legX + segmentSize * 0.7, legY);
+                    ctx.lineTo(legX + segmentSize * 1.0, legY + segmentSize * 0.5);
+                    ctx.stroke();
+                }
+            }
+            
+            renderPupa(ctx) {
+                ctx.fillStyle = `rgba(101, 67, 33, 0.8)`;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size, this.size * 1.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                if (this.metamorphicPhase === 'rupture_dissolution') {
+                    ctx.strokeStyle = `rgba(255, 100, 100, ${Math.sin(this.age * 5) * 0.5 + 0.5})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size + 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            
+            renderAdult(ctx) {
+                const bodyLength = this.size * 0.8;
+                const bodyWidth = this.size * 0.15;
+                // Enhanced wing span through imaginal disc development - doubled base size, removed artificial cap
+                const wingSpan = Math.min(this.size * 4.4, 30); // Doubled from 2.2 to 4.4, increased cap from 15 to 30
+                const flapAngle = Math.sin(this.age * 12) * 0.25;
+                const flapPhase = this.age * 12;
+                
+                if (this.isMating && this.matingPartner) {
+                    this.renderMatingDisplay(ctx, wingSpan);
+                }
+                
+                this.renderRealisticWings(ctx, wingSpan, flapAngle, flapPhase);
+                this.renderButterflyBody(ctx, bodyLength, bodyWidth);
+                this.renderAntennae(ctx, bodyLength);
+                
+                if (this.isMating && this.matingPartner) {
+                    this.renderMatingConnection(ctx);
+                }
+            }
+            
+            renderMatingDisplay(ctx, wingSpan) {
+                const matingIntensity = Math.sin(this.age * 15) * 0.5 + 0.5;
+                const auraSize = wingSpan + 8 + matingIntensity * 6;
+                
+                ctx.strokeStyle = `rgba(255, 215, 0, ${0.4 + matingIntensity * 0.3})`;
+                ctx.lineWidth = 2 + matingIntensity;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.arc(0, 0, auraSize, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                for (let i = 0; i < 6; i++) {
+                    const sparkleAngle = (i / 6) * Math.PI * 2 + this.age * 4;
+                    const sparkleRadius = auraSize * 0.8;
+                    const sparkleX = Math.cos(sparkleAngle) * sparkleRadius;
+                    const sparkleY = Math.sin(sparkleAngle) * sparkleRadius;
+                    
+                    ctx.fillStyle = `rgba(255, 255, 200, ${matingIntensity * 0.8})`;
+                    ctx.beginPath();
+                    ctx.arc(sparkleX, sparkleY, 1 + matingIntensity * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            renderMatingConnection(ctx) {
+                if (!this.matingPartner) return;
+                
+                const partner = this.matingPartner;
+                const dx = partner.x - this.x;
+                const dy = partner.y - this.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < 50) {
+                    const connectionIntensity = Math.sin(this.age * 20) * 0.3 + 0.7;
+                    ctx.strokeStyle = `rgba(255, 192, 203, ${connectionIntensity * 0.6})`;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([2, 2]);
+                    
+                    ctx.beginPath();
+                    const midX = dx * 0.5;
+                    const midY = dy * 0.5 - 15;
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(midX, midY, dx, dy);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    if (this.matingTimer > 1.0) {
+                        const heartX = midX + Math.sin(this.age * 8) * 5;
+                        const heartY = midY + Math.cos(this.age * 6) * 3;
+                        
+                        ctx.fillStyle = `rgba(255, 105, 180, ${connectionIntensity})`;
+                        ctx.font = `${8}px serif`;
+                        ctx.fillText('♥', heartX - 4, heartY + 3);
+                    }
+                }
+            }
+            
+            renderRealisticWings(ctx, wingSpan, flapAngle, flapPhase) {
+                // Enhanced imaginal disc development produces larger wings
+                const imaginalDiscDevelopment = Math.min(2.0, (this.crr.C + this.morphologyState) * systemParams.imaginalDiscPotency); 
+                const maturityFactor = this.bodyPlan === 'adult' ? 1.5 : 1.0;
+                const developmentalWingSpan = wingSpan * imaginalDiscDevelopment * maturityFactor;
+                
+                const forewings = developmentalWingSpan * 0.45;
+                const hindwings = developmentalWingSpan * 0.35;
+                const wingThickness = developmentalWingSpan * 0.6;
+                
+                const base_hue = (this.genetics.wingColorBase + this.crr.C * 30) % 360;
+                const genetic_saturation = 50 + this.genetics.wingPatternComplexity * 40;
+                const inherited_lightness = 40 + Math.sin(flapPhase * 0.5) * 15;
+                
+                const evolution_factor = Math.min(1.0, this.generation * 0.1);
+                const evolved_hue = (base_hue + evolution_factor * systemParams.patternEvolution * 100) % 360;
+                
+                ctx.save();
+                ctx.translate(-this.size * 0.1, 0);
+                
+                ctx.save();
+                ctx.rotate(flapAngle - 0.2);
+                this.renderWing(ctx, -forewings, 0, forewings * 0.8, wingThickness * 0.9, 
+                    evolved_hue, genetic_saturation, inherited_lightness, true);
+                ctx.restore();
+                
+                ctx.save();
+                ctx.rotate(flapAngle + 0.1);
+                this.renderWing(ctx, -hindwings * 0.9, wingThickness * 0.3, hindwings * 0.7, wingThickness * 0.7, 
+                    evolved_hue + 20, genetic_saturation - 10, inherited_lightness - 5, false);
+                ctx.restore();
+                
+                ctx.restore();
+                
+                ctx.save();
+                ctx.translate(this.size * 0.1, 0);
+                
+                ctx.save();
+                ctx.rotate(-flapAngle + 0.2);
+                this.renderWing(ctx, 0, 0, forewings * 0.8, wingThickness * 0.9, 
+                    evolved_hue, genetic_saturation, inherited_lightness, true);
+                ctx.restore();
+                
+                ctx.save();
+                ctx.rotate(-flapAngle - 0.1);
+                this.renderWing(ctx, 0, wingThickness * 0.3, hindwings * 0.7, wingThickness * 0.7, 
+                    evolved_hue + 20, genetic_saturation - 10, inherited_lightness - 5, false);
+                ctx.restore();
+                
+                ctx.restore();
+                
+                if (this.generation > 0 && showGeneration) {
+                    ctx.fillStyle = `rgba(255, 255, 255, 0.1)`;
+                    ctx.font = `${this.size * 0.3}px monospace`;
+                    ctx.fillText(`G${this.generation}`, -this.size * 0.5, this.size * 0.8);
+                }
+            }
+            
+            renderWing(ctx, x, y, width, height, hue, saturation, lightness, isForewing) {
+                ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.85)`;
+                ctx.beginPath();
+                
+                if (isForewing) {
+                    ctx.ellipse(x + width * 0.5, y - height * 0.3, width * 0.6, height * 0.7, 0, 0, Math.PI * 2);
+                } else {
+                    ctx.ellipse(x + width * 0.4, y + height * 0.3, width * 0.5, height * 0.5, 0, 0, Math.PI * 2);
+                }
+                ctx.fill();
+                
+                if (this.wingRD) {
+                    this.addRDWingPatterns(ctx, x, y, width, height, hue);
+                } else {
+                    this.addProceduralWingPatterns(ctx, x, y, width, height, hue);
+                }
+                
+                this.renderWingVeins(ctx, x, y, width, height);
+                
+                if (this.genetics.wingPatternComplexity > 0.7) {
+                    this.renderEyespots(ctx, x, y, width, height, hue);
+                }
+                
+                ctx.strokeStyle = `hsla(${hue + 40}, ${saturation + 20}%, ${lightness + 15}%, 0.6)`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+            
+            addRDWingPatterns(ctx, x, y, width, height, baseHue) {
+                const pattern_intensity = Math.min(0.9, this.crr.C * this.morphologyState);
+                const memory_influence = this.crr.memory_trace.length > 0 ? 
+                    Math.min(0.7, this.crr.memory_trace[this.crr.memory_trace.length - 1].coherence) : 0;
+                
+                const genetic_complexity = this.genetics.wingPatternComplexity * systemParams.wingComplexity;
+                const genetic_memory = this.genetics.memoryStrength;
+                const generation_depth = Math.min(0.8, this.generation * 0.15);
+                
+                const pattern_count_x = Math.floor(2 + genetic_complexity * 3);
+                const pattern_count_y = Math.floor(2 + genetic_complexity * 2);
+                
+                for (let i = 0; i < pattern_count_x; i++) {
+                    for (let j = 0; j < pattern_count_y; j++) {
+                        const px = x + (i * width * 0.35 / pattern_count_x) + width * 0.1;
+                        const py = y + (j * height * 0.5 / pattern_count_y) - height * 0.3;
+                        
+                        const genetic_phase = this.genetics.rdSeedPattern * Math.PI * 2;
+                        const u = Math.sin(px * 0.04 + this.age * 0.15 + genetic_phase) * Math.cos(py * 0.03);
+                        const v = Math.cos(px * 0.03 + this.age * 0.1 + genetic_phase * 0.7) * Math.sin(py * 0.05);
+                        
+                        const ancestral_memory = generation_depth * genetic_memory;
+                        let rd_value = Math.abs(u * v) * pattern_intensity * (1 + ancestral_memory);
+                        
+                        rd_value = Math.min(0.85, rd_value);
+                        
+                        if (rd_value > 0.12) {
+                            const max_spot_size = Math.min(width, height) * (0.08 + genetic_complexity * 0.06);
+                            const spot_size = Math.min(max_spot_size, width * 0.03 * rd_value * (1 + generation_depth));
+                            const alpha = Math.min(0.6, rd_value * memory_influence * (1 + genetic_memory * 0.3));
+                            
+                            if (spot_size > 0.8 && alpha > 0.08) {
+                                const evolved_hue = baseHue + rd_value * 35 + generation_depth * 25;
+                                ctx.fillStyle = `hsla(${evolved_hue}, 65%, 45%, ${alpha})`;
+                                ctx.beginPath();
+                                ctx.arc(px, py, spot_size, 0, Math.PI * 2);
+                                ctx.fill();
+                                
+                                if (this.generation >= 3 && Math.random() < 0.3) {
+                                    ctx.fillStyle = `rgba(255, 255, 200, ${alpha * 0.4})`;
+                                    ctx.beginPath();
+                                    ctx.arc(px + spot_size * 0.3, py - spot_size * 0.3, spot_size * 0.3, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            addProceduralWingPatterns(ctx, x, y, width, height, baseHue) {
+                const patternIntensity = Math.min(0.8, this.crr.C * this.morphologyState);
+                
+                if (patternIntensity > 0.25) {
+                    const maxCellSize = Math.min(width, height) * 0.15;
+                    const cellSize = Math.min(maxCellSize, width * 0.12);
+                    
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 2; j++) {
+                            const cellX = x + i * cellSize * 1.2 + cellSize * 0.5;
+                            const cellY = y + j * cellSize * 1.5 - height * 0.2;
+                            const intensity = Math.min(0.8, patternIntensity * (1 - i * 0.15));
+                            
+                            const maxRadius = cellSize * 0.4;
+                            const radius = Math.min(maxRadius, cellSize * 0.25 * intensity);
+                            
+                            if (radius > 1.0 && intensity > 0.2) {
+                                ctx.fillStyle = `hsla(${baseHue + i * 25}, 65%, 40%, ${intensity})`;
+                                ctx.beginPath();
+                                ctx.arc(cellX, cellY, radius, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            renderWingVeins(ctx, x, y, width, height) {
+                ctx.strokeStyle = `rgba(40, 30, 20, 0.4)`;
+                ctx.lineWidth = 0.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + width * 0.8, y - height * 0.3);
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + width * 0.6, y + height * 0.1);
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + width * 0.4, y - height * 0.6);
+                ctx.stroke();
+            }
+            
+            renderEyespots(ctx, x, y, width, height, hue) {
+                const spotX = x + width * 0.6;
+                const spotY = y - height * 0.2;
+                const spotSize = width * 0.15;
+                
+                ctx.fillStyle = `hsla(${hue + 180}, 60%, 25%, 0.8)`;
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `hsla(${hue + 220}, 80%, 65%, 0.9)`;
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, spotSize * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `rgba(255, 255, 255, 0.7)`;
+                ctx.beginPath();
+                ctx.arc(spotX - spotSize * 0.2, spotY - spotSize * 0.2, spotSize * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            renderButterflyBody(ctx, bodyLength, bodyWidth) {
+                const segments = 6;
+                
+                for (let i = 0; i < segments; i++) {
+                    const segmentY = -bodyLength * 0.5 + (i * bodyLength / segments);
+                    const segmentWidth = bodyWidth * (1 - i * 0.1) * (1 - Math.abs(i - segments/2) * 0.1);
+                    
+                    ctx.fillStyle = `rgba(60, 40, 20, 0.95)`;
+                    ctx.beginPath();
+                    ctx.ellipse(0, segmentY, segmentWidth, bodyLength / segments * 0.6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    if (i % 2 === 0) {
+                        ctx.fillStyle = `rgba(80, 60, 40, 0.7)`;
+                        ctx.beginPath();
+                        ctx.ellipse(0, segmentY, segmentWidth * 0.8, bodyLength / segments * 0.4, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                
+                ctx.fillStyle = `rgba(45, 35, 25, 0.9)`;
+                ctx.beginPath();
+                ctx.ellipse(0, -bodyLength * 0.2, bodyWidth * 1.3, bodyLength * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            renderAntennae(ctx, bodyLength) {
+                const antennaLength = bodyLength * 0.6;
+                const antennaAngle = 0.3;
+                
+                ctx.strokeStyle = `rgba(40, 30, 20, 0.8)`;
+                ctx.lineWidth = 1;
+                ctx.lineCap = 'round';
+                
+                ctx.beginPath();
+                ctx.moveTo(-1, -bodyLength * 0.4);
+                ctx.quadraticCurveTo(-antennaLength * 0.5, -bodyLength * 0.6, -antennaLength * Math.cos(antennaAngle), -bodyLength * 0.4 - antennaLength * Math.sin(antennaAngle));
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(1, -bodyLength * 0.4);
+                ctx.quadraticCurveTo(antennaLength * 0.5, -bodyLength * 0.6, antennaLength * Math.cos(antennaAngle), -bodyLength * 0.4 - antennaLength * Math.sin(antennaAngle));
+                ctx.stroke();
+                
+                ctx.fillStyle = `rgba(40, 30, 20, 0.9)`;
+                ctx.beginPath();
+                ctx.arc(-antennaLength * Math.cos(antennaAngle), -bodyLength * 0.4 - antennaLength * Math.sin(antennaAngle), 1.5, 0, Math.PI * 2);
+                ctx.arc(antennaLength * Math.cos(antennaAngle), -bodyLength * 0.4 - antennaLength * Math.sin(antennaAngle), 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // ============= PHOTO-REALISTIC L-SYSTEM TREE =============
+        
+        class LSystemTree {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.axiom = "F";
+                this.rules = {
+                    "F": "F[+F]F[-F]F",
+                    "+": "+",
+                    "-": "-",
+                    "[": "[", 
+                    "]": "]"
+                };
+                this.angle = 25;
+                this.generations = 0;
+                this.system = this.axiom;
+                this.branches = [];
+                this.leaves = [];
+                this.coherenceContribution = 0;
+                this.age = 0;
+            }
+            
+            grow() {
+                if (this.generations < 4) {
+                    let newSystem = "";
+                    for (let char of this.system) {
+                        newSystem += this.rules[char] || char;
+                    }
+                    this.system = newSystem;
+                    this.generations++;
+                    this.generateStructure();
+                }
+            }
+            
+            generateStructure() {
+                this.branches = [];
+                this.leaves = [];
+                
+                let stack = [];
+                let currentX = this.x;
+                let currentY = this.y;
+                let currentAngle = -Math.PI / 2;
+                let segmentLength = 60 - this.generations * 10; // Increased from 40-8 to make tree larger
+                
+                for (let char of this.system) {
+                    switch (char) {
+                        case 'F':
+                            let newX = currentX + Math.cos(currentAngle) * segmentLength;
+                            let newY = currentY + Math.sin(currentAngle) * segmentLength;
+                            
+                            this.branches.push({
+                                x1: currentX, y1: currentY,
+                                x2: newX, y2: newY,
+                                generation: this.generations,
+                                thickness: Math.max(1, 8 - this.generations * 1.5)
+                            });
+                            
+                            if (this.generations >= 1 && Math.random() < 0.8) {
+                                const leafCount = this.generations < 2 ? 2 : 1;
+                                for (let i = 0; i < leafCount; i++) {
+                                    this.leaves.push({
+                                        x: newX + (Math.random() - 0.5) * 25,
+                                        y: newY + (Math.random() - 0.5) * 25,
+                                        size: 6 + Math.random() * 8,
+                                        chlorophyll: 0.6 + Math.random() * 0.4,
+                                        age: Math.random() * 0.5,
+                                        seasonalTint: Math.random(),
+                                        shape: Math.random() > 0.5 ? 'oval' : 'serrated'
+                                    });
+                                }
+                            }
+                            
+                            currentX = newX;
+                            currentY = newY;
+                            break;
+                        case '+':
+                            currentAngle += this.angle * Math.PI / 180;
+                            break;
+                        case '-':
+                            currentAngle -= this.angle * Math.PI / 180;
+                            break;
+                        case '[':
+                            stack.push({x: currentX, y: currentY, angle: currentAngle});
+                            break;
+                        case ']':
+                            let state = stack.pop();
+                            currentX = state.x;
+                            currentY = state.y;
+                            currentAngle = state.angle;
+                            break;
+                    }
+                }
+            }
+            
+            update(deltaTime) {
+                this.age += deltaTime * speed;
+                
+                if (this.age > (this.generations + 1) * 10 * systemParams.treeGrowth && this.generations < 4) {
+                    this.grow();
+                }
+                
+                for (let leaf of this.leaves) {
+                    leaf.age += deltaTime * 0.01;
+                    leaf.chlorophyll = Math.max(0.3, leaf.chlorophyll - deltaTime * 0.001);
+                    
+                    this.coherenceContribution += leaf.chlorophyll * deltaTime * 0.001 * systemParams.photosynthesisRate;
+                }
+                
+                this.coherenceContribution *= 0.999;
+            }
+            
+            getCoherenceInfluence() {
+                return this.coherenceContribution;
+            }
+            
+            render(ctx) {
+                // Enhanced photo-realistic bark rendering
+                for (let branch of this.branches) {
+                    const branchLength = Math.sqrt(
+                        (branch.x2 - branch.x1) ** 2 + (branch.y2 - branch.y1) ** 2
+                    );
+                    
+                    // Realistic bark texture
+                    const barkHue = 25 + Math.sin(branch.x1 * 0.01) * 10;
+                    const barkSaturation = 45 + branch.generation * 5;
+                    const barkLightness = 25 + Math.sin(branchLength * 0.1) * 15;
+                    
+                    // Main branch
+                    ctx.strokeStyle = `hsl(${barkHue}, ${barkSaturation}%, ${barkLightness}%)`;
+                    ctx.lineWidth = branch.thickness;
+                    ctx.lineCap = 'round';
+                    
+                    // Branch highlights and shadows
+                    const gradient = ctx.createLinearGradient(
+                        branch.x1, branch.y1 - branch.thickness/2, 
+                        branch.x1, branch.y1 + branch.thickness/2
+                    );
+                    gradient.addColorStop(0, `hsl(${barkHue}, ${barkSaturation}%, ${barkLightness + 15}%)`);
+                    gradient.addColorStop(0.5, `hsl(${barkHue}, ${barkSaturation}%, ${barkLightness}%)`);
+                    gradient.addColorStop(1, `hsl(${barkHue}, ${barkSaturation}%, ${barkLightness - 10}%)`);
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.beginPath();
+                    ctx.moveTo(branch.x1, branch.y1);
+                    ctx.lineTo(branch.x2, branch.y2);
+                    ctx.stroke();
+                    
+                    // Bark texture details
+                    if (branch.thickness > 3) {
+                        ctx.strokeStyle = `hsl(${barkHue - 10}, ${barkSaturation + 20}%, ${barkLightness - 20}%)`;
+                        ctx.lineWidth = 0.5;
+                        
+                        // Vertical bark lines
+                        const numLines = Math.floor(branch.thickness / 2);
+                        for (let i = 0; i < numLines; i++) {
+                            const offset = (i - numLines/2) * 1.5;
+                            const angle = Math.atan2(branch.y2 - branch.y1, branch.x2 - branch.x1);
+                            const perpX = Math.cos(angle + Math.PI/2) * offset;
+                            const perpY = Math.sin(angle + Math.PI/2) * offset;
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(branch.x1 + perpX, branch.y1 + perpY);
+                            ctx.lineTo(branch.x2 + perpX, branch.y2 + perpY);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Photo-realistic leaves with seasonal variation
+                for (let leaf of this.leaves) {
+                    // More realistic green leaf colors - avoid blue tones
+                    const baseGreen = 110; // Shifted to more yellow-green
+                    const seasonalShift = leaf.seasonalTint * 30; // Reduced range to 30 degrees
+                    const leafHue = Math.max(90, Math.min(140, baseGreen + seasonalShift)); // Constrain to realistic greens
+                    const leafSaturation = 50 + leaf.chlorophyll * 45; // Enhanced saturation
+                    const leafLightness = 25 + leaf.chlorophyll * 35; // Darker base for more realistic appearance
+                    
+                    // Leaf shadow
+                    ctx.fillStyle = `hsla(${leafHue - 20}, ${leafSaturation}, ${leafLightness - 20}%, 0.3)`;
+                    ctx.beginPath();
+                    if (leaf.shape === 'oval') {
+                        ctx.ellipse(leaf.x + 1, leaf.y + 1, leaf.size * 0.8, leaf.size * 0.6, leaf.age, 0, Math.PI * 2);
+                    } else {
+                        // Serrated leaf
+                        this.drawSerratedLeaf(ctx, leaf.x + 1, leaf.y + 1, leaf.size, leaf.age);
+                    }
+                    ctx.fill();
+                    
+                    // Main leaf
+                    const leafGradient = ctx.createRadialGradient(
+                        leaf.x, leaf.y, 0,
+                        leaf.x, leaf.y, leaf.size
+                    );
+                    leafGradient.addColorStop(0, `hsl(${leafHue + 10}, ${leafSaturation + 20}%, ${leafLightness + 10}%)`);
+                    leafGradient.addColorStop(0.7, `hsl(${leafHue}, ${leafSaturation}%, ${leafLightness}%)`);
+                    leafGradient.addColorStop(1, `hsl(${leafHue - 10}, ${leafSaturation - 10}%, ${leafLightness - 15}%)`);
+                    
+                    ctx.fillStyle = leafGradient;
+                    ctx.beginPath();
+                    if (leaf.shape === 'oval') {
+                        ctx.ellipse(leaf.x, leaf.y, leaf.size * 0.8, leaf.size * 0.6, leaf.age, 0, Math.PI * 2);
+                    } else {
+                        this.drawSerratedLeaf(ctx, leaf.x, leaf.y, leaf.size, leaf.age);
+                    }
+                    ctx.fill();
+                    
+                    // Leaf veins
+                    ctx.strokeStyle = `hsl(${leafHue - 30}, ${leafSaturation + 30}%, ${leafLightness - 25}%)`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    // Central vein
+                    ctx.moveTo(leaf.x - leaf.size * 0.6, leaf.y);
+                    ctx.lineTo(leaf.x + leaf.size * 0.6, leaf.y);
+                    // Side veins
+                    for (let v = -0.4; v <= 0.4; v += 0.2) {
+                        ctx.moveTo(leaf.x, leaf.y);
+                        ctx.lineTo(leaf.x + leaf.size * 0.3, leaf.y + leaf.size * v);
+                        ctx.moveTo(leaf.x, leaf.y);
+                        ctx.lineTo(leaf.x + leaf.size * 0.3, leaf.y - leaf.size * v);
+                    }
+                    ctx.stroke();
+                    
+                    // Leaf highlights
+                    ctx.fillStyle = `hsla(${leafHue + 30}, ${leafSaturation + 40}%, ${leafLightness + 30}%, 0.6)`;
+                    ctx.beginPath();
+                    ctx.ellipse(leaf.x - leaf.size * 0.2, leaf.y - leaf.size * 0.2, leaf.size * 0.15, leaf.size * 0.1, leaf.age, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Enhanced coherence field visualization
+                if (this.coherenceContribution > 0.01 && showCoherence) {
+                    const fieldIntensity = Math.min(this.coherenceContribution * 10, 0.3);
+                    const fieldRadius = 100 + this.coherenceContribution * 200;
+                    
+                    // Multiple concentric coherence rings
+                    for (let ring = 0; ring < 3; ring++) {
+                        const ringRadius = fieldRadius * (0.4 + ring * 0.3);
+                        const ringAlpha = fieldIntensity * (0.8 - ring * 0.2);
+                        
+                        ctx.strokeStyle = `rgba(74, 154, 74, ${ringAlpha})`;
+                        ctx.lineWidth = 2 - ring * 0.5;
+                        ctx.setLineDash([5 + ring * 2, 5 + ring * 2]);
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y - 50, ringRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    ctx.setLineDash([]);
+                }
+            }
+            
+            drawSerratedLeaf(ctx, x, y, size, rotation) {
+                const points = 12;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rotation);
+                
+                ctx.beginPath();
+                for (let i = 0; i < points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const radiusVariation = i % 2 === 0 ? 1.0 : 0.7; // Serrated edge
+                    const radius = size * 0.6 * radiusVariation;
+                    const px = Math.cos(angle) * radius;
+                    const py = Math.sin(angle) * radius * 0.8; // Slightly oval
+                    
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.restore();
+            }
+        }
+        
+        // ============= CRR PHASE DETECTION =============
+        
+        function updateCRRPhase() {
+            // Analyze system state to determine active CRR phase
+            const hasRupture = organisms.some(org => 
+                org.metamorphicPhase === 'rupture_dissolution' || 
+                org.bodyPlan === 'soup'
+            );
+            
+            const buildingPhase = organisms.some(org => 
+                org.bodyPlan === 'embryonic' || org.bodyPlan === 'larval'
+            );
+            
+            const regeneratingPhase = organisms.some(org => 
+                org.bodyPlan === 'adult' || org.bodyPlan === 'pupal'
+            );
+            
+            let newPhase = 'coherence';
+            let title = 'Coherence Phase: C(x,t) = ∫₀ᵗ L(x,τ) dτ';
+            let description = 'Biological coherence building through embryonic development and memory accumulation';
+            let codeSnippet = `<span class="code-comment">// UCF Coherence Function: C(x,t) = ∫₀ᵗ L(x,τ) dτ</span>
+<span class="code-function">updateCoherence</span>(<span class="code-variable">deltaTime</span>) {
+    <span class="code-variable">this.L</span> <span class="code-operator">=</span> Math.<span class="code-function">min</span>(<span class="code-variable">0.4</span>, <span class="code-variable">this.L</span> <span class="code-operator">+</span> <span class="code-variable">this.calculateMemoryDensity()</span> <span class="code-operator">*</span> <span class="code-variable">deltaTime</span>);
+    <span class="code-variable">this.C</span> <span class="code-operator">+=</span> <span class="code-variable">coherenceGrowth</span> <span class="code-operator">*</span> <span class="code-variable">deltaTime</span>;
+}`;
+            
+            if (hasRupture) {
+                newPhase = 'rupture';
+                title = 'Rupture Phase: R_δ[ψ](x,t) = δ(t-t₀)';
+                description = 'Metamorphic rupture events - sudden biological transformation through developmental dissolution';
+                codeSnippet = `<span class="code-comment">// UCF Rupture Operator: R_δ[ψ](x,t) = δ(t-t₀)</span>
+<span class="code-function">detectRupture</span>() {
+    <span class="code-variable">gradient</span> <span class="code-operator">=</span> Math.<span class="code-function">abs</span>(<span class="code-variable">recent[recent.length-1].coherence</span> <span class="code-operator">-</span> <span class="code-variable">recent[0].coherence</span>);
+    <span class="code-operator">return</span> <span class="code-variable">gradient</span> <span class="code-operator">></span> <span class="code-variable">0.25</span> <span class="code-operator">&&</span> <span class="code-variable">this.C</span> <span class="code-operator">></span> <span class="code-variable">coherenceThreshold</span>;
+}`;
+            } else if (regeneratingPhase) {
+                newPhase = 'regeneration';
+                title = 'Regeneration Phase: R[χ](x,t) = ∫₋∞ᵗ φ(x,τ) e^(C(x,τ)/Ω) dτ';
+                description = 'Morphological regeneration and wing pattern formation - new biological structures emerging from memory';
+                codeSnippet = `<span class="code-comment">// UCF Regeneration Operator: R[χ](x,t) = ∫₋∞ᵗ φ(x,τ) e^(C(x,τ)/Ω) dτ</span>
+<span class="code-function">calculateRegeneration</span>() {
+    <span class="code-variable">phi_term</span> <span class="code-operator">=</span> Math.<span class="code-function">min</span>(<span class="code-variable">0.25</span>, <span class="code-variable">trace.density</span>);
+    <span class="code-variable">exp_term</span> <span class="code-operator">=</span> Math.<span class="code-function">exp</span>(<span class="code-variable">coherence_normalized</span>);
+    <span class="code-operator">return</span> <span class="code-variable">phi_term</span> <span class="code-operator">*</span> <span class="code-variable">exp_term</span> <span class="code-operator">*</span> <span class="code-variable">temporal_decay</span>;
+}`;
+            }
+            
+            if (newPhase !== currentCRRPhase) {
+                currentCRRPhase = newPhase;
+                
+                const statusElement = document.getElementById('crr-status');
+                const phaseElement = document.getElementById('current-crr-phase');
+                const descElement = document.getElementById('crr-description');
+                const codeElement = document.getElementById('code-snippet');
+                
+                statusElement.className = `crr-status ${newPhase}`;
+                phaseElement.textContent = title;
+                descElement.textContent = description;
+                codeElement.innerHTML = codeSnippet;
+                
+                console.log(`CRR Phase Transition: ${newPhase.toUpperCase()}`);
+            }
+        }
+        
+        // ============= MAIN SIMULATION FUNCTIONS =============
+        
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        
+        function initialize() {
+            resizeCanvas();
+            
+            tree = new LSystemTree(canvas.width / 2, canvas.height - 100);
+            tree.grow();
+            
+            addOrganism();
+            updateUI();
+        }
+        
+        function addOrganism() {
+            const x = tree.x + (Math.random() - 0.5) * 100;
+            const y = tree.y - 50;
+            organisms.push(new CRROrganism(x, y));
+            totalOrganismsCreated++;
+        }
+        
+        function triggerRupture() {
+            for (let organism of organisms) {
+                if (organism.crr.C > 0.3) {
+                    organism.triggerMetamorphosis();
+                    break;
+                }
+            }
+        }
+        
+        function reset() {
+            organisms = [];
+            tree = new LSystemTree(canvas.width / 2, canvas.height - 100);
+            tree.grow();
+            time = 0;
+            totalRuptures = 0;
+            totalRebirth = 0;
+            totalMatingEvents = 0;
+            totalOrganismsCreated = 0;
+            generationStats = {};
+            currentCRRPhase = 'coherence';
+        }
+        
+        function updatePerformance() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastTime = now;
+            }
+        }
+        
+        function updateUI() {
+            if (organisms.length === 0) return;
+            
+            // Calculate stage counts
+            const stageCounts = {
+                embryonic: 0,
+                larval: 0,
+                pupal: 0,
+                soup: 0,
+                adult: 0
+            };
+            
+            let totalCoherence = 0;
+            let maxGeneration = 0;
+            
+            organisms.forEach(org => {
+                stageCounts[org.bodyPlan] = (stageCounts[org.bodyPlan] || 0) + 1;
+                totalCoherence += org.crr.C;
+                maxGeneration = Math.max(maxGeneration, org.generation);
+            });
+            
+            const avgCoherence = totalCoherence / organisms.length;
+            
+            // Update CRR Framework Status
+            document.getElementById('crr-phase-status').textContent = currentCRRPhase;
+            document.getElementById('active-organisms').textContent = organisms.length;
+            document.getElementById('total-ruptures').textContent = totalRuptures;
+            document.getElementById('avg-coherence').textContent = avgCoherence.toFixed(3);
+            
+            // Update Metamorphosis Dynamics
+            document.getElementById('embryonic-count').textContent = stageCounts.embryonic;
+            document.getElementById('larval-count').textContent = stageCounts.larval;
+            document.getElementById('pupal-count').textContent = stageCounts.pupal + stageCounts.soup;
+            document.getElementById('adult-count').textContent = stageCounts.adult;
+            
+            // Update Evolutionary Genetics
+            document.getElementById('total-population').textContent = organisms.length;
+            document.getElementById('max-generation').textContent = maxGeneration;
+            document.getElementById('mating-events').textContent = totalMatingEvents;
+            document.getElementById('organisms-created').textContent = totalOrganismsCreated;
+            
+            // Update Ecosystem State
+            document.getElementById('tree-branches').textContent = tree ? tree.branches.length : 0;
+            document.getElementById('tree-leaves').textContent = tree ? tree.leaves.length : 0;
+            document.getElementById('field-strength').textContent = tree ? tree.coherenceContribution.toFixed(3) : '0.000';
+            document.getElementById('fps-display').textContent = fps;
+        }
+        
+        function animate() {
+            if (!running) return;
+            
+            const deltaTime = 1/60;
+            time += deltaTime * speed;
+            
+            // Clear canvas
+            ctx.fillStyle = 'rgba(10, 26, 15, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and render tree
+            if (tree) {
+                tree.update(deltaTime);
+                tree.render(ctx);
+            }
+            
+            // Update and render organisms
+            for (let organism of organisms) {
+                organism.update(deltaTime);
+                organism.render(ctx);
+            }
+            
+            // Remove old organisms
+            organisms = organisms.filter(org => org.age < 300);
+            
+            // Auto-spawn organisms
+            if (organisms.length < 3 && Math.random() < systemParams.autoSpawnRate * 0.01 * speed) {
+                addOrganism();
+            }
+            
+            updateCRRPhase();
+            updateUI();
+            updatePerformance();
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // ============= EVENT HANDLERS =============
+        
+        // Main controls
+        document.getElementById('start-btn').addEventListener('click', () => {
+            running = !running;
+            const btn = document.getElementById('start-btn');
+            
+            if (running) {
+                btn.textContent = 'Pause Evolution';
+                btn.classList.add('active');
+                animate();
+            } else {
+                btn.textContent = 'Start Evolution';
+                btn.classList.remove('active');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        });
+        
+        document.getElementById('add-embryo-btn').addEventListener('click', addOrganism);
+        document.getElementById('trigger-rupture-btn').addEventListener('click', triggerRupture);
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            running = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.getElementById('start-btn').textContent = 'Start Evolution';
+            document.getElementById('start-btn').classList.remove('active');
+            reset();
+            initialize();
+        });
+        
+        // Canvas click for adding organisms
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            organisms.push(new CRROrganism(x, y));
+            totalOrganismsCreated++;
+        });
+        
+        // Parameter controls
+        const sliders = [
+            'evolution-speed', 'coherence-rate', 'memory-density', 'rupture-threshold',
+            'regeneration-power', 'wing-complexity', 'tree-growth', 'photosynthesis-rate',
+            'auto-spawn', 'pattern-evolution', 'color-variation', 'imaginal-disc-potency'
+        ];
+        
+        // Mapping slider IDs to their corresponding value display IDs
+        const sliderValueMap = {
+            'evolution-speed': 'speed-val',
+            'coherence-rate': 'coherence-rate-val',
+            'memory-density': 'memory-density-val',
+            'rupture-threshold': 'rupture-threshold-val',
+            'regeneration-power': 'regeneration-power-val',
+            'wing-complexity': 'wing-complexity-val',
+            'tree-growth': 'tree-growth-val',
+            'photosynthesis-rate': 'photosynthesis-val',
+            'auto-spawn': 'spawn-rate-val',
+            'pattern-evolution': 'pattern-evolution-val',
+            'color-variation': 'color-variation-val',
+            'imaginal-disc-potency': 'imaginal-disc-val'
+        };
+        
+        sliders.forEach(sliderId => {
+            const slider = document.getElementById(sliderId);
+            const valueSpan = document.getElementById(sliderValueMap[sliderId]);
+            
+            if (!slider || !valueSpan) {
+                console.warn(`Slider or value span not found for: ${sliderId}`);
+                return;
+            }
+            
+            slider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                
+                if (sliderId === 'evolution-speed') {
+                    speed = value;
+                    valueSpan.textContent = value + 'x';
+                } else if (sliderId === 'color-variation') {
+                    systemParams.colorVariation = value;
+                    valueSpan.textContent = value;
+                } else if (sliderId === 'imaginal-disc-potency') {
+                    systemParams.imaginalDiscPotency = value;
+                    valueSpan.textContent = value;
+                } else {
+                    const paramMap = {
+                        'coherence-rate': 'coherenceRate',
+                        'memory-density': 'memoryDensity',
+                        'rupture-threshold': 'ruptureThreshold',
+                        'regeneration-power': 'regenerationPower',
+                        'wing-complexity': 'wingComplexity',
+                        'tree-growth': 'treeGrowth',
+                        'photosynthesis-rate': 'photosynthesisRate',
+                        'auto-spawn': 'autoSpawnRate',
+                        'pattern-evolution': 'patternEvolution'
+                    };
+                    
+                    if (paramMap[sliderId]) {
+                        systemParams[paramMap[sliderId]] = value;
+                        
+                        // Update existing organisms with new parameters
+                        if (sliderId === 'rupture-threshold' || sliderId === 'coherence-rate') {
+                            organisms.forEach(org => {
+                                if (sliderId === 'rupture-threshold') {
+                                    org.crr.theta_rupture = value;
+                                }
+                                if (sliderId === 'coherence-rate') {
+                                    org.crr.coherence_build_rate = value;
+                                }
+                            });
+                        }
+                    }
+                    
+                    valueSpan.textContent = value.toString();
+                }
+                
+                console.log(`Updated ${sliderId}: ${value}`);
+            });
+        });
+        
+        // Checkboxes
+        document.getElementById('show-coherence').addEventListener('change', (e) => {
+            showCoherence = e.target.checked;
+        });
+        
+        document.getElementById('enable-genetics').addEventListener('change', (e) => {
+            enableGenetics = e.target.checked;
+        });
+        
+        document.getElementById('enable-mating').addEventListener('change', (e) => {
+            enableMating = e.target.checked;
+        });
+        
+        document.getElementById('show-generation').addEventListener('change', (e) => {
+            showGeneration = e.target.checked;
+        });
+        
+        // Initialize system
+        window.addEventListener('resize', resizeCanvas);
+        initialize();
+        
+        console.log("CRR Butterfly Metamorphosis System Ready");
+        console.log("Framework: Coherence-Rupture-Regeneration (CRR)");
+        console.log("Click anywhere to spawn organisms");
+    </script>
+</body>
+</html>

@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta viewport="width=device-width, initial-scale=1.0">
+    <title>CRR Zippo Lighter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f23, #1a1a3a);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .title h1 {
+            color: #FFD700;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(255, 215, 0, 0.3);
+        }
+        
+        .title p {
+            color: #CCC;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .lighter-container {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        #lighterCanvas {
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: radial-gradient(circle at 30% 40%, #1a1a2e, #16213e, #0f0f23);
+            cursor: grab;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        
+        #lighterCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .controls {
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border: 2px solid #4a4a6a;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 420px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            gap: 15px;
+        }
+        
+        .control-label {
+            color: #AAA;
+            min-width: 130px;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .control-value {
+            color: #FFF;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: right;
+            font-size: 12px;
+            text-shadow: 0 0 4px rgba(255,255,255,0.3);
+        }
+        
+        .control-slider {
+            flex: 1;
+            height: 20px;
+            background: linear-gradient(90deg, #333, #555, #333);
+            outline: none;
+            border-radius: 10px;
+            border: 1px solid #666;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .sound-button {
+            background: linear-gradient(145deg, #555, #333);
+            color: #FFF;
+            border: 1px solid #777;
+            border-radius: 6px;
+            padding: 8px 18px;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        
+        .sound-button:hover {
+            background: linear-gradient(145deg, #666, #444);
+            transform: translateY(-1px);
+        }
+        
+        .stats {
+            background: linear-gradient(145deg, #1a3a1a, #0d2a0d);
+            border: 2px solid #4a6a4a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 11px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .stat-label { color: #AAA; }
+        .stat-value { 
+            color: #FFF; 
+            font-weight: bold;
+            text-shadow: 0 0 4px rgba(255,255,255,0.2);
+        }
+        
+        .crr-info {
+            background: linear-gradient(145deg, #1a1a3a, #0f0f2a);
+            border: 2px solid #6A5ACD;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 10px;
+            color: #DDA0DD;
+            line-height: 1.4;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .instructions {
+            text-align: center;
+            margin: 15px 0;
+            color: #FFD700;
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>🔥 CRR Zippo Lighter 🔥</h1>
+        <p>
+            Coherence • Rupture • Regeneration Framework<br/>
+            <em>Mathematical Gas Combustion, emergent flame, diagetic sound</em>
+        </p>
+    </div>
+    
+    <div class="instructions">
+        Drag to move • Click lid to open/close • Click flint wheel to strike
+    </div>
+    
+    <div class="lighter-container">
+        <canvas id="lighterCanvas" width="400" height="500"></canvas>
+    </div>
+    
+    <div class="controls">
+        <div class="control-row">
+            <span class="control-label">Fuel Level:</span>
+            <input type="range" class="control-slider" id="fuelLevel" min="0.1" max="1.0" step="0.05" value="0.8">
+            <span class="control-value" id="fuelValue">80%</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">Flint Quality:</span>
+            <input type="range" class="control-slider" id="flintQuality" min="0.3" max="1.0" step="0.05" value="0.9">
+            <span class="control-value" id="flintValue">90%</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">CRR Coupling:</span>
+            <input type="range" class="control-slider" id="crrCoupling" min="0.1" max="1.0" step="0.05" value="0.6">
+            <span class="control-value" id="crrValue">0.60</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">Wind Factor:</span>
+            <input type="range" class="control-slider" id="windFactor" min="0.0" max="0.8" step="0.05" value="0.1">
+            <span class="control-value" id="windValue">0.10</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">Metal Shine:</span>
+            <input type="range" class="control-slider" id="metalShine" min="0.3" max="2.0" step="0.1" value="1.2">
+            <span class="control-value" id="metalShineValue">1.20</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">Sound:</span>
+            <button id="soundToggle" class="sound-button">ENABLE</button>
+            <span class="control-value" id="soundStatus">OFF</span>
+        </div>
+        <div class="control-row">
+            <span class="control-label">Gas Volume:</span>
+            <input type="range" class="control-slider" id="gasVolume" min="0.0" max="1.0" step="0.1" value="0.7">
+            <span class="control-value" id="gasVolumeValue">70%</span>
+        </div>
+        
+        <div class="stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Coherence:</span>
+                    <span class="stat-value" id="coherenceLevel">0.50</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Flame Temp:</span>
+                    <span class="stat-value" id="flameTemp">293 K</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Rupture Events:</span>
+                    <span class="stat-value" id="ruptureCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Lid State:</span>
+                    <span class="stat-value" id="lidState">CLOSED</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="crr-info">
+            <strong>CRR Zippo Physics:</strong><br/>
+            <strong>Coherence Integration:</strong> C(x) = ∫ L(x,τ) dτ<br/>
+            <strong>Rupture Detection:</strong> δ(t-t₀) = Dirac delta at rupture time<br/>
+            <strong>Regeneration Operator:</strong> R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ<br/>
+            <strong>Metal Physics:</strong> Lighter has optical wave interference patterns on the metalcasing :-)
+        </div>
+    </div>
+
+    <script>
+        // Canvas and rendering context
+        const canvas = document.getElementById('lighterCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Enhanced CRR Zippo State System with Metal Physics
+        let zippoState = {
+            // Position and movement
+            x: canvas.width / 2,
+            y: canvas.height / 2 + 30,
+            lastPosition: { x: canvas.width / 2, y: canvas.height / 2 + 30 },
+            velocity: { x: 0, y: 0 },
+            acceleration: { x: 0, y: 0 },
+            speed: 0,
+            movementIntensity: 0,
+            
+            // Physical properties
+            fuelLevel: 0.8,
+            flintQuality: 0.9,
+            crrCoupling: 0.6,
+            windFactor: 0.1,
+            metalShine: 1.2,
+            
+            // CRR Mathematical Fields
+            coherenceField: new Float32Array(32),
+            fuelField: new Float32Array(32),
+            thermalField: new Float32Array(32),
+            sparkField: new Float32Array(16),
+            
+            // Enhanced mechanical system
+            lidOpen: false,
+            lidAngle: 0,
+            lidTargetAngle: 0,
+            lidVelocity: 0,
+            lidInertia: 0.15,
+            lidSpring: 0.2,
+            lidDamping: 0.85,
+            wheelRotation: 0,
+            wheelVelocity: 0,
+            flintWear: 0,
+            
+            // Flame physics
+            isLit: false,
+            flameIntensity: 0,
+            flameTemp: 293.15,
+            ignitionEnergy: 0,
+            flameSegments: [],
+            
+            // CRR Dynamics
+            ruptureEvents: 0,
+            coherenceLevel: 0.5,
+            emergenceLevel: 0,
+            
+            // Interaction system
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 },
+            mousePos: { x: 0, y: 0 },
+            lastMousePos: { x: 0, y: 0 },
+            mouseVelocity: { x: 0, y: 0 },
+            mouseSpeed: 0,
+            lastStrikeTime: 0,
+            flickDetected: false,
+            
+            // Audio system
+            audioEnabled: false,
+            audioContext: null,
+            masterGain: null,
+            flameOscillator: null,
+            gasVolume: 0.7,
+            lastSoundTime: { lid: 0, flint: 0, ignition: 0 },
+            
+            // Time tracking
+            time: 0,
+            lastFrameTime: 0
+        };
+        
+        // CRR Framework Parameters
+        const crrParams = {
+            coherenceThreshold: 0.65,
+            ruptureThreshold: 0.8,
+            temporalIntegration: 0.08,
+            quantumNoise: 0.04,
+            sparkCoherence: 0.7,
+            flameStability: 0.6,
+            fuelConsumption: 0.0002,
+            rebirthStrength: 0.4
+        };
+        
+        // Physical constants
+        const CONSTANTS = {
+            BUTANE_COMBUSTION_TEMP: 1970,
+            IGNITION_ENERGY: 0.25,
+            SPARK_TEMP: 2800,
+            ROOM_TEMP: 293.15,
+            THERMAL_DIFFUSION: 0.12,
+            FLICK_VELOCITY_THRESHOLD: 15,
+            LID_MAX_ANGLE: Math.PI * 0.45
+        };
+        
+        // Advanced noise functions (from fish scale script)
+        function hash21(x, y) {
+            let p = x * 233.34 + y * 851.73;
+            p = (p * 0.1031) % 1;
+            p += p * (p + 23.45);
+            return (p * p) % 1;
+        }
+        
+        function hash22(x, y) {
+            let p = x * 233.34 + y * 851.73;
+            p = (p * 0.1031) % 1;
+            p += p * (p + 23.45);
+            let px = (p * p) % 1;
+            let py = (p + x + y) % 1;
+            return { x: px, y: py };
+        }
+        
+        function smoothNoise(x, y) {
+            const ix = Math.floor(x);
+            const iy = Math.floor(y);
+            const fx = x - ix;
+            const fy = y - iy;
+            
+            const f = fx * fx * (3 - 2 * fx);
+            const g = fy * fy * (3 - 2 * fy);
+            
+            const a = hash21(ix, iy);
+            const b = hash21(ix + 1, iy);
+            const c = hash21(ix, iy + 1);
+            const d = hash21(ix + 1, iy + 1);
+            
+            return a * (1 - f) * (1 - g) + b * f * (1 - g) + c * (1 - f) * g + d * f * g;
+        }
+        
+        // Initialize CRR fields and flame segments
+        function initializeSystem() {
+            for (let i = 0; i < 32; i++) {
+                zippoState.coherenceField[i] = 0.4 + Math.random() * 0.2;
+                zippoState.fuelField[i] = zippoState.fuelLevel * (0.8 + Math.random() * 0.4);
+                zippoState.thermalField[i] = 0.3 + Math.random() * 0.1;
+            }
+            
+            for (let i = 0; i < 16; i++) {
+                zippoState.sparkField[i] = Math.random() * 0.05;
+            }
+            
+            zippoState.flameSegments = [];
+            for (let i = 0; i < 12; i++) {
+                zippoState.flameSegments.push({
+                    x: 0, y: 0,
+                    intensity: 0,
+                    temperature: CONSTANTS.ROOM_TEMP,
+                    age: 0,
+                    vx: 0, vy: 0
+                });
+            }
+            
+            zippoState.lastFrameTime = Date.now();
+        }
+        
+        // Core CRR Physics Engine (maintaining all original functionality)
+        function updateCRRPhysics() {
+            const currentTime = Date.now();
+            const deltaTime = Math.min((currentTime - zippoState.lastFrameTime) / 1000, 0.033);
+            zippoState.lastFrameTime = currentTime;
+            
+            let totalCoherence = 0;
+            let totalFuelCoherence = 0;
+            
+            // 1. Zippo movement physics tracking
+            const dx = zippoState.x - zippoState.lastPosition.x;
+            const dy = zippoState.y - zippoState.lastPosition.y;
+            
+            zippoState.velocity.x = dx / deltaTime;
+            zippoState.velocity.y = dy / deltaTime;
+            zippoState.speed = Math.sqrt(zippoState.velocity.x ** 2 + zippoState.velocity.y ** 2);
+            
+            zippoState.acceleration.x = (zippoState.velocity.x - (zippoState.lastPosition.vx || 0)) / deltaTime;
+            zippoState.acceleration.y = (zippoState.velocity.y - (zippoState.lastPosition.vy || 0)) / deltaTime;
+            
+            zippoState.movementIntensity = Math.min(1, zippoState.speed / 300);
+            
+            zippoState.lastPosition.x = zippoState.x;
+            zippoState.lastPosition.y = zippoState.y;
+            zippoState.lastPosition.vx = zippoState.velocity.x;
+            zippoState.lastPosition.vy = zippoState.velocity.y;
+            
+            // 2. Enhanced lid physics
+            const lidTargetAngle = zippoState.lidOpen ? CONSTANTS.LID_MAX_ANGLE : 0;
+            const lidSpringForce = (lidTargetAngle - zippoState.lidAngle) * zippoState.lidSpring;
+            const lidDampingForce = -zippoState.lidVelocity * (1 - zippoState.lidDamping);
+            
+            zippoState.lidVelocity += (lidSpringForce + lidDampingForce) / zippoState.lidInertia;
+            zippoState.lidAngle += zippoState.lidVelocity * deltaTime;
+            
+            if (zippoState.lidAngle < 0) {
+                zippoState.lidAngle = 0;
+                zippoState.lidVelocity *= -0.3;
+            } else if (zippoState.lidAngle > CONSTANTS.LID_MAX_ANGLE) {
+                zippoState.lidAngle = CONSTANTS.LID_MAX_ANGLE;
+                zippoState.lidVelocity *= -0.4;
+            }
+            
+            // 3. Mouse velocity tracking for flick detection
+            const mouseDx = zippoState.mousePos.x - zippoState.lastMousePos.x;
+            const mouseDy = zippoState.mousePos.y - zippoState.lastMousePos.y;
+            zippoState.mouseVelocity.x = mouseDx / deltaTime;
+            zippoState.mouseVelocity.y = mouseDy / deltaTime;
+            zippoState.mouseSpeed = Math.sqrt(zippoState.mouseVelocity.x ** 2 + zippoState.mouseVelocity.y ** 2);
+            
+            if (zippoState.mouseSpeed > CONSTANTS.FLICK_VELOCITY_THRESHOLD && zippoState.isDragging) {
+                if (!zippoState.flickDetected) {
+                    zippoState.flickDetected = true;
+                    snapLidOpen();
+                }
+            } else if (zippoState.mouseSpeed < CONSTANTS.FLICK_VELOCITY_THRESHOLD * 0.5) {
+                zippoState.flickDetected = false;
+            }
+            
+            zippoState.lastMousePos = { ...zippoState.mousePos };
+            
+            // 4-11. Complete CRR physics (maintaining all original calculations)
+            // [All original physics calculations remain exactly the same]
+            
+            // CRR Fuel field evolution
+            for (let i = 0; i < 32; i++) {
+                const prev = zippoState.fuelField[(i - 1 + 32) % 32];
+                const next = zippoState.fuelField[(i + 1) % 32];
+                const diffusion = (prev + next) * 0.5 - zippoState.fuelField[i];
+                
+                if (isFinite(diffusion)) {
+                    zippoState.fuelField[i] += diffusion * 0.02;
+                }
+                zippoState.fuelField[i] = Math.max(0, Math.min(1, zippoState.fuelField[i]));
+                totalFuelCoherence += zippoState.fuelField[i];
+            }
+            
+            // CRR Coherence field evolution
+            for (let i = 0; i < 32; i++) {
+                const prev = zippoState.coherenceField[(i - 1 + 32) % 32];
+                const next = zippoState.coherenceField[(i + 1) % 32];
+                const entanglement = (prev + next) * 0.5 - zippoState.coherenceField[i];
+                
+                const fuelInfluence = zippoState.fuelField[i] * zippoState.crrCoupling;
+                const thermalCoupling = zippoState.thermalField[i] * 0.1;
+                const quantumFluctuation = (Math.random() - 0.5) * crrParams.quantumNoise;
+                
+                let coherenceUpdate = entanglement * 0.03 + 
+                                     fuelInfluence * 0.02 + 
+                                     thermalCoupling * 0.01 +
+                                     quantumFluctuation;
+                
+                if (isFinite(coherenceUpdate)) {
+                    zippoState.coherenceField[i] += coherenceUpdate;
+                }
+                
+                zippoState.coherenceField[i] = Math.max(0.1, Math.min(0.95, zippoState.coherenceField[i]));
+                
+                if (!isFinite(zippoState.coherenceField[i])) {
+                    zippoState.coherenceField[i] = 0.5;
+                }
+                
+                totalCoherence += zippoState.coherenceField[i];
+            }
+            
+            zippoState.coherenceLevel = totalCoherence / 32;
+            
+            // Spark generation and flame physics (maintaining all original code)
+            if (Math.abs(zippoState.wheelVelocity) > 2.0) {
+                const frictionEnergy = Math.abs(zippoState.wheelVelocity) * zippoState.flintQuality;
+                const coherenceAmplification = zippoState.coherenceLevel * crrParams.sparkCoherence;
+                
+                zippoState.ignitionEnergy += frictionEnergy * coherenceAmplification * 0.1;
+                
+                for (let i = 0; i < 16; i++) {
+                    zippoState.sparkField[i] += frictionEnergy * (0.1 + Math.random() * 0.2);
+                    zippoState.sparkField[i] = Math.min(1, zippoState.sparkField[i]);
+                }
+                
+                zippoState.flintWear += frictionEnergy * 0.001;
+            }
+            
+            for (let i = 0; i < 16; i++) {
+                zippoState.sparkField[i] *= 0.85;
+            }
+            
+            // Enhanced ignition and flame dynamics (maintaining original functionality)
+            const sparkEnergy = zippoState.sparkField.reduce((a, b) => a + b) / 16;
+            const fuelDensity = totalFuelCoherence / 32;
+            const lidOpenFactor = zippoState.lidAngle / CONSTANTS.LID_MAX_ANGLE;
+            
+            if (!zippoState.isLit && zippoState.ignitionEnergy > CONSTANTS.IGNITION_ENERGY && 
+                fuelDensity > 0.3 && sparkEnergy > 0.2 && lidOpenFactor > 0.7) {
+                zippoState.isLit = true;
+                zippoState.flameIntensity = 0.1;
+                zippoState.ignitionEnergy = 0;
+                
+                playIgnitionSound();
+                startFlameSound();
+                
+                for (let i = 0; i < zippoState.flameSegments.length; i++) {
+                    zippoState.flameSegments[i].intensity = Math.random() * 0.3;
+                    zippoState.flameSegments[i].age = 0;
+                }
+            }
+            
+            // Complete flame physics with movement response (maintaining all original calculations)
+            if (zippoState.isLit && lidOpenFactor > 0.3) {
+                const fuelAvailable = fuelDensity > 0.1;
+                const windEffect = 1 - zippoState.windFactor;
+                const coherenceStability = zippoState.coherenceLevel * crrParams.flameStability;
+                const lidProtection = Math.min(1, lidOpenFactor + 0.3);
+                const movementDamping = 1 - (zippoState.movementIntensity * 0.4);
+                const movementTurbulence = zippoState.movementIntensity * 2;
+                
+                if (zippoState.speed > 400 && Math.random() < zippoState.movementIntensity * 0.1) {
+                    zippoState.isLit = false;
+                    zippoState.flameIntensity = 0;
+                    stopFlameSound();
+                }
+                
+                if (fuelAvailable && zippoState.isLit) {
+                    const targetIntensity = Math.min(1, coherenceStability * windEffect * lidProtection * movementDamping);
+                    zippoState.flameIntensity += (targetIntensity - zippoState.flameIntensity) * 0.1;
+                    
+                    // Complete flame segment physics
+                    zippoState.flameSegments.forEach((segment, i) => {
+                        segment.age += 0.1;
+                        const ageDecay = Math.max(0, 1 - segment.age * 0.3);
+                        const movementFlicker = 0.7 + Math.random() * 0.6 * (1 + movementTurbulence);
+                        segment.intensity = zippoState.flameIntensity * ageDecay * movementFlicker;
+                        
+                        const inertialForceX = -zippoState.acceleration.x * 0.001;
+                        const inertialForceY = -zippoState.acceleration.y * 0.001;
+                        const buoyancy = segment.intensity * 0.8;
+                        const windInfluence = zippoState.windFactor * (Math.random() - 0.5) * 2 * lidProtection;
+                        const turbulence = (Math.random() - 0.5) * 0.3 * (1 + movementTurbulence);
+                        
+                        segment.vy = -buoyancy + turbulence + inertialForceY;
+                        segment.vx = windInfluence + turbulence + inertialForceX;
+                        segment.x += segment.vx;
+                        segment.y += segment.vy;
+                        
+                        if (segment.age > 3 || segment.intensity < 0.1) {
+                            segment.x = (Math.random() - 0.5) * 6;
+                            segment.y = 0;
+                            segment.intensity = zippoState.flameIntensity * (0.5 + Math.random() * 0.5);
+                            segment.age = 0;
+                            segment.temperature = CONSTANTS.ROOM_TEMP + 
+                                                (CONSTANTS.BUTANE_COMBUSTION_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                        }
+                        
+                        const targetTemp = CONSTANTS.ROOM_TEMP + 
+                                         (CONSTANTS.BUTANE_COMBUSTION_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                        segment.temperature += (targetTemp - segment.temperature) * 0.1;
+                    });
+                    
+                    updateFlameSound();
+                    
+                    // Fuel consumption and thermal generation
+                    const consumptionRate = zippoState.flameIntensity * crrParams.fuelConsumption * (1 + movementTurbulence * 0.2);
+                    for (let i = 0; i < 32; i++) {
+                        zippoState.fuelField[i] -= consumptionRate;
+                        zippoState.fuelField[i] = Math.max(0, zippoState.fuelField[i]);
+                    }
+                    zippoState.fuelLevel = Math.max(0, zippoState.fuelLevel - consumptionRate);
+                    
+                    const thermalGeneration = zippoState.flameIntensity * 0.1;
+                    for (let i = 0; i < 32; i++) {
+                        zippoState.thermalField[i] += thermalGeneration;
+                        zippoState.thermalField[i] = Math.min(1, zippoState.thermalField[i]);
+                    }
+                    
+                    const targetTemp = CONSTANTS.ROOM_TEMP + (CONSTANTS.BUTANE_COMBUSTION_TEMP - CONSTANTS.ROOM_TEMP) * zippoState.flameIntensity;
+                    zippoState.flameTemp += (targetTemp - zippoState.flameTemp) * 0.05;
+                } else {
+                    zippoState.isLit = false;
+                    zippoState.flameIntensity = 0;
+                    stopFlameSound();
+                }
+            } else {
+                if (lidOpenFactor < 0.2 && zippoState.isLit) {
+                    zippoState.isLit = false;
+                    stopFlameSound();
+                }
+                zippoState.flameIntensity *= 0.95;
+                zippoState.flameTemp += (CONSTANTS.ROOM_TEMP - zippoState.flameTemp) * 0.02;
+                
+                zippoState.flameSegments.forEach(segment => {
+                    segment.intensity *= 0.9;
+                });
+            }
+            
+            // Thermal field decay
+            for (let i = 0; i < 32; i++) {
+                zippoState.thermalField[i] *= 0.98;
+            }
+            
+            // CRR Rupture detection and regeneration
+            if (zippoState.coherenceLevel > crrParams.ruptureThreshold) {
+                zippoState.ruptureEvents++;
+                
+                for (let i = 0; i < 32; i++) {
+                    const historicalValue = zippoState.fuelField[i] * 0.8;
+                    const clampedCoherence = Math.max(0, Math.min(5, zippoState.coherenceField[i]));
+                    const exponentialWeight = Math.exp(clampedCoherence);
+                    const rebirthValue = historicalValue * exponentialWeight * crrParams.rebirthStrength;
+                    
+                    if (isFinite(rebirthValue)) {
+                        zippoState.coherenceField[i] = Math.min(0.7, rebirthValue);
+                    } else {
+                        zippoState.coherenceField[i] = 0.5;
+                    }
+                }
+            }
+            
+            zippoState.wheelVelocity *= 0.85;
+            zippoState.ignitionEnergy *= 0.9;
+            zippoState.time += deltaTime;
+        }
+        
+        // Ultra-realistic metal surface calculation
+        function calculateMetalSurface(x, y, width, height, time, viewAngle) {
+            const surfaceX = (x + width/2) / 100;
+            const surfaceY = (y + height/2) / 100;
+            
+            // Advanced surface microstructure using hash functions
+            const microDetail = hash22(surfaceX * 50, surfaceY * 50);
+            const scratchPattern = smoothNoise(surfaceX * 20, surfaceY * 5) * 0.3;
+            const brushedLines = Math.sin(surfaceY * 80) * 0.1;
+            
+            // Surface normal perturbation
+            const normalPerturbation = {
+                x: (microDetail.x - 0.5) * 0.2 + scratchPattern * 0.1,
+                y: (microDetail.y - 0.5) * 0.2 + brushedLines * 0.05
+            };
+            
+            // Viewing angle calculations
+            const viewX = Math.cos(viewAngle);
+            const viewY = Math.sin(viewAngle);
+            
+            // Fresnel reflection
+            const dotProduct = Math.abs(viewX * normalPerturbation.x + viewY * normalPerturbation.y);
+            const fresnel = 0.2 + 0.8 * Math.pow(1 - dotProduct, 3);
+            
+            // Interference patterns from microscopic surface structure
+            const pathDiff = (normalPerturbation.x + normalPerturbation.y) * 0.5;
+            const interference = {
+                r: 0.5 + 0.5 * Math.sin(pathDiff * 15 + time * 2),
+                g: 0.5 + 0.5 * Math.sin(pathDiff * 18 + time * 2.2),
+                b: 0.5 + 0.5 * Math.sin(pathDiff * 22 + time * 2.5)
+            };
+            
+            // Base metallic color
+            const baseColor = {
+                r: 0.8 + interference.r * 0.15 * zippoState.metalShine,
+                g: 0.82 + interference.g * 0.12 * zippoState.metalShine,
+                b: 0.85 + interference.b * 0.1 * zippoState.metalShine
+            };
+            
+            // Environmental reflections
+            const envReflection = 0.3 + 0.4 * Math.sin(viewAngle + surfaceX * 3 + surfaceY * 2);
+            
+            // Final surface color with advanced lighting
+            const surfaceIntensity = Math.min(1, fresnel * zippoState.metalShine * envReflection);
+            
+            return {
+                r: Math.min(255, baseColor.r * 255 * surfaceIntensity),
+                g: Math.min(255, baseColor.g * 255 * surfaceIntensity),
+                b: Math.min(255, baseColor.b * 255 * surfaceIntensity)
+            };
+        }
+        
+        // Enhanced metallic lighter case rendering
+        function drawUltraRealisticLighterCase(x, y) {
+            const time = zippoState.time * 2;
+            const mouseAngle = Math.atan2(zippoState.mousePos.y - (y - 20), zippoState.mousePos.x - x);
+            
+            // Main body with ultra-realistic metal surface
+            for (let px = -40; px < 40; px += 2) {
+                for (let py = -60; py < 60; py += 2) {
+                    const worldX = x + px;
+                    const worldY = y + py;
+                    
+                    // Local viewing angle for this surface point
+                    const localAngle = Math.atan2(zippoState.mousePos.y - worldY, zippoState.mousePos.x - worldX);
+                    const surfaceColor = calculateMetalSurface(px, py, 80, 120, time, localAngle);
+                    
+                    ctx.fillStyle = `rgb(${Math.floor(surfaceColor.r)}, ${Math.floor(surfaceColor.g)}, ${Math.floor(surfaceColor.b)})`;
+                    ctx.fillRect(worldX, worldY, 2, 2);
+                }
+            }
+            
+            // Ultra-detailed animated lid with enhanced physics-based reflections
+            ctx.save();
+            ctx.translate(x - 40, y - 80);
+            ctx.rotate(-zippoState.lidAngle);
+            
+            const angleInfluence = zippoState.lidAngle / CONSTANTS.LID_MAX_ANGLE;
+            
+            // Lid surface with dynamic reflections
+            for (let px = 0; px < 80; px += 2) {
+                for (let py = 0; py < 25; py += 2) {
+                    const lidAngle = Math.atan2(py - 12.5, px - 40) + zippoState.lidAngle;
+                    const lidSurface = calculateMetalSurface(px - 40, py - 12.5, 80, 25, time, lidAngle + mouseAngle);
+                    
+                    // Angle-dependent brightness
+                    const brightness = 0.7 + 0.3 * angleInfluence;
+                    
+                    ctx.fillStyle = `rgb(${Math.floor(lidSurface.r * brightness)}, ${Math.floor(lidSurface.g * brightness)}, ${Math.floor(lidSurface.b * brightness)})`;
+                    ctx.fillRect(px, py, 2, 2);
+                }
+            }
+            
+            // Enhanced hinge details with micro-reflections
+            const hingeColor = calculateMetalSurface(-2, 10, 4, 19, time, mouseAngle);
+            ctx.fillStyle = `rgb(${Math.floor(hingeColor.r)}, ${Math.floor(hingeColor.g)}, ${Math.floor(hingeColor.b)})`;
+            ctx.fillRect(-2, 3, 4, 19);
+            ctx.fillRect(78, 3, 4, 19);
+            
+            // Interior detail when open
+            if (zippoState.lidAngle > 0.1) {
+                const interiorColor = calculateMetalSurface(40, 12, 76, 21, time, mouseAngle + Math.PI);
+                ctx.fillStyle = `rgb(${Math.floor(interiorColor.r * 0.6)}, ${Math.floor(interiorColor.g * 0.6)}, ${Math.floor(interiorColor.b * 0.6)})`;
+                ctx.fillRect(2, 2, 76, 21);
+            }
+            
+            ctx.restore();
+            
+            // Enhanced text with metallic finish
+            ctx.fillStyle = '#2a2a2a';
+            ctx.font = 'bold 10px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ZIPPO', x, y + 40);
+            
+            ctx.fillStyle = '#4a4a6a';
+            ctx.font = 'bold 8px monospace';
+            ctx.fillText('CRR-ENABLED', x, y + 52);
+        }
+        
+        // Enhanced flint wheel with ultra-realistic metal texturing
+        function drawUltraRealisticFlintWheel(x, y) {
+            const wheelX = x + 25;
+            const wheelY = y - 35;
+            const time = zippoState.time * 3;
+            const mouseAngle = Math.atan2(zippoState.mousePos.y - wheelY, zippoState.mousePos.x - wheelX);
+            
+            ctx.save();
+            ctx.translate(wheelX, wheelY);
+            ctx.rotate(zippoState.wheelRotation);
+            
+            // Ultra-detailed wheel surface
+            const wheelRadius = 12;
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                for (let radius = 0; radius < wheelRadius; radius += 1) {
+                    const px = Math.cos(angle) * radius;
+                    const py = Math.sin(angle) * radius;
+                    
+                    const surfaceAngle = angle + mouseAngle + time * 0.5;
+                    const wheelSurface = calculateMetalSurface(px, py, 24, 24, time, surfaceAngle);
+                    
+                    // Radial brushed metal effect
+                    const radialEffect = 0.8 + 0.2 * Math.sin(radius * 2 + time);
+                    
+                    ctx.fillStyle = `rgb(${Math.floor(wheelSurface.r * radialEffect)}, ${Math.floor(wheelSurface.g * radialEffect)}, ${Math.floor(wheelSurface.b * radialEffect)})`;
+                    ctx.fillRect(px - 0.5, py - 0.5, 1, 1);
+                }
+            }
+            
+            // Enhanced serrations with individual micro-reflections
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const serrationColor = calculateMetalSurface(
+                    Math.cos(angle) * 10, Math.sin(angle) * 10, 2, 8, time, angle + mouseAngle
+                );
+                
+                ctx.strokeStyle = `rgb(${Math.floor(serrationColor.r)}, ${Math.floor(serrationColor.g)}, ${Math.floor(serrationColor.b)})`;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+                ctx.lineTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
+                ctx.stroke();
+            }
+            
+            // Ultra-detailed center with depth
+            const centerColor = calculateMetalSurface(0, 0, 6, 6, time, mouseAngle);
+            ctx.fillStyle = `rgb(${Math.floor(centerColor.r * 0.7)}, ${Math.floor(centerColor.g * 0.7)}, ${Math.floor(centerColor.b * 0.7)})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // Standard fuel and wick rendering (maintaining original functionality)
+        function drawWickAndFuel(x, y) {
+            const fuelHeight = zippoState.fuelLevel * 60;
+            const fuelGradient = ctx.createLinearGradient(x - 30, y + 30, x + 30, y + 30);
+            fuelGradient.addColorStop(0, 'rgba(100, 150, 255, 0.4)');
+            fuelGradient.addColorStop(1, 'rgba(150, 200, 255, 0.3)');
+            
+            ctx.fillStyle = fuelGradient;
+            ctx.fillRect(x - 30, y + 30 - fuelHeight + 30, 60, fuelHeight);
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 2, y - 65, 4, 15);
+            
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(x - 1, y - 68, 2, 8);
+        }
+        
+        // Enhanced spark rendering with better physics
+        function drawEnhancedSparks(x, y) {
+            const wheelX = x + 25;
+            const wheelY = y - 35;
+            
+            zippoState.sparkField.forEach((intensity, i) => {
+                if (intensity > 0.1) {
+                    const sparkX = wheelX + (Math.random() - 0.5) * 20;
+                    const sparkY = wheelY + (Math.random() - 0.5) * 15;
+                    const sparkSize = intensity * 4;
+                    
+                    const sparkGradient = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, sparkSize);
+                    sparkGradient.addColorStop(0, `rgba(255, 255, 150, ${intensity})`);
+                    sparkGradient.addColorStop(0.3, `rgba(255, 200, 100, ${intensity * 0.8})`);
+                    sparkGradient.addColorStop(0.7, `rgba(255, 150, 50, ${intensity * 0.5})`);
+                    sparkGradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+                    
+                    ctx.fillStyle = sparkGradient;
+                    ctx.fillRect(sparkX - sparkSize, sparkY - sparkSize, sparkSize * 2, sparkSize * 2);
+                }
+            });
+        }
+        
+        // Realistic flame rendering (maintaining all original flame physics)
+        function drawRealisticFlame(x, y) {
+            const flameX = x;
+            const flameY = y - 65;
+            const baseIntensity = zippoState.flameIntensity;
+            
+            if (baseIntensity < 0.05) return;
+            
+            ctx.save();
+            
+            // Double-sized flame glow with enhanced realism
+            const glowRadius = 150 + baseIntensity * 120;
+            const glowGradient = ctx.createRadialGradient(
+                flameX, flameY - 15, 0,
+                flameX, flameY - 15, glowRadius
+            );
+            glowGradient.addColorStop(0, `rgba(255, 180, 50, ${baseIntensity * 0.7})`);
+            glowGradient.addColorStop(0.3, `rgba(255, 120, 30, ${baseIntensity * 0.5})`);
+            glowGradient.addColorStop(0.7, `rgba(255, 80, 20, ${baseIntensity * 0.3})`);
+            glowGradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(flameX - glowRadius, flameY - 15 - glowRadius, glowRadius * 2, glowRadius * 2);
+            
+            // Realistic butane flame segments (maintaining all original color physics)
+            zippoState.flameSegments.forEach((segment, i) => {
+                if (segment.intensity < 0.1) return;
+                
+                const segmentX = flameX + segment.x;
+                const segmentY = flameY + segment.y;
+                
+                // Realistic butane combustion colors (maintaining original calculations)
+                let r, g, b;
+                const temp = segment.temperature;
+                
+                if (temp < 600) {
+                    r = 80; g = 120; b = 255;
+                } else if (temp < 1000) {
+                    const t = (temp - 600) / 400;
+                    r = Math.floor(80 + (255 - 80) * t); 
+                    g = Math.floor(120 + (140 - 120) * t); 
+                    b = Math.floor(255 * (1 - t));
+                } else if (temp < 1400) {
+                    r = 255; g = 140; b = 20;
+                } else if (temp < 1800) {
+                    const t = (temp - 1400) / 400;
+                    r = 255; 
+                    g = Math.floor(140 + (255 - 140) * t); 
+                    b = Math.floor(20 + (180 - 20) * t);
+                } else {
+                    r = 255; g = 255; b = 180;
+                }
+                
+                const segmentSize = segment.intensity * 72 * (1 - segment.age * 0.2);
+                const segmentHeight = segmentSize * (1.5 + Math.sin(zippoState.time * 5 + i) * 0.3);
+                const alpha = segment.intensity * (1 - segment.age * 0.3);
+                
+                const coreGradient = ctx.createRadialGradient(
+                    segmentX, segmentY, 0,
+                    segmentX, segmentY - segmentHeight / 2, segmentHeight / 2
+                );
+                coreGradient.addColorStop(0, `rgba(${r}, ${g}, ${Math.floor(b * 1.2)}, ${alpha})`);
+                coreGradient.addColorStop(0.4, `rgba(${r}, ${Math.floor(g * 0.9)}, ${b}, ${alpha * 0.8})`);
+                coreGradient.addColorStop(0.8, `rgba(${Math.floor(r * 0.8)}, ${Math.floor(g * 0.7)}, ${Math.floor(b * 0.6)}, ${alpha * 0.4})`);
+                coreGradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+                
+                ctx.fillStyle = coreGradient;
+                
+                // Flame shape (maintaining original calculations)
+                ctx.beginPath();
+                const baseWidth = segmentSize * 0.6;
+                const tipWidth = segmentSize * 0.2;
+                const height = segmentHeight;
+                
+                ctx.moveTo(segmentX - baseWidth, segmentY);
+                ctx.bezierCurveTo(
+                    segmentX - baseWidth * 0.8, segmentY - height * 0.3,
+                    segmentX - tipWidth, segmentY - height * 0.7,
+                    segmentX - tipWidth * 0.5, segmentY - height
+                );
+                ctx.bezierCurveTo(
+                    segmentX - tipWidth * 0.2, segmentY - height * 1.1,
+                    segmentX + tipWidth * 0.2, segmentY - height * 1.1,
+                    segmentX + tipWidth * 0.5, segmentY - height
+                );
+                ctx.bezierCurveTo(
+                    segmentX + tipWidth, segmentY - height * 0.7,
+                    segmentX + baseWidth * 0.8, segmentY - height * 0.3,
+                    segmentX + baseWidth, segmentY
+                );
+                ctx.closePath();
+                ctx.fill();
+                
+                // Inner bright core
+                if (segment.intensity > 0.6) {
+                    const innerGradient = ctx.createRadialGradient(
+                        segmentX, segmentY - height * 0.1, 0,
+                        segmentX, segmentY - height * 0.3, height * 0.3
+                    );
+                    innerGradient.addColorStop(0, `rgba(255, 255, 200, ${segment.intensity * 0.8})`);
+                    innerGradient.addColorStop(0.5, `rgba(255, 220, 100, ${segment.intensity * 0.5})`);
+                    innerGradient.addColorStop(1, 'rgba(255, 150, 50, 0)');
+                    
+                    ctx.fillStyle = innerGradient;
+                    ctx.beginPath();
+                    ctx.ellipse(segmentX, segmentY - height * 0.2, baseWidth * 0.4, height * 0.4, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            ctx.restore();
+        }
+        
+        // CRR field visualization (maintaining original)
+        function drawCRRVisualization(x, y) {
+            if (zippoState.crrCoupling < 0.3) return;
+            
+            const alpha = zippoState.crrCoupling * 0.3;
+            
+            for (let i = 0; i < 8; i++) {
+                const fieldX = x + (i - 4) * 10;
+                const fieldY = y + 70;
+                const coherence = zippoState.coherenceField[i * 4] * alpha;
+                
+                if (coherence > 0.1) {
+                    ctx.fillStyle = `rgba(100, 255, 200, ${coherence})`;
+                    ctx.fillRect(fieldX - 2, fieldY, 4, coherence * 20);
+                }
+            }
+        }
+        
+        // Main rendering function with ultra-realistic metals
+        function renderUltraRealisticCRRZippo() {
+            // Dark metallic background
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const x = zippoState.x;
+            const y = zippoState.y;
+            
+            drawUltraRealisticLighterCase(x, y);
+            drawUltraRealisticFlintWheel(x, y);
+            drawWickAndFuel(x, y);
+            drawEnhancedSparks(x, y);
+            
+            const lidOpenFactor = zippoState.lidAngle / CONSTANTS.LID_MAX_ANGLE;
+            if ((zippoState.isLit || zippoState.flameIntensity > 0.05) && lidOpenFactor > 0.1) {
+                drawRealisticFlame(x, y);
+            }
+            
+            drawCRRVisualization(x, y);
+        }
+        
+        // Audio System (maintaining all original audio functionality)
+        function initializeAudio() {
+            if (!zippoState.audioEnabled || zippoState.audioContext) return;
+            
+            try {
+                zippoState.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                zippoState.masterGain = zippoState.audioContext.createGain();
+                zippoState.masterGain.connect(zippoState.audioContext.destination);
+                zippoState.masterGain.gain.setValueAtTime(0.3, zippoState.audioContext.currentTime);
+            } catch (error) {
+                console.error('Audio initialization failed:', error);
+                zippoState.audioEnabled = false;
+            }
+        }
+        
+        function createNoise(duration, frequency, filterFreq) {
+            if (!zippoState.audioContext) return;
+            
+            const bufferSize = zippoState.audioContext.sampleRate * duration;
+            const noiseBuffer = zippoState.audioContext.createBuffer(1, bufferSize, zippoState.audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = zippoState.audioContext.createBufferSource();
+            noise.buffer = noiseBuffer;
+            
+            const filter = zippoState.audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(filterFreq, zippoState.audioContext.currentTime);
+            
+            const gain = zippoState.audioContext.createGain();
+            gain.gain.setValueAtTime(0, zippoState.audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(frequency, zippoState.audioContext.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, zippoState.audioContext.currentTime + duration);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(zippoState.masterGain);
+            
+            noise.start();
+            noise.stop(zippoState.audioContext.currentTime + duration);
+        }
+        
+        function playLidSound(opening) {
+            if (!zippoState.audioEnabled || !zippoState.audioContext) return;
+            
+            const now = Date.now();
+            if (now - zippoState.lastSoundTime.lid < 100) return;
+            zippoState.lastSoundTime.lid = now;
+            
+            const osc = zippoState.audioContext.createOscillator();
+            const gain = zippoState.audioContext.createGain();
+            const filter = zippoState.audioContext.createBiquadFilter();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(opening ? 2800 : 2200, zippoState.audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(opening ? 1800 : 1400, zippoState.audioContext.currentTime + 0.1);
+            
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(2000, zippoState.audioContext.currentTime);
+            filter.Q.setValueAtTime(15, zippoState.audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(0.4, zippoState.audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, zippoState.audioContext.currentTime + 0.15);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(zippoState.masterGain);
+            
+            osc.start();
+            osc.stop(zippoState.audioContext.currentTime + 0.15);
+            
+            createNoise(0.1, 0.2, 3000);
+        }
+        
+        function playFlintSound() {
+            if (!zippoState.audioEnabled || !zippoState.audioContext) return;
+            
+            const now = Date.now();
+            if (now - zippoState.lastSoundTime.flint < 80) return;
+            zippoState.lastSoundTime.flint = now;
+            
+            createNoise(0.12, 0.6, 4000);
+            
+            const osc = zippoState.audioContext.createOscillator();
+            const gain = zippoState.audioContext.createGain();
+            const filter = zippoState.audioContext.createBiquadFilter();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1200 + Math.random() * 800, zippoState.audioContext.currentTime);
+            
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(800, zippoState.audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(0.3, zippoState.audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, zippoState.audioContext.currentTime + 0.08);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(zippoState.masterGain);
+            
+            osc.start();
+            osc.stop(zippoState.audioContext.currentTime + 0.08);
+        }
+        
+        function playIgnitionSound() {
+            if (!zippoState.audioEnabled || !zippoState.audioContext) return;
+            
+            const now = Date.now();
+            if (now - zippoState.lastSoundTime.ignition < 500) return;
+            zippoState.lastSoundTime.ignition = now;
+            
+            createNoise(0.3, 0.4, 1200);
+            
+            const osc = zippoState.audioContext.createOscillator();
+            const gain = zippoState.audioContext.createGain();
+            const filter = zippoState.audioContext.createBiquadFilter();
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(80, zippoState.audioContext.currentTime);
+            osc.frequency.linearRampToValueAtTime(120, zippoState.audioContext.currentTime + 0.2);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, zippoState.audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(0, zippoState.audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, zippoState.audioContext.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, zippoState.audioContext.currentTime + 0.3);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(zippoState.masterGain);
+            
+            osc.start();
+            osc.stop(zippoState.audioContext.currentTime + 0.3);
+        }
+        
+        function startFlameSound() {
+            if (!zippoState.audioEnabled || !zippoState.audioContext || zippoState.flameOscillator) return;
+            
+            const bufferSize = zippoState.audioContext.sampleRate * 2;
+            const noiseBuffer = zippoState.audioContext.createBuffer(1, bufferSize, zippoState.audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                const baseNoise = Math.random() * 2 - 1;
+                const highFreqNoise = Math.random() * 0.8 - 0.4;
+                const gasModulation = Math.sin(i * 0.003) * 0.3;
+                output[i] = (baseNoise * 0.6 + highFreqNoise * 0.4 + gasModulation) * 0.8;
+            }
+            
+            zippoState.flameOscillator = zippoState.audioContext.createBufferSource();
+            zippoState.flameOscillator.buffer = noiseBuffer;
+            zippoState.flameOscillator.loop = true;
+            
+            const flameGain = zippoState.audioContext.createGain();
+            const flameFilter = zippoState.audioContext.createBiquadFilter();
+            const highPassFilter = zippoState.audioContext.createBiquadFilter();
+            
+            flameFilter.type = 'lowpass';
+            flameFilter.frequency.setValueAtTime(800, zippoState.audioContext.currentTime);
+            
+            highPassFilter.type = 'highpass';
+            highPassFilter.frequency.setValueAtTime(200, zippoState.audioContext.currentTime);
+            
+            flameGain.gain.setValueAtTime(0, zippoState.audioContext.currentTime);
+            flameGain.gain.linearRampToValueAtTime(0.35 * zippoState.gasVolume, zippoState.audioContext.currentTime + 0.1);
+            
+            zippoState.flameOscillator.connect(highPassFilter);
+            highPassFilter.connect(flameFilter);
+            flameFilter.connect(flameGain);
+            flameGain.connect(zippoState.masterGain);
+            
+            zippoState.flameOscillator.flameGain = flameGain;
+            zippoState.flameOscillator.flameFilter = flameFilter;
+            zippoState.flameOscillator.start();
+        }
+        
+        function updateFlameSound() {
+            if (!zippoState.flameOscillator || !zippoState.audioEnabled) return;
+            
+            const baseVolume = zippoState.flameIntensity * 0.35 * zippoState.gasVolume;
+            const movementVariation = (1 - zippoState.movementIntensity * 0.3);
+            const targetVolume = baseVolume * movementVariation;
+            
+            const filterFreq = 600 + zippoState.flameIntensity * 400;
+            
+            zippoState.flameOscillator.flameGain.gain.linearRampToValueAtTime(
+                targetVolume, 
+                zippoState.audioContext.currentTime + 0.1
+            );
+            
+            zippoState.flameOscillator.flameFilter.frequency.linearRampToValueAtTime(
+                filterFreq,
+                zippoState.audioContext.currentTime + 0.1
+            );
+        }
+        
+        function stopFlameSound() {
+            if (!zippoState.flameOscillator) return;
+            
+            zippoState.flameOscillator.flameGain.gain.exponentialRampToValueAtTime(
+                0.01, 
+                zippoState.audioContext.currentTime + 0.2
+            );
+            
+            setTimeout(() => {
+                if (zippoState.flameOscillator) {
+                    zippoState.flameOscillator.stop();
+                    zippoState.flameOscillator = null;
+                }
+            }, 300);
+        }
+        
+        function toggleAudio() {
+            zippoState.audioEnabled = !zippoState.audioEnabled;
+            
+            if (zippoState.audioEnabled) {
+                initializeAudio();
+                document.getElementById('soundToggle').textContent = 'DISABLE';
+                document.getElementById('soundStatus').textContent = 'ON';
+            } else {
+                if (zippoState.audioContext) {
+                    stopFlameSound();
+                    zippoState.audioContext.close();
+                    zippoState.audioContext = null;
+                }
+                document.getElementById('soundToggle').textContent = 'ENABLE';
+                document.getElementById('soundStatus').textContent = 'OFF';
+            }
+        }
+        
+        // Interaction System (maintaining all original functionality)
+        function getMousePos(event) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+        
+        function isInsideLighter(mousePos) {
+            const dx = mousePos.x - zippoState.x;
+            const dy = mousePos.y - zippoState.y;
+            return dx >= -40 && dx <= 40 && dy >= -80 && dy <= 60;
+        }
+        
+        function isNearFlintWheel(mousePos) {
+            const wheelX = zippoState.x + 25;
+            const wheelY = zippoState.y - 35;
+            const distance = Math.sqrt((mousePos.x - wheelX) ** 2 + (mousePos.y - wheelY) ** 2);
+            return distance < 20;
+        }
+        
+        function isOnLid(mousePos) {
+            const hingeX = zippoState.x - 40;
+            const hingeY = zippoState.y - 80;
+            
+            const dx = mousePos.x - hingeX;
+            const dy = mousePos.y - hingeY;
+            
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const isInLidArea = (dx >= -10 && dx <= 90) && (dy >= -15 && dy <= 40) && distance <= 100;
+            
+            return isInLidArea;
+        }
+        
+        function toggleLid() {
+            const wasOpen = zippoState.lidOpen;
+            zippoState.lidOpen = !zippoState.lidOpen;
+            
+            playLidSound(!wasOpen);
+            
+            if (zippoState.lidOpen) {
+                zippoState.lidVelocity += 8;
+            } else {
+                zippoState.lidVelocity -= 5;
+            }
+        }
+        
+        function snapLidOpen() {
+            if (!zippoState.lidOpen) {
+                zippoState.lidOpen = true;
+                zippoState.lidVelocity += 15;
+                playLidSound(true);
+            }
+        }
+        
+        function strikeFlint() {
+            const now = Date.now();
+            if (now - zippoState.lastStrikeTime < 100) return;
+            
+            zippoState.lastStrikeTime = now;
+            zippoState.wheelVelocity += 3 + Math.random() * 2;
+            zippoState.wheelRotation += 0.5;
+            
+            playFlintSound();
+            
+            if (!zippoState.lidOpen) {
+                zippoState.lidOpen = true;
+                zippoState.lidVelocity += 6;
+                playLidSound(true);
+            }
+            
+            for (let i = 0; i < 16; i++) {
+                zippoState.sparkField[i] += Math.random() * 0.3;
+            }
+        }
+        
+        // Event Handlers (maintaining all original functionality)
+        canvas.addEventListener('mousedown', (event) => {
+            const mousePos = getMousePos(event);
+            zippoState.mousePos = mousePos;
+            zippoState.lastMousePos = mousePos;
+            
+            if (isOnLid(mousePos)) {
+                toggleLid();
+                return;
+            }
+            
+            if (isNearFlintWheel(mousePos) && !zippoState.isDragging) {
+                strikeFlint();
+                return;
+            }
+            
+            if (isInsideLighter(mousePos)) {
+                zippoState.isDragging = true;
+                zippoState.dragOffset.x = mousePos.x - zippoState.x;
+                zippoState.dragOffset.y = mousePos.y - zippoState.y;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (event) => {
+            const mousePos = getMousePos(event);
+            zippoState.mousePos = mousePos;
+            
+            if (zippoState.isDragging) {
+                zippoState.x = mousePos.x - zippoState.dragOffset.x;
+                zippoState.y = mousePos.y - zippoState.dragOffset.y;
+                
+                zippoState.x = Math.max(50, Math.min(canvas.width - 50, zippoState.x));
+                zippoState.y = Math.max(90, Math.min(canvas.height - 70, zippoState.y));
+            } else {
+                if (isOnLid(mousePos)) {
+                    canvas.style.cursor = 'pointer';
+                } else if (isNearFlintWheel(mousePos)) {
+                    canvas.style.cursor = 'pointer';
+                } else if (isInsideLighter(mousePos)) {
+                    canvas.style.cursor = 'grab';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            zippoState.isDragging = false;
+            zippoState.flickDetected = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            zippoState.isDragging = false;
+            zippoState.flickDetected = false;
+            canvas.style.cursor = 'grab';
+        });
+        
+        // Control System
+        function setupControls() {
+            document.getElementById('fuelLevel').addEventListener('input', (e) => {
+                zippoState.fuelLevel = parseFloat(e.target.value);
+                document.getElementById('fuelValue').textContent = (zippoState.fuelLevel * 100).toFixed(0) + '%';
+                
+                for (let i = 0; i < 32; i++) {
+                    zippoState.fuelField[i] = zippoState.fuelLevel * (0.8 + Math.random() * 0.4);
+                }
+            });
+            
+            document.getElementById('flintQuality').addEventListener('input', (e) => {
+                zippoState.flintQuality = parseFloat(e.target.value);
+                document.getElementById('flintValue').textContent = (zippoState.flintQuality * 100).toFixed(0) + '%';
+            });
+            
+            document.getElementById('crrCoupling').addEventListener('input', (e) => {
+                zippoState.crrCoupling = parseFloat(e.target.value);
+                document.getElementById('crrValue').textContent = parseFloat(e.target.value).toFixed(2);
+            });
+            
+            document.getElementById('windFactor').addEventListener('input', (e) => {
+                zippoState.windFactor = parseFloat(e.target.value);
+                document.getElementById('windValue').textContent = parseFloat(e.target.value).toFixed(2);
+            });
+            
+            document.getElementById('metalShine').addEventListener('input', (e) => {
+                zippoState.metalShine = parseFloat(e.target.value);
+                document.getElementById('metalShineValue').textContent = parseFloat(e.target.value).toFixed(2);
+            });
+            
+            document.getElementById('gasVolume').addEventListener('input', (e) => {
+                zippoState.gasVolume = parseFloat(e.target.value);
+                document.getElementById('gasVolumeValue').textContent = (zippoState.gasVolume * 100).toFixed(0) + '%';
+                
+                if (zippoState.flameOscillator && zippoState.isLit) {
+                    updateFlameSound();
+                }
+            });
+            
+            document.getElementById('soundToggle').addEventListener('click', toggleAudio);
+        }
+        
+        function updateUI() {
+            document.getElementById('coherenceLevel').textContent = zippoState.coherenceLevel.toFixed(2);
+            document.getElementById('flameTemp').textContent = zippoState.flameTemp.toFixed(0) + ' K';
+            document.getElementById('ruptureCount').textContent = zippoState.ruptureEvents.toString();
+            
+            const lidState = zippoState.lidOpen ? 'OPEN' : 'CLOSED';
+            const lidAngleDegrees = Math.round(zippoState.lidAngle * 180 / Math.PI);
+            document.getElementById('lidState').textContent = `${lidState} (${lidAngleDegrees}°)`;
+        }
+        
+        // Main CRR System Loop
+        function mainCRRLoop() {
+            updateCRRPhysics();
+            renderUltraRealisticCRRZippo();
+            updateUI();
+        }
+        
+        // Initialize and start enhanced CRR Zippo system
+        initializeSystem();
+        setupControls();
+        setInterval(mainCRRLoop, 33); // 30 FPS
+    </script>
+</body>
+</html>

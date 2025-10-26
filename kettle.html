@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Kettle Simulation - Coherence, Rupture, Regeneration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e5e5e5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .disclaimer {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+            color: #92400e;
+        }
+
+        .disclaimer h3 {
+            color: #92400e;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .disclaimer p {
+            color: #78350f;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #e5e5e5;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 10;
+            color: #1a1a1a;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: #666666;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 15px;
+        }
+
+        .framework-explanation {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .framework-explanation h3 {
+            color: #495057;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .crr-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .crr-item {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .crr-item h4 {
+            color: #2563eb;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .crr-item p {
+            font-size: 0.8rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .equation-banner {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-size: 0.95rem;
+            color: #2563eb;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            height: 600px;
+            margin-bottom: 25px;
+        }
+
+        .kettle-display {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            border: 2px solid #3a3a5e;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .atmospheric-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            overflow: visible;
+            z-index: 1;
+        }
+
+        .kettle-container {
+            position: relative;
+            perspective: 1200px;
+            z-index: 5;
+        }
+
+        .kettle {
+            width: 280px;
+            height: 360px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-10deg) rotateY(15deg);
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.3));
+        }
+
+        .kettle-glass {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.12) 0%, 
+                rgba(255,255,255,0.02) 20%, 
+                rgba(255,255,255,0.06) 40%, 
+                rgba(255,255,255,0.15) 60%, 
+                rgba(255,255,255,0.01) 80%, 
+                rgba(255,255,255,0.1) 100%);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 20px 20px 35px 35px;
+            position: relative;
+            backdrop-filter: blur(8px);
+            box-shadow: 
+                0 0 40px rgba(255,255,255,0.15),
+                inset 0 0 40px rgba(255,255,255,0.08),
+                inset -12px -12px 30px rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+
+        .glass-reflections {
+            position: absolute;
+            top: 6%;
+            left: 10%;
+            width: 25%;
+            height: 60%;
+            background: linear-gradient(135deg, 
+                rgba(255,255,255,0.3) 0%, 
+                rgba(255,255,255,0.12) 30%, 
+                transparent 60%);
+            border-radius: 20px;
+            transform: skew(-10deg, 6deg);
+            animation: glassShimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes glassShimmer {
+            0%, 100% { opacity: 0.6; transform: skew(-10deg, 6deg) translateX(0); }
+            50% { opacity: 0.8; transform: skew(-10deg, 6deg) translateX(6px); }
+        }
+
+        .water-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 70%;
+            border-radius: 0 0 35px 35px;
+            overflow: hidden;
+            background: linear-gradient(to bottom, 
+                rgba(80,130,220,0.85) 0%, 
+                rgba(40,90,180,0.9) 100%);
+            transition: height 0.3s ease;
+        }
+
+        .kettle-handle {
+            position: absolute;
+            right: -40px;
+            top: 60px;
+            width: 60px;
+            height: 140px;
+            border: 5px solid #2c3e50;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6, #bdc3c7);
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.4),
+                inset 0 2px 12px rgba(255,255,255,0.3);
+        }
+
+        .handle-grip {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 45px;
+            height: 100px;
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            border-radius: 22px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
+        }
+
+        .kettle-spout {
+            position: absolute;
+            left: -35px;
+            top: 95px;
+            width: 80px;
+            height: 24px;
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.15), 
+                rgba(255,255,255,0.06),
+                transparent);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 25px 8px 8px 25px;
+            transform: rotate(-15deg);
+            overflow: visible;
+        }
+
+        .heating-element {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 50px;
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+            border-radius: 25px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .heating-coils {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 10px;
+            background: repeating-linear-gradient(
+                90deg,
+                #34495e 0px,
+                #2c3e50 6px,
+                #34495e 12px
+            );
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .heating-element.active {
+            background: linear-gradient(135deg, #e74c3c, #c0392b, #a93226);
+            box-shadow: 0 0 40px rgba(231,76,60,0.8);
+            animation: heatingIntensity 1s ease-in-out infinite;
+        }
+
+        .heating-element.active .heating-coils {
+            background: repeating-linear-gradient(
+                90deg,
+                #ff6b4a 0px,
+                #e74c3c 3px,
+                #ff6b4a 6px,
+                #c0392b 9px,
+                #ff6b4a 12px
+            );
+            box-shadow: 0 0 20px rgba(255,107,74,0.7);
+            animation: coilGlow 0.6s ease-in-out infinite;
+        }
+
+        @keyframes heatingIntensity {
+            0%, 100% { 
+                box-shadow: 0 0 40px rgba(231,76,60,0.8);
+                transform: translateX(-50%) scale(1);
+            }
+            50% { 
+                box-shadow: 0 0 55px rgba(231,76,60,1.1);
+                transform: translateX(-50%) scale(1.02);
+            }
+        }
+
+        @keyframes coilGlow {
+            0%, 100% { filter: brightness(1) saturate(1); }
+            50% { filter: brightness(1.4) saturate(1.2); }
+        }
+
+        .n2-molecule {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: rgba(135, 206, 250, 0.7);
+            animation: atmosphericFloat 7s ease-in-out infinite;
+            box-shadow: 0 0 2px rgba(135, 206, 250, 0.3);
+        }
+
+        .o2-molecule {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: rgba(255, 182, 193, 0.7);
+            animation: atmosphericFloat 5s ease-in-out infinite;
+            box-shadow: 0 0 2px rgba(255, 182, 193, 0.3);
+        }
+
+        .co2-molecule {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            border-radius: 50%;
+            background: rgba(200, 200, 200, 0.6);
+            animation: atmosphericFloat 9s ease-in-out infinite;
+            box-shadow: 0 0 1px rgba(200, 200, 200, 0.4);
+        }
+
+        @keyframes atmosphericFloat {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.7; }
+            25% { transform: translateY(-25px) translateX(12px); opacity: 0.9; }
+            50% { transform: translateY(-12px) translateX(-10px); opacity: 0.5; }
+            75% { transform: translateY(-35px) translateX(15px); opacity: 0.8; }
+        }
+
+        .steam-particle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle, 
+                rgba(255,255,255,0.9) 0%, 
+                rgba(255,255,255,0.6) 40%, 
+                rgba(255,255,255,0.2) 80%,
+                transparent 100%);
+            border-radius: 50%;
+        }
+
+        .atmospheric-steam {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, 
+                rgba(255,255,255,0.8) 0%, 
+                rgba(255,255,255,0.5) 40%, 
+                rgba(255,255,255,0.15) 80%,
+                transparent 100%);
+            border-radius: 50%;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+        }
+
+        .control-section h4 {
+            color: #495057;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .slider-group label {
+            min-width: 100px;
+            color: #6c757d;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .slider-group input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: linear-gradient(to right, #e9ecef, #2563eb);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+            color: #2563eb;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .display-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .display-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .display-card h5 {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .display-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .display-unit {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+
+        .control-btn {
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 4px;
+        }
+
+        .control-btn:hover {
+            background: #f8f9fa;
+            border-color: #2563eb;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: #e74c3c;
+            border-color: #c0392b;
+            color: white;
+        }
+
+        .control-btn.active:hover {
+            background: #c0392b;
+        }
+
+        .state-indicator {
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: all 0.6s ease;
+            font-size: 0.95rem;
+        }
+
+        .state-liquid {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border: 2px solid #22c55e;
+            color: #166534;
+        }
+
+        .state-heating {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            border: 2px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .state-boiling {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+            transition: color 0.6s ease;
+        }
+
+        .metric-unit {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+
+        .math-display {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            color: #2563eb;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 25% 25%, 
+                rgba(255,255,255,0.7) 0%, 
+                rgba(255,255,255,0.2) 30%, 
+                rgba(80,130,220,0.15) 60%, 
+                transparent 100%);
+            box-shadow: 
+                inset 0 0 6px rgba(255,255,255,0.3),
+                0 0 4px rgba(255,255,255,0.15);
+        }
+
+        .thermal-convection {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to top,
+                transparent 0px,
+                rgba(255,120,120,0.12) 20px,
+                transparent 40px
+            );
+            animation: convectionFlow 1.8s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes convectionFlow {
+            0% { transform: translateY(0); opacity: 0.2; }
+            100% { transform: translateY(-40px); opacity: 0.5; }
+        }
+
+        .phase-transition-zone {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 16px;
+            background: linear-gradient(to bottom,
+                rgba(255,255,255,0.7) 0%,
+                rgba(255,255,255,0.2) 50%,
+                transparent 100%);
+            animation: phaseInterface 0.8s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes phaseInterface {
+            0%, 100% { transform: scaleY(1); opacity: 0.5; }
+            50% { transform: scaleY(1.3); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+    <div class="disclaimer">
+        <h3>Educational Computational Tool - CRR Framework</h3>
+        <p>This is an educational demonstration of Coherence-Rupture-Regeneration principles applied to thermodynamics and fluid dynamics. 
+        The simulation shows CRR cycles in water phase transitions using computational modeling.</p>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>CRR Kettle Simulation</h1>
+            <div class="subtitle">Coherence • Rupture • Regeneration in Thermodynamic Systems</div>
+        </div>
+
+        <div class="framework-explanation">
+            <h3>Coherence-Rupture-Regeneration (CRR) - Applied Thermodynamics</h3>
+            <div class="crr-grid">
+                <div class="crr-item">
+                    <h4>Coherence State C(x,t)</h4>
+                    <p>Organized liquid water with stable hydrogen bonds and thermal equilibrium. Low entropy, high molecular organization.</p>
+                </div>
+                <div class="crr-item">
+                    <h4>Rupture Event δ(t-t₀)</h4>
+                    <p>Phase transition triggered by thermal energy. Discrete boiling events where coherent liquid becomes chaotic steam.</p>
+                </div>
+                <div class="crr-item">
+                    <h4>Regeneration R[χ](x,t)</h4>
+                    <p>Steam formation and atmospheric dispersion. Reorganization of water molecules into new coherent state in atmosphere.</p>
+                </div>
+            </div>
+            <p style="font-size: 0.85rem; color: #666; text-align: center; margin-top: 12px;">
+                <em>Mathematical modeling of thermal coherence patterns and phase transitions</em>
+            </p>
+        </div>
+
+        <div class="equation-banner">
+            CRR(x,t) = C(liquid) → δ(boiling) → R[steam] | Computational Thermodynamics
+        </div>
+
+        <div id="stateIndicator" class="state-indicator state-liquid">
+            💧 LIQUID STATE - Coherent molecular organization | C(x,t) = 1.886 | T = 20.0°C
+        </div>
+
+        <div class="simulation-area">
+            <div class="kettle-display">
+                <div class="atmospheric-zone" id="atmosphericZone"></div>
+                <div class="kettle-container">
+                    <div class="kettle">
+                        <div class="kettle-glass">
+                            <div class="glass-reflections"></div>
+                            <div class="water-container" id="waterContainer">
+                                <div class="thermal-convection" id="thermalConvection"></div>
+                                <div class="phase-transition-zone" id="phaseZone"></div>
+                            </div>
+                        </div>
+                        <div class="kettle-handle">
+                            <div class="handle-grip"></div>
+                        </div>
+                        <div class="kettle-spout" id="spout"></div>
+                        <div class="heating-element" id="heatingElement">
+                            <div class="heating-coils"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="panel-title">CRR Controls & Monitoring</div>
+                
+                <div class="control-section">
+                    <h4>System Controls</h4>
+                    <button class="control-btn" id="powerButton" onclick="toggleHeating()">🔥 Start Heating</button>
+                    <div class="slider-group">
+                        <label>Target Temp:</label>
+                        <input type="range" id="tempSlider" min="20" max="110" value="100">
+                        <span class="slider-value" id="tempValue">100°C</span>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h4>CRR Parameters</h4>
+                    <div class="slider-group">
+                        <label>Coherence:</label>
+                        <input type="range" id="coherenceSlider" min="0.5" max="3.0" step="0.1" value="1.8">
+                        <span class="slider-value" id="coherenceValue">1.8</span>
+                    </div>
+                    <div class="slider-group">
+                        <label>Heat Rate:</label>
+                        <input type="range" id="heatSlider" min="1000" max="3000" step="100" value="3000">
+                        <span class="slider-value" id="heatValue">3000W</span>
+                    </div>
+                </div>
+
+                <div class="display-grid">
+                    <div class="display-card">
+                        <h5>Temperature</h5>
+                        <div class="display-value" id="tempDisplay">20.0</div>
+                        <div class="display-unit">°C</div>
+                    </div>
+                    <div class="display-card">
+                        <h5>Water Level</h5>
+                        <div class="display-value" id="waterDisplay">500</div>
+                        <div class="display-unit">ml</div>
+                    </div>
+                    <div class="display-card">
+                        <h5>Steam Rate</h5>
+                        <div class="display-value" id="steamDisplay">0.0</div>
+                        <div class="display-unit">g/min</div>
+                    </div>
+                    <div class="display-card">
+                        <h5>Phase State</h5>
+                        <div class="display-value" id="phaseDisplay">Liquid</div>
+                        <div class="display-unit">H₂O</div>
+                    </div>
+                </div>
+
+                <div class="math-display" id="mathDisplay">
+                    C(x,t) = 1.886 | δ-events: 0 | R[steam]: 0.000
+                </div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Coherence Level</h3>
+                <div class="metric-value" id="coherenceMetric">1.886</div>
+                <div class="metric-unit">CRR</div>
+            </div>
+            <div class="metric-card">
+                <h3>Rupture Events</h3>
+                <div class="metric-value" id="ruptureMetric">0</div>
+                <div class="metric-unit">count</div>
+            </div>
+            <div class="metric-card">
+                <h3>Regeneration Cycles</h3>
+                <div class="metric-value" id="regenerationMetric">0</div>
+                <div class="metric-unit">cycles</div>
+            </div>
+            <div class="metric-card">
+                <h3>Molecular Motion</h3>
+                <div class="metric-value" id="motionMetric">3400</div>
+                <div class="metric-unit">cm⁻¹</div>
+            </div>
+            <div class="metric-card">
+                <h3>H-Bond Network</h3>
+                <div class="metric-value" id="bondMetric">3.7</div>
+                <div class="metric-unit">bonds/mol</div>
+            </div>
+            <div class="metric-card">
+                <h3>System Energy</h3>
+                <div class="metric-value" id="energyMetric">0</div>
+                <div class="metric-unit">kJ</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CRR Kettle Physics Engine
+        class CRRKettleSimulation {
+            constructor() {
+                // Core CRR Parameters
+                this.coherenceField = new Array(100).fill(0).map((_, i) => {
+                    // Add spatial variation to create initial gradients
+                    const baseCoherence = 1.5 + Math.random() * 0.3;
+                    const spatialVariation = Math.sin(i * 0.2) * 0.15;
+                    return baseCoherence + spatialVariation;
+                });
+                this.mnemonicEntanglement = new Array(100).fill(0);
+                this.temporalDecay = 0.002;
+                this.coherenceThreshold = 0.12;
+                this.regenerationMemory = new Map();
+                this.ruptureEvents = 0;
+                this.regenerationCycles = 0;
+                
+                // Physical Parameters
+                this.temperature = 20.0;
+                this.targetTemperature = 100.0;
+                this.isHeating = false;
+                this.waterMass = 500;
+                this.heatingPower = 3000;
+                this.ambientTemperature = 20.0;
+                this.coolingRate = 0.05;
+                this.steamProductionRate = 0;
+                this.totalEvaporated = 0;
+                
+                // Molecular Parameters
+                this.waterStructure = {
+                    clusterSize: 5.2,
+                    bondAngle: 104.5,
+                    dipoleMoment: 1.85,
+                    deuteriumRatio: 0.000156,
+                    vibrationFrequency: 3400
+                };
+                
+                this.hydrogenBondNetwork = new Array(100).fill(3.7);
+                this.nucleationSites = 0;
+                this.phaseState = 'liquid';
+                
+                // Atmosphere parameters
+                this.atmosphere = {
+                    n2Concentration: 0.78,
+                    o2Concentration: 0.21,
+                    co2Concentration: 0.0004,
+                    pressure: 1.0,
+                    temperature: 20.0,
+                    humidity: 0.4
+                };
+                
+                this.atmosphericCoherence = new Array(80).fill(0).map(() => Math.random() * 0.3 + 0.2);
+                
+                // DOM Elements
+                this.waterContainer = document.getElementById('waterContainer');
+                this.heatingElement = document.getElementById('heatingElement');
+                this.powerButton = document.getElementById('powerButton');
+                this.tempSlider = document.getElementById('tempSlider');
+                this.coherenceSlider = document.getElementById('coherenceSlider');
+                this.heatSlider = document.getElementById('heatSlider');
+                this.atmosphericZone = document.getElementById('atmosphericZone');
+                this.thermalConvection = document.getElementById('thermalConvection');
+                this.phaseZone = document.getElementById('phaseZone');
+                
+                // Particle arrays
+                this.steamParticles = [];
+                this.bubbles = [];
+                this.n2Molecules = [];
+                this.o2Molecules = [];
+                this.co2Molecules = [];
+                
+                this.initializeEventListeners();
+                this.initializeAtmosphere();
+                this.startSimulation();
+            }
+            
+            initializeEventListeners() {
+                this.tempSlider.addEventListener('input', (e) => {
+                    this.targetTemperature = parseFloat(e.target.value);
+                    document.getElementById('tempValue').textContent = this.targetTemperature + '°C';
+                });
+                
+                this.coherenceSlider.addEventListener('input', (e) => {
+                    const newCoherence = parseFloat(e.target.value);
+                    document.getElementById('coherenceValue').textContent = newCoherence.toFixed(1);
+                    this.coherenceField = this.coherenceField.map(val => newCoherence + (val - 1.8));
+                });
+                
+                this.heatSlider.addEventListener('input', (e) => {
+                    this.heatingPower = parseInt(e.target.value);
+                    document.getElementById('heatValue').textContent = this.heatingPower + 'W';
+                });
+            }
+            
+            initializeAtmosphere() {
+                for (let i = 0; i < 50; i++) {
+                    const n2 = document.createElement('div');
+                    n2.className = 'n2-molecule';
+                    n2.style.left = Math.random() * window.innerWidth + 'px';
+                    n2.style.top = Math.random() * window.innerHeight + 'px';
+                    n2.style.animationDelay = Math.random() * 7 + 's';
+                    this.atmosphericZone.appendChild(n2);
+                    this.n2Molecules.push(n2);
+                }
+                
+                for (let i = 0; i < 15; i++) {
+                    const o2 = document.createElement('div');
+                    o2.className = 'o2-molecule';
+                    o2.style.left = Math.random() * window.innerWidth + 'px';
+                    o2.style.top = Math.random() * window.innerHeight + 'px';
+                    o2.style.animationDelay = Math.random() * 5 + 's';
+                    this.atmosphericZone.appendChild(o2);
+                    this.o2Molecules.push(o2);
+                }
+                
+                for (let i = 0; i < 4; i++) {
+                    const co2 = document.createElement('div');
+                    co2.className = 'co2-molecule';
+                    co2.style.left = Math.random() * window.innerWidth + 'px';
+                    co2.style.top = Math.random() * window.innerHeight + 'px';
+                    co2.style.animationDelay = Math.random() * 9 + 's';
+                    this.atmosphericZone.appendChild(co2);
+                    this.co2Molecules.push(co2);
+                }
+            }
+            
+            updateCRRCoherence() {
+                const deltaTime = 0.016;
+                
+                // Add thermal fluctuations that create local coherence spikes
+                if (this.temperature > 70 && Math.random() < 0.08) {
+                    const hotspot = Math.floor(Math.random() * 100);
+                    this.coherenceField[hotspot] += 0.3 + (this.temperature / 100) * 0.4;
+                }
+                
+                for (let i = 0; i < 100; i++) {
+                    // CRR Coherence calculation
+                    const fieldState = Math.sin(Date.now() * 0.0001 + i * 0.03) * Math.cos(Date.now() * 0.00012 + i * 0.02);
+                    const thermalNormalization = 1.0 / (1.0 + Math.exp((this.temperature - 273.15) / 8.0));
+                    const hydrogenBondModulation = 1 + 0.15 * Math.sin(Date.now() * 0.0001 + i * 0.06) * (this.temperature / 300.0);
+                    
+                    this.mnemonicEntanglement[i] = fieldState * thermalNormalization * hydrogenBondModulation;
+                    
+                    const mnemonicContribution = this.mnemonicEntanglement[i] * Math.exp(-this.temporalDecay * deltaTime);
+                    this.coherenceField[i] += mnemonicContribution * 0.006;
+                    this.coherenceField[i] *= (1 - this.temporalDecay);
+                    
+                    if (this.isHeating) {
+                        this.coherenceField[i] += 0.008 * (this.temperature / 100);
+                        
+                        // Add spatial perturbations during heating to create gradients
+                        if (this.temperature > 80 && Math.random() < 0.02) {
+                            const perturbation = (Math.random() - 0.5) * 0.4 * (this.temperature / 100);
+                            this.coherenceField[i] += perturbation;
+                        }
+                    }
+                    
+                    this.coherenceField[i] = Math.max(0.8, Math.min(3.5, this.coherenceField[i]));
+                    
+                    // Rupture detection with higher rate when boiling
+                    if (i > 1 && i < 98) {
+                        const coherenceGradient = Math.abs(this.coherenceField[i+1] - this.coherenceField[i-1]) / 2;
+                        let decoherenceRate = 0.0008 * (1 + this.temperature / 273.15);
+                        
+                        if (this.temperature >= 100) {
+                            decoherenceRate *= 12;
+                        } else if (this.temperature >= 85) {
+                            decoherenceRate *= 2.5;
+                        }
+                        
+                        // Dynamic threshold based on temperature
+                        const adaptiveThreshold = this.temperature > 90 ? 0.08 : this.coherenceThreshold;
+                        
+                        if (coherenceGradient > adaptiveThreshold && Math.random() < decoherenceRate) {
+                            this.processRupture(i);
+                        }
+                    }
+                }
+                
+                this.updateAtmosphericCoherence();
+            }
+            
+            updateAtmosphericCoherence() {
+                for (let i = 0; i < 80; i++) {
+                    const fieldState = Math.sin(Date.now() * 0.0002 + i * 0.06);
+                    const temperatureEffect = 1.0 / (1.0 + Math.exp((this.atmosphere.temperature - 273.15) / 15.0));
+                    const pressureEffect = this.atmosphere.pressure * 0.85;
+                    const humidityEffect = 1 + this.atmosphere.humidity * 0.2;
+                    
+                    this.atmosphericCoherence[i] += fieldState * temperatureEffect * pressureEffect * humidityEffect * 0.002;
+                    this.atmosphericCoherence[i] *= 0.997;
+                    this.atmosphericCoherence[i] = Math.max(0.1, Math.min(0.7, this.atmosphericCoherence[i]));
+                }
+                
+                if (this.temperature >= 100) {
+                    this.atmosphere.humidity = Math.min(0.9, this.atmosphere.humidity + 0.001);
+                    this.updateAtmosphericInteraction();
+                } else {
+                    this.atmosphere.humidity = Math.max(0.4, this.atmosphere.humidity - 0.0008);
+                }
+            }
+            
+            updateAtmosphericInteraction() {
+                const steamEffect = (this.temperature - 100) / 15;
+                
+                this.n2Molecules.forEach(molecule => {
+                    if (Math.random() < steamEffect * 0.15) {
+                        const drift = (Math.random() - 0.5) * 3;
+                        const lift = -Math.random() * 6;
+                        molecule.style.transform = `translateX(${drift}px) translateY(${lift}px) scale(1.05)`;
+                        molecule.style.opacity = '0.9';
+                    }
+                });
+                
+                this.o2Molecules.forEach(molecule => {
+                    if (Math.random() < steamEffect * 0.2) {
+                        const drift = (Math.random() - 0.5) * 4;
+                        const lift = -Math.random() * 8;
+                        molecule.style.transform = `translateX(${drift}px) translateY(${lift}px) scale(1.1)`;
+                        molecule.style.opacity = '0.95';
+                    }
+                });
+            }
+            
+            processRupture(location) {
+                const memoryRecord = {
+                    originalCoherence: this.coherenceField[location],
+                    hydrogenBonds: this.hydrogenBondNetwork[location],
+                    timestamp: Date.now(),
+                    molecularState: {...this.waterStructure}
+                };
+                
+                this.regenerationMemory.set(location, memoryRecord);
+                this.ruptureEvents++;
+                
+                this.coherenceField[location] *= 0.3;
+                this.hydrogenBondNetwork[location] *= 0.5;
+                
+                if (this.temperature > 85) {
+                    this.createBubble(location);
+                }
+                
+                if (this.temperature >= 100) {
+                    this.createSteamFromSurface(location);
+                }
+                
+                setTimeout(() => {
+                    this.processRegeneration(location);
+                }, 800 + Math.random() * 1500);
+            }
+            
+            processRegeneration(location) {
+                if (this.regenerationMemory.has(location)) {
+                    const memory = this.regenerationMemory.get(location);
+                    
+                    this.coherenceField[location] = memory.originalCoherence * 0.75 + this.coherenceField[location] * 0.25;
+                    this.hydrogenBondNetwork[location] = memory.hydrogenBonds * 0.85;
+                    
+                    this.regenerationCycles++;
+                    this.regenerationMemory.delete(location);
+                }
+            }
+            
+            updateThermodynamics(deltaTime) {
+                if (this.isHeating && this.temperature < this.targetTemperature) {
+                    const baseHeatingRate = (this.heatingPower / (this.waterMass * 4.186));
+                    const averageCoherence = this.coherenceField.reduce((a, b) => a + b, 0) / 100;
+                    const coherenceAmplification = 1.2 + (averageCoherence - 1.8) * 0.5;
+                    const massReduction = Math.max(0.8, (this.waterMass - this.totalEvaporated) / this.waterMass);
+                    
+                    const effectiveHeatingRate = baseHeatingRate * coherenceAmplification * massReduction;
+                    this.temperature += effectiveHeatingRate * deltaTime;
+                    
+                } else if (!this.isHeating || this.temperature > this.targetTemperature) {
+                    const coolingRate = (this.temperature - this.ambientTemperature) * this.coolingRate * deltaTime;
+                    this.temperature -= coolingRate;
+                }
+                
+                this.nucleationSites = Math.floor(Math.max(0, (this.temperature - 80) / 2));
+                
+                if (this.temperature >= 100) {
+                    this.phaseState = 'boiling';
+                    this.calculateSteamProduction(deltaTime);
+                    this.generateSteamFromWaterSurface();
+                } else if (this.temperature >= 85) {
+                    this.phaseState = 'pre-boiling';
+                    this.createNucleationBubbles();
+                } else if (this.temperature >= 60) {
+                    this.phaseState = 'heating';
+                } else {
+                    this.phaseState = 'liquid';
+                }
+                
+                this.temperature = Math.max(this.ambientTemperature, Math.min(110, this.temperature));
+                
+                this.waterStructure.clusterSize = 5.2 - (this.temperature - 20) * 0.015;
+                this.waterStructure.vibrationFrequency = 3400 + (this.temperature - 20) * 1.8;
+            }
+            
+            calculateSteamProduction(deltaTime) {
+                if (this.temperature >= 100) {
+                    const excessHeat = this.temperature - 100;
+                    const baseRate = 1.0 + excessHeat * 0.25;
+                    const coherenceBoost = this.coherenceField.reduce((a, b) => a + b, 0) / 100;
+                    
+                    this.steamProductionRate = baseRate * (1 + coherenceBoost * 0.6) * deltaTime;
+                    this.totalEvaporated += this.steamProductionRate;
+                    
+                    this.waterMass = Math.max(0, this.waterMass - this.steamProductionRate);
+                    
+                    if (this.waterMass < 100) {
+                        this.steamProductionRate *= 1.3;
+                    }
+                } else {
+                    this.steamProductionRate = 0;
+                }
+            }
+            
+            createBubble(location) {
+                if (this.temperature > 85) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    
+                    const coherenceInfluence = this.coherenceField[location];
+                    const baseSize = 3 + Math.random() * 15;
+                    const size = baseSize * (0.6 + coherenceInfluence * 0.4);
+                    
+                    bubble.style.width = size + 'px';
+                    bubble.style.height = size + 'px';
+                    bubble.style.left = (10 + Math.random() * 80) + '%';
+                    bubble.style.bottom = (5 + Math.random() * 15) + 'px';
+                    bubble.style.opacity = '0.7';
+                    
+                    this.waterContainer.appendChild(bubble);
+                    this.animateBubble(bubble);
+                    
+                    setTimeout(() => {
+                        if (bubble.parentNode) {
+                            bubble.remove();
+                        }
+                    }, 3500);
+                }
+            }
+            
+            animateBubble(bubble) {
+                let y = 0;
+                let x = 0;
+                let opacity = 0.7;
+                let scale = 0.4;
+                
+                const animate = () => {
+                    y += 1.2 + Math.random() * 1.2;
+                    x += (Math.random() - 0.5) * 0.5;
+                    opacity -= 0.002;
+                    scale += 0.006;
+                    
+                    bubble.style.transform = `translateY(-${y}px) translateX(${x}px) scale(${scale})`;
+                    bubble.style.opacity = opacity;
+                    
+                    if (opacity > 0 && y < 250) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            createSteamFromSurface(location) {
+                if (this.temperature >= 100) {
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            const steam = document.createElement('div');
+                            steam.className = 'steam-particle';
+                            
+                            const waterLevel = Math.max(5, 70 * (this.waterMass / 500));
+                            steam.style.left = (20 + Math.random() * 60) + '%';
+                            steam.style.bottom = waterLevel + '%';
+                            
+                            this.waterContainer.appendChild(steam);
+                            this.animateSteamFromSurface(steam);
+                            
+                            setTimeout(() => {
+                                if (steam.parentNode) {
+                                    steam.remove();
+                                }
+                            }, 3000);
+                        }, i * 40);
+                    }
+                }
+            }
+            
+            animateSteamFromSurface(particle) {
+                let y = 0;
+                let x = 0;
+                let opacity = 0.9;
+                let scale = 0.6;
+                
+                const animate = () => {
+                    y += 2 + Math.random() * 1.5;
+                    x += (Math.random() - 0.5) * 1.2;
+                    opacity -= 0.008;
+                    scale += 0.012;
+                    
+                    particle.style.transform = `translateY(-${y}px) translateX(${x}px) scale(${scale})`;
+                    particle.style.opacity = opacity;
+                    
+                    if (opacity > 0 && y < 200) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            generateSteamFromWaterSurface() {
+                if (this.temperature >= 100) {
+                    for (let i = 0; i < 12; i++) {
+                        const surfaceSteam = document.createElement('div');
+                        surfaceSteam.className = 'steam-particle';
+                        
+                        const startX = 15 + Math.random() * 70;
+                        surfaceSteam.style.left = startX + '%';
+                        const waterLevel = Math.max(5, 70 * (this.waterMass / 500));
+                        surfaceSteam.style.bottom = waterLevel + '%';
+                        
+                        this.waterContainer.appendChild(surfaceSteam);
+                        this.animateSurfaceSteam(surfaceSteam, startX);
+                        
+                        setTimeout(() => {
+                            if (surfaceSteam.parentNode) {
+                                surfaceSteam.remove();
+                            }
+                        }, 8000);
+                    }
+                    
+                    for (let j = 0; j < 18; j++) {
+                        const atmosphericSteam = document.createElement('div');
+                        atmosphericSteam.className = 'atmospheric-steam';
+                        
+                        const kettleCenterX = window.innerWidth * 0.4;
+                        const kettleCenterY = window.innerHeight * 0.65;
+                        
+                        const clusterRadius = 60 + Math.random() * 40;
+                        const angle = Math.random() * Math.PI * 2;
+                        const startX = kettleCenterX + Math.cos(angle) * clusterRadius * Math.random();
+                        const startY = kettleCenterY + Math.sin(angle) * clusterRadius * 0.3;
+                        
+                        atmosphericSteam.style.left = startX + 'px';
+                        atmosphericSteam.style.top = startY + 'px';
+                        
+                        this.atmosphericZone.appendChild(atmosphericSteam);
+                        this.animateAtmosphericSteam(atmosphericSteam, startX, startY);
+                        
+                        setTimeout(() => {
+                            if (atmosphericSteam.parentNode) {
+                                atmosphericSteam.remove();
+                            }
+                        }, 12000);
+                    }
+                }
+            }
+            
+            animateSurfaceSteam(particle, startX) {
+                let y = 0;
+                let x = startX;
+                let opacity = 0.9;
+                let scale = 0.5;
+                let age = 0;
+                
+                const animate = () => {
+                    age += 0.016;
+                    
+                    const spreadFactor = Math.min(1.5, y / 60);
+                    const riseSpeed = Math.max(1, 4 - (y / 80));
+                    y += riseSpeed + Math.random() * 1.5;
+                    
+                    const horizontalDrift = (Math.random() - 0.5) * (1 + spreadFactor);
+                    x += horizontalDrift;
+                    
+                    const heightFade = Math.max(0, 1 - (y / 280));
+                    const ageFade = Math.exp(-age * 0.05);
+                    opacity = 0.9 * heightFade * ageFade;
+                    
+                    scale += (0.01 + spreadFactor * 0.008);
+                    
+                    particle.style.transform = `translateY(-${y}px) translateX(${x - startX}px) scale(${scale})`;
+                    particle.style.opacity = opacity;
+                    
+                    if (opacity > 0.05 && y < 350) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            animateAtmosphericSteam(particle, startX, startY) {
+                let y = startY;
+                let x = startX;
+                let opacity = 0.8;
+                let scale = 0.7;
+                let age = 0;
+                
+                const animate = () => {
+                    age += 0.016;
+                    
+                    const height = startY - y;
+                    const spreadFactor = Math.min(4, height / 50);
+                    
+                    const riseSpeed = Math.max(0.6, 3 - (height / 100));
+                    y -= riseSpeed + Math.random() * 1.2;
+                    
+                    const horizontalDrift = (Math.random() - 0.5) * (2 + spreadFactor * 2.5);
+                    x += horizontalDrift;
+                    
+                    const heightFade = Math.max(0, 1 - (height / 400));
+                    const ageFade = Math.exp(-age * 0.05);
+                    opacity = 0.8 * heightFade * ageFade;
+                    
+                    scale += (0.014 + spreadFactor * 0.01);
+                    
+                    x = Math.max(-150, Math.min(window.innerWidth + 150, x));
+                    
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.opacity = opacity;
+                    particle.style.transform = `scale(${scale})`;
+                    
+                    if (opacity > 0.02 && y > -100) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+            
+            createNucleationBubbles() {
+                if (Math.random() < 0.3 && this.nucleationSites > 0) {
+                    const location = Math.floor(Math.random() * 100);
+                    this.createBubble(location);
+                    
+                    // Nucleation creates local coherence discontinuity
+                    if (location > 1 && location < 98) {
+                        this.coherenceField[location] += 0.5;
+                        this.coherenceField[location - 1] -= 0.2;
+                        this.coherenceField[location + 1] -= 0.2;
+                    }
+                }
+            }
+            
+            updateVisualEffects() {
+                const indicator = document.getElementById('stateIndicator');
+                indicator.className = 'state-indicator';
+                
+                if (this.phaseState === 'liquid') {
+                    indicator.classList.add('state-liquid');
+                    indicator.textContent = `💧 LIQUID STATE - Coherent organization | C(x,t) = ${this.getAverageCoherence().toFixed(3)} | T = ${this.temperature.toFixed(1)}°C`;
+                } else if (this.phaseState === 'heating' || this.phaseState === 'pre-boiling') {
+                    indicator.classList.add('state-heating');
+                    indicator.textContent = `🔥 HEATING STATE - Thermal energy input | C(x,t) = ${this.getAverageCoherence().toFixed(3)} | T = ${this.temperature.toFixed(1)}°C`;
+                } else if (this.phaseState === 'boiling') {
+                    indicator.classList.add('state-boiling');
+                    indicator.textContent = `💨 BOILING STATE - Phase transition active | δ-events: ${this.ruptureEvents} | T = ${this.temperature.toFixed(1)}°C`;
+                }
+                
+                document.getElementById('tempDisplay').textContent = this.temperature.toFixed(1);
+                document.getElementById('waterDisplay').textContent = Math.floor(this.waterMass);
+                document.getElementById('steamDisplay').textContent = (this.steamProductionRate * 60).toFixed(1);
+                document.getElementById('phaseDisplay').textContent = this.phaseState.charAt(0).toUpperCase() + this.phaseState.slice(1);
+                
+                document.getElementById('coherenceMetric').textContent = this.getAverageCoherence().toFixed(3);
+                document.getElementById('ruptureMetric').textContent = this.ruptureEvents;
+                document.getElementById('regenerationMetric').textContent = this.regenerationCycles;
+                document.getElementById('motionMetric').textContent = Math.floor(this.waterStructure.vibrationFrequency);
+                document.getElementById('bondMetric').textContent = this.getAverageBonds().toFixed(1);
+                document.getElementById('energyMetric').textContent = Math.floor((this.temperature - 20) * this.waterMass * 4.186 / 1000);
+                
+                const regenValue = this.temperature >= 100 ? (this.steamProductionRate * 10).toFixed(3) : '0.000';
+                document.getElementById('mathDisplay').textContent = 
+                    `C(x,t) = ${this.getAverageCoherence().toFixed(3)} | δ-events: ${this.ruptureEvents} | R[steam]: ${regenValue}`;
+                
+                const tempRatio = Math.min(1, (this.temperature - 20) / 80);
+                const blueIntensity = 220 - (tempRatio * 120);
+                const redIntensity = tempRatio * 160;
+                const greenIntensity = Math.max(40, 130 - (tempRatio * 100));
+                
+                const coherenceEffect = this.getAverageCoherence();
+                const opacity = 0.8 + (coherenceEffect - 1.8) * 0.1;
+                
+                this.waterContainer.style.background = `linear-gradient(to bottom, 
+                    rgba(${redIntensity}, ${greenIntensity}, ${blueIntensity}, ${opacity}) 0%, 
+                    rgba(${Math.floor(redIntensity * 0.8)}, ${Math.floor(greenIntensity * 0.6)}, ${Math.floor(blueIntensity * 1.2)}, ${opacity + 0.05}) 100%)`;
+                
+                const waterLevel = Math.max(5, 70 * (this.waterMass / 500));
+                this.waterContainer.style.height = waterLevel + '%';
+                
+                if (this.temperature > 60) {
+                    this.thermalConvection.style.opacity = Math.min(0.6, (this.temperature - 60) / 25);
+                    this.thermalConvection.style.animationDuration = Math.max(1, 2.5 - tempRatio * 1.5) + 's';
+                } else {
+                    this.thermalConvection.style.opacity = 0;
+                }
+                
+                if (this.temperature > 95) {
+                    this.phaseZone.style.opacity = Math.min(0.8, (this.temperature - 95) / 5);
+                    this.phaseZone.style.animationDuration = Math.max(0.4, 1.2 - (this.temperature - 95) * 0.15) + 's';
+                } else {
+                    this.phaseZone.style.opacity = 0;
+                }
+            }
+            
+            getAverageCoherence() {
+                return this.coherenceField.reduce((a, b) => a + b, 0) / 100;
+            }
+            
+            getAverageBonds() {
+                return this.hydrogenBondNetwork.reduce((a, b) => a + b, 0) / 100;
+            }
+            
+            startSimulation() {
+                let lastTime = Date.now();
+                
+                const simulate = () => {
+                    const currentTime = Date.now();
+                    const deltaTime = (currentTime - lastTime) / 1000;
+                    lastTime = currentTime;
+                    
+                    this.updateCRRCoherence();
+                    this.updateThermodynamics(deltaTime);
+                    this.updateVisualEffects();
+                    
+                    requestAnimationFrame(simulate);
+                };
+                
+                simulate();
+            }
+        }
+        
+        function toggleHeating() {
+            const button = document.getElementById('powerButton');
+            const element = document.getElementById('heatingElement');
+            
+            window.kettleSimulation.isHeating = !window.kettleSimulation.isHeating;
+            
+            if (window.kettleSimulation.isHeating) {
+                button.textContent = '🔴 Stop Heating';
+                button.classList.add('active');
+                element.classList.add('active');
+            } else {
+                button.textContent = '🔥 Start Heating';
+                button.classList.remove('active');
+                element.classList.remove('active');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            window.kettleSimulation = new CRRKettleSimulation();
+            console.log("CRR Kettle Simulation Initialized - Coherence-Rupture-Regeneration Framework Active");
+        });
+    </script>
+</body>
+</html>

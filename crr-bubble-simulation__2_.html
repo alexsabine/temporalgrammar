@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Bubble Physics - Complete Mathematical Framework</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #ffffff;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: #1a1a1a;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Mathematical Explainer */
+        .explainer {
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            padding: 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #1a1a1a;
+        }
+        
+        .explainer-header {
+            background: #000000;
+            color: white;
+            padding: 20px 30px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .explainer-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+            color: white;
+        }
+        
+        .explainer-header .toggle {
+            font-size: 24px;
+            transition: transform 0.3s;
+            color: white;
+        }
+        
+        .explainer-header .toggle.open {
+            transform: rotate(180deg);
+        }
+        
+        .explainer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .explainer-content.open {
+            max-height: 5000px;
+            transition: max-height 0.5s ease-in;
+        }
+        
+        .explainer-inner {
+            padding: 30px;
+        }
+        
+        .explainer h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        
+        .explainer h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        
+        .equation-section {
+            background: #f0f0f0;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .equation-section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .equation {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 16px;
+            font-style: italic;
+            color: #1a1a1a;
+            padding: 12px;
+            background: white;
+            border: 1px solid #d0d0d0;
+            margin: 10px 0;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        
+        .code-mapping {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            border-left: 3px solid #667eea;
+        }
+        
+        .code-mapping .comment {
+            color: #68d391;
+            font-weight: 500;
+        }
+        
+        .code-mapping .keyword {
+            color: #fbbf24;
+        }
+        
+        .implementation-note {
+            background: #f0f4ff;
+            border: 1px solid #b8c5e0;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        /* Simulation Window */
+        .sim-container {
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #1a1a2e;
+        }
+        
+        .sim-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .sim-header p {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+        
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .mode-btn:hover {
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        #canvas-wrapper {
+            width: 100%;
+            height: 600px;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #d0d0d0;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        #canvas-wrapper.pin-mode {
+            cursor: crosshair;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #wand {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            opacity: 0.8;
+            transition: transform 0.1s;
+            z-index: 1000;
+        }
+        
+        #wand.blowing { 
+            transform: translate(-50%, -50%) scale(1.3) rotate(5deg); 
+        }
+        
+        #wand.pin-mode {
+            width: 40px;
+            height: 40px;
+        }
+        
+        /* Controls */
+        .controls-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-panel {
+            background: #f8f8f8;
+            border: 1px solid #d0d0d0;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #1a1a1a;
+        }
+        
+        .control-panel h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: white;
+            border: 1px solid #d0d0d0;
+            padding: 14px;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .signature-indicator {
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sig-fragile { 
+            background: #ffe5e5; 
+            border-color: #ff6b6b;
+            color: #c44; 
+        }
+        
+        .sig-resilient { 
+            background: #e5ffe5; 
+            border-color: #64c864;
+            color: #4a4; 
+        }
+        
+        .sig-oscillatory { 
+            background: #e5f2ff; 
+            border-color: #6496ff;
+            color: #48c; 
+        }
+        
+        .slider-group { 
+            margin: 16px 0; 
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .slider-value {
+            color: #667eea;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+        
+        button:hover { 
+            background: #5568d3;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .info-note {
+            background: #f0f4ff;
+            border-left: 3px solid #667eea;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Mathematical Explainer -->
+        <div class="explainer">
+            <div class="explainer-header" onclick="toggleExplainer()">
+                <h1>Coherence–Rupture–Regeneration (CRR) Framework</h1>
+                <span class="toggle" id="explainer-toggle">▼</span>
+            </div>
+            <div class="explainer-content" id="explainer-content">
+                <div class="explainer-inner">
+                    <h2>Mathematical Foundation for Bubble Dynamics</h2>
+                    
+                    <div class="info-note">
+                        <strong>What you're seeing:</strong> Each bubble is a CRR agent that accumulates coherence, undergoes rupture, and influences future bubbles through a memory field. The simulation implements the complete canonical formalism with proper Dirac delta rupture physics.
+                    </div>
+            
+            <div class="equation-section">
+                <h3>Operator 1: Coherence Density</h3>
+                <div class="equation">
+                    L(x, ẋ, t) = f<sub>film</sub>(h) · f<sub>age</sub>(t) · f<sub>structure</sub> · f<sub>kinetic</sub>(v) · f<sub>blanket</sub>
+                </div>
+                <div class="implementation-note">
+                    The coherence density measures how stable the bubble is at each moment. It's the product of five factors: film thickness optimality, age decay, structural bonding (foam vs isolated), velocity damping, and Markov blanket enhancement.
+                </div>
+                <div class="code-mapping">
+<span class="comment">// Code Implementation:</span>
+<span class="keyword">const</span> filmStability = exp(-pow(log(film / 280e-9), 2));
+<span class="keyword">const</span> ageStability = exp(-age / 35.0);
+<span class="keyword">const</span> structuralBonus = inFoam ? plateauBonus : 1.0;
+<span class="keyword">const</span> kineticStability = exp(-velocity.length() * 5.0);
+<span class="keyword">const</span> blanketBoost = hasBlanket ? 1.3 : 1.0;
+L = filmStability * ageStability * structuralBonus * kineticStability * blanketBoost;
+                </div>
+            </div>
+            
+            <div class="equation-section">
+                <h3>Operator 2: Coherence Accumulation</h3>
+                <div class="equation">
+                    C(x, t) = ∫<sub>0</sub><sup>t</sup> L(x, τ) dτ &nbsp;&nbsp;&nbsp; with decay: &nbsp; dC/dt = L − γC
+                </div>
+                <div class="implementation-note">
+                    Coherence C is the time-integral of the density L. It accumulates when the bubble is stable (high L) and decays exponentially. High coherence stabilizes the film and resists rupture.
+                </div>
+                <div class="code-mapping">
+<span class="comment">// Code Implementation:</span>
+C += L * dt;                        <span class="comment">// Integration: accumulate</span>
+C *= pow(coherenceDecay, dt);       <span class="comment">// Exponential decay</span>
+C = min(C, maxCoherence);           <span class="comment">// Saturation limit</span>
+
+<span class="comment">// Coherence feeds back into physics:</span>
+drainRate *= exp(-C / 12.0);        <span class="comment">// Slows drainage</span>
+radius = radius0 * (1.0 + C * 0.009); <span class="comment">// Inflates bubble</span>
+                </div>
+            </div>
+            
+            <div class="equation-section">
+                <h3>Operator 3: Regeneration Kernel</h3>
+                <div class="equation">
+                    R[χ](x, t) = ∫ φ(x, τ) · exp(C(τ)/Ω) · Θ(t−τ) dτ
+                </div>
+                <div class="implementation-note">
+                    When a bubble ruptures, it's recorded in the memory field φ(x,τ) with its position, coherence, and timestamp. New bubbles query this field and inherit weighted coherence and rupture risk. The exponential weighting exp(C/Ω) means high-coherence ruptures have exponentially stronger influence.
+                </div>
+                <div class="code-mapping">
+<span class="comment">// Code Implementation:</span>
+<span class="keyword">function</span> getRegeneration(pos, now) {
+    <span class="keyword">let</span> inheritedC = 0, inheritedRisk = 0;
+    <span class="keyword">for</span> (<span class="keyword">const</span> event of memoryField.events) {
+        <span class="keyword">const</span> dist = pos.distanceTo(event.pos);
+        <span class="keyword">const</span> age = (now - event.t) / 1000;
+        <span class="keyword">if</span> (age < 0) <span class="keyword">continue</span>;  <span class="comment">// Θ(t-τ) causality</span>
+        
+        <span class="comment">// Regeneration kernel weights:</span>
+        <span class="keyword">const</span> spatialWeight = exp(-dist / regenRadius);
+        <span class="keyword">const</span> temporalWeight = exp(-age / memoryTemporal);
+        <span class="keyword">const</span> coherenceWeight = exp(event.C / Ω);  <span class="comment">// ← exp(C/Ω)</span>
+        
+        <span class="keyword">const</span> weight = spatialWeight * temporalWeight * coherenceWeight;
+        inheritedC += event.C * weight;
+    }
+    <span class="keyword">return</span> { inherited: inheritedC, risk: inheritedRisk };
+}
+                </div>
+            </div>
+            
+            <div class="equation-section">
+                <h3>Dirac Delta Rupture: δ(t−t₀)</h3>
+                <div class="equation">
+                    Rupture impulse: ρ(x) · δ(t−t₀) propagates as crack wave through thin film
+                </div>
+                <div class="implementation-note">
+                    At rupture time t₀, a Dirac delta perturbation is applied instantaneously at the rupture point. This creates a discretized wave that propagates radially through the coherence field at finite velocity, causing crack formation and film retraction. The wave amplitude decays with distance and is modulated by local coherence density.
+                </div>
+                <div class="code-mapping">
+<span class="comment">// Enhanced Dirac Delta Implementation:</span>
+<span class="comment">// 1. Instantaneous impulse at t=t₀ creates rupture epicenter</span>
+<span class="comment">// 2. Crack wave propagates radially: v = sqrt(σ/ρh) ≈ 10-20 m/s</span>
+<span class="comment">// 3. Wave amplitude: A(r,t) = A₀·exp(-r/λ)·δ(t-r/v)</span>
+<span class="comment">// 4. Film retracts following crack front</span>
+<span class="comment">// 5. Coherence field locally collapses: C(x,t) → 0 at crack</span>
+                </div>
+            </div>
+            
+            <div class="equation-section">
+                <h3>Rupture Detection</h3>
+                <div class="equation">
+                    Rupture occurs when: &nbsp; C(t) / h<sub>0</sub> < θ<sub>crit</sub> &nbsp; or &nbsp; h(t) < h<sub>min</sub> &nbsp; or &nbsp; ρ<sub>risk</sub> > ρ<sub>max</sub>
+                </div>
+                <div class="implementation-note">
+                    Bubbles can fail through five mechanisms: (1) physical threshold (film too thin), (2) CRR degradation (coherence too low for current film state), (3) contagion (inherited high rupture risk), (4) senescence (age), or (5) boundary escape.
+                </div>
+            </div>
+            
+            <div class="equation-section">
+                <h3>Markov Blankets (Collective Coherence)</h3>
+                <div class="equation">
+                    C<sub>shared</sub> = ⟨C⟩ + β·√n + γ·min(t<sub>blanket</sub>/10, 1)
+                </div>
+                <div class="implementation-note">
+                    When bubbles touch, they form a Markov blanket—a statistical ensemble that shares coherence. The shared coherence grows sublinearly with size (√n scaling) and increases with blanket age. Members receive coherence boosts and reduced rupture risk.
+                </div>
+            </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Simulation Window -->
+        <div class="sim-container">
+            <div class="sim-header">
+                <div>
+                    <h2>Live CRR Simulation</h2>
+                    <p>Choose mode: blow bubbles or pop them with a pin</p>
+                </div>
+            </div>
+            
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="blow-btn" onclick="setMode('blow')">🫧 Blow Bubbles</button>
+                <button class="mode-btn" id="pin-btn" onclick="setMode('pin')">📍 Pop with Pin</button>
+            </div>
+            
+            <div id="canvas-wrapper">
+                <canvas id="canvas"></canvas>
+                <div id="wand">
+                    <svg id="wand-svg" viewBox="0 0 100 100">
+                        <defs>
+                            <radialGradient id="wandGrad">
+                                <stop offset="0%" stop-color="rgba(200,230,255,0.9)"/>
+                                <stop offset="100%" stop-color="rgba(150,200,255,0.5)"/>
+                            </radialGradient>
+                        </defs>
+                        <ellipse cx="50" cy="30" rx="28" ry="38" fill="none" 
+                                 stroke="url(#wandGrad)" stroke-width="3"/>
+                        <ellipse cx="50" cy="30" rx="22" ry="32" fill="none" 
+                                 stroke="rgba(220,240,255,0.8)" stroke-width="1.5"/>
+                        <line x1="50" y1="65" x2="50" y2="95" 
+                              stroke="#8B4513" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="48" cy="22" r="8" fill="rgba(255,255,255,0.9)"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls-container">
+            <!-- System Metrics -->
+            <div class="control-panel">
+                <h3>System Metrics</h3>
+                
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Bubbles</div>
+                        <div class="stat-value" id="count">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Foam Clusters</div>
+                        <div class="stat-value" id="clusters">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Avg Coherence</div>
+                        <div class="stat-value" id="coherence">0.0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Ruptures</div>
+                        <div class="stat-value" id="ruptures">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">M-Blankets</div>
+                        <div class="stat-value" id="blankets">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Memory Events</div>
+                        <div class="stat-value" id="memory">0</div>
+                    </div>
+                </div>
+                
+                <div class="signature-indicator" id="signature">System Initializing...</div>
+                
+                <button onclick="resetAll()">Reset System</button>
+            </div>
+            
+            <!-- Core CRR Parameters -->
+            <div class="control-panel">
+                <h3>Core CRR Parameters</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Ω (Temperature)</span>
+                        <span class="slider-value" id="omega-val">16.0</span>
+                    </div>
+                    <input type="range" id="omega" min="8" max="32" step="1" value="16">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Coherence Decay</span>
+                        <span class="slider-value" id="decay-val">0.972</span>
+                    </div>
+                    <input type="range" id="decay" min="0.90" max="0.99" step="0.001" value="0.972">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Rupture Threshold</span>
+                        <span class="slider-value" id="rupthresh-val">0.15</span>
+                    </div>
+                    <input type="range" id="rupthresh" min="0.08" max="0.30" step="0.01" value="0.15">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Memory Radius</span>
+                        <span class="slider-value" id="memrad-val">0.50</span>
+                    </div>
+                    <input type="range" id="memrad" min="0.20" max="1.00" step="0.05" value="0.50">
+                </div>
+            </div>
+            
+            <!-- Foam Physics -->
+            <div class="control-panel">
+                <h3>Foam Physics</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Plateau Bonus</span>
+                        <span class="slider-value" id="plateau-val">2.0</span>
+                    </div>
+                    <input type="range" id="plateau" min="1.0" max="4.0" step="0.1" value="2.0">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Cohesion Strength</span>
+                        <span class="slider-value" id="cohesion-val">0.95</span>
+                    </div>
+                    <input type="range" id="cohesion" min="0.5" max="0.99" step="0.01" value="0.95">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Contact Gap</span>
+                        <span class="slider-value" id="gap-val">0.70</span>
+                    </div>
+                    <input type="range" id="gap" min="0.60" max="0.90" step="0.01" value="0.70">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Buoyancy</span>
+                        <span class="slider-value" id="buoy-val">0.018</span>
+                    </div>
+                    <input type="range" id="buoy" min="0.005" max="0.040" step="0.001" value="0.018">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Wind Strength</span>
+                        <span class="slider-value" id="wind-val">0.042</span>
+                    </div>
+                    <input type="range" id="wind" min="0.0" max="0.10" step="0.002" value="0.042">
+                </div>
+            </div>
+            
+            <!-- Visual Controls -->
+            <div class="control-panel">
+                <h3>Visual & Flow</h3>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Bubble Size Min</span>
+                        <span class="slider-value" id="sizemin-val">0.08</span>
+                    </div>
+                    <input type="range" id="sizemin" min="0.04" max="0.15" step="0.01" value="0.08">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Bubble Size Max</span>
+                        <span class="slider-value" id="sizemax-val">0.13</span>
+                    </div>
+                    <input type="range" id="sizemax" min="0.08" max="0.30" step="0.01" value="0.13">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Flow Speed</span>
+                        <span class="slider-value" id="flow-val">0.85</span>
+                    </div>
+                    <input type="range" id="flow" min="0.2" max="2.0" step="0.05" value="0.85">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Iridescence Intensity</span>
+                        <span class="slider-value" id="irid-val">1.40</span>
+                    </div>
+                    <input type="range" id="irid" min="0.5" max="3.0" step="0.1" value="1.40">
+                </div>
+                
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Colour Saturation</span>
+                        <span class="slider-value" id="sat-val">1.65</span>
+                    </div>
+                    <input type="range" id="sat" min="0.5" max="3.0" step="0.05" value="1.65">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        'use strict';
+        
+        // ═══════════════════════════════════════════════════════════
+        // COMPLETE CRR PARAMETER SET
+        // ═══════════════════════════════════════════════════════════
+        const CRR = {
+            // Core CRR operators
+            Omega: 16.0,
+            coherenceDecay: 0.972,
+            memoryDepth: 150,
+            ruptureThreshold: 0.15,
+            regenRadius: 0.50,
+            memoryTemporal: 10.0,
+            
+            // Foam structure
+            plateauBonus: 2.0,
+            cohesionStrength: 0.95,
+            contactGap: 0.70,
+            blanketBonus: 1.8,
+            
+            // Physical constants
+            drainageRate: 7.8e-9,
+            viscosity: 0.001,
+            criticalThickness: 12e-9,
+            surfaceTension: 0.025,
+            
+            // Atmosphere
+            buoyancy: 0.018,
+            windStrength: 0.042,
+            airDrag: 0.015,
+            
+            // Visual
+            iridescenceFlow: 0.85,
+            iridescenceIntensity: 1.40,
+            colorSaturation: 1.65,
+            bubbleSizeMin: 0.08,
+            bubbleSizeMax: 0.13,
+            
+            // Dynamics limits
+            maxCoherence: 20.0,
+            maxVelocity: 0.40,
+            maxRuptureRisk: 1.5,
+            
+            // Rupture modes
+            ruptureMode: {
+                physical: 0.80,
+                coherence: 0.70,
+                contagion: 0.60,
+                senescence: 0.50
+            },
+            
+            // Dirac delta rupture physics
+            crackWaveVelocity: 15.0,  // m/s - crack propagation speed in thin film
+            crackDecayLength: 0.08,   // spatial decay of crack amplitude
+            filmRetractionSpeed: 1.2, // speed of film retraction following crack
+            coherenceCollapseRate: 25.0 // rate of local coherence collapse at crack
+        };
+        
+        // Slider bindings
+        const bindSlider = (id, prop, displayId, transform = x => x) => {
+            const input = document.getElementById(id);
+            const display = document.getElementById(displayId);
+            input.addEventListener('input', e => {
+                const val = parseFloat(e.target.value);
+                CRR[prop] = transform(val);
+                display.textContent = e.target.value;
+            });
+        };
+        
+        bindSlider('omega', 'Omega', 'omega-val');
+        bindSlider('decay', 'coherenceDecay', 'decay-val');
+        bindSlider('rupthresh', 'ruptureThreshold', 'rupthresh-val');
+        bindSlider('memrad', 'regenRadius', 'memrad-val');
+        bindSlider('plateau', 'plateauBonus', 'plateau-val');
+        bindSlider('cohesion', 'cohesionStrength', 'cohesion-val');
+        bindSlider('gap', 'contactGap', 'gap-val');
+        bindSlider('sizemin', 'bubbleSizeMin', 'sizemin-val');
+        bindSlider('sizemax', 'bubbleSizeMax', 'sizemax-val');
+        bindSlider('flow', 'iridescenceFlow', 'flow-val');
+        bindSlider('irid', 'iridescenceIntensity', 'irid-val');
+        bindSlider('sat', 'colorSaturation', 'sat-val');
+        bindSlider('buoy', 'buoyancy', 'buoy-val');
+        bindSlider('wind', 'windStrength', 'wind-val');
+        
+        // ═══════════════════════════════════════════════════════════
+        // MODE MANAGEMENT
+        // ═══════════════════════════════════════════════════════════
+        let currentMode = 'blow'; // 'blow' or 'pin'
+        
+        function setMode(mode) {
+            currentMode = mode;
+            const wrapper = document.getElementById('canvas-wrapper');
+            const wand = document.getElementById('wand');
+            const wandSvg = document.getElementById('wand-svg');
+            const blowBtn = document.getElementById('blow-btn');
+            const pinBtn = document.getElementById('pin-btn');
+            
+            if (mode === 'blow') {
+                wrapper.classList.remove('pin-mode');
+                wand.classList.remove('pin-mode');
+                blowBtn.classList.add('active');
+                pinBtn.classList.remove('active');
+                
+                // Restore wand SVG
+                wandSvg.innerHTML = `
+                    <defs>
+                        <radialGradient id="wandGrad">
+                            <stop offset="0%" stop-color="rgba(200,230,255,0.9)"/>
+                            <stop offset="100%" stop-color="rgba(150,200,255,0.5)"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="30" rx="28" ry="38" fill="none" 
+                             stroke="url(#wandGrad)" stroke-width="3"/>
+                    <ellipse cx="50" cy="30" rx="22" ry="32" fill="none" 
+                             stroke="rgba(220,240,255,0.8)" stroke-width="1.5"/>
+                    <line x1="50" y1="65" x2="50" y2="95" 
+                          stroke="#8B4513" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="48" cy="22" r="8" fill="rgba(255,255,255,0.9)"/>
+                `;
+            } else {
+                wrapper.classList.add('pin-mode');
+                wand.classList.add('pin-mode');
+                blowBtn.classList.remove('active');
+                pinBtn.classList.add('active');
+                
+                // Change to pin SVG
+                wandSvg.innerHTML = `
+                    <circle cx="50" cy="25" r="12" fill="#ff6b6b" stroke="#cc5555" stroke-width="2"/>
+                    <circle cx="50" cy="25" r="6" fill="#ff9999"/>
+                    <line x1="50" y1="37" x2="50" y2="95" 
+                          stroke="#999999" stroke-width="3" stroke-linecap="round"/>
+                    <polygon points="48,85 50,95 52,85" fill="#777777"/>
+                `;
+            }
+        }
+        window.setMode = setMode;
+        
+        // ═══════════════════════════════════════════════════════════
+        // MEMORY FIELD φ(x,τ) - REGENERATION OPERATOR
+        // ═══════════════════════════════════════════════════════════
+        class MemoryField {
+            constructor() {
+                this.events = [];
+            }
+            
+            addRupture(pos, C, t, signature) {
+                this.events.push({
+                    pos: pos.clone(),
+                    C: Math.min(C, CRR.maxCoherence),
+                    t: t,
+                    signature: signature
+                });
+                if (this.events.length > CRR.memoryDepth) {
+                    this.events.shift();
+                }
+            }
+            
+            getRegeneration(pos, now) {
+                let inheritedC = 0;
+                let inheritedRisk = 0;
+                let totalWeight = 0;
+                
+                for (const event of this.events) {
+                    const dist = pos.distanceTo(event.pos);
+                    if (dist > CRR.regenRadius * 2) continue;
+                    
+                    const age = (now - event.t) / 1000;
+                    if (age < 0) continue;
+                    
+                    const spatialWeight = Math.exp(-dist / CRR.regenRadius);
+                    const temporalWeight = Math.exp(-age / CRR.memoryTemporal);
+                    const coherenceWeight = Math.exp(event.C / CRR.Omega);
+                    
+                    const weight = spatialWeight * temporalWeight * coherenceWeight;
+                    
+                    inheritedC += event.C * weight;
+                    totalWeight += weight;
+                    
+                    if (event.signature === 'fragile') {
+                        inheritedRisk += weight * 0.18;
+                    } else if (event.signature === 'oscillatory') {
+                        inheritedRisk += weight * 0.10;
+                    }
+                }
+                
+                return {
+                    inherited: totalWeight > 0 ? 
+                        Math.min(inheritedC / totalWeight * 0.25, 5.0) : 0,
+                    risk: Math.min(inheritedRisk, CRR.maxRuptureRisk * 0.8),
+                    memoryStrength: totalWeight
+                };
+            }
+            
+            clear() {
+                this.events = [];
+            }
+        }
+        
+        const memoryField = new MemoryField();
+        
+        // ═══════════════════════════════════════════════════════════
+        // MARKOV BLANKET
+        // ═══════════════════════════════════════════════════════════
+        class MarkovBlanket {
+            constructor() {
+                this.members = new Set();
+                this.sharedCoherence = 0;
+                this.age = 0;
+            }
+            
+            add(bubble) {
+                this.members.add(bubble);
+                bubble.blanket = this;
+            }
+            
+            remove(bubble) {
+                this.members.delete(bubble);
+                bubble.blanket = null;
+            }
+            
+            update(dt) {
+                if (this.members.size < 2) return false;
+                
+                this.age += dt;
+                
+                let totalC = 0;
+                let avgRisk = 0;
+                for (const b of this.members) {
+                    totalC += Math.min(b.C, CRR.maxCoherence);
+                    avgRisk += b.ruptureRisk;
+                }
+                
+                const avgC = totalC / this.members.size;
+                const sizeBonus = Math.sqrt(this.members.size) * CRR.blanketBonus;
+                const stabilityBonus = Math.min(this.age / 10.0, 1.0) * 0.8;
+                
+                this.sharedCoherence = Math.min(
+                    avgC + sizeBonus + stabilityBonus,
+                    CRR.maxCoherence * 1.5
+                );
+                
+                avgRisk /= this.members.size;
+                
+                for (const b of this.members) {
+                    b.C += this.sharedCoherence * 0.045 * dt * 60;
+                    b.C = Math.min(b.C, CRR.maxCoherence);
+                    b.ruptureRisk *= Math.pow(0.96, dt * 60);
+                    b.L *= 1.0 + CRR.plateauBonus * 0.05;
+                }
+                
+                return true;
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // BUBBLE CLASS
+        // ═══════════════════════════════════════════════════════════
+        class Bubble {
+            constructor(x, y, z, inherited, risk, memStrength) {
+                this.r = CRR.bubbleSizeMin + 
+                         Math.random() * (CRR.bubbleSizeMax - CRR.bubbleSizeMin);
+                this.r0 = this.r;
+                
+                this.film = (400 + Math.random() * 300 + inherited * 80) * 1e-9;
+                this.film0 = this.film;
+                
+                this.L = 0;
+                this.C = Math.min(inherited, CRR.maxCoherence);
+                this.ruptureRisk = risk;
+                this.memoryInfluence = memStrength;
+                
+                this.age = 0;
+                this.birth = Date.now();
+                
+                this.neighbors = [];
+                this.neighborDirs = [];
+                this.inFoam = false;
+                this.blanket = null;
+                
+                this.rupturing = false;
+                this.ruptureT = 0;
+                this.signature = 'unknown';
+                
+                this.pos = new THREE.Vector3(x, y, z);
+                this.vel = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.04,
+                    0.06 + Math.random() * 0.08,
+                    (Math.random() - 0.5) * 0.04
+                );
+                this.acc = new THREE.Vector3(0, 0, 0);
+                this.wobble = Math.random() * Math.PI * 2;
+                
+                this.flowPhase = Math.random() * Math.PI * 2;
+                this.hue = Math.random();
+                
+                this.createMesh();
+            }
+            
+            createMesh() {
+                const segments = Math.max(32, Math.floor(this.r * 400));
+                this.geo = new THREE.SphereGeometry(this.r, segments, segments);
+                this.origPos = this.geo.attributes.position.array.slice();
+                
+                this.mat = new THREE.ShaderMaterial({
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    uniforms: {
+                        time: { value: 0 },
+                        film: { value: this.film * 1e9 },
+                        coherence: { value: this.C },
+                        coherenceDensity: { value: 0 },
+                        risk: { value: this.ruptureRisk },
+                        foam: { value: 0 },
+                        dissolve: { value: 0 },
+                        flowPhase: { value: this.flowPhase },
+                        flowSpeed: { value: CRR.iridescenceFlow },
+                        iridIntensity: { value: CRR.iridescenceIntensity },
+                        colorSat: { value: CRR.colorSaturation },
+                        worldPos: { value: this.pos },
+                        bubbleSize: { value: this.r },
+                        hueShift: { value: this.hue },
+                        // Crack-based dissolution uniforms
+                        crackCount: { value: 0 },
+                        crackCenters: { value: [] },
+                        crackTimes: { value: [] },
+                        ruptureTime: { value: 0 },
+                        crackRadius: { value: this.r * 0.15 }
+                    },
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        varying vec3 vView;
+                        varying vec3 vPos;
+                        varying vec3 vWorldPos;
+                        
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                            vWorldPos = worldPosition.xyz;
+                            vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                            vView = -mvPos.xyz;
+                            vPos = position;
+                            gl_Position = projectionMatrix * mvPos;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float time;
+                        uniform float film;
+                        uniform float coherence;
+                        uniform float coherenceDensity;
+                        uniform float risk;
+                        uniform float foam;
+                        uniform float dissolve;
+                        uniform float flowPhase;
+                        uniform float flowSpeed;
+                        uniform float iridIntensity;
+                        uniform float colorSat;
+                        uniform vec3 worldPos;
+                        uniform float bubbleSize;
+                        uniform float hueShift;
+                        
+                        // Crack-based dissolution uniforms
+                        uniform int crackCount;
+                        uniform float crackCenters[150];  // up to 50 crack points * 3
+                        uniform float crackTimes[50];
+                        uniform float ruptureTime;
+                        uniform float crackRadius;
+                        
+                        varying vec3 vNormal;
+                        varying vec3 vView;
+                        varying vec3 vPos;
+                        varying vec3 vWorldPos;
+                        
+                        float hash(vec2 p) {
+                            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+                        }
+                        
+                        float noise(vec2 p) {
+                            vec2 i = floor(p);
+                            vec2 f = fract(p);
+                            f = f * f * (3.0 - 2.0 * f);
+                            return mix(
+                                mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                                mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x),
+                                f.y
+                            );
+                        }
+                        
+                        vec3 swirlingInterference(float thickness, float cosTheta, vec2 surfacePos) {
+                            float n = 1.33;
+                            
+                            float flowStability = mix(2.2, 0.4, coherenceDensity);
+                            float flowRate = flowSpeed * flowStability;
+                            
+                            vec2 flow1 = surfacePos * 1.8 + vec2(time * flowRate * 0.5);
+                            float primaryFlow = noise(flow1) * 2.0 - 1.0;
+                            
+                            vec2 flow2 = surfacePos * 3.5 + vec2(time * flowRate * 0.3, flowPhase);
+                            float secondaryFlow = noise(flow2) * 2.0 - 1.0;
+                            
+                            vec2 turb = surfacePos * 8.0 + vec2(time * flowRate * 0.7, -time * flowRate * 0.4);
+                            float turbulence = (noise(turb) - 0.5) * 2.0 * (1.0 - coherenceDensity * 0.4);
+                            
+                            float vr = length(surfacePos);
+                            float va = atan(surfacePos.y, surfacePos.x);
+                            float vortex = sin(vr * 4.0 - va * 2.0 + time * flowRate * 0.3) * 0.6 +
+                                          sin(vr * 7.0 + va * 3.0 - time * flowRate * 0.5) * 0.4;
+                            
+                            float drift = sin(surfacePos.x * 3.0 + time * flowRate * 0.6) * 
+                                         cos(surfacePos.y * 2.5 - time * flowRate * 0.4);
+                            
+                            float totalFlow = primaryFlow * 0.45 + secondaryFlow * 0.30 + 
+                                            turbulence * 0.15 + vortex * 0.25 + drift * 0.35;
+                            
+                            float localThickness = thickness * (1.0 + totalFlow * 1.2);
+                            
+                            float drainGradient = smoothstep(-1.0, 1.0, vPos.y);
+                            localThickness *= 0.60 + drainGradient * 0.40;
+                            
+                            localThickness *= 1.0 + coherence * 0.04;
+                            
+                            float opticalPath = 2.0 * n * localThickness * cosTheta;
+                            opticalPath *= 1.0 + totalFlow * 0.25;
+                            
+                            vec3 wavelengths = vec3(650.0, 510.0, 450.0);
+                            wavelengths += hueShift * 40.0;
+                            
+                            float colorShift = coherenceDensity * 10.0 - risk * 12.0 + totalFlow * 8.0;
+                            wavelengths += colorShift;
+                            
+                            vec3 phase = 6.28318 * opticalPath / wavelengths;
+                            vec3 intensity = 0.30 + 0.70 * cos(phase);
+                            
+                            float saturation = colorSat + abs(totalFlow) * 0.25 + coherenceDensity * 0.15;
+                            float luma = dot(intensity, vec3(0.299, 0.587, 0.114));
+                            intensity = mix(vec3(luma), intensity, saturation);
+                            
+                            intensity *= 0.80 + abs(totalFlow) * 0.25 + abs(vortex) * 0.15;
+                            intensity *= iridIntensity;
+                            
+                            return intensity;
+                        }
+                        
+                        void main() {
+                            // Calculate crack-based dissolution
+                            float crackDissolution = 0.0;
+                            
+                            if (crackCount > 0 && ruptureTime > 0.0) {
+                                // Check distance to each crack point
+                                for (int i = 0; i < 50; i++) {
+                                    if (i >= crackCount) break;
+                                    
+                                    vec3 crackCenter = vec3(
+                                        crackCenters[i * 3],
+                                        crackCenters[i * 3 + 1],
+                                        crackCenters[i * 3 + 2]
+                                    );
+                                    
+                                    float distToCrack = length(vPos - crackCenter);
+                                    float crackArrivalTime = crackTimes[i];
+                                    
+                                    // Has the crack wave reached this point yet?
+                                    if (ruptureTime > crackArrivalTime) {
+                                        float timeSinceCrack = ruptureTime - crackArrivalTime;
+                                        // Crack expands over time - faster expansion
+                                        float expandedRadius = crackRadius * (1.0 + timeSinceCrack * 12.0);
+                                        
+                                        if (distToCrack < expandedRadius) {
+                                            // Smooth falloff at crack edge
+                                            float crackInfluence = 1.0 - smoothstep(0.0, expandedRadius, distToCrack);
+                                            crackInfluence *= min(timeSinceCrack * 6.0, 1.0);
+                                            crackDissolution = max(crackDissolution, crackInfluence);
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Combine crack dissolution with uniform dissolve
+                            float totalDissolve = max(dissolve, crackDissolution);
+                            
+                            if (totalDissolve > 0.99) discard;
+                            
+                            vec3 N = normalize(vNormal);
+                            vec3 V = normalize(vView);
+                            
+                            float fresnel = pow(1.0 - abs(dot(V, N)), 2.2);
+                            float cosTheta = abs(dot(V, N));
+                            
+                            vec2 surfacePos = vWorldPos.xy;
+                            
+                            vec3 irid = swirlingInterference(film, cosTheta, surfacePos);
+                            
+                            // Show cracks as darker/whiter zones
+                            if (crackDissolution > 0.1) {
+                                float crackHighlight = crackDissolution * 0.6;
+                                irid = mix(irid, vec3(1.0), crackHighlight);
+                            }
+                            
+                            if (foam > 0.5) {
+                                float edgeDist = length(vPos.xy);
+                                float contactDark = smoothstep(0.80, 0.97, edgeDist);
+                                irid *= 1.0 - contactDark * 0.35;
+                            }
+                            
+                            vec3 sky = vec3(0.68, 0.84, 0.99);
+                            vec3 col = mix(irid, sky, 0.08);
+                            
+                            vec3 L = normalize(vec3(1.0, 2.8, 1.0));
+                            float spec = pow(max(dot(reflect(-L, N), V), 0.0), 60.0);
+                            col += vec3(1.0) * spec * 1.8;
+                            
+                            float alpha = (fresnel * 0.58 + 0.12) * smoothstep(6.0, 200.0, film);
+                            
+                            float edge = pow(1.0 - abs(dot(V, N)), 1.60);
+                            col += edge * irid * 1.10;
+                            
+                            if (film < 25.0 || risk > 0.60) {
+                                float intensity = max(1.0 - film/25.0, risk);
+                                float pulse = sin(time * 32.0 + risk * 14.0) * 0.5 + 0.5;
+                                col += vec3(1.0, 0.45, 0.15) * pulse * intensity * 0.50;
+                            }
+                            
+                            alpha *= 1.0 - totalDissolve;
+                            gl_FragColor = vec4(col, alpha);
+                        }
+                    `
+                });
+                
+                this.mesh = new THREE.Mesh(this.geo, this.mat);
+                this.mesh.position.copy(this.pos);
+                this.mesh.userData.bubble = this;
+                scene.add(this.mesh);
+            }
+            
+            update(dt, time) {
+                this.age += dt;
+                
+                if (this.rupturing) {
+                    this.ruptureT += dt * 6.0;
+                    this.mat.uniforms.dissolve.value = this.ruptureT;
+                    return this.ruptureT >= 1.0;
+                }
+                
+                // COHERENCE DYNAMICS
+                const optimalFilm = 280e-9;
+                const filmStability = Math.exp(-Math.pow(Math.log(this.film / optimalFilm), 2) / 2);
+                const ageStability = Math.exp(-this.age / 35.0);
+                const structuralBonus = this.inFoam ? CRR.plateauBonus : 1.0;
+                const velMag = this.vel.length();
+                const kineticStability = Math.exp(-velMag * 5.0);
+                const blanketBoost = this.blanket ? 1.3 : 1.0;
+                
+                this.L = filmStability * ageStability * structuralBonus * 
+                         kineticStability * blanketBoost;
+                
+                this.C += this.L * dt * 60;
+                this.C *= Math.pow(CRR.coherenceDecay, dt * 60);
+                this.C = Math.min(this.C, CRR.maxCoherence);
+                
+                // FILM DRAINAGE
+                const cohesionFactor = Math.exp(-this.C / 12.0);
+                const foamFactor = this.inFoam ? 1.25 : 1.0;
+                
+                const drainRate = -CRR.drainageRate * cohesionFactor * foamFactor *
+                    Math.pow(this.film, 2.5) / (CRR.viscosity * this.r * this.r);
+                
+                this.film += drainRate * dt * 60;
+                this.film = Math.max(this.film, 0);
+                
+                this.r = this.r0 * (1.0 + this.C * 0.009);
+                
+                // ATMOSPHERIC PHYSICS
+                this.acc.set(0, 0, 0);
+                
+                if (!this.inFoam) {
+                    const buoyForce = CRR.buoyancy * (this.r / 0.1);
+                    this.acc.y += buoyForce;
+                    
+                    const ws = CRR.windStrength;
+                    const windX = Math.sin(time * 0.3 + this.pos.y * 0.5) * ws +
+                                 Math.sin(time * 1.2 + this.pos.x * 1.5) * ws * 0.6;
+                    const windZ = Math.cos(time * 0.4 + this.pos.x * 0.6) * ws +
+                                 Math.cos(time * 0.9 + this.pos.z * 1.8) * ws * 0.6;
+                    const windY = Math.cos(time * 1.5 + this.pos.y * 2.0) * ws * 0.4;
+                    
+                    this.acc.x += windX;
+                    this.acc.z += windZ;
+                    this.acc.y += windY;
+                    
+                    this.wobble += dt * (2.0 + velMag * 0.5) * 60;
+                    this.acc.x += Math.sin(this.wobble) * 0.025;
+                    this.acc.y += Math.sin(this.wobble * 1.3 + 1.0) * 0.012;
+                    this.acc.z += Math.cos(this.wobble * 0.9) * 0.025;
+                    
+                    const drag = CRR.airDrag * (this.r / 0.1);
+                    this.acc.sub(this.vel.clone().multiplyScalar(drag));
+                    
+                } else {
+                    const avgVel = new THREE.Vector3();
+                    for (const n of this.neighbors) avgVel.add(n.vel);
+                    avgVel.divideScalar(Math.max(this.neighbors.length, 1));
+                    
+                    const atmDamp = Math.exp(-this.neighbors.length * 0.08);
+                    
+                    const collectiveBuoy = CRR.buoyancy * 0.7 / 
+                        Math.sqrt(Math.max(this.neighbors.length, 1));
+                    avgVel.y += collectiveBuoy * dt * 60;
+                    
+                    const ws = CRR.windStrength * atmDamp;
+                    avgVel.x += Math.sin(time * 0.3 + this.pos.y * 0.5) * ws * dt * 60;
+                    avgVel.z += Math.cos(time * 0.4 + this.pos.x * 0.6) * ws * dt * 60;
+                    
+                    this.wobble += dt * 60 * (1.0 + Math.random() * 0.3);
+                    const wobblePhase = this.wobble + this.neighbors.length * 0.5;
+                    avgVel.x += Math.sin(wobblePhase) * 0.012 * dt * 60;
+                    avgVel.z += Math.cos(wobblePhase * 0.9) * 0.012 * dt * 60;
+                    
+                    this.vel.lerp(avgVel, 0.32);
+                    this.vel.multiplyScalar(Math.pow(0.94, dt * 60));
+                    
+                    for (const n of this.neighbors) {
+                        const toNeighbor = new THREE.Vector3().subVectors(n.pos, this.pos);
+                        const dist = toNeighbor.length();
+                        const targetDist = (this.r + n.r) * CRR.contactGap;
+                        
+                        if (dist > targetDist && dist < targetDist * 2) {
+                            const correction = toNeighbor.normalize()
+                                .multiplyScalar((dist - targetDist) * CRR.cohesionStrength);
+                            this.pos.add(correction);
+                        }
+                    }
+                }
+                
+                this.vel.add(this.acc.clone().multiplyScalar(dt));
+                
+                if (this.vel.length() > CRR.maxVelocity) {
+                    this.vel.normalize().multiplyScalar(CRR.maxVelocity);
+                }
+                
+                this.pos.add(this.vel.clone().multiplyScalar(dt));
+                
+                // UPDATE RENDERING
+                this.mesh.position.copy(this.pos);
+                this.mat.uniforms.time.value = this.age;
+                this.mat.uniforms.film.value = this.film * 1e9;
+                this.mat.uniforms.coherence.value = this.C;
+                this.mat.uniforms.coherenceDensity.value = this.L;
+                this.mat.uniforms.risk.value = this.ruptureRisk;
+                this.mat.uniforms.foam.value = this.inFoam ? 1.0 : 0.0;
+                this.mat.uniforms.flowSpeed.value = CRR.iridescenceFlow;
+                this.mat.uniforms.iridIntensity.value = CRR.iridescenceIntensity;
+                this.mat.uniforms.colorSat.value = CRR.colorSaturation;
+                this.mat.uniforms.worldPos.value.copy(this.pos);
+                this.mat.uniforms.bubbleSize.value = this.r;
+                
+                if (!this.inFoam) {
+                    const rotSpeed = velMag * 0.3;
+                    this.mesh.rotation.x = this.age * 0.04 + Math.sin(this.wobble) * 0.15;
+                    this.mesh.rotation.y = this.age * 0.06 + Math.cos(this.wobble * 0.8) * 0.15;
+                    this.mesh.rotation.z = Math.sin(this.wobble * 0.5) * 0.1;
+                }
+                
+                return this.checkRupture();
+            }
+            
+            checkRupture() {
+                if (this.film < CRR.criticalThickness) {
+                    this.signature = 'physical';
+                    this.rupturing = true;
+                    return false;
+                }
+                
+                const ratio = this.C / (this.film0 * 1e9);
+                if (ratio < CRR.ruptureThreshold) {
+                    const degradation = 1.0 - ratio / CRR.ruptureThreshold;
+                    const filmFactor = Math.exp(-this.film / 40e-9);
+                    const prob = degradation * filmFactor * (1.0 + this.ruptureRisk);
+                    
+                    if (Math.random() < prob * 0.018 * CRR.ruptureMode.coherence) {
+                        this.signature = 'fragile';
+                        this.rupturing = true;
+                        return false;
+                    }
+                }
+                
+                if (this.ruptureRisk > 0.65) {
+                    if (Math.random() < 0.012 * CRR.ruptureMode.contagion) {
+                        this.signature = 'contagion';
+                        this.rupturing = true;
+                        return false;
+                    }
+                }
+                
+                if (this.age > 35) {
+                    if (Math.random() < 0.003 * CRR.ruptureMode.senescence) {
+                        this.signature = 'senescence';
+                        this.rupturing = true;
+                        return false;
+                    }
+                }
+                
+                if (this.pos.y > 6 || Math.abs(this.pos.x) > 6 || Math.abs(this.pos.z) > 6) {
+                    this.signature = 'escape';
+                    return true;
+                }
+                
+                if (this.inFoam && this.blanket) {
+                    this.signature = 'resilient';
+                } else if (this.C > 8.0 && this.L > 0.8) {
+                    this.signature = 'resilient';
+                } else if (this.C < 3.0 && this.ruptureRisk > 0.4) {
+                    this.signature = 'fragile';
+                } else {
+                    this.signature = 'oscillatory';
+                }
+                
+                return false;
+            }
+            
+            formFoam(other) {
+                if (this.neighbors.includes(other)) return;
+                
+                this.neighbors.push(other);
+                other.neighbors.push(this);
+                
+                const dir = new THREE.Vector3().subVectors(other.pos, this.pos).normalize();
+                this.neighborDirs.push(dir);
+                other.neighborDirs.push(dir.clone().negate());
+                
+                this.inFoam = true;
+                other.inFoam = true;
+                
+                if (!this.blanket && !other.blanket) {
+                    const blanket = new MarkovBlanket();
+                    blanket.add(this);
+                    blanket.add(other);
+                    blankets.push(blanket);
+                } else if (this.blanket && !other.blanket) {
+                    this.blanket.add(other);
+                } else if (!this.blanket && other.blanket) {
+                    other.blanket.add(this);
+                } else if (this.blanket !== other.blanket) {
+                    for (const b of other.blanket.members) {
+                        this.blanket.add(b);
+                    }
+                    const idx = blankets.indexOf(other.blanket);
+                    if (idx >= 0) blankets.splice(idx, 1);
+                }
+                
+                const dist = this.pos.distanceTo(other.pos);
+                const target = (this.r + other.r) * CRR.contactGap;
+                if (dist > target) {
+                    const corr = dir.clone().multiplyScalar((dist - target) * 0.88);
+                    this.pos.add(corr);
+                    other.pos.sub(corr);
+                    this.mesh.position.copy(this.pos);
+                    other.mesh.position.copy(other.pos);
+                }
+                
+                this.deform();
+                other.deform();
+                
+                this.C += CRR.plateauBonus * 0.15;
+                other.C += CRR.plateauBonus * 0.15;
+            }
+            
+            deform() {
+                const pos = this.geo.attributes.position.array;
+                const sizeScale = Math.min(this.r / 0.1, 2.0);
+                const deformStrength = 0.65 * sizeScale;
+                
+                for (let i = 0; i < pos.length; i += 3) {
+                    const v = new THREE.Vector3(this.origPos[i], this.origPos[i+1], this.origPos[i+2]);
+                    const vDir = v.clone().normalize();
+                    let maxFlat = 0, flatDir = new THREE.Vector3();
+                    
+                    for (const nDir of this.neighborDirs) {
+                        const align = vDir.dot(nDir);
+                        if (align > 0.50) {
+                            const str = Math.pow((align - 0.50) / 0.50, 0.80);
+                            if (str > maxFlat) {
+                                maxFlat = str;
+                                flatDir = nDir;
+                            }
+                        }
+                    }
+                    
+                    if (maxFlat > 0) {
+                        const flat = 1.0 - maxFlat * deformStrength;
+                        const plane = flatDir.clone().multiplyScalar(this.r * 0.65);
+                        const pull = new THREE.Vector3().subVectors(plane, v)
+                            .multiplyScalar(maxFlat * 0.50);
+                        const def = v.clone().multiplyScalar(flat).add(pull);
+                        
+                        pos[i] = THREE.MathUtils.lerp(this.origPos[i], def.x, 0.97);
+                        pos[i+1] = THREE.MathUtils.lerp(this.origPos[i+1], def.y, 0.97);
+                        pos[i+2] = THREE.MathUtils.lerp(this.origPos[i+2], def.z, 0.97);
+                    } else {
+                        pos[i] = this.origPos[i];
+                        pos[i+1] = this.origPos[i+1];
+                        pos[i+2] = this.origPos[i+2];
+                    }
+                }
+                this.geo.attributes.position.needsUpdate = true;
+                this.geo.computeVertexNormals();
+            }
+            
+            rupture() {
+                memoryField.addRupture(this.pos, this.C, Date.now(), this.signature);
+                
+                for (const n of this.neighbors) {
+                    n.ruptureRisk += 0.38;
+                    n.ruptureRisk = Math.min(n.ruptureRisk, CRR.maxRuptureRisk);
+                    n.L *= 0.75;
+                }
+                
+                this.ruptureEffect();
+            }
+            
+            ruptureEffect() {
+                // ═══════════════════════════════════════════════════════════
+                // TRUE CRR RUPTURE PHYSICS: Coherence-Field-Driven Tearing
+                // ═══════════════════════════════════════════════════════════
+                // The bubble's actual coherence field C(x,t) determines where
+                // and how the film tears. The Dirac delta δ(t-t₀) creates
+                // stress waves that propagate along paths of minimum coherence.
+                // ═══════════════════════════════════════════════════════════
+                
+                const t0 = Date.now();
+                const ruptureIntensity = Math.min(1.0 + this.C / 10.0, 2.5);
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 1: Sample coherence field across bubble surface
+                // ═══════════════════════════════════════════════════════════
+                const positions = this.geo.attributes.position.array;
+                const vertexCount = positions.length / 3;
+                
+                // Calculate local coherence at each vertex based on:
+                // - Height (drainage): top has more fluid, bottom is thinner
+                // - Distance from foam contacts: contacts are reinforced
+                // - Film thickness gradient
+                // - Random thermal fluctuations
+                const vertexCoherence = [];
+                const vertexStress = [];
+                
+                for (let i = 0; i < vertexCount; i++) {
+                    const vx = positions[i * 3];
+                    const vy = positions[i * 3 + 1];
+                    const vz = positions[i * 3 + 2];
+                    const vertex = new THREE.Vector3(vx, vy, vz);
+                    const vertexDir = vertex.clone().normalize();
+                    
+                    // Drainage gradient: bottom is weaker (less coherence)
+                    const drainageFactor = 0.4 + 0.6 * ((vy / this.r) * 0.5 + 0.5);
+                    
+                    // Distance from foam contacts: contacts are stronger
+                    let foamReinforcement = 1.0;
+                    if (this.inFoam && this.neighborDirs.length > 0) {
+                        let maxAlignment = 0;
+                        for (const nDir of this.neighborDirs) {
+                            const alignment = Math.abs(vertexDir.dot(nDir));
+                            maxAlignment = Math.max(maxAlignment, alignment);
+                        }
+                        // Vertices near contacts are reinforced
+                        foamReinforcement = 1.0 + maxAlignment * 1.8;
+                    }
+                    
+                    // Thermal fluctuations (microscopic defects)
+                    const thermalNoise = 0.85 + Math.random() * 0.3;
+                    
+                    // Local coherence field value
+                    const localC = this.C * drainageFactor * thermalNoise / foamReinforcement;
+                    vertexCoherence.push(localC);
+                    
+                    // Stress accumulation (inverse of coherence)
+                    // Low coherence = high stress = more likely to tear
+                    vertexStress.push(1.0 / (localC + 0.1));
+                }
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 2: Find rupture initiation points distributed globally
+                // ═══════════════════════════════════════════════════════════
+                // Use stratified sampling across sphere to ensure global coverage
+                const numInitiationPoints = Math.floor(4 + Math.random() * 3);
+                const initiationPoints = [];
+                
+                // Divide sphere into regions and pick high-stress point in each
+                const numRegions = 8; // Octants of the sphere
+                
+                for (let region = 0; region < Math.min(numInitiationPoints, numRegions); region++) {
+                    // Get approximate region center using spherical coordinates
+                    const phi = (region % 4) * Math.PI / 2 + Math.random() * Math.PI / 3;
+                    const theta = Math.floor(region / 4) * Math.PI + Math.random() * Math.PI / 2;
+                    
+                    const regionDir = new THREE.Vector3(
+                        Math.sin(theta) * Math.cos(phi),
+                        Math.cos(theta),
+                        Math.sin(theta) * Math.sin(phi)
+                    );
+                    
+                    // Find highest stress vertex in this region
+                    let maxStress = -1;
+                    let maxIdx = 0;
+                    
+                    for (let i = 0; i < vertexCount; i++) {
+                        if (vertexStress[i] < 0) continue; // Already used
+                        
+                        const vx = positions[i * 3];
+                        const vy = positions[i * 3 + 1];
+                        const vz = positions[i * 3 + 2];
+                        const vertexDir = new THREE.Vector3(vx, vy, vz).normalize();
+                        
+                        // Check if vertex is in this region (within 60 degrees)
+                        const alignment = vertexDir.dot(regionDir);
+                        if (alignment > 0.5 && vertexStress[i] > maxStress) {
+                            maxStress = vertexStress[i];
+                            maxIdx = i;
+                        }
+                    }
+                    
+                    if (maxStress > 0) {
+                        initiationPoints.push({
+                            idx: maxIdx,
+                            stress: maxStress,
+                            pos: new THREE.Vector3(
+                                positions[maxIdx*3],
+                                positions[maxIdx*3+1],
+                                positions[maxIdx*3+2]
+                            )
+                        });
+                        vertexStress[maxIdx] = -1; // Mark as used
+                    }
+                }
+                
+                // If we need more points, add them randomly with high stress
+                while (initiationPoints.length < numInitiationPoints) {
+                    let maxStress = -1;
+                    let maxIdx = 0;
+                    
+                    for (let i = 0; i < vertexCount; i++) {
+                        if (vertexStress[i] > maxStress) {
+                            maxStress = vertexStress[i];
+                            maxIdx = i;
+                        }
+                    }
+                    
+                    if (maxStress <= 0) break;
+                    
+                    initiationPoints.push({
+                        idx: maxIdx,
+                        stress: maxStress,
+                        pos: new THREE.Vector3(
+                            positions[maxIdx*3],
+                            positions[maxIdx*3+1],
+                            positions[maxIdx*3+2]
+                        )
+                    });
+                    vertexStress[maxIdx] = -1;
+                }
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 3: Propagate cracks along spherical surface
+                // ═══════════════════════════════════════════════════════════
+                const crackPaths = [];
+                
+                // Helper function to project point onto sphere surface
+                const projectToSphere = (point) => {
+                    const dir = point.clone().normalize();
+                    return dir.multiplyScalar(this.r);
+                };
+                
+                // Helper function to get tangent direction on sphere
+                const getSphericalTangent = (point, angle, drainageBias = 0) => {
+                    // Get local tangent plane basis
+                    const normal = point.clone().normalize();
+                    
+                    // Create perpendicular vectors for tangent plane
+                    let tangent1 = new THREE.Vector3();
+                    if (Math.abs(normal.y) < 0.9) {
+                        tangent1.crossVectors(normal, new THREE.Vector3(0, 1, 0)).normalize();
+                    } else {
+                        tangent1.crossVectors(normal, new THREE.Vector3(1, 0, 0)).normalize();
+                    }
+                    const tangent2 = new THREE.Vector3().crossVectors(normal, tangent1).normalize();
+                    
+                    // Add drainage bias (downward)
+                    const drainageDir = new THREE.Vector3(0, -1, 0);
+                    const drainageTangent = drainageDir.clone()
+                        .sub(normal.clone().multiplyScalar(drainageDir.dot(normal)))
+                        .normalize();
+                    
+                    // Combine angle-based direction with drainage bias
+                    let direction = tangent1.clone().multiplyScalar(Math.cos(angle))
+                        .add(tangent2.clone().multiplyScalar(Math.sin(angle)));
+                    
+                    if (drainageBias > 0) {
+                        direction.lerp(drainageTangent, drainageBias);
+                    }
+                    
+                    return direction.normalize();
+                };
+                
+                for (const initPt of initiationPoints) {
+                    // Project initiation point to sphere surface
+                    const surfaceInitPt = projectToSphere(initPt.pos);
+                    
+                    // Each crack propagates along sphere surface with MORE branches
+                    // to ensure full coverage
+                    const numBranches = Math.floor(5 + Math.random() * 4);
+                    
+                    for (let b = 0; b < numBranches; b++) {
+                        const path = [surfaceInitPt.clone()];
+                        let currentPos = surfaceInitPt.clone();
+                        let baseAngle = (b / numBranches) * Math.PI * 2 + Math.random() * 0.4;
+                        
+                        // Propagate crack step by step along sphere
+                        const steps = 15 + Math.floor(Math.random() * 12);
+                        const angularStepSize = 0.14; // Slightly larger steps for better coverage
+                        
+                        for (let s = 0; s < steps; s++) {
+                            // Angular deviation for crack wandering
+                            const angleWander = (Math.random() - 0.5) * 0.5;
+                            baseAngle += angleWander;
+                            
+                            // Drainage bias increases over time (cracks prefer to go down)
+                            const drainageBias = Math.min(s / steps * 0.4, 0.35);
+                            
+                            // Get tangent direction on sphere surface
+                            const tangentDir = getSphericalTangent(currentPos, baseAngle, drainageBias);
+                            
+                            // Move along sphere surface (geodesic-like path)
+                            // Use small angular steps and re-project to maintain spherical path
+                            const stepVec = tangentDir.multiplyScalar(this.r * angularStepSize);
+                            let nextPos = currentPos.clone().add(stepVec);
+                            
+                            // Project back onto sphere surface
+                            nextPos = projectToSphere(nextPos);
+                            
+                            // Add small perturbations for realistic crack irregularity
+                            const perturbation = Math.random() * 0.015;
+                            nextPos.multiplyScalar(1.0 + perturbation);
+                            
+                            path.push(nextPos);
+                            currentPos = nextPos;
+                            
+                            // Cracks can branch more frequently for better coverage
+                            if (s > 2 && Math.random() < 0.20) {
+                                // Create sub-branch
+                                const branchPath = [currentPos.clone()];
+                                let branchPos = currentPos.clone();
+                                let branchAngle = baseAngle + (Math.random() - 0.5) * 1.5;
+                                const branchSteps = Math.floor(6 + Math.random() * 7);
+                                
+                                for (let bs = 0; bs < branchSteps; bs++) {
+                                    const branchTangent = getSphericalTangent(branchPos, branchAngle, drainageBias);
+                                    const branchStepVec = branchTangent.multiplyScalar(this.r * angularStepSize * 0.8);
+                                    let nextBranchPos = branchPos.clone().add(branchStepVec);
+                                    nextBranchPos = projectToSphere(nextBranchPos);
+                                    branchPath.push(nextBranchPos);
+                                    branchPos = nextBranchPos;
+                                    branchAngle += (Math.random() - 0.5) * 0.4;
+                                }
+                                
+                                crackPaths.push(branchPath);
+                            }
+                        }
+                        
+                        crackPaths.push(path);
+                    }
+                }
+                
+                // ═══════════════════════════════════════════════════════════
+                // Add circumferential cracks (great circles) for full coverage
+                // ═══════════════════════════════════════════════════════════
+                const numCircumferentialCracks = Math.floor(1 + Math.random() * 2);
+                
+                for (let c = 0; c < numCircumferentialCracks; c++) {
+                    const circleAxis = new THREE.Vector3(
+                        Math.random() - 0.5,
+                        Math.random() - 0.5,
+                        Math.random() - 0.5
+                    ).normalize();
+                    
+                    const circlePath = [];
+                    const numCirclePoints = 24 + Math.floor(Math.random() * 12);
+                    
+                    for (let i = 0; i <= numCirclePoints; i++) {
+                        const angle = (i / numCirclePoints) * Math.PI * 2;
+                        
+                        // Create perpendicular vectors to axis
+                        let perp1 = new THREE.Vector3();
+                        if (Math.abs(circleAxis.y) < 0.9) {
+                            perp1.crossVectors(circleAxis, new THREE.Vector3(0, 1, 0)).normalize();
+                        } else {
+                            perp1.crossVectors(circleAxis, new THREE.Vector3(1, 0, 0)).normalize();
+                        }
+                        const perp2 = new THREE.Vector3().crossVectors(circleAxis, perp1).normalize();
+                        
+                        // Point on great circle
+                        const circlePoint = perp1.clone().multiplyScalar(Math.cos(angle))
+                            .add(perp2.clone().multiplyScalar(Math.sin(angle)))
+                            .multiplyScalar(this.r);
+                        
+                        // Add small perturbations for irregularity
+                        const perturbation = (Math.random() - 0.5) * 0.02;
+                        circlePoint.multiplyScalar(1.0 + perturbation);
+                        
+                        circlePath.push(circlePoint);
+                    }
+                    
+                    crackPaths.push(circlePath);
+                }
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 4: Create visual crack lines following coherence field
+                // ═══════════════════════════════════════════════════════════
+                const crackLines = [];
+                
+                for (const path of crackPaths) {
+                    const lineGeom = new THREE.BufferGeometry().setFromPoints(path);
+                    const lineMat = new THREE.LineBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0,
+                        linewidth: 2
+                    });
+                    const line = new THREE.Line(lineGeom, lineMat);
+                    line.position.copy(this.pos);
+                    
+                    line.userData.path = path;
+                    line.userData.pathLength = path.length;
+                    
+                    crackLines.push(line);
+                    scene.add(line);
+                }
+                
+                // Calculate crack wave velocity based on local film thickness
+                // v = sqrt(σ/(ρ·h)) - thinner film = faster cracks
+                const avgFilmThickness = this.film * 1e9; // in nm
+                const crackVel = CRR.crackWaveVelocity * Math.sqrt(300 / Math.max(avgFilmThickness, 10));
+                const decayLength = CRR.crackDecayLength * this.r;
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 5: Create shader-based film dissolution
+                // ═══════════════════════════════════════════════════════════
+                // Instead of uniform fade, the film tears along crack lines
+                // Store crack data in material uniforms for shader access
+                
+                const crackCenters = [];
+                const crackTimes = [];
+                
+                for (const path of crackPaths) {
+                    for (let i = 0; i < path.length; i++) {
+                        const pt = path[i];
+                        crackCenters.push(pt.x, pt.y, pt.z);
+                        // Crack reaches this point at time proportional to distance
+                        const dist = i * (this.r * 0.15);
+                        crackTimes.push(dist / crackVel);
+                    }
+                }
+                
+                // Add uniforms to track crack propagation for shader dissolution
+                this.mat.uniforms.crackCount = { value: Math.min(crackCenters.length / 3, 50) };
+                this.mat.uniforms.crackCenters = { value: crackCenters };
+                this.mat.uniforms.crackTimes = { value: crackTimes };
+                this.mat.uniforms.ruptureTime = { value: 0 };
+                this.mat.uniforms.crackRadius = { value: this.r * 0.15 }; // Increased for more coverage
+                
+                // ═══════════════════════════════════════════════════════════
+                // STEP 6: Create film retraction geometry
+                // ═══════════════════════════════════════════════════════════
+                // Shards retract along crack paths, following coherence gradients
+                const filmShards = [];
+                const numShards = Math.floor(10 + Math.random() * 6);
+                
+                for (let i = 0; i < numShards; i++) {
+                    const angle = (i / numShards) * Math.PI * 2;
+                    const angle2 = ((i + 1) / numShards) * Math.PI * 2;
+                    
+                    const r1 = this.r * (0.25 + Math.random() * 0.25);
+                    const r2 = this.r * (0.65 + Math.random() * 0.35);
+                    
+                    // Triangular shard geometry
+                    const v1 = new THREE.Vector3(0, 0, 0);
+                    const v2 = new THREE.Vector3(Math.cos(angle) * r2, Math.sin(angle) * r2, 0);
+                    const v3 = new THREE.Vector3(Math.cos(angle2) * r2, Math.sin(angle2) * r2, 0);
+                    
+                    const shardGeom = new THREE.BufferGeometry();
+                    const vertices = new Float32Array([
+                        v1.x, v1.y, v1.z,
+                        v2.x, v2.y, v2.z,
+                        v3.x, v3.y, v3.z
+                    ]);
+                    shardGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                    
+                    const hue = 0.52 + Math.random() * 0.18 - this.ruptureRisk * 0.08;
+                    const sat = 0.55 + this.C * 0.03;
+                    const shardMat = new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(hue, sat, 0.72),
+                        transparent: true,
+                        opacity: 0.65 + ruptureIntensity * 0.15,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const shard = new THREE.Mesh(shardGeom, shardMat);
+                    shard.position.copy(this.pos);
+                    
+                    // Retraction velocity: radially outward from rupture point
+                    const avgAngle = (angle + angle2) / 2;
+                    const retractionSpeed = CRR.filmRetractionSpeed * (0.85 + Math.random() * 0.5);
+                    shard.userData.vel = new THREE.Vector3(
+                        Math.cos(avgAngle) * retractionSpeed,
+                        Math.sin(avgAngle) * retractionSpeed,
+                        (Math.random() - 0.5) * 0.25
+                    );
+                    
+                    // Angular velocity from stress relief
+                    shard.userData.rotVel = new THREE.Vector3(
+                        (Math.random() - 0.5) * 18,
+                        (Math.random() - 0.5) * 18,
+                        (Math.random() - 0.5) * 18
+                    );
+                    
+                    filmShards.push(shard);
+                    scene.add(shard);
+                }
+                
+                // Droplet spray (soap solution aerosolization)
+                const droplets = [];
+                const dropletCount = Math.floor(110 + ruptureIntensity * 80 + Math.random() * 90);
+                
+                for (let i = 0; i < dropletCount; i++) {
+                    const size = 0.0005 + Math.random() * 0.0028 * ruptureIntensity;
+                    const geo = new THREE.SphereGeometry(size, 4, 4);
+                    
+                    const hue = 0.50 + Math.random() * 0.20 + this.C * 0.01;
+                    const dropletMat = new THREE.MeshBasicMaterial({
+                        color: new THREE.Color().setHSL(hue, 0.48, 0.78),
+                        transparent: true,
+                        opacity: 0.75 + Math.random() * 0.2
+                    });
+                    
+                    const droplet = new THREE.Mesh(geo, dropletMat);
+                    
+                    // Spray pattern: radially biased with some randomness
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(Math.pow(Math.random(), 0.35) * 2 - 1);
+                    const speed = (0.30 + Math.pow(Math.random(), 0.45) * 1.35) * ruptureIntensity;
+                    
+                    droplet.userData.vel = new THREE.Vector3(
+                        Math.sin(phi) * Math.cos(theta) * speed,
+                        Math.sin(phi) * Math.sin(theta) * speed,
+                        Math.cos(phi) * speed * 0.55
+                    );
+                    
+                    droplet.position.copy(this.pos);
+                    droplets.push(droplet);
+                    scene.add(droplet);
+                }
+                
+                // Instantaneous flash at rupture epicenter (Dirac delta impulse visualization)
+                const flashGeo = new THREE.SphereGeometry(this.r * 0.18, 16, 16);
+                const flashMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 1.0
+                });
+                const flash = new THREE.Mesh(flashGeo, flashMat);
+                flash.position.copy(this.pos);
+                scene.add(flash);
+                
+                // ═══════════════════════════════════════════════════════════
+                // ANIMATION LOOP: Coherence-field-driven crack propagation
+                // ═══════════════════════════════════════════════════════════
+                const startTime = Date.now();
+                const totalDuration = 1.2;
+                
+                const animate = () => {
+                    const now = Date.now();
+                    const t = (now - startTime) / 1000;
+                    
+                    if (t > totalDuration) {
+                        // Cleanup
+                        for (const crack of crackLines) {
+                            scene.remove(crack);
+                            crack.geometry.dispose();
+                            crack.material.dispose();
+                        }
+                        for (const shard of filmShards) {
+                            scene.remove(shard);
+                            shard.geometry.dispose();
+                            shard.material.dispose();
+                        }
+                        for (const droplet of droplets) {
+                            scene.remove(droplet);
+                            droplet.geometry.dispose();
+                            droplet.material.dispose();
+                        }
+                        scene.remove(flash);
+                        flashGeo.dispose();
+                        flashMat.dispose();
+                        return;
+                    }
+                    
+                    // Update shader rupture time for crack-based dissolution
+                    this.mat.uniforms.ruptureTime.value = t;
+                    
+                    // ═══════════════════════════════════════════════════════
+                    // CRACK LINE PROPAGATION (following coherence field)
+                    // ═══════════════════════════════════════════════════════
+                    if (t < 0.25) {
+                        const propagationProgress = Math.pow(t / 0.25, 0.6);
+                        
+                        for (const crack of crackLines) {
+                            const pathLength = crack.userData.pathLength;
+                            const visibleLength = Math.floor(pathLength * propagationProgress);
+                            
+                            // Gradually reveal crack as it propagates
+                            crack.material.opacity = 0.90 * Math.min(propagationProgress * 2.5, 1.0);
+                        }
+                    } else {
+                        // Fade out crack lines after propagation
+                        const fadeT = (t - 0.25) / 0.35;
+                        for (const crack of crackLines) {
+                            crack.material.opacity = Math.max(0, 0.85 * (1.0 - fadeT));
+                        }
+                    }
+                    
+                    // ═══════════════════════════════════════════════════════
+                    // FILM SHARD RETRACTION
+                    // ═══════════════════════════════════════════════════════
+                    if (t < 0.55) {
+                        const retractionProgress = Math.pow(t / 0.55, 1.3);
+                        
+                        for (const shard of filmShards) {
+                            shard.position.add(shard.userData.vel.clone().multiplyScalar(0.020));
+                            shard.rotation.x += shard.userData.rotVel.x * 0.014;
+                            shard.rotation.y += shard.userData.rotVel.y * 0.014;
+                            shard.rotation.z += shard.userData.rotVel.z * 0.014;
+                            
+                            const shrinkage = 1.0 - retractionProgress * 0.92;
+                            shard.scale.setScalar(Math.max(shrinkage, 0.08));
+                            shard.material.opacity = 0.70 * (1.0 - retractionProgress);
+                        }
+                    }
+                    
+                    // ═══════════════════════════════════════════════════════
+                    // DROPLET SPRAY
+                    // ═══════════════════════════════════════════════════════
+                    for (const droplet of droplets) {
+                        droplet.position.add(droplet.userData.vel.clone().multiplyScalar(0.015));
+                        droplet.userData.vel.y -= 0.020;
+                        droplet.userData.vel.multiplyScalar(0.980);
+                        
+                        if (t > 0.5) {
+                            droplet.material.opacity *= 0.950;
+                        }
+                    }
+                    
+                    // ═══════════════════════════════════════════════════════
+                    // INSTANTANEOUS FLASH (Dirac delta impulse visualization)
+                    // ═══════════════════════════════════════════════════════
+                    if (t < 0.09) {
+                        const flashExpansion = 1.0 + t * 16.0;
+                        flash.scale.setScalar(flashExpansion);
+                        flashMat.opacity = Math.pow(1.0 - t / 0.09, 2.5);
+                    } else {
+                        flash.visible = false;
+                    }
+                    
+                    requestAnimationFrame(animate);
+                };
+                
+                animate();
+            }
+            
+            destroy() {
+                if (this.blanket) this.blanket.remove(this);
+                scene.remove(this.mesh);
+                this.geo.dispose();
+                this.mat.dispose();
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════
+        // SCENE SETUP
+        // ═══════════════════════════════════════════════════════════
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+            60, 
+            canvasWrapper.clientWidth / canvasWrapper.clientHeight, 
+            0.1, 
+            1000
+        );
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas, 
+            alpha: true, 
+            antialias: true 
+        });
+        
+        renderer.setSize(canvasWrapper.clientWidth, canvasWrapper.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        camera.position.z = 3;
+        
+        scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+        
+        const sun = new THREE.DirectionalLight(0xfffacd, 1.35);
+        sun.position.set(5, 10, 5);
+        scene.add(sun);
+        
+        const fill = new THREE.DirectionalLight(0xadd8e6, 0.58);
+        fill.position.set(-5, 3, -5);
+        scene.add(fill);
+        
+        // ═══════════════════════════════════════════════════════════
+        // SYSTEM STATE
+        // ═══════════════════════════════════════════════════════════
+        const bubbles = [];
+        const blankets = [];
+        let totalRuptures = 0;
+        let systemTime = 0;
+        
+        function createBubble(screenX, screenY) {
+            const rect = canvasWrapper.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((screenX - rect.left) / rect.width) * 2 - 1,
+                -((screenY - rect.top) / rect.height) * 2 + 1
+            );
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera(mouse, camera);
+            const worldPos = ray.ray.origin.clone()
+                .add(ray.ray.direction.multiplyScalar(2));
+            
+            const regen = memoryField.getRegeneration(worldPos, Date.now());
+            
+            bubbles.push(new Bubble(
+                worldPos.x, worldPos.y, worldPos.z,
+                regen.inherited,
+                regen.risk,
+                regen.memoryStrength
+            ));
+        }
+        
+        function popBubble(screenX, screenY) {
+            const rect = canvasWrapper.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((screenX - rect.left) / rect.width) * 2 - 1,
+                -((screenY - rect.top) / rect.height) * 2 + 1
+            );
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            
+            for (const intersect of intersects) {
+                if (intersect.object.userData.bubble) {
+                    const bubble = intersect.object.userData.bubble;
+                    if (!bubble.rupturing) {
+                        bubble.signature = 'manual-pin';
+                        bubble.rupturing = true;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        function detectFoam() {
+            for (let i = 0; i < bubbles.length; i++) {
+                for (let j = i + 1; j < bubbles.length; j++) {
+                    const a = bubbles[i];
+                    const b = bubbles[j];
+                    const dist = a.pos.distanceTo(b.pos);
+                    if (dist < (a.r + b.r) * 1.002) {
+                        a.formFoam(b);
+                    }
+                }
+            }
+        }
+        
+        function updateStats() {
+            const n = bubbles.length;
+            document.getElementById('count').textContent = n;
+            document.getElementById('ruptures').textContent = totalRuptures;
+            document.getElementById('memory').textContent = memoryField.events.length;
+            document.getElementById('blankets').textContent = blankets.length;
+            
+            if (n > 0) {
+                let avgC = 0;
+                const sigCounts = { fragile: 0, resilient: 0, oscillatory: 0 };
+                
+                for (const b of bubbles) {
+                    avgC += b.C;
+                    if (sigCounts.hasOwnProperty(b.signature)) {
+                        sigCounts[b.signature]++;
+                    }
+                }
+                
+                document.getElementById('coherence').textContent = (avgC / n).toFixed(1);
+                
+                let dominant = 'oscillatory';
+                let maxCount = 0;
+                for (const sig in sigCounts) {
+                    if (sigCounts[sig] > maxCount) {
+                        maxCount = sigCounts[sig];
+                        dominant = sig;
+                    }
+                }
+                
+                const sigEl = document.getElementById('signature');
+                sigEl.className = 'signature-indicator sig-' + dominant;
+                sigEl.textContent = `Dominant: ${dominant.toUpperCase()} (${maxCount}/${n})`;
+            } else {
+                document.getElementById('coherence').textContent = '0.0';
+                document.getElementById('signature').textContent = 'No active bubbles';
+                document.getElementById('signature').className = 'signature-indicator';
+            }
+            
+            const clusters = new Set();
+            for (const b of bubbles) {
+                if (b.inFoam) {
+                    let id = bubbles.indexOf(b);
+                    for (const n of b.neighbors) {
+                        id = Math.min(id, bubbles.indexOf(n));
+                    }
+                    clusters.add(id);
+                }
+            }
+            document.getElementById('clusters').textContent = clusters.size;
+        }
+        
+        function resetAll() {
+            for (const b of bubbles) b.destroy();
+            bubbles.length = 0;
+            blankets.length = 0;
+            memoryField.clear();
+            totalRuptures = 0;
+            updateStats();
+        }
+        window.resetAll = resetAll;
+        
+        // ═══════════════════════════════════════════════════════════
+        // EXPLAINER DROPDOWN TOGGLE
+        // ═══════════════════════════════════════════════════════════
+        function toggleExplainer() {
+            const content = document.getElementById('explainer-content');
+            const toggle = document.getElementById('explainer-toggle');
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                toggle.classList.remove('open');
+            } else {
+                content.classList.add('open');
+                toggle.classList.add('open');
+            }
+        }
+        window.toggleExplainer = toggleExplainer;
+        
+        // ═══════════════════════════════════════════════════════════
+        // INPUT HANDLING
+        // ═══════════════════════════════════════════════════════════
+        let mouseX = 0, mouseY = 0, blowing = false, lastBlow = 0;
+        const wand = document.getElementById('wand');
+        
+        function updateWand(x, y) {
+            const rect = canvasWrapper.getBoundingClientRect();
+            mouseX = x;
+            mouseY = y;
+            wand.style.left = (x - rect.left) + 'px';
+            wand.style.top = (y - rect.top) + 'px';
+        }
+        
+        function handlePointerDown(e) {
+            blowing = true;
+            if (currentMode === 'blow') {
+                wand.classList.add('blowing');
+            } else {
+                // Pin mode - immediately pop on click
+                popBubble(mouseX, mouseY);
+            }
+        }
+        
+        function handlePointerUp() {
+            blowing = false;
+            wand.classList.remove('blowing');
+        }
+        
+        canvasWrapper.addEventListener('mousemove', e => {
+            updateWand(e.clientX, e.clientY);
+        });
+        canvasWrapper.addEventListener('mousedown', handlePointerDown);
+        canvasWrapper.addEventListener('mouseup', handlePointerUp);
+        
+        canvasWrapper.addEventListener('touchmove', e => {
+            e.preventDefault();
+            updateWand(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        canvasWrapper.addEventListener('touchstart', e => {
+            e.preventDefault();
+            updateWand(e.touches[0].clientX, e.touches[0].clientY);
+            handlePointerDown(e);
+        });
+        canvasWrapper.addEventListener('touchend', e => {
+            e.preventDefault();
+            handlePointerUp();
+        });
+        
+        // ═══════════════════════════════════════════════════════════
+        // MAIN LOOP
+        // ═══════════════════════════════════════════════════════════
+        let lastTime = Date.now();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = Date.now();
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+            systemTime += dt;
+            
+            if (blowing && currentMode === 'blow' && now - lastBlow > 85) {
+                createBubble(mouseX, mouseY);
+                lastBlow = now;
+            }
+            
+            if (bubbles.length > 1) {
+                detectFoam();
+            }
+            
+            for (let i = blankets.length - 1; i >= 0; i--) {
+                if (!blankets[i].update(dt)) {
+                    blankets.splice(i, 1);
+                }
+            }
+            
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                const b = bubbles[i];
+                const destroyed = b.update(dt, systemTime);
+                
+                if (destroyed) {
+                    b.rupture();
+                    b.destroy();
+                    bubbles.splice(i, 1);
+                    totalRuptures++;
+                }
+            }
+            
+            updateStats();
+            renderer.render(scene, camera);
+        }
+        
+        window.addEventListener('resize', () => {
+            const width = canvasWrapper.clientWidth;
+            const height = canvasWrapper.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+        
+        animate();
+    </script>
+</body>
+</html>

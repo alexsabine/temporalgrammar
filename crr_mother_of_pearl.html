@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Mother-of-Pearl - Enhanced Iridescent Surface</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fafafa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+        
+        .demo-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .controls-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        h1 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        h2 {
+            color: #34495e;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .crr-explanation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            text-align: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+        
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: crosshair;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .slider-group {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .slider {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-family: monospace;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .status {
+            padding: 12px;
+            background: #e8f4f8;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .parameter-section {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .mouse-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #95a5a6;
+        }
+        
+        .memory-indicator {
+            color: #27ae60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="demo-area">
+            <h1>CRR Mother-of-Pearl Surface</h1>
+            
+            <div class="crr-explanation">
+                <strong>Enhanced Iridescent Surface with UCF Dynamics</strong><br>
+                Natural mother-of-pearl patterns with improved color visibility:
+                
+                <div class="equation">
+                    <strong>Coherence Integration:</strong> C(x) = ∫ L(x,τ) dτ
+                </div>
+                <div class="equation">
+                    <strong>Surface Evolution:</strong> h(x,t) = h₀ + ∇·φ(x,t)
+                </div>
+                <div class="equation">
+                    <strong>Enhanced Interference:</strong> I = |r₁ + r₂e^(iδ)|² · K(θ)
+                </div>
+                
+                <span class="memory-indicator">Continuous iridescent surface</span> with enhanced color visibility and corrected slider behavior.
+            </div>
+            
+            <canvas id="canvas" width="512" height="512"></canvas>
+            
+            <div class="mouse-info">
+                Move mouse to observe enhanced iridescent color shifts with viewing angle.
+                Click to create coherence ruptures. Right-click for calcium field enhancement.
+            </div>
+        </div>
+        
+        <div class="controls-area">
+            <h2>Enhanced Color Controls</h2>
+            
+            <div class="status" id="status">
+                UCF System: ACTIVE | Surface: CONTINUOUS | Colors: ENHANCED
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="reset()">Reset Surface</button>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Memory Rate (λ)</label>
+                <input type="range" class="slider" id="lambda" min="0.01" max="0.1" step="0.01" value="0.03">
+                <div class="slider-value" id="lambda-value">0.03</div>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Surface Flow</label>
+                <input type="range" class="slider" id="flow" min="0.1" max="2.0" step="0.1" value="0.8">
+                <div class="slider-value" id="flow-value">0.8</div>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Rupture Sensitivity</label>
+                <input type="range" class="slider" id="rupture" min="0.3" max="1.2" step="0.1" value="0.7">
+                <div class="slider-value" id="rupture-value">0.7</div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Iridescent Colors</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Blue Intensity</label>
+                    <input type="range" class="slider" id="blue" min="0.0" max="1.0" step="0.1" value="0.3">
+                    <div class="slider-value" id="blue-value">0.3</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Purple Depth</label>
+                    <input type="range" class="slider" id="purple" min="0.0" max="1.0" step="0.1" value="0.2">
+                    <div class="slider-value" id="purple-value">0.2</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Gold Highlights</label>
+                    <input type="range" class="slider" id="gold" min="0.0" max="1.0" step="0.1" value="0.4">
+                    <div class="slider-value" id="gold-value">0.4</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Pink Shimmer</label>
+                    <input type="range" class="slider" id="pink" min="0.0" max="1.0" step="0.1" value="0.25">
+                    <div class="slider-value" id="pink-value">0.25</div>
+                </div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Surface Properties</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Layer Thickness</label>
+                    <input type="range" class="slider" id="thickness" min="0.1" max="1.0" step="0.05" value="0.45">
+                    <div class="slider-value" id="thickness-value">0.45</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Surface Detail</label>
+                    <input type="range" class="slider" id="detail" min="2" max="15" step="1" value="7">
+                    <div class="slider-value" id="detail-value">7</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Color Saturation</label>
+                    <input type="range" class="slider" id="saturation" min="0.5" max="2.0" step="0.1" value="0.9">
+                    <div class="slider-value" id="saturation-value">0.9</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Natural Variation</label>
+                    <input type="range" class="slider" id="variation" min="0.1" max="0.8" step="0.05" value="0.15">
+                    <div class="slider-value" id="variation-value">0.15</div>
+                </div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Evolution Speed</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Time Scale</label>
+                    <input type="range" class="slider" id="speed" min="0.02" max="0.2" step="0.01" value="0.04">
+                    <div class="slider-value" id="speed-value">0.04</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Pattern Scale</label>
+                    <input type="range" class="slider" id="scale" min="0.5" max="3.0" step="0.1" value="0.5">
+                    <div class="slider-value" id="scale-value">0.5</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl2');
+        
+        if (!gl) {
+            alert('WebGL2 not supported');
+        }
+        
+        // Vertex shader
+        const vertexShaderSource = `#version 300 es
+            in vec2 a_position;
+            out vec2 v_texCoord;
+            
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+                v_texCoord = (a_position + 1.0) * 0.5;
+            }
+        `;
+        
+        // Enhanced mother-of-pearl rendering shader
+        const fragmentShaderSource = `#version 300 es
+            precision highp float;
+            
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+            
+            uniform sampler2D u_texture;
+            uniform sampler2D u_memory;
+            uniform float u_time;
+            uniform vec2 u_mouse;
+            
+            // Enhanced parameters with corrected behavior
+            uniform float u_blueIntensity;
+            uniform float u_purpleDepth;
+            uniform float u_goldHighlights;
+            uniform float u_pinkShimmer;
+            uniform float u_layerThickness;
+            uniform float u_surfaceDetail;
+            uniform float u_colorSaturation;
+            uniform float u_naturalVariation;
+            uniform float u_timeScale;
+            uniform float u_patternScale;
+            
+            // Improved hash function
+            float hash21(vec2 p) {
+                p = fract(p * vec2(233.34, 851.73));
+                p += dot(p, p + 23.45);
+                return fract(p.x * p.y);
+            }
+            
+            // Enhanced noise with better distribution
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                
+                float a = hash21(i);
+                float b = hash21(i + vec2(1.0, 0.0));
+                float c = hash21(i + vec2(0.0, 1.0));
+                float d = hash21(i + vec2(1.0, 1.0));
+                
+                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+            }
+            
+            // Multi-octave noise for natural patterns
+            float fbm(vec2 p) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                float frequency = 1.0;
+                
+                for(int i = 0; i < 6; i++) {
+                    value += amplitude * noise(p * frequency);
+                    frequency *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+            
+            // Enhanced surface height calculation
+            float calculateSurfaceHeight(vec2 coord) {
+                vec4 texData = texture(u_texture, coord);
+                vec4 memData = texture(u_memory, coord);
+                
+                float u = texData.x;
+                float v = texData.y;
+                float memory = memData.x;
+                
+                vec2 scaledCoord = coord * u_patternScale;
+                float time = u_time * u_timeScale;
+                
+                // Enhanced flowing patterns with better coherence
+                float wave1 = sin(scaledCoord.x * 6.0 + scaledCoord.y * 4.0 + time * 1.8) * 0.35;
+                float wave2 = sin(scaledCoord.x * 9.0 - scaledCoord.y * 7.0 + time * 1.2) * 0.25;
+                float wave3 = sin(scaledCoord.x * 4.0 + scaledCoord.y * 11.0 + time * 0.9) * 0.4;
+                
+                // Natural surface detail with better distribution
+                float detail1 = fbm(scaledCoord * u_surfaceDetail + time * 0.4) * u_naturalVariation;
+                float detail2 = fbm(scaledCoord * u_surfaceDetail * 0.7 + time * 0.2) * u_naturalVariation * 0.6;
+                
+                // Memory-driven surface modulation
+                float memoryWave = memory * 0.6 * sin(scaledCoord.x * 12.0 + scaledCoord.y * 8.0 + time * 2.0);
+                
+                // Reaction-diffusion surface influence
+                float reactionHeight = (u - v) * 0.4 * sin(scaledCoord.x * 15.0 + time * 1.5);
+                
+                return wave1 + wave2 + wave3 + detail1 + detail2 + memoryWave + reactionHeight;
+            }
+            
+            // Enhanced iridescent color calculation
+            vec3 calculateEnhancedIridescence(vec2 coord, float surfaceHeight) {
+                // Improved viewing direction calculation
+                vec2 mouseDir = normalize(u_mouse - coord);
+                float mouseDistance = length(u_mouse - coord);
+                
+                // Better surface normal estimation
+                float epsilon = 0.005;
+                float dx = calculateSurfaceHeight(coord + vec2(epsilon, 0.0)) - calculateSurfaceHeight(coord - vec2(epsilon, 0.0));
+                float dy = calculateSurfaceHeight(coord + vec2(0.0, epsilon)) - calculateSurfaceHeight(coord - vec2(0.0, epsilon));
+                vec3 normal = normalize(vec3(dx * 100.0, dy * 100.0, 1.0));
+                
+                // Enhanced viewing angle calculation
+                vec3 viewDir = normalize(vec3(mouseDir * (1.2 - mouseDistance * 0.8), 0.4 + 0.6 * (1.0 - mouseDistance)));
+                float viewAngle = acos(max(0.0, min(1.0, dot(normal, viewDir))));
+                
+                // Improved film thickness with better variation
+                float baseThickness = u_layerThickness * 0.6; // Base reduced for better colors
+                float thicknessNoise = fbm(coord * 18.0 + u_time * u_timeScale * 0.3) * 0.15;
+                float heightInfluence = abs(surfaceHeight) * 0.3;
+                float thickness = baseThickness + thicknessNoise + heightInfluence;
+                
+                // Enhanced path difference calculation
+                float pathDiff = 2.0 * thickness * cos(viewAngle);
+                float basePhase = 6.28318 * pathDiff;
+                
+                // Improved wavelength interference with better separation
+                float redPhase = basePhase / 0.68 + u_time * u_timeScale * 0.8;
+                float greenPhase = basePhase / 0.53 + u_time * u_timeScale * 0.6;
+                float bluePhase = basePhase / 0.45 + u_time * u_timeScale * 0.4;
+                
+                // Enhanced interference patterns
+                float redInterference = 0.5 + 0.5 * cos(redPhase);
+                float greenInterference = 0.5 + 0.5 * cos(greenPhase);
+                float blueInterference = 0.5 + 0.5 * cos(bluePhase);
+                
+                // Base pearl color with better luminance
+                vec3 pearlBase = vec3(0.94, 0.96, 0.98);
+                
+                // Enhanced color components with slightly increased saturation
+                vec3 blueComponent = vec3(0.18, 0.38, 0.88) * blueInterference * u_blueIntensity;
+                vec3 purpleComponent = vec3(0.68, 0.28, 0.83) * (redInterference * blueInterference) * u_purpleDepth;
+                vec3 goldComponent = vec3(0.98, 0.78, 0.28) * redInterference * u_goldHighlights;
+                vec3 pinkComponent = vec3(0.88, 0.48, 0.68) * (redInterference * greenInterference) * u_pinkShimmer;
+                
+                // Teal component for natural shell colors with slight boost
+                vec3 tealComponent = vec3(0.22, 0.72, 0.62) * greenInterference * 0.45;
+                
+                // Combine all components with enhanced mixing and slight saturation boost
+                vec3 iridescent = pearlBase + 
+                                (blueComponent + purpleComponent + goldComponent + pinkComponent + tealComponent) * u_colorSaturation * 1.15;
+                
+                // Memory field color enhancement
+                vec4 memData = texture(u_memory, coord);
+                if (memData.x > 0.2) {
+                    float memoryGlow = memData.x * 0.3;
+                    vec3 memoryColor = vec3(0.4, 0.6, 0.9) * memoryGlow;
+                    iridescent += memoryColor;
+                }
+                
+                // Enhanced fresnel effect for viewing angle
+                float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 1.5);
+                float brightness = 0.75 + 0.35 * fresnel;
+                
+                return iridescent * brightness;
+            }
+            
+            void main() {
+                vec2 coord = v_texCoord;
+                
+                // Calculate enhanced surface height
+                float surfaceHeight = calculateSurfaceHeight(coord);
+                
+                // Calculate enhanced iridescent colors
+                vec3 color = calculateEnhancedIridescence(coord, surfaceHeight);
+                
+                // Improved environmental lighting
+                float ambientLight = 0.12;
+                float directLight = 0.88;
+                vec3 environmentTint = vec3(0.95, 0.97, 1.0);
+                color = color * directLight + environmentTint * ambientLight;
+                
+                // Enhanced color post-processing
+                color = pow(color, vec3(0.95)); // Slight gamma adjustment for better visibility
+                color = clamp(color, 0.0, 1.0);
+                
+                fragColor = vec4(color, 1.0);
+            }
+        `;
+        
+        // Field update shader (unchanged from previous version)
+        const updateShaderSource = `#version 300 es
+            precision highp float;
+            
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+            
+            uniform sampler2D u_texture;
+            uniform sampler2D u_memory;
+            uniform float u_lambda;
+            uniform float u_flow;
+            uniform float u_ruptureThreshold;
+            uniform vec2 u_mouse;
+            uniform bool u_disturb;
+            uniform int u_interactionType;
+            
+            const float Du = 0.16;
+            const float Dv = 0.08;
+            const float dt = 0.8;
+            const float feed = 0.042;
+            const float kill = 0.062;
+            const float texelSize = 1.0 / 512.0;
+            
+            vec4 laplacian(sampler2D tex, vec2 coord) {
+                vec4 sum = vec4(0.0);
+                sum += texture(tex, coord + vec2(-texelSize, 0.0));
+                sum += texture(tex, coord + vec2(texelSize, 0.0));
+                sum += texture(tex, coord + vec2(0.0, -texelSize));
+                sum += texture(tex, coord + vec2(0.0, texelSize));
+                sum -= 4.0 * texture(tex, coord);
+                return sum;
+            }
+            
+            void main() {
+                vec2 coord = v_texCoord;
+                vec4 current = texture(u_texture, coord);
+                vec4 memory = texture(u_memory, coord);
+                
+                float u = current.x;
+                float v = current.y;
+                float m = memory.x;
+                
+                // Mouse interactions
+                float distToMouse = length(u_mouse - coord);
+                if (u_disturb && distToMouse < 0.08) {
+                    float strength = exp(-distToMouse * distToMouse / 0.015);
+                    if (u_interactionType == 0) {
+                        // Rupture event
+                        v += 0.6 * strength;
+                        u *= 0.7;
+                        m *= 0.5;
+                    } else if (u_interactionType == 1) {
+                        // Calcium enhancement
+                        u += 0.4 * strength;
+                        m += 0.3 * strength;
+                    }
+                }
+                
+                // Reaction-diffusion dynamics
+                vec4 lapU = laplacian(u_texture, coord);
+                float uvv = u * v * v;
+                
+                float dU = Du * lapU.x - uvv + feed * (1.0 - u);
+                float dV = Dv * lapU.y + uvv - (feed + kill) * v;
+                
+                // Memory evolution
+                float newMemory = m + u_lambda * (u - m);
+                
+                // Memory-driven feedback
+                dU += u_flow * 0.1 * (newMemory - u) * sin(coord.x * 20.0 + coord.y * 15.0);
+                
+                // Update
+                float newU = clamp(u + dU * dt, 0.0, 1.0);
+                float newV = clamp(v + dV * dt, 0.0, 1.0);
+                
+                // Memory decay
+                newMemory = clamp(newMemory * 0.998, 0.0, 1.0);
+                
+                fragColor = vec4(newU, newV, 0.0, newMemory);
+            }
+        `;
+        
+        function createShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            
+            return shader;
+        }
+        
+        function createProgram(vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program error:', gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+            
+            return program;
+        }
+        
+        // Create programs
+        const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
+        const renderProgram = createProgram(vertexShader, createShader(gl.FRAGMENT_SHADER, fragmentShaderSource));
+        const updateProgram = createProgram(vertexShader, createShader(gl.FRAGMENT_SHADER, updateShaderSource));
+        
+        // Create geometry
+        const positions = new Float32Array([
+            -1, -1, 1, -1, -1, 1,
+            -1, 1, 1, -1, 1, 1,
+        ]);
+        
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+        
+        // Create textures
+        function createTexture() {
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            return texture;
+        }
+        
+        const texture1 = createTexture();
+        const texture2 = createTexture();
+        const memoryTexture1 = createTexture();
+        const memoryTexture2 = createTexture();
+        
+        function initializeTextures() {
+            const size = 512;
+            const data = new Float32Array(size * size * 4);
+            const memoryData = new Float32Array(size * size * 4);
+            
+            for (let i = 0; i < size * size * 4; i += 4) {
+                data[i] = 1.0;
+                data[i + 1] = Math.random() < 0.01 ? 1.0 : 0.0;
+                data[i + 2] = 0.0;
+                data[i + 3] = 1.0;
+                
+                memoryData[i] = Math.random() * 0.1;
+                memoryData[i + 1] = 0.0;
+                memoryData[i + 2] = 0.0;
+                memoryData[i + 3] = 1.0;
+            }
+            
+            [texture1, texture2].forEach(tex => {
+                gl.bindTexture(gl.TEXTURE_2D, tex);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, size, size, 0, gl.RGBA, gl.FLOAT, data);
+            });
+            
+            [memoryTexture1, memoryTexture2].forEach(tex => {
+                gl.bindTexture(gl.TEXTURE_2D, tex);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, size, size, 0, gl.RGBA, gl.FLOAT, memoryData);
+            });
+        }
+        
+        // Framebuffers
+        const framebuffer1 = gl.createFramebuffer();
+        const framebuffer2 = gl.createFramebuffer();
+        
+        initializeTextures();
+        
+        // State
+        let currentTexture = texture1;
+        let nextTexture = texture2;
+        let currentMemory = memoryTexture1;
+        let nextMemory = memoryTexture2;
+        let currentFramebuffer = framebuffer1;
+        let nextFramebuffer = framebuffer2;
+        
+        let time = 0;
+        let mouseX = 0.5;
+        let mouseY = 0.5;
+        let mousePressed = false;
+        let interactionType = 0;
+        
+        // Enhanced parameters with user-specified defaults
+        let lambda = 0.03;
+        let flow = 0.8;
+        let ruptureThreshold = 0.7;
+        let blueIntensity = 0.3;        // Corrected: lower default values
+        let purpleDepth = 0.2;          // that work intuitively with sliders
+        let goldHighlights = 0.4;
+        let pinkShimmer = 0.25;
+        let layerThickness = 0.45;      // Updated to match user's slider position
+        let surfaceDetail = 7;          // Updated to match user's slider position
+        let colorSaturation = 0.9;      // Updated to match user's slider position
+        let naturalVariation = 0.15;    // Updated to match user's slider position
+        let timeScale = 0.04;           // Updated to match user's slider position
+        let patternScale = 0.5;         // Updated to match user's slider position
+        
+        // Events
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) / rect.width;
+            mouseY = 1.0 - (e.clientY - rect.top) / rect.height;
+            updateStatus();
+        });
+        
+        canvas.addEventListener('mousedown', (e) => { 
+            mousePressed = true;
+            interactionType = e.button === 2 ? 1 : 0;
+        });
+        
+        canvas.addEventListener('mouseup', () => { mousePressed = false; });
+        canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+        
+        // Sliders with corrected behavior
+        function setupSlider(id, callback) {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(id + '-value');
+            
+            slider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                valueDisplay.textContent = value.toString();
+                callback(value);
+            });
+        }
+        
+        setupSlider('lambda', (v) => { lambda = v; });
+        setupSlider('flow', (v) => { flow = v; });
+        setupSlider('rupture', (v) => { ruptureThreshold = v; });
+        setupSlider('blue', (v) => { blueIntensity = v; });
+        setupSlider('purple', (v) => { purpleDepth = v; });
+        setupSlider('gold', (v) => { goldHighlights = v; });
+        setupSlider('pink', (v) => { pinkShimmer = v; });
+        setupSlider('thickness', (v) => { layerThickness = v; });
+        setupSlider('detail', (v) => { surfaceDetail = v; });
+        setupSlider('saturation', (v) => { colorSaturation = v; });
+        setupSlider('variation', (v) => { naturalVariation = v; });
+        setupSlider('speed', (v) => { timeScale = v; });
+        setupSlider('scale', (v) => { patternScale = v; });
+        
+        function reset() {
+            initializeTextures();
+            time = 0;
+        }
+        
+        function updateStatus() {
+            const angle = Math.atan2(mouseY - 0.5, mouseX - 0.5) * 180 / Math.PI;
+            document.getElementById('status').textContent = 
+                `UCF System: ACTIVE | View: ${angle.toFixed(0)}° | Colors: ENHANCED`;
+        }
+        
+        function render() {
+            time += 0.016;
+            
+            // Update simulation
+            gl.bindFramebuffer(gl.FRAMEBUFFER, nextFramebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nextTexture, 0);
+            
+            gl.useProgram(updateProgram);
+            gl.viewport(0, 0, 512, 512);
+            
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_lambda'), lambda);
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_flow'), flow);
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_ruptureThreshold'), ruptureThreshold);
+            gl.uniform2f(gl.getUniformLocation(updateProgram, 'u_mouse'), mouseX, mouseY);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_disturb'), mousePressed);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_interactionType'), interactionType);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_texture'), 0);
+            
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, currentMemory);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_memory'), 1);
+            
+            const posLoc = gl.getAttribLocation(updateProgram, 'a_position');
+            gl.enableVertexAttribArray(posLoc);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Update memory
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nextMemory, 0);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Render to screen
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.useProgram(renderProgram);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_time'), time);
+            gl.uniform2f(gl.getUniformLocation(renderProgram, 'u_mouse'), mouseX, mouseY);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_blueIntensity'), blueIntensity);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_purpleDepth'), purpleDepth);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_goldHighlights'), goldHighlights);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_pinkShimmer'), pinkShimmer);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_layerThickness'), layerThickness);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_surfaceDetail'), surfaceDetail);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_colorSaturation'), colorSaturation);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_naturalVariation'), naturalVariation);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_timeScale'), timeScale);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_patternScale'), patternScale);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, nextTexture);
+            gl.uniform1i(gl.getUniformLocation(renderProgram, 'u_texture'), 0);
+            
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, nextMemory);
+            gl.uniform1i(gl.getUniformLocation(renderProgram, 'u_memory'), 1);
+            
+            const renderPosLoc = gl.getAttribLocation(renderProgram, 'a_position');
+            gl.enableVertexAttribArray(renderPosLoc);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(renderPosLoc, 2, gl.FLOAT, false, 0, 0);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Swap buffers
+            [currentTexture, nextTexture] = [nextTexture, currentTexture];
+            [currentMemory, nextMemory] = [nextMemory, currentMemory];
+            [currentFramebuffer, nextFramebuffer] = [nextFramebuffer, currentFramebuffer];
+            
+            requestAnimationFrame(render);
+        }
+        
+        // Global functions
+        window.reset = reset;
+        
+        // Start
+        updateStatus();
+        render();
+    </script>
+</body>
+</html>

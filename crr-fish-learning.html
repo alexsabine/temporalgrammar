@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Fish Learning: Non-Markovian Intelligence Emergence</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      font-size: 16px;
+      color: #a0aec0;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .formalism-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .formalism-panel h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #a0d8f1;
+    }
+    
+    .equation-group {
+      margin-bottom: 25px;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .equation-group.active {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .equation-group.active-coherence {
+      border-left-color: #667eea;
+    }
+    
+    .equation-group.active-memory {
+      border-left-color: #f093fb;
+    }
+    
+    .equation-group.active-rupture {
+      border-left-color: #ff6b6b;
+    }
+    
+    .equation-group.active-regeneration {
+      border-left-color: #4ecdc4;
+    }
+    
+    .equation-title {
+      font-size: 14px;
+      color: #cbd5e0;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .equation {
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      color: #fff;
+      margin: 10px 0;
+    }
+    
+    .term {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: help;
+      transition: all 0.2s ease;
+    }
+    
+    .term:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    
+    .term.highlight {
+      background: rgba(255, 255, 100, 0.3);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .explanation {
+      font-size: 13px;
+      color: #a0aec0;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+    
+    .simulation-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn.danger {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .btn.success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .canvas-wrapper {
+      position: relative;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 500px;
+    }
+    
+    .fish-info {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-size: 12px;
+      min-width: 180px;
+    }
+    
+    .fish-info-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+    }
+    
+    .fish-info-label {
+      color: #a0aec0;
+    }
+    
+    .fish-info-value {
+      color: #4ecdc4;
+      font-weight: 600;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .metric-card {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .metric-label {
+      font-size: 12px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+    
+    .metric-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    
+    .metric-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #4ecdc4 100%);
+      transition: width 0.3s ease;
+    }
+    
+    .tooltip {
+      position: fixed;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      max-width: 300px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .tooltip.visible {
+      opacity: 1;
+    }
+    
+    .learning-event {
+      position: absolute;
+      pointer-events: none;
+      animation: fadeOut 2s ease-out forwards;
+      font-size: 12px;
+      font-weight: 600;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    }
+    
+    @keyframes fadeOut {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-30px); }
+    }
+    
+    .learning-event.predator {
+      color: #ff6b6b;
+    }
+    
+    .learning-event.food {
+      color: #4ecdc4;
+    }
+    
+    .learning-event.rupture {
+      color: #f093fb;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Coherence → Rupture → Regeneration: Fish Learning</h1>
+      <p>Watch fish transition from Markovian (memoryless) to Non-Markovian (history-aware) intelligence</p>
+    </div>
+    
+    <div class="main-grid">
+      <div class="formalism-panel">
+        <h2>CRR Mathematical Framework</h2>
+        
+        <div class="equation-group" id="eq-coherence">
+          <div class="equation-title">Coherence Integration</div>
+          <div class="equation">
+            <span class="term" data-tooltip="Accumulated knowledge and experience over time">C(x)</span> = 
+            ∫ <span class="term" data-tooltip="Rate of learning from each experience">L(x,τ)</span> dτ
+          </div>
+          <div class="explanation">
+            Coherence builds as the fish learns. Each experience contributes to accumulated knowledge.
+            Higher coherence = more sophisticated behavior.
+          </div>
+        </div>
+        
+        <div class="equation-group" id="eq-memory">
+          <div class="equation-title">Memory Density</div>
+          <div class="equation">
+            <span class="term" data-tooltip="Learning rate at time τ">L(x,τ)</span> = 
+            <span class="term" data-tooltip="Successful experiences">φ₊</span> - 
+            <span class="term" data-tooltip="Stressful events">φ₋</span>
+          </div>
+          <div class="explanation">
+            Memory density captures learning from experience. Predator encounters and food discoveries 
+            create strong positive memories. Energy depletion creates negative stress.
+          </div>
+        </div>
+        
+        <div class="equation-group" id="eq-rupture">
+          <div class="equation-title">Rupture Detection</div>
+          <div class="equation">
+            <span class="term" data-tooltip="Discontinuous transformation at critical threshold">δ(t-t₀)</span> when 
+            <span class="term" data-tooltip="Current coherence level">C(x)</span> > 
+            <span class="term" data-tooltip="Learning breakthrough threshold">C_threshold</span>
+          </div>
+          <div class="explanation">
+            When coherence exceeds threshold, fish undergoes "rupture" - a learning breakthrough where 
+            behavior reorganizes. Coherence resets but knowledge is preserved through regeneration.
+          </div>
+        </div>
+        
+        <div class="equation-group" id="eq-regeneration">
+          <div class="equation-title">Regeneration Operator</div>
+          <div class="equation">
+            <span class="term" data-tooltip="Rebuilt behavior from past experiences">R[χ](x,t)</span> = 
+            ∫ <span class="term" data-tooltip="Historical experience signal">φ(x,τ)</span>·<span class="term" data-tooltip="Exponential memory weighting">e^(C(x)/Ω)</span>·<span class="term" data-tooltip="Only past contributes (causality)">Θ(t-τ)</span> dτ
+          </div>
+          <div class="explanation">
+            Fish rebuild behavior using exponentially-weighted past experiences. Higher coherence means 
+            stronger memory influence. The Heaviside function Θ ensures only past affects present (time's arrow).
+          </div>
+        </div>
+      </div>
+      
+      <div class="simulation-panel">
+        <div class="controls">
+          <button class="btn" onclick="simulation.addPredator()">Add Predator (High Learning)</button>
+          <button class="btn success" onclick="simulation.addFood()">Add Food (Moderate Learning)</button>
+          <button class="btn danger" onclick="simulation.reset()">Reset Simulation</button>
+        </div>
+        
+        <div class="canvas-wrapper">
+          <canvas id="oceanCanvas"></canvas>
+          <div class="fish-info">
+            <div class="fish-info-item">
+              <span class="fish-info-label">Coherence C(x):</span>
+              <span class="fish-info-value" id="coherenceValue">0</span>
+            </div>
+            <div class="fish-info-item">
+              <span class="fish-info-label">Memory L(x,τ):</span>
+              <span class="fish-info-value" id="memoryValue">0</span>
+            </div>
+            <div class="fish-info-item">
+              <span class="fish-info-label">Regeneration R:</span>
+              <span class="fish-info-value" id="regenValue">0</span>
+            </div>
+            <div class="fish-info-item">
+              <span class="fish-info-label">Ruptures:</span>
+              <span class="fish-info-value" id="ruptureValue">0</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Total Learning Events</div>
+            <div class="metric-value" id="totalEvents">0</div>
+            <div class="metric-bar">
+              <div class="metric-bar-fill" id="eventsBar" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-label">Predator Encounters</div>
+            <div class="metric-value" id="predatorEvents">0</div>
+            <div class="metric-bar">
+              <div class="metric-bar-fill" id="predatorBar" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-label">Food Discoveries</div>
+            <div class="metric-value" id="foodEvents">0</div>
+            <div class="metric-bar">
+              <div class="metric-bar-fill" id="foodBar" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-label">Learning Breakthroughs</div>
+            <div class="metric-value" id="breakthroughs">0</div>
+            <div class="metric-bar">
+              <div class="metric-bar-fill" id="breakthroughBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    // Tooltip system
+    const tooltip = document.getElementById('tooltip');
+    document.querySelectorAll('.term').forEach(term => {
+      term.addEventListener('mouseenter', (e) => {
+        const text = e.target.getAttribute('data-tooltip');
+        tooltip.textContent = text;
+        tooltip.classList.add('visible');
+      });
+      
+      term.addEventListener('mousemove', (e) => {
+        tooltip.style.left = e.pageX + 15 + 'px';
+        tooltip.style.top = e.pageY + 15 + 'px';
+      });
+      
+      term.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('visible');
+      });
+    });
+    
+    // CRR Fish Learning Simulation
+    class CRRFishSimulation {
+      constructor() {
+        this.canvas = document.getElementById('oceanCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        
+        // Simulation parameters
+        this.OMEGA = 50;
+        this.RUPTURE_THRESHOLD = this.OMEGA * Math.log(10); // ~115
+        
+        // Fish state
+        this.fish = {
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          coherence: 0,
+          memoryTrace: [],
+          ruptureCount: 0,
+          currentL: 0,
+          regeneration: 0,
+          direction: 0
+        };
+        
+        // Environment
+        this.predators = [];
+        this.food = [];
+        this.particles = [];
+        
+        // Metrics
+        this.metrics = {
+          totalEvents: 0,
+          predatorEvents: 0,
+          foodEvents: 0,
+          breakthroughs: 0
+        };
+        
+        // Active component tracking
+        this.activeComponent = null;
+        this.componentTimer = 0;
+        
+        this.reset();
+        this.animate();
+        
+        window.addEventListener('resize', () => this.resize());
+      }
+      
+      resize() {
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+      }
+      
+      reset() {
+        this.fish.x = this.width / 2;
+        this.fish.y = this.height / 2;
+        this.fish.vx = 0;
+        this.fish.vy = 0;
+        this.fish.coherence = 0;
+        this.fish.memoryTrace = [];
+        this.fish.ruptureCount = 0;
+        this.fish.currentL = 0;
+        this.fish.regeneration = 0;
+        
+        this.predators = [];
+        this.food = [];
+        this.particles = [];
+        
+        this.metrics = {
+          totalEvents: 0,
+          predatorEvents: 0,
+          foodEvents: 0,
+          breakthroughs: 0
+        };
+        
+        this.time = 0;
+        this.updateMetrics();
+      }
+      
+      addPredator() {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.max(this.width, this.height) * 0.4;
+        this.predators.push({
+          x: this.fish.x + Math.cos(angle) * distance,
+          y: this.fish.y + Math.sin(angle) * distance,
+          vx: 0,
+          vy: 0,
+          size: 25,
+          age: 0
+        });
+      }
+      
+      addFood() {
+        this.food.push({
+          x: Math.random() * this.width,
+          y: Math.random() * this.height,
+          size: 8
+        });
+      }
+      
+      calculateMemoryDensity() {
+        let L = 0.1; // Baseline exploration
+        
+        // Check predator proximity
+        for (let predator of this.predators) {
+          const dist = Math.hypot(this.fish.x - predator.x, this.fish.y - predator.y);
+          if (dist < 150) {
+            const danger = (150 - dist) / 150;
+            L += danger * 2.5; // High learning from danger
+            
+            if (danger > 0.5 && Math.random() < 0.01) {
+              this.showLearningEvent('PREDATOR!', 'predator');
+              this.metrics.predatorEvents++;
+              this.metrics.totalEvents++;
+              this.highlightComponent('memory', 1000);
+            }
+          }
+        }
+        
+        // Check food proximity
+        for (let i = this.food.length - 1; i >= 0; i--) {
+          const item = this.food[i];
+          const dist = Math.hypot(this.fish.x - item.x, this.fish.y - item.y);
+          if (dist < 30) {
+            L += 1.2; // Moderate learning from success
+            
+            if (dist < 15) {
+              this.food.splice(i, 1);
+              this.showLearningEvent('FOOD!', 'food');
+              this.metrics.foodEvents++;
+              this.metrics.totalEvents++;
+              this.highlightComponent('memory', 800);
+              this.createParticles(item.x, item.y, '#4ecdc4');
+            }
+          }
+        }
+        
+        return L;
+      }
+      
+      calculateRegeneration() {
+        let R = 0;
+        const currentTime = this.time;
+        
+        // Only past states contribute (Heaviside function)
+        for (let memory of this.fish.memoryTrace) {
+          if (memory.t >= currentTime) break;
+          
+          const phi = memory.L; // Historical signal
+          const timeDecay = Math.exp(-0.05 * (currentTime - memory.t));
+          const coherenceWeight = Math.exp(this.fish.coherence / this.OMEGA);
+          
+          // R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ
+          R += phi * coherenceWeight * timeDecay * 0.1;
+        }
+        
+        return R;
+      }
+      
+      updateFish() {
+        // Calculate memory density L(x,τ)
+        this.fish.currentL = this.calculateMemoryDensity();
+        
+        // Update coherence C(x) = ∫ L(x,τ) dτ
+        this.fish.coherence += this.fish.currentL;
+        this.highlightComponent('coherence', 100);
+        
+        // Store memory trace
+        this.fish.memoryTrace.push({
+          t: this.time,
+          L: this.fish.currentL,
+          C: this.fish.coherence,
+          x: this.fish.x,
+          y: this.fish.y
+        });
+        
+        // Limit memory trace size
+        if (this.fish.memoryTrace.length > 500) {
+          this.fish.memoryTrace.shift();
+        }
+        
+        // Check for rupture
+        if (this.fish.coherence > this.RUPTURE_THRESHOLD) {
+          this.fish.ruptureCount++;
+          this.metrics.breakthroughs++;
+          this.showLearningEvent('BREAKTHROUGH!', 'rupture');
+          this.highlightComponent('rupture', 2000);
+          this.fish.coherence *= 0.35; // Reset with retention
+          this.createParticles(this.fish.x, this.fish.y, '#f093fb', 30);
+        }
+        
+        // Calculate regeneration
+        this.fish.regeneration = this.calculateRegeneration();
+        this.highlightComponent('regeneration', 100);
+        
+        // Movement influenced by coherence and regeneration
+        const coherenceInfluence = Math.tanh(this.fish.coherence / this.OMEGA);
+        const regenInfluence = this.fish.regeneration * 0.1;
+        
+        // Avoid predators (stronger with higher coherence)
+        for (let predator of this.predators) {
+          const dx = this.fish.x - predator.x;
+          const dy = this.fish.y - predator.y;
+          const dist = Math.hypot(dx, dy);
+          
+          if (dist < 200) {
+            const avoidStrength = (200 - dist) / 200;
+            const learningBoost = 1 + coherenceInfluence; // Learned avoidance
+            this.fish.vx += (dx / dist) * avoidStrength * 0.5 * learningBoost;
+            this.fish.vy += (dy / dist) * avoidStrength * 0.5 * learningBoost;
+          }
+        }
+        
+        // Seek food (improved with coherence)
+        for (let item of this.food) {
+          const dx = item.x - this.fish.x;
+          const dy = item.y - this.fish.y;
+          const dist = Math.hypot(dx, dy);
+          
+          if (dist < 150) {
+            const seekStrength = coherenceInfluence * 0.3;
+            this.fish.vx += (dx / dist) * seekStrength;
+            this.fish.vy += (dy / dist) * seekStrength;
+          }
+        }
+        
+        // Random exploration (reduced with higher coherence)
+        const exploration = 1 - coherenceInfluence * 0.5;
+        this.fish.vx += (Math.random() - 0.5) * 0.3 * exploration;
+        this.fish.vy += (Math.random() - 0.5) * 0.3 * exploration;
+        
+        // Apply regeneration influence
+        this.fish.vx += regenInfluence * Math.cos(this.time * 0.1);
+        this.fish.vy += regenInfluence * Math.sin(this.time * 0.1);
+        
+        // Update position
+        this.fish.x += this.fish.vx;
+        this.fish.y += this.fish.vy;
+        
+        // Boundaries
+        const margin = 50;
+        if (this.fish.x < margin) {
+          this.fish.x = margin;
+          this.fish.vx = Math.abs(this.fish.vx);
+        }
+        if (this.fish.x > this.width - margin) {
+          this.fish.x = this.width - margin;
+          this.fish.vx = -Math.abs(this.fish.vx);
+        }
+        if (this.fish.y < margin) {
+          this.fish.y = margin;
+          this.fish.vy = Math.abs(this.fish.vy);
+        }
+        if (this.fish.y > this.height - margin) {
+          this.fish.y = this.height - margin;
+          this.fish.vy = -Math.abs(this.fish.vy);
+        }
+        
+        // Damping
+        this.fish.vx *= 0.95;
+        this.fish.vy *= 0.95;
+        
+        // Update direction
+        if (Math.abs(this.fish.vx) > 0.1 || Math.abs(this.fish.vy) > 0.1) {
+          this.fish.direction = Math.atan2(this.fish.vy, this.fish.vx);
+        }
+      }
+      
+      updatePredators() {
+        for (let predator of this.predators) {
+          predator.age++;
+          
+          // Chase fish
+          const dx = this.fish.x - predator.x;
+          const dy = this.fish.y - predator.y;
+          const dist = Math.hypot(dx, dy);
+          
+          const chaseStrength = 0.15;
+          predator.vx += (dx / dist) * chaseStrength;
+          predator.vy += (dy / dist) * chaseStrength;
+          
+          predator.x += predator.vx;
+          predator.y += predator.vy;
+          
+          predator.vx *= 0.96;
+          predator.vy *= 0.96;
+          
+          // Remove old predators
+          if (predator.age > 1000) {
+            const index = this.predators.indexOf(predator);
+            if (index > -1) this.predators.splice(index, 1);
+          }
+        }
+      }
+      
+      updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const p = this.particles[i];
+          p.age++;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.1; // Gravity
+          p.opacity -= 0.02;
+          
+          if (p.opacity <= 0 || p.age > 100) {
+            this.particles.splice(i, 1);
+          }
+        }
+      }
+      
+      highlightComponent(component, duration) {
+        this.activeComponent = component;
+        this.componentTimer = duration;
+        
+        // Update equation highlighting
+        document.querySelectorAll('.equation-group').forEach(eq => {
+          eq.classList.remove('active', 'active-coherence', 'active-memory', 'active-rupture', 'active-regeneration');
+        });
+        
+        if (component) {
+          const elem = document.getElementById(`eq-${component}`);
+          if (elem) {
+            elem.classList.add('active', `active-${component}`);
+          }
+        }
+      }
+      
+      showLearningEvent(text, type) {
+        const event = document.createElement('div');
+        event.className = `learning-event ${type}`;
+        event.textContent = text;
+        event.style.left = this.canvas.offsetLeft + this.fish.x + 'px';
+        event.style.top = this.canvas.offsetTop + this.fish.y - 20 + 'px';
+        document.body.appendChild(event);
+        
+        setTimeout(() => event.remove(), 2000);
+      }
+      
+      createParticles(x, y, color, count = 15) {
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 3;
+          this.particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 2,
+            color,
+            opacity: 1,
+            age: 0
+          });
+        }
+      }
+      
+      updateMetrics() {
+        document.getElementById('coherenceValue').textContent = this.fish.coherence.toFixed(1);
+        document.getElementById('memoryValue').textContent = this.fish.currentL.toFixed(2);
+        document.getElementById('regenValue').textContent = this.fish.regeneration.toFixed(2);
+        document.getElementById('ruptureValue').textContent = this.fish.ruptureCount;
+        
+        document.getElementById('totalEvents').textContent = this.metrics.totalEvents;
+        document.getElementById('predatorEvents').textContent = this.metrics.predatorEvents;
+        document.getElementById('foodEvents').textContent = this.metrics.foodEvents;
+        document.getElementById('breakthroughs').textContent = this.metrics.breakthroughs;
+        
+        const maxEvents = Math.max(1, this.metrics.totalEvents);
+        document.getElementById('eventsBar').style.width = '100%';
+        document.getElementById('predatorBar').style.width = (this.metrics.predatorEvents / maxEvents * 100) + '%';
+        document.getElementById('foodBar').style.width = (this.metrics.foodEvents / maxEvents * 100) + '%';
+        document.getElementById('breakthroughBar').style.width = (this.metrics.breakthroughs / 5 * 100) + '%';
+      }
+      
+      draw() {
+        // Background
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        gradient.addColorStop(0, '#1a3a52');
+        gradient.addColorStop(1, '#0d1b2a');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        
+        // Coherence field visualization
+        if (this.fish.coherence > 10) {
+          const radius = this.fish.coherence * 1.5;
+          const fieldGradient = this.ctx.createRadialGradient(
+            this.fish.x, this.fish.y, 0,
+            this.fish.x, this.fish.y, radius
+          );
+          fieldGradient.addColorStop(0, 'rgba(102, 126, 234, 0.2)');
+          fieldGradient.addColorStop(1, 'rgba(102, 126, 234, 0)');
+          this.ctx.fillStyle = fieldGradient;
+          this.ctx.beginPath();
+          this.ctx.arc(this.fish.x, this.fish.y, radius, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        
+        // Memory trace
+        if (this.fish.memoryTrace.length > 2) {
+          this.ctx.strokeStyle = 'rgba(240, 147, 251, 0.2)';
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.fish.memoryTrace[0].x, this.fish.memoryTrace[0].y);
+          for (let memory of this.fish.memoryTrace) {
+            this.ctx.lineTo(memory.x, memory.y);
+          }
+          this.ctx.stroke();
+        }
+        
+        // Particles
+        for (let p of this.particles) {
+          this.ctx.fillStyle = p.color;
+          this.ctx.globalAlpha = p.opacity;
+          this.ctx.beginPath();
+          this.ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        this.ctx.globalAlpha = 1;
+        
+        // Food
+        for (let item of this.food) {
+          this.ctx.fillStyle = '#4ecdc4';
+          this.ctx.beginPath();
+          this.ctx.arc(item.x, item.y, item.size, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          // Pulse effect
+          this.ctx.strokeStyle = 'rgba(78, 205, 196, 0.3)';
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          this.ctx.arc(item.x, item.y, item.size + Math.sin(this.time * 0.1) * 3, 0, Math.PI * 2);
+          this.ctx.stroke();
+        }
+        
+        // Predators
+        for (let predator of this.predators) {
+          this.ctx.save();
+          this.ctx.translate(predator.x, predator.y);
+          const angle = Math.atan2(predator.vy, predator.vx);
+          this.ctx.rotate(angle);
+          
+          // Danger field
+          this.ctx.fillStyle = 'rgba(255, 107, 107, 0.1)';
+          this.ctx.beginPath();
+          this.ctx.arc(0, 0, 150, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          // Body
+          this.ctx.fillStyle = '#ff6b6b';
+          this.ctx.beginPath();
+          this.ctx.ellipse(0, 0, predator.size, predator.size * 0.4, 0, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          // Eye
+          this.ctx.fillStyle = '#fff';
+          this.ctx.beginPath();
+          this.ctx.arc(predator.size * 0.4, -predator.size * 0.1, 4, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          this.ctx.restore();
+        }
+        
+        // Fish
+        this.ctx.save();
+        this.ctx.translate(this.fish.x, this.fish.y);
+        this.ctx.rotate(this.fish.direction);
+        
+        // Coherence glow
+        const glowIntensity = Math.min(1, this.fish.coherence / this.RUPTURE_THRESHOLD);
+        this.ctx.shadowColor = `rgba(102, 126, 234, ${glowIntensity})`;
+        this.ctx.shadowBlur = 20 * glowIntensity;
+        
+        // Body
+        const bodyGradient = this.ctx.createLinearGradient(-15, 0, 15, 0);
+        bodyGradient.addColorStop(0, '#667eea');
+        bodyGradient.addColorStop(1, '#764ba2');
+        this.ctx.fillStyle = bodyGradient;
+        this.ctx.beginPath();
+        this.ctx.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Tail
+        this.ctx.beginPath();
+        this.ctx.moveTo(-15, 0);
+        this.ctx.lineTo(-22, -8);
+        this.ctx.lineTo(-22, 8);
+        this.ctx.closePath();
+        this.ctx.fill();
+        
+        // Eye
+        this.ctx.shadowBlur = 0;
+        this.ctx.fillStyle = '#fff';
+        this.ctx.beginPath();
+        this.ctx.arc(8, -3, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.fillStyle = '#000';
+        this.ctx.beginPath();
+        this.ctx.arc(9, -3, 1.5, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.restore();
+      }
+      
+      animate() {
+        this.time++;
+        
+        this.updateFish();
+        this.updatePredators();
+        this.updateParticles();
+        
+        // Component highlight timer
+        if (this.componentTimer > 0) {
+          this.componentTimer--;
+          if (this.componentTimer === 0) {
+            this.highlightComponent(null);
+          }
+        }
+        
+        this.draw();
+        
+        // Update metrics periodically
+        if (this.time % 10 === 0) {
+          this.updateMetrics();
+        }
+        
+        // Auto-add food periodically
+        if (this.time % 200 === 0 && this.food.length < 5) {
+          this.addFood();
+        }
+        
+        requestAnimationFrame(() => this.animate());
+      }
+    }
+    
+    // Initialize simulation
+    const simulation = new CRRFishSimulation();
+    window.simulation = simulation;
+  </script>
+</body>
+</html>

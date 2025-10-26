@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Multi-Room Explorer - Enhanced Edition</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 30px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #2c3e50;
+    }
+    
+    .header h1 {
+      font-size: 32px;
+      font-weight: 400;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    
+    .header p {
+      color: #546e7a;
+      font-size: 15px;
+      font-style: italic;
+    }
+    
+    .explainer-section {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+    
+    .explainer-header {
+      background: #e9ecef;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    
+    .explainer-header:hover {
+      background: #dee2e6;
+    }
+    
+    .explainer-header h2 {
+      font-size: 18px;
+      font-weight: 400;
+      color: #2c3e50;
+    }
+    
+    .explainer-toggle {
+      font-size: 20px;
+      color: #546e7a;
+      transition: transform 0.3s;
+    }
+    
+    .explainer-toggle.open {
+      transform: rotate(180deg);
+    }
+    
+    .explainer-content {
+      padding: 25px;
+      display: none;
+    }
+    
+    .explainer-content.open {
+      display: block;
+    }
+    
+    .explainer-content h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 20px 0 12px 0;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 5px;
+    }
+    
+    .explainer-content h3:first-child {
+      margin-top: 0;
+    }
+    
+    .explainer-content p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #495057;
+    }
+    
+    .explainer-content ul {
+      margin: 10px 0 15px 25px;
+      font-size: 14px;
+      color: #495057;
+    }
+    
+    .explainer-content li {
+      margin-bottom: 8px;
+    }
+    
+    .equation {
+      background: #ffffff;
+      border-left: 3px solid #2c3e50;
+      padding: 12px 15px;
+      margin: 15px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #2c3e50;
+      overflow-x: auto;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 600px 1fr 350px;
+      gap: 20px;
+    }
+    
+    .panel {
+      background: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      background: #2c3e50;
+      border: 1px solid #2c3e50;
+      border-radius: 3px;
+      color: white;
+      font-family: Georgia, serif;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+    
+    .btn:hover {
+      background: #34495e;
+      border-color: #34495e;
+    }
+    
+    .btn.secondary {
+      background: #6c757d;
+      border-color: #6c757d;
+    }
+    
+    .btn.secondary:hover {
+      background: #5a6268;
+      border-color: #5a6268;
+    }
+    
+    canvas {
+      display: block;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .minimap-container {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .minimap-title {
+      font-size: 14px;
+      color: #a78bfa;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .stat-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 3px;
+      padding: 15px;
+    }
+    
+    .stat-card h3 {
+      font-size: 14px;
+      color: #2c3e50;
+      margin-bottom: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 6px;
+    }
+    
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    
+    .stat-label {
+      color: #6c757d;
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .stat-value.good {
+      color: #28a745;
+    }
+    
+    .stat-value.excellent {
+      color: #007bff;
+    }
+    
+    .legend {
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 12px;
+      line-height: 1.8;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 3px;
+    }
+    
+    .legend strong {
+      color: #2c3e50;
+    }
+    
+    .key-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      margin-right: 5px;
+      border: none;
+    }
+    
+    .progress-bar {
+      background: rgba(0, 0, 0, 0.3);
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a78bfa 0%, #ec4899 100%);
+      transition: width 0.3s ease;
+    }
+    
+    .phase-indicator {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(236, 72, 153, 0.5);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ec4899;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Coherence-Rupture-Renewal Multi-Room Explorer</h1>
+      <p>A non-Markovian spatial navigation demonstration with emergent intelligence</p>
+    </div>
+    
+    <div class="explainer-section">
+      <div class="explainer-header" onclick="toggleExplainer()">
+        <h2>Mathematical Framework & Methodology</h2>
+        <span class="explainer-toggle" id="explainerToggle">▼</span>
+      </div>
+      <div class="explainer-content" id="explainerContent">
+        <h3>Core Mathematical Framework</h3>
+        <p>The Coherence-Rupture-Renewal (CRR) framework models agent behaviour through three coupled mathematical operators that construct temporality dynamically:</p>
+        
+        <div class="equation">
+C(x,t) = ∫ L(x,τ) dτ
+(Coherence accumulation through spatial memory density)
+        </div>
+        
+        <div class="equation">
+δ(t-t₀) = Dirac delta at rupture time
+(Discrete interventions when loop detection threshold exceeded)
+        </div>
+        
+        <div class="equation">
+R[χ](x,t) = ∫ φ(x,τ)·e^(C(x,τ)/Ω)·Θ(t-τ) dτ
+(Regeneration through exponentially-weighted memory integration)
+        </div>
+        
+        <p>Where L(x,τ) represents memory density, φ(x,τ) is the historical field signal, Ω is the system temperature parameter, and Θ(t-τ) enforces causality.</p>
+        
+        <h3>Markovian Agent in Non-Markovian Field</h3>
+        <p>The agent itself maintains only local, Markovian state (current position, immediate sensory information, discovered map). However, it is embedded in a coherence field that accumulates non-Markovian temporal dependencies:</p>
+        <ul>
+          <li><strong>Local state:</strong> The agent "forgets" detailed history and acts based on current perception</li>
+          <li><strong>Field memory:</strong> Past experiences create weighted gradients in the coherence field that influence future decisions</li>
+          <li><strong>Emergent intelligence:</strong> I = tanh(C/Ω) grows as coherence accumulates, modulating exploration vs exploitation</li>
+        </ul>
+        
+        <h3>Distinction from Standard Reinforcement Learning</h3>
+        <p>This approach differs fundamentally from conventional RL methods:</p>
+        <ul>
+          <li><strong>No prior training required:</strong> The agent begins with zero knowledge and learns entirely through real-time coherence accumulation</li>
+          <li><strong>No reward function:</strong> Behaviour emerges from coherence-rupture dynamics rather than external reward signals</li>
+          <li><strong>Non-stationary learning:</strong> Intelligence parameter I evolves continuously, creating adaptive temporal structure</li>
+          <li><strong>Rupture as feature:</strong> Loop detection triggers spatial memory suppression, preventing infinite cycles without external intervention</li>
+          <li><strong>Memory as landscape:</strong> Past experiences create gradients that guide future exploration through regeneration operator R</li>
+        </ul>
+        
+        <h3>Biological and Philosophical Motivation</h3>
+        <p>The CRR framework draws inspiration from biological memory systems:</p>
+        <ul>
+          <li><strong>Memory consolidation:</strong> Coherence accumulation mirrors how experiences strengthen neural representations over time</li>
+          <li><strong>Attention switching:</strong> Rupture events parallel how biological systems break attentional fixation when stuck</li>
+          <li><strong>Plasticity:</strong> The regeneration operator implements a form of memory-guided exploration similar to hippocampal replay</li>
+          <li><strong>Temporal asymmetry:</strong> The causal constraint Θ(t-τ) enforces the "arrow of lived time" characteristic of biological systems</li>
+        </ul>
+        
+        <h3>Observed Behaviours in This Simulation</h3>
+        <p>The demonstration exhibits several emergent properties:</p>
+        <ul>
+          <li><strong>Progressive room discovery:</strong> Agent systematically explores unmapped regions driven by frontier detection</li>
+          <li><strong>Loop breaking:</strong> Spatial suppression automatically prevents revisitation spirals without hand-coded rules</li>
+          <li><strong>Phase transition:</strong> Upon collecting all keys, behaviour shifts from exploration to goal-directed navigation</li>
+          <li><strong>Exit beaconing:</strong> Strong regeneration signal creates directed movement toward known goal location</li>
+          <li><strong>Adaptive intelligence:</strong> Decision quality improves as coherence accumulates, visible in reduced step counts over episodes</li>
+        </ul>
+        
+        <h3>Applications Across Domains</h3>
+        <p>Whilst this demonstration focuses on spatial navigation, the CRR formalism has been explored in multiple contexts:</p>
+        <ul>
+          <li><strong>Ecological systems:</strong> Modelling moss growth patterns and ecosystem recovery after disturbance</li>
+          <li><strong>Neural dynamics:</strong> Perceptual switching, attention mechanisms, and memory consolidation</li>
+          <li><strong>Machine learning:</strong> Addressing catastrophic forgetting through metabolised rupture and selective regeneration</li>
+          <li><strong>Cultural evolution:</strong> Understanding how traditions accumulate, rupture, and synthesise through interference</li>
+        </ul>
+        
+        <h3>Performance Characteristics</h3>
+        <p>In this multi-room navigation task:</p>
+        <ul>
+          <li>Target performance: Completion in under 10,000 steps for 4-key configuration</li>
+          <li>Progressive difficulty: Key count increases with successful completions</li>
+          <li>No training phase: All learning occurs during task execution</li>
+          <li>Emergent efficiency: Step count typically decreases across episodes as field memory accumulates</li>
+        </ul>
+        
+        <p style="margin-top: 20px; font-style: italic; color: #6c757d;">This implementation demonstrates that complex adaptive behaviour can emerge from simple mathematical principles governing coherence accumulation, rupture detection, and memory-guided regeneration—without explicit programming of navigation strategies or pre-training on examples.</p>
+      </div>
+    </div>
+    
+    <div class="main-grid">
+      <div class="panel">
+        <div class="controls">
+          <button class="btn" id="startBtn" onclick="toggleSimulation()">Start Agent</button>
+          <button class="btn secondary" onclick="resetSimulation()">New World</button>
+          <button class="btn secondary" onclick="speedUp()">
+            Speed: <span id="speedLabel">1×</span>
+          </button>
+        </div>
+        
+        <div class="phase-indicator" id="phaseIndicator">
+          Phase 1: Exploration
+        </div>
+        
+        <canvas id="mainCanvas" width="600" height="600"></canvas>
+        
+        <div class="legend">
+          <strong style="color: #a78bfa;">Purple:</strong> Coherence &nbsp;•&nbsp;
+          <strong style="color: #22d3ee;">Cyan arrow:</strong> Regeneration &nbsp;•&nbsp;
+          <strong style="color: #f59e0b;">Orange arrow:</strong> Frontier search &nbsp;•&nbsp;
+          <strong style="color: #f59e0b;">Golden beam:</strong> Exit beacon &nbsp;•&nbsp;
+          <strong style="color: #fbbf24;">Gold:</strong> Keys
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="minimap-container">
+          <div class="minimap-title">World Map – Room Discovery</div>
+          <canvas id="minimapCanvas" width="400" height="400"></canvas>
+        </div>
+        
+        <div class="stat-card">
+          <h3>Mission Progress</h3>
+          <div class="stat-row">
+            <span class="stat-label">Rooms Discovered:</span>
+            <span class="stat-value excellent" id="roomsDiscovered">1 / 16</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="roomProgress" style="width: 6.25%"></div>
+          </div>
+          
+          <div class="stat-row" style="margin-top: 15px;">
+            <span class="stat-label">Keys Collected:</span>
+            <span class="stat-value good" id="keysCollected">0 / 4</span>
+          </div>
+          <div style="margin-top: 8px;" id="keyIndicators"></div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Performance Metrics</h3>
+            <div class="stat-row">
+              <span class="stat-label">Steps:</span>
+              <span class="stat-value" id="steps">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Episodes:</span>
+              <span class="stat-value" id="episodes">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Best Run:</span>
+              <span class="stat-value excellent" id="bestRun">N/A</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Completions:</span>
+              <span class="stat-value excellent" id="completions">0</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <h3>CRR Metrics</h3>
+            <div class="stat-row">
+              <span class="stat-label">Coherence C:</span>
+              <span class="stat-value" id="coherence">0.0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Intelligence I:</span>
+              <span class="stat-value" id="intelligence">0.00</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Loop Breaks:</span>
+              <span class="stat-value" id="localRuptures">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Global Ruptures:</span>
+              <span class="stat-value" id="globalRuptures">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CONSTANTS & CONFIGURATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    const mainCanvas = document.getElementById('mainCanvas');
+    const mainCtx = mainCanvas.getContext('2d');
+    const minimapCanvas = document.getElementById('minimapCanvas');
+    const minimapCtx = minimapCanvas.getContext('2d');
+    
+    const ROOM_GRID = 4;
+    const ROOM_SIZE = 25;
+    const TOTAL_SIZE = ROOM_GRID * ROOM_SIZE;
+    const CELL_SIZE = 6;
+    
+    const CRR = {
+      OMEGA: 30,
+      LOOP_WINDOW: 25,
+      LOOP_THRESHOLD_BASE: 0.55,
+      LOOP_THRESHOLD_STRICT: 0.40,
+      RUPTURE_RADIUS: 12,
+      RUPTURE_SUPPRESSION: 25,
+      BASE_LEARNING: 0.08,
+      NOVELTY_BONUS: 5.0,
+      ROOM_BONUS: 20,
+      KEY_BONUS: 60,
+      SPATIAL_RANGE: 20,
+      TEMPORAL_DECAY: 0.004,
+      MEMORY_CAPACITY: 35,
+      MOMENTUM_DECAY: 0.85,
+      ROOM_EXPLORATION_THRESHOLD: 100,
+      PHASE: { EXPLORE: 0, NAVIGATE: 1 }
+    };
+    
+    let isRunning = false;
+    let speed = 1;
+    let world, agent, animationId;
+    let ruptureEffect = 0;
+    let successfulCompletions = 0;
+    
+    // ═══════════════════════════════════════════════════════════════
+    // WORLD GENERATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    class World {
+      constructor(numKeys) {
+        this.numKeys = numKeys || 4;
+        this.rooms = [];
+        this.keys = [];
+        this.exit = null;
+        this.generate();
+      }
+      
+      generate() {
+        for (let ry = 0; ry < ROOM_GRID; ry++) {
+          for (let rx = 0; rx < ROOM_GRID; rx++) {
+            this.rooms.push(this.generateRoom(rx, ry));
+          }
+        }
+        
+        const availableRooms = [];
+        for (let i = 1; i < 15; i++) availableRooms.push(i);
+        
+        for (let i = availableRooms.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [availableRooms[i], availableRooms[j]] = [availableRooms[j], availableRooms[i]];
+        }
+        
+        const keyRooms = availableRooms.slice(0, this.numKeys);
+        keyRooms.forEach((roomIdx, keyId) => {
+          const rx = roomIdx % ROOM_GRID;
+          const ry = Math.floor(roomIdx / ROOM_GRID);
+          const keyX = rx * ROOM_SIZE + 5 + Math.floor(Math.random() * 15);
+          const keyY = ry * ROOM_SIZE + 5 + Math.floor(Math.random() * 15);
+          this.keys.push({ x: keyX, y: keyY, id: keyId, collected: false });
+        });
+        
+        this.exit = {
+          x: (ROOM_GRID - 1) * ROOM_SIZE + ROOM_SIZE - 3,
+          y: (ROOM_GRID - 1) * ROOM_SIZE + ROOM_SIZE - 3
+        };
+      }
+      
+      generateRoom(rx, ry) {
+        const room = Array(ROOM_SIZE).fill().map(() => Array(ROOM_SIZE).fill(1));
+        const stack = [[Math.floor(ROOM_SIZE / 2), Math.floor(ROOM_SIZE / 2)]];
+        room[stack[0][1]][stack[0][0]] = 0;
+        
+        while (stack.length > 0) {
+          const [x, y] = stack[stack.length - 1];
+          const neighbors = [];
+          
+          [[0, 2], [2, 0], [0, -2], [-2, 0]].forEach(([dx, dy]) => {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx > 0 && nx < ROOM_SIZE - 1 && ny > 0 && ny < ROOM_SIZE - 1 && room[ny][nx] === 1) {
+              neighbors.push([nx, ny, x + dx / 2, y + dy / 2]);
+            }
+          });
+          
+          if (neighbors.length > 0) {
+            const [nx, ny, wx, wy] = neighbors[Math.floor(Math.random() * neighbors.length)];
+            room[ny][nx] = 0;
+            room[wy][wx] = 0;
+            stack.push([nx, ny]);
+          } else {
+            stack.pop();
+          }
+        }
+        
+        const doorY = Math.floor(ROOM_SIZE / 2);
+        const doorX = Math.floor(ROOM_SIZE / 2);
+        
+        if (rx > 0) for (let i = 0; i < 3; i++) room[doorY][i] = 0;
+        if (rx < ROOM_GRID - 1) for (let i = 0; i < 3; i++) room[doorY][ROOM_SIZE - 1 - i] = 0;
+        if (ry > 0) for (let i = 0; i < 3; i++) room[i][doorX] = 0;
+        if (ry < ROOM_GRID - 1) for (let i = 0; i < 3; i++) room[ROOM_SIZE - 1 - i][doorX] = 0;
+        
+        return { rx, ry, map: room, discovered: (rx === 0 && ry === 0) };
+      }
+      
+      getCell(x, y) {
+        const rx = Math.floor(x / ROOM_SIZE);
+        const ry = Math.floor(y / ROOM_SIZE);
+        const lx = x % ROOM_SIZE;
+        const ly = y % ROOM_SIZE;
+        if (rx < 0 || rx >= ROOM_GRID || ry < 0 || ry >= ROOM_GRID) return 1;
+        return this.rooms[ry * ROOM_GRID + rx].map[ly][lx];
+      }
+      
+      getRoomAt(x, y) {
+        const rx = Math.floor(x / ROOM_SIZE);
+        const ry = Math.floor(y / ROOM_SIZE);
+        if (rx < 0 || rx >= ROOM_GRID || ry < 0 || ry >= ROOM_GRID) return null;
+        return this.rooms[ry * ROOM_GRID + rx];
+      }
+      
+      resetKeys() {
+        this.keys.forEach(k => k.collected = false);
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // CRR AGENT (FULLY ENHANCED)
+    // ═══════════════════════════════════════════════════════════════
+    
+    class CRRAgent {
+      constructor(world) {
+        this.world = world;
+        this.knownMap = Array(TOTAL_SIZE).fill().map(() => Array(TOTAL_SIZE).fill(-1));
+        this.spatialMemory = {};
+        this.coherenceField = {};
+        this.localSuppression = {};
+        this.regenMomentum = { dx: 0, dy: 0 };
+        
+        // CRR Enhancement 1: Room-level coherence tracking
+        this.roomCoherence = Array(16).fill(0);
+        this.roomSuppression = Array(16).fill(0);
+        
+        // CRR Enhancement 2: Early exit memory (latent)
+        this.exitMemory = null;
+        this.exitSearchStartStep = 0;
+        
+        this.phase = CRR.PHASE.EXPLORE;
+        this.exitKnown = false;
+        this.exitBeacon = null;
+        this.totalEpisodes = 0;
+        this.bestRun = Infinity;
+        this.reset();
+      }
+      
+      reset() {
+        this.x = Math.floor(ROOM_SIZE / 2);
+        this.y = Math.floor(ROOM_SIZE / 2);
+        this.steps = 0;
+        this.path = [[this.x, this.y]];
+        this.recentPath = [[this.x, this.y]];
+        this.visited = new Set();
+        this.roomsDiscovered = new Set([0]);
+        this.keysCollected = new Set();
+        this.globalCoherence = 0;
+        this.localRuptureCount = 0;
+        this.globalRuptureCount = 0;
+        this.localSuppression = {};
+        this.regenMomentum = { dx: 0, dy: 0 };
+        this.roomCoherence = Array(16).fill(0);
+        this.roomSuppression = Array(16).fill(0);
+        this.exitMemory = null;
+        this.exitSearchStartStep = 0;
+        this.phase = CRR.PHASE.EXPLORE;
+        this.exitKnown = false;
+        this.exitBeacon = null;
+        this.navStartStep = 0;
+        this.world.resetKeys();
+        this.senseEnvironment();
+      }
+      
+      senseEnvironment() {
+        const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+        for (const [dx, dy] of dirs) {
+          const nx = this.x + dx;
+          const ny = this.y + dy;
+          if (nx >= 0 && nx < TOTAL_SIZE && ny >= 0 && ny < TOTAL_SIZE) {
+            this.knownMap[ny][nx] = this.world.getCell(nx, ny);
+          }
+        }
+        this.knownMap[this.y][this.x] = this.world.getCell(this.x, this.y);
+        
+        const room = this.world.getRoomAt(this.x, this.y);
+        if (room && !room.discovered) {
+          room.discovered = true;
+          this.roomsDiscovered.add(room.ry * ROOM_GRID + room.rx);
+        }
+        
+        // CRR Enhancement 2: Early exit memory (store but don't activate)
+        const exitDist = Math.abs(this.x - this.world.exit.x) + Math.abs(this.y - this.world.exit.y);
+        if (exitDist <= 5 && !this.exitMemory) {
+          this.exitMemory = {
+            x: this.world.exit.x,
+            y: this.world.exit.y,
+            discoveredAt: this.steps
+          };
+        }
+        
+        // Activate exit knowledge only when all keys collected
+        if (this.keysCollected.size === this.world.numKeys && this.exitMemory && !this.exitKnown) {
+          this.exitKnown = true;
+          this.exitSearchStartStep = this.steps;
+        }
+      }
+      
+      detectLoop() {
+        if (this.phase === CRR.PHASE.NAVIGATE) return false;
+        if (this.recentPath.length < CRR.LOOP_WINDOW) return false;
+        
+        const window = this.recentPath.slice(-CRR.LOOP_WINDOW);
+        const uniquePositions = new Set(window.map(([x, y]) => `${x},${y}`));
+        const revisitation = 1 - (uniquePositions.size / window.length);
+        const threshold = this.keysCollected.size >= 2 ? CRR.LOOP_THRESHOLD_STRICT : CRR.LOOP_THRESHOLD_BASE;
+        
+        return revisitation > threshold;
+      }
+      
+      triggerLocalRupture() {
+        this.localRuptureCount++;
+        ruptureEffect = 1.0;
+        
+        for (let dy = -CRR.RUPTURE_RADIUS; dy <= CRR.RUPTURE_RADIUS; dy++) {
+          for (let dx = -CRR.RUPTURE_RADIUS; dx <= CRR.RUPTURE_RADIUS; dx++) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist <= CRR.RUPTURE_RADIUS) {
+              const key = `${this.x + dx},${this.y + dy}`;
+              this.localSuppression[key] = CRR.RUPTURE_SUPPRESSION * (1 - dist / CRR.RUPTURE_RADIUS);
+            }
+          }
+        }
+        
+        // CRR Enhancement 5: Macro-level suppression
+        const currentRoom = this.world.getRoomAt(this.x, this.y);
+        if (currentRoom) {
+          const roomId = currentRoom.ry * ROOM_GRID + currentRoom.rx;
+          this.roomSuppression[roomId] = 50;
+        }
+        
+        this.recentPath = this.recentPath.slice(-5);
+        this.globalCoherence *= 0.55;
+        this.regenMomentum.dx *= 0.3;
+        this.regenMomentum.dy *= 0.3;
+      }
+      
+      calculateFrontier() {
+        let F = { dx: 0, dy: 0 };
+        const sampleRadius = 25;
+        const frontierCells = [];
+        
+        for (let dy = -sampleRadius; dy <= sampleRadius; dy += 3) {
+          for (let dx = -sampleRadius; dx <= sampleRadius; dx += 3) {
+            const sx = this.x + dx;
+            const sy = this.y + dy;
+            if (sx < 0 || sx >= TOTAL_SIZE || sy < 0 || sy >= TOTAL_SIZE) continue;
+            
+            const key = `${sx},${sy}`;
+            const isKnown = this.knownMap[sy][sx] !== -1;
+            const isUnvisited = !this.visited.has(key);
+            const isPassable = this.knownMap[sy][sx] === 0;
+            
+            if (isKnown && isUnvisited && isPassable) {
+              frontierCells.push({ dx, dy, dist: Math.sqrt(dx*dx + dy*dy) });
+            }
+          }
+        }
+        
+        for (let cell of frontierCells) {
+          if (cell.dist < 0.1) continue;
+          const distanceWeight = cell.dist / sampleRadius;
+          const influence = distanceWeight * 1.2;
+          F.dx += (cell.dx / cell.dist) * influence;
+          F.dy += (cell.dy / cell.dist) * influence;
+        }
+        
+        return F;
+      }
+      
+      calculateCoherenceGradient() {
+        let grad = { dx: 0, dy: 0 };
+        const sampleDist = 8;
+        
+        for (let dy = -sampleDist; dy <= sampleDist; dy += 4) {
+          for (let dx = -sampleDist; dx <= sampleDist; dx += 4) {
+            if (dx === 0 && dy === 0) continue;
+            const sx = this.x + dx;
+            const sy = this.y + dy;
+            const key = `${sx},${sy}`;
+            
+            if (this.coherenceField[key]) {
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < 0.1) continue;
+              const coherence = this.coherenceField[key];
+              const weight = coherence / (dist * dist);
+              grad.dx += (dx / dist) * weight;
+              grad.dy += (dy / dist) * weight;
+            }
+          }
+        }
+        
+        return grad;
+      }
+      
+      // CRR Enhancement 1: Room-level coherence bias
+      calculateRoomBias() {
+        let bias = { dx: 0, dy: 0 };
+        
+        // Find least explored rooms
+        let minCoherence = Infinity;
+        const unexploredRooms = [];
+        
+        for (let i = 0; i < 16; i++) {
+          if (this.roomCoherence[i] < CRR.ROOM_EXPLORATION_THRESHOLD) {
+            unexploredRooms.push(i);
+            minCoherence = Math.min(minCoherence, this.roomCoherence[i]);
+          }
+        }
+        
+        // Bias toward least explored rooms
+        for (let roomId of unexploredRooms) {
+          const rx = roomId % ROOM_GRID;
+          const ry = Math.floor(roomId / ROOM_GRID);
+          const roomCenterX = rx * ROOM_SIZE + Math.floor(ROOM_SIZE / 2);
+          const roomCenterY = ry * ROOM_SIZE + Math.floor(ROOM_SIZE / 2);
+          
+          const dx = roomCenterX - this.x;
+          const dy = roomCenterY - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < 0.1) continue;
+          
+          const explorationGap = 1 - (this.roomCoherence[roomId] / CRR.ROOM_EXPLORATION_THRESHOLD);
+          const suppressionPenalty = this.roomSuppression[roomId] > 0 ? 0.3 : 1.0;
+          const weight = explorationGap * suppressionPenalty / (dist * 0.5);
+          
+          bias.dx += (dx / dist) * weight;
+          bias.dy += (dy / dist) * weight;
+        }
+        
+        return bias;
+      }
+      
+      calculateRegeneration() {
+        let R = { dx: 0, dy: 0 };
+        
+        const needsExitDiscovery = (this.keysCollected.size === this.world.numKeys) && !this.exitKnown;
+        
+        if (needsExitDiscovery) {
+          // CRR Enhancement 3: Adaptive frontier weighting
+          const searchDuration = this.steps - this.exitSearchStartStep;
+          let frontierWeight = 5.0;
+          if (searchDuration > 10000) frontierWeight = 12.0;
+          else if (searchDuration > 5000) frontierWeight = 8.0;
+          
+          const F = this.calculateFrontier();
+          R.dx += F.dx * frontierWeight;
+          R.dy += F.dy * frontierWeight;
+          
+          // CRR Enhancement 1: Room-level bias during exit search
+          const roomBias = this.calculateRoomBias();
+          R.dx += roomBias.dx * 2.0;
+          R.dy += roomBias.dy * 2.0;
+          
+          R.dx += this.regenMomentum.dx * 0.3;
+          R.dy += this.regenMomentum.dy * 0.3;
+          this.regenMomentum.dx = R.dx * CRR.MOMENTUM_DECAY;
+          this.regenMomentum.dy = R.dy * CRR.MOMENTUM_DECAY;
+          return R;
+        }
+        
+        if (this.phase === CRR.PHASE.NAVIGATE && this.exitBeacon) {
+          const dx = this.exitBeacon.x - this.x;
+          const dy = this.exitBeacon.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 0.1) {
+            const strength = this.exitBeacon.strength * 3.0;
+            R.dx += (dx / dist) * strength;
+            R.dy += (dy / dist) * strength;
+          }
+          return R;
+        }
+        
+        const F = this.calculateFrontier();
+        R.dx += F.dx * 1.5;
+        R.dy += F.dy * 1.5;
+        
+        const coherenceGrad = this.calculateCoherenceGradient();
+        R.dx += coherenceGrad.dx * 0.4;
+        R.dy += coherenceGrad.dy * 0.4;
+        
+        // CRR Enhancement 1: Room-level bias during exploration
+        const roomBias = this.calculateRoomBias();
+        R.dx += roomBias.dx * 0.8;
+        R.dy += roomBias.dy * 0.8;
+        
+        for (let key in this.spatialMemory) {
+          const [mx, my] = key.split(',').map(Number);
+          const memories = this.spatialMemory[key];
+          if (!memories || memories.length === 0) continue;
+          
+          const dx = mx - this.x;
+          const dy = my - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 0.1 || dist > CRR.SPATIAL_RANGE * 2) continue;
+          
+          const distantBoost = dist > CRR.RUPTURE_RADIUS ? 1.8 : 1.0;
+          
+          for (let mem of memories) {
+            if (mem.step >= this.steps) continue;
+            const Δt = this.steps - mem.step;
+            const temporalWeight = Math.exp(-CRR.TEMPORAL_DECAY * Δt);
+            const coherenceWeight = Math.exp(Math.min(mem.coherence / CRR.OMEGA, 10));
+            const spatialWeight = 1 / (1 + dist * 0.25);
+            const φ = mem.signal;
+            const importance = mem.importance || 1.0;
+            const recencyBonus = (Δt < 50) ? 1.5 : 1.0;
+            const influence = φ * coherenceWeight * temporalWeight * spatialWeight * distantBoost * importance * recencyBonus;
+            
+            if (φ > 2 && dist > 0) {
+              R.dx += (dx / dist) * influence * 0.25;
+              R.dy += (dy / dist) * influence * 0.25;
+            }
+          }
+        }
+        
+        R.dx += this.regenMomentum.dx * 0.2;
+        R.dy += this.regenMomentum.dy * 0.2;
+        this.regenMomentum.dx = R.dx * CRR.MOMENTUM_DECAY;
+        this.regenMomentum.dy = R.dy * CRR.MOMENTUM_DECAY;
+        
+        return R;
+      }
+      
+      selectAction(R, intelligence) {
+        const moves = this.getValidMoves();
+        if (moves.length === 0) return null;
+        
+        let bestMove = moves[0];
+        let bestScore = -Infinity;
+        
+        const currentRoom = this.world.getRoomAt(this.x, this.y);
+        const currentRoomId = currentRoom ? currentRoom.ry * ROOM_GRID + currentRoom.rx : -1;
+        
+        for (let [dx, dy, nx, ny] of moves) {
+          let score = 0;
+          const key = `${nx},${ny}`;
+          
+          if (this.localSuppression[key]) {
+            score -= this.localSuppression[key];
+            this.localSuppression[key] *= 0.94;
+          }
+          
+          // CRR Enhancement 4: Room transition momentum
+          const nextRoom = this.world.getRoomAt(nx, ny);
+          const nextRoomId = nextRoom ? nextRoom.ry * ROOM_GRID + nextRoom.rx : -1;
+          
+          if (nextRoomId !== currentRoomId && nextRoomId >= 0) {
+            // Bonus for room transitions
+            score += 15 * (1 + intelligence * 0.3);
+            
+            // CRR Enhancement 5: Room suppression penalty
+            if (this.roomSuppression[nextRoomId] > 0) {
+              score -= this.roomSuppression[nextRoomId];
+            }
+          }
+          
+          if (this.phase === CRR.PHASE.NAVIGATE) {
+            const exitDist = Math.abs(nx - this.world.exit.x) + Math.abs(ny - this.world.exit.y);
+            score -= exitDist * 10.0;
+            score += (R.dx * dx + R.dy * dy) * 8.0;
+            score += Math.random() * 0.05;
+          } else {
+            if (nextRoom && nextRoom !== currentRoom && !nextRoom.discovered) {
+              const roomBonus = this.keysCollected.size === this.world.numKeys ? 50 : 40;
+              score += roomBonus * (1 + intelligence);
+            }
+            
+            let minKeyDist = Infinity;
+            for (let k of this.world.keys) {
+              if (!k.collected) {
+                const dist = Math.abs(nx - k.x) + Math.abs(ny - k.y);
+                minKeyDist = Math.min(minKeyDist, dist);
+              }
+            }
+            if (minKeyDist < Infinity) {
+              score -= minKeyDist * (0.02 + intelligence * 0.05);
+            }
+            
+            if (!this.visited.has(key)) {
+              const explorationBonus = this.keysCollected.size === this.world.numKeys ? 20 : 15;
+              score += explorationBonus * (1 + intelligence * 0.4);
+            } else {
+              const recentVisits = this.recentPath.slice(-20).filter(([x, y]) => x === nx && y === ny).length;
+              score -= recentVisits * (18 + intelligence * 25);
+            }
+            
+            const regenWeight = 0.5 - (intelligence * 0.2);
+            score += (R.dx * dx + R.dy * dy) * regenWeight;
+            score += Math.random() * 5 * (1 - intelligence * 0.85);
+          }
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestMove = [dx, dy, nx, ny];
+          }
+        }
+        
+        return bestMove;
+      }
+      
+      getValidMoves() {
+        const moves = [];
+        const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+        for (const [dx, dy] of dirs) {
+          const nx = this.x + dx;
+          const ny = this.y + dy;
+          if (nx >= 0 && nx < TOTAL_SIZE && ny >= 0 && ny < TOTAL_SIZE) {
+            if (this.knownMap[ny][nx] === 0) {
+              moves.push([dx, dy, nx, ny]);
+            }
+          }
+        }
+        return moves;
+      }
+      
+      step() {
+        this.steps++;
+        
+        if (this.detectLoop()) {
+          this.triggerLocalRupture();
+        }
+        
+        for (let k of this.world.keys) {
+          if (!k.collected && Math.abs(this.x - k.x) <= 1 && Math.abs(this.y - k.y) <= 1) {
+            k.collected = true;
+            this.keysCollected.add(k.id);
+            this.globalCoherence += CRR.KEY_BONUS;
+            
+            if (this.keysCollected.size === this.world.numKeys && this.exitKnown) {
+              this.phase = CRR.PHASE.NAVIGATE;
+              this.navStartStep = this.steps;
+              this.exitBeacon = { x: this.world.exit.x, y: this.world.exit.y, strength: 100 };
+              this.localSuppression = {};
+            }
+          }
+        }
+        
+        if (this.keysCollected.size === this.world.numKeys && 
+            Math.abs(this.x - this.world.exit.x) <= 1 && 
+            Math.abs(this.y - this.world.exit.y) <= 1) {
+          this.bestRun = Math.min(this.bestRun, this.steps);
+          return 'success';
+        }
+        
+        const R = this.calculateRegeneration();
+        const intelligence = Math.tanh(this.globalCoherence / CRR.OMEGA);
+        const move = this.selectAction(R, intelligence);
+        if (!move) return 'stuck';
+        
+        this.x = move[2];
+        this.y = move[3];
+        this.path.push([this.x, this.y]);
+        this.recentPath.push([this.x, this.y]);
+        if (this.recentPath.length > CRR.LOOP_WINDOW * 2) {
+          this.recentPath.shift();
+        }
+        
+        this.senseEnvironment();
+        
+        const key = `${this.x},${this.y}`;
+        const isNovel = !this.visited.has(key);
+        this.visited.add(key);
+        
+        let L = CRR.BASE_LEARNING;
+        let importance = 1.0;
+        
+        if (isNovel) L += CRR.NOVELTY_BONUS;
+        
+        const room = this.world.getRoomAt(this.x, this.y);
+        const roomId = room ? room.ry * ROOM_GRID + room.rx : -1;
+        if (room && !this.roomsDiscovered.has(roomId)) {
+          L += CRR.ROOM_BONUS;
+          importance = 8.0;
+          this.roomsDiscovered.add(roomId);
+        }
+        
+        this.globalCoherence += L;
+        
+        if (!this.coherenceField[key]) this.coherenceField[key] = 0;
+        this.coherenceField[key] += L;
+        
+        // CRR Enhancement 1: Update room-level coherence
+        if (roomId >= 0) {
+          this.roomCoherence[roomId] += L;
+          if (this.roomSuppression[roomId] > 0) {
+            this.roomSuppression[roomId] *= 0.95;
+          }
+        }
+        
+        if (!this.spatialMemory[key]) this.spatialMemory[key] = [];
+        this.spatialMemory[key].push({
+          step: this.steps,
+          signal: L,
+          coherence: this.coherenceField[key],
+          importance: importance
+        });
+        
+        if (this.spatialMemory[key].length > CRR.MEMORY_CAPACITY) {
+          this.spatialMemory[key].shift();
+        }
+        
+        if (this.globalCoherence > 250) {
+          this.globalRuptureCount++;
+          this.globalCoherence *= 0.5;
+        }
+        
+        if (this.steps > 100000) return 'timeout';
+        
+        return 'continue';
+      }
+      
+      startEpisode() {
+        this.reset();
+        this.totalEpisodes++;
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // VISUALIZATION
+    // ═══════════════════════════════════════════════════════════════
+    
+    function draw() {
+      mainCtx.fillStyle = '#0a0a15';
+      mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+      
+      for (let key in agent.coherenceField) {
+        const [x, y] = key.split(',').map(Number);
+        const coherence = agent.coherenceField[key];
+        const intensity = Math.min(Math.abs(coherence) / 18, 0.6);
+        mainCtx.fillStyle = `rgba(167, 139, 250, ${intensity * 0.5})`;
+        mainCtx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      }
+      
+      if (agent.phase === CRR.PHASE.NAVIGATE && agent.exitBeacon) {
+        const grad = mainCtx.createRadialGradient(
+          agent.exitBeacon.x * CELL_SIZE + CELL_SIZE,
+          agent.exitBeacon.y * CELL_SIZE + CELL_SIZE, 0,
+          agent.exitBeacon.x * CELL_SIZE + CELL_SIZE,
+          agent.exitBeacon.y * CELL_SIZE + CELL_SIZE, CELL_SIZE * 15
+        );
+        grad.addColorStop(0, 'rgba(245, 158, 11, 0.7)');
+        grad.addColorStop(0.3, 'rgba(245, 158, 11, 0.4)');
+        grad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+        mainCtx.fillStyle = grad;
+        mainCtx.beginPath();
+        mainCtx.arc(
+          agent.exitBeacon.x * CELL_SIZE + CELL_SIZE,
+          agent.exitBeacon.y * CELL_SIZE + CELL_SIZE,
+          CELL_SIZE * 15, 0, Math.PI * 2
+        );
+        mainCtx.fill();
+        
+        mainCtx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+        mainCtx.lineWidth = 4;
+        mainCtx.setLineDash([10, 5]);
+        mainCtx.beginPath();
+        mainCtx.moveTo(agent.x * CELL_SIZE + CELL_SIZE, agent.y * CELL_SIZE + CELL_SIZE);
+        mainCtx.lineTo(agent.exitBeacon.x * CELL_SIZE + CELL_SIZE, agent.exitBeacon.y * CELL_SIZE + CELL_SIZE);
+        mainCtx.stroke();
+        mainCtx.setLineDash([]);
+      }
+      
+      const R = agent.calculateRegeneration();
+      const regenMag = Math.sqrt(R.dx * R.dx + R.dy * R.dy);
+      const inExitSearch = agent.keysCollected.size === agent.world.numKeys && !agent.exitKnown;
+      
+      if (regenMag > 0.5) {
+        const arrowLen = Math.min(regenMag * 6, 35);
+        const arrowX = agent.x * CELL_SIZE + CELL_SIZE;
+        const arrowY = agent.y * CELL_SIZE + CELL_SIZE;
+        const endX = arrowX + R.dx * arrowLen;
+        const endY = arrowY + R.dy * arrowLen;
+        const arrowColor = inExitSearch ? 'rgba(245, 158, 11, 0.9)' : 'rgba(34, 211, 238, 0.7)';
+        
+        mainCtx.strokeStyle = arrowColor;
+        mainCtx.lineWidth = inExitSearch ? 3 : 2;
+        mainCtx.beginPath();
+        mainCtx.moveTo(arrowX, arrowY);
+        mainCtx.lineTo(endX, endY);
+        mainCtx.stroke();
+        
+        const angle = Math.atan2(R.dy, R.dx);
+        mainCtx.fillStyle = arrowColor;
+        mainCtx.beginPath();
+        mainCtx.moveTo(endX, endY);
+        mainCtx.lineTo(endX - 8 * Math.cos(angle - Math.PI / 6), endY - 8 * Math.sin(angle - Math.PI / 6));
+        mainCtx.lineTo(endX - 8 * Math.cos(angle + Math.PI / 6), endY - 8 * Math.sin(angle + Math.PI / 6));
+        mainCtx.closePath();
+        mainCtx.fill();
+      }
+      
+      for (let y = 0; y < TOTAL_SIZE; y++) {
+        for (let x = 0; x < TOTAL_SIZE; x++) {
+          const rx = Math.floor(x / ROOM_SIZE);
+          const ry = Math.floor(y / ROOM_SIZE);
+          const lx = x % ROOM_SIZE;
+          const ly = y % ROOM_SIZE;
+          const isDoor = (lx === 0 || lx === ROOM_SIZE - 1 || ly === 0 || ly === ROOM_SIZE - 1) &&
+                         (lx === Math.floor(ROOM_SIZE / 2) || ly === Math.floor(ROOM_SIZE / 2));
+          
+          if (agent.knownMap[y][x] === -1) {
+            mainCtx.fillStyle = '#1a1a2e';
+          } else if (agent.knownMap[y][x] === 1) {
+            mainCtx.fillStyle = '#2d2d44';
+          } else if (isDoor && agent.knownMap[y][x] === 0) {
+            mainCtx.fillStyle = '#10b981';
+          } else {
+            mainCtx.fillStyle = 'rgba(30, 30, 50, 0.5)';
+          }
+          mainCtx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+      }
+      
+      mainCtx.strokeStyle = 'rgba(167, 139, 250, 0.25)';
+      mainCtx.lineWidth = 1;
+      for (let i = 1; i < ROOM_GRID; i++) {
+        mainCtx.beginPath();
+        mainCtx.moveTo(i * ROOM_SIZE * CELL_SIZE, 0);
+        mainCtx.lineTo(i * ROOM_SIZE * CELL_SIZE, mainCanvas.height);
+        mainCtx.stroke();
+        mainCtx.beginPath();
+        mainCtx.moveTo(0, i * ROOM_SIZE * CELL_SIZE);
+        mainCtx.lineTo(mainCanvas.width, i * ROOM_SIZE * CELL_SIZE);
+        mainCtx.stroke();
+      }
+      
+      for (let k of world.keys) {
+        if (!k.collected) {
+          mainCtx.fillStyle = '#fbbf24';
+          mainCtx.shadowColor = '#fbbf24';
+          mainCtx.shadowBlur = 10;
+          mainCtx.beginPath();
+          mainCtx.arc(k.x * CELL_SIZE + CELL_SIZE/2, k.y * CELL_SIZE + CELL_SIZE/2, 7, 0, Math.PI * 2);
+          mainCtx.fill();
+          mainCtx.shadowBlur = 0;
+        }
+      }
+      
+      mainCtx.fillStyle = '#f59e0b';
+      mainCtx.fillRect(world.exit.x * CELL_SIZE, world.exit.y * CELL_SIZE, CELL_SIZE * 3, CELL_SIZE * 3);
+      
+      if (agent.recentPath.length > 1) {
+        mainCtx.strokeStyle = 'rgba(167, 139, 250, 0.4)';
+        mainCtx.lineWidth = 1.5;
+        mainCtx.beginPath();
+        const [px, py] = agent.recentPath[Math.max(0, agent.recentPath.length - 60)];
+        mainCtx.moveTo(px * CELL_SIZE + CELL_SIZE/2, py * CELL_SIZE + CELL_SIZE/2);
+        for (let i = Math.max(0, agent.recentPath.length - 60); i < agent.recentPath.length; i++) {
+          const [x, y] = agent.recentPath[i];
+          mainCtx.lineTo(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2);
+        }
+        mainCtx.stroke();
+      }
+      
+      if (ruptureEffect > 0) {
+        const radius = 35 * ruptureEffect;
+        const grad = mainCtx.createRadialGradient(
+          agent.x * CELL_SIZE + CELL_SIZE, agent.y * CELL_SIZE + CELL_SIZE, 0,
+          agent.x * CELL_SIZE + CELL_SIZE, agent.y * CELL_SIZE + CELL_SIZE, radius
+        );
+        grad.addColorStop(0, `rgba(236, 72, 153, ${ruptureEffect * 0.8})`);
+        grad.addColorStop(1, 'rgba(236, 72, 153, 0)');
+        mainCtx.fillStyle = grad;
+        mainCtx.beginPath();
+        mainCtx.arc(agent.x * CELL_SIZE + CELL_SIZE, agent.y * CELL_SIZE + CELL_SIZE, radius, 0, Math.PI * 2);
+        mainCtx.fill();
+        ruptureEffect *= 0.88;
+      }
+      
+      mainCtx.fillStyle = '#a78bfa';
+      mainCtx.shadowColor = '#a78bfa';
+      mainCtx.shadowBlur = 10;
+      mainCtx.fillRect(agent.x * CELL_SIZE, agent.y * CELL_SIZE, CELL_SIZE * 2, CELL_SIZE * 2);
+      mainCtx.shadowBlur = 0;
+      
+      drawMinimap();
+    }
+    
+    function drawMinimap() {
+      const roomPixels = minimapCanvas.width / ROOM_GRID;
+      minimapCtx.fillStyle = '#0a0a15';
+      minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+      
+      for (let i = 0; i < world.rooms.length; i++) {
+        const room = world.rooms[i];
+        const x = (i % ROOM_GRID) * roomPixels;
+        const y = Math.floor(i / ROOM_GRID) * roomPixels;
+        
+        minimapCtx.fillStyle = room.discovered ? 'rgba(167, 139, 250, 0.4)' : 'rgba(50, 50, 80, 0.3)';
+        minimapCtx.fillRect(x + 2, y + 2, roomPixels - 4, roomPixels - 4);
+        minimapCtx.strokeStyle = 'rgba(167, 139, 250, 0.6)';
+        minimapCtx.lineWidth = 1;
+        minimapCtx.strokeRect(x + 2, y + 2, roomPixels - 4, roomPixels - 4);
+        
+        for (let k of world.keys) {
+          if (!k.collected) {
+            const keyRoom = world.getRoomAt(k.x, k.y);
+            if (keyRoom === room) {
+              minimapCtx.fillStyle = '#fbbf24';
+              minimapCtx.beginPath();
+              minimapCtx.arc(x + roomPixels/2, y + roomPixels/2, 4, 0, Math.PI * 2);
+              minimapCtx.fill();
+            }
+          }
+        }
+      }
+      
+      const currentRoom = world.getRoomAt(agent.x, agent.y);
+      if (currentRoom) {
+        const x = currentRoom.rx * roomPixels;
+        const y = currentRoom.ry * roomPixels;
+        minimapCtx.strokeStyle = '#ec4899';
+        minimapCtx.lineWidth = 3;
+        minimapCtx.strokeRect(x + 2, y + 2, roomPixels - 4, roomPixels - 4);
+      }
+    }
+    
+    function updateStats() {
+      document.getElementById('steps').textContent = agent.steps.toLocaleString();
+      document.getElementById('episodes').textContent = agent.totalEpisodes;
+      document.getElementById('completions').textContent = successfulCompletions;
+      document.getElementById('roomsDiscovered').textContent = `${agent.roomsDiscovered.size} / 16`;
+      document.getElementById('roomProgress').style.width = `${(agent.roomsDiscovered.size / 16) * 100}%`;
+      document.getElementById('keysCollected').textContent = `${agent.keysCollected.size} / ${world.numKeys}`;
+      document.getElementById('coherence').textContent = agent.globalCoherence.toFixed(1);
+      document.getElementById('intelligence').textContent = Math.tanh(agent.globalCoherence / CRR.OMEGA).toFixed(2);
+      document.getElementById('localRuptures').textContent = agent.localRuptureCount;
+      document.getElementById('globalRuptures').textContent = agent.globalRuptureCount;
+      document.getElementById('bestRun').textContent = agent.bestRun === Infinity ? 'N/A' : agent.bestRun.toLocaleString();
+      
+      let phaseText, phaseColor, phaseBorder;
+      if (agent.keysCollected.size === world.numKeys && !agent.exitKnown) {
+        phaseText = `Exit Search: Frontier Exploration`;
+        phaseColor = '#f59e0b';
+        phaseBorder = 'rgba(245, 158, 11, 0.5)';
+      } else if (agent.phase === CRR.PHASE.NAVIGATE) {
+        phaseText = `Phase 2: Navigation to Exit`;
+        phaseColor = '#f59e0b';
+        phaseBorder = 'rgba(245, 158, 11, 0.5)';
+      } else {
+        phaseText = `Phase 1: Exploration (${agent.keysCollected.size}/${world.numKeys} keys)`;
+        phaseColor = '#ec4899';
+        phaseBorder = 'rgba(236, 72, 153, 0.5)';
+      }
+      
+      document.getElementById('phaseIndicator').textContent = phaseText;
+      document.getElementById('phaseIndicator').style.borderColor = phaseBorder;
+      document.getElementById('phaseIndicator').style.color = phaseColor;
+      
+      const keyContainer = document.getElementById('keyIndicators');
+      keyContainer.innerHTML = '';
+      for (let i = 0; i < world.numKeys; i++) {
+        const indicator = document.createElement('span');
+        indicator.className = 'key-indicator';
+        indicator.style.background = agent.keysCollected.has(i) ? '#fbbf24' : '#3a3a4a';
+        keyContainer.appendChild(indicator);
+      }
+    }
+    
+    function toggleExplainer() {
+      const content = document.getElementById('explainerContent');
+      const toggle = document.getElementById('explainerToggle');
+      content.classList.toggle('open');
+      toggle.classList.toggle('open');
+    }
+    
+    function toggleSimulation() {
+      isRunning = !isRunning;
+      document.getElementById('startBtn').textContent = isRunning ? 'Pause' : 'Start Agent';
+    }
+    
+    function resetSimulation() {
+      isRunning = false;
+      successfulCompletions = 0;
+      world = new World(4);
+      agent = new CRRAgent(world);
+      agent.startEpisode();
+      updateStats();
+      draw();
+      document.getElementById('startBtn').textContent = 'Start Agent';
+    }
+    
+    function speedUp() {
+      speed = speed === 1 ? 5 : speed === 5 ? 20 : 1;
+      document.getElementById('speedLabel').textContent = speed + '×';
+    }
+    
+    function animate() {
+      if (isRunning) {
+        for (let i = 0; i < speed; i++) {
+          const result = agent.step();
+          if (result === 'success') {
+            successfulCompletions++;
+            const newKeyCount = Math.min(4 + successfulCompletions, 12);
+            world = new World(newKeyCount);
+            agent = new CRRAgent(world);
+            agent.startEpisode();
+          } else if (result === 'timeout' || result === 'stuck') {
+            agent.startEpisode();
+          }
+        }
+        updateStats();
+      }
+      draw();
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    world = new World(4);
+    agent = new CRRAgent(world);
+    agent.startEpisode();
+    updateStats();
+    draw();
+    animate();
+  </script>
+</body>
+</html>

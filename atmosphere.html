@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Atmospheric Molecular Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .main-container {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+            max-width: 1600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: #666666;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .equation-banner {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            font-family: 'Georgia', monospace;
+            font-size: 0.95rem;
+            color: #495057;
+            margin-bottom: 30px;
+        }
+
+        .simulation-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            margin-bottom: 30px;
+            height: 700px;
+        }
+
+        .molecule-palette {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .palette-section {
+            margin-bottom: 20px;
+        }
+
+        .palette-section h3 {
+            color: #495057;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .molecule-item {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            user-select: none;
+        }
+
+        .molecule-item:hover {
+            background: #f8f9fa;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .molecule-symbol {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .molecule-name {
+            font-size: 0.8rem;
+            color: #495057;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .molecule-formula {
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+
+        .atmosphere-container {
+            position: relative;
+            background: linear-gradient(135deg, #000 0%, #001122 100%);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #atmosphereCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .analysis-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .analysis-section {
+            margin-bottom: 20px;
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .analysis-section h4 {
+            color: #495057;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .ucf-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .ucf-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .ucf-value {
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .molecule-detected {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: #155724;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #f9fafb;
+            border-color: #2563eb;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .atmospheric-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 15, 30, 0.9);
+            color: rgba(200, 220, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            backdrop-filter: blur(8px);
+        }
+
+        .atmospheric-overlay .title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #88ddff;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .metric-row-atm {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-value-atm {
+            color: #88ff88;
+            font-weight: bold;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #4a9eff;
+            border-radius: 50%;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .intensity-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .intensity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #17a2b8, #6f42c1);
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+            width: 0%;
+        }
+
+        .system-legend {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>CRR Atmospheric Molecular Simulation</h1>
+            <div class="subtitle">Coherence • Rupture • Regeneration Framework</div>
+        </div>
+
+        <div class="equation-banner">
+            CRR Atmospheric Integration: C(x,t) = ∫ L(x,τ) dτ • δ(t-t₀) • R[χ](x,t) = ∫ φ(x->,τ) e^(C(x)/Ω) dτ
+        </div>
+
+        <div class="system-legend">
+            <p style="font-size: 0.95rem; color: #495057; line-height: 1.6; margin: 0;">
+                Many of our simulations utilise invisible (or visible) atmospheres to integrate the agents. For example, photosynthesising leaves which oxygenate the air, clouds which cohere because of water vapour in the atmosphere. This CRR demonstration aims to visually demonstrate how these coherence functions are utilised, using a highly visual, albeit dramatically rendered, simulation. This also enables real-time quantitative metrics and even LLM derived qualitative statements, depending on the field-state.
+            </p>
+        </div>
+
+        <div class="simulation-layout">
+            <aside class="molecule-palette">
+                <div class="palette-section">
+                    <h3>🪵 Agarwood</h3>
+                    <div class="molecule-item" data-scent="agarwood" data-compound="pec">
+                        <div class="molecule-symbol">🔸</div>
+                        <div class="molecule-name">2-(2-Phenylethyl)chromone</div>
+                        <div class="molecule-formula">C₁₇H₁₄O₂ (MW: 250.29)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="agarwood" data-compound="agarospirol">
+                        <div class="molecule-symbol">🔶</div>
+                        <div class="molecule-name">Agarospirol</div>
+                        <div class="molecule-formula">C₁₅H₂₆O (MW: 222.37)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🍯 Honey</h3>
+                    <div class="molecule-item" data-scent="honey" data-compound="phenylacetic">
+                        <div class="molecule-symbol">🔸</div>
+                        <div class="molecule-name">Phenylacetic Acid</div>
+                        <div class="molecule-formula">C₈H₈O₂ (MW: 136.15)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="honey" data-compound="methyl_anthranilate">
+                        <div class="molecule-symbol">🔷</div>
+                        <div class="molecule-name">Methyl Anthranilate</div>
+                        <div class="molecule-formula">C₈H₉NO₂ (MW: 151.16)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🌊 Ocean</h3>
+                    <div class="molecule-item" data-scent="ocean" data-compound="dimethyl_sulfide">
+                        <div class="molecule-symbol">🔹</div>
+                        <div class="molecule-name">Dimethyl Sulfide</div>
+                        <div class="molecule-formula">C₂H₆S (MW: 62.13)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="ocean" data-compound="geosmin">
+                        <div class="molecule-symbol">🔶</div>
+                        <div class="molecule-name">Geosmin</div>
+                        <div class="molecule-formula">C₁₂H₂₂O (MW: 182.30)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🌹 Rose</h3>
+                    <div class="molecule-item" data-scent="rose" data-compound="phenylethyl_alcohol">
+                        <div class="molecule-symbol">🌺</div>
+                        <div class="molecule-name">Phenylethyl Alcohol</div>
+                        <div class="molecule-formula">C₈H₁₀O (MW: 122.16)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="rose" data-compound="geraniol">
+                        <div class="molecule-symbol">🔻</div>
+                        <div class="molecule-name">Geraniol</div>
+                        <div class="molecule-formula">C₁₀H₁₈O (MW: 154.25)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🍋 Citrus</h3>
+                    <div class="molecule-item" data-scent="citrus" data-compound="limonene">
+                        <div class="molecule-symbol">🟡</div>
+                        <div class="molecule-name">D-Limonene</div>
+                        <div class="molecule-formula">C₁₀H₁₆ (MW: 136.23)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="citrus" data-compound="citral">
+                        <div class="molecule-symbol">⚡</div>
+                        <div class="molecule-name">Citral</div>
+                        <div class="molecule-formula">C₁₀H₁₆O (MW: 152.23)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🌿 Mint</h3>
+                    <div class="molecule-item" data-scent="mint" data-compound="menthol">
+                        <div class="molecule-symbol">❄️</div>
+                        <div class="molecule-name">L-Menthol</div>
+                        <div class="molecule-formula">C₁₀H₂₀O (MW: 156.27)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="mint" data-compound="eucalyptol">
+                        <div class="molecule-symbol">🧊</div>
+                        <div class="molecule-name">Eucalyptol</div>
+                        <div class="molecule-formula">C₁₀H₁₈O (MW: 154.25)</div>
+                    </div>
+                </div>
+                
+                <div class="palette-section">
+                    <h3>🔥 Smoke</h3>
+                    <div class="molecule-item" data-scent="smoke" data-compound="guaiacol">
+                        <div class="molecule-symbol">🪨</div>
+                        <div class="molecule-name">Guaiacol</div>
+                        <div class="molecule-formula">C₇H₈O₂ (MW: 124.14)</div>
+                    </div>
+                    <div class="molecule-item" data-scent="smoke" data-compound="vanillin">
+                        <div class="molecule-symbol">🟤</div>
+                        <div class="molecule-name">Vanillin</div>
+                        <div class="molecule-formula">C₈H₈O₃ (MW: 152.15)</div>
+                    </div>
+                </div>
+            </aside>
+            
+            <main class="atmosphere-container">
+                <canvas id="atmosphereCanvas"></canvas>
+                
+                <div class="atmospheric-overlay">
+                    <div class="title">CRR Atmospheric Monitor</div>
+                    
+                    <div class="metric-row-atm">
+                        <span>Field State:</span>
+                        <span class="metric-value-atm" id="fieldState">Stable</span>
+                    </div>
+                    <div class="metric-row-atm">
+                        <span>Molecular Count:</span>
+                        <span class="metric-value-atm" id="moleculeCount">0</span>
+                    </div>
+                    <div class="metric-row-atm">
+                        <span>Diffusion Rate:</span>
+                        <span class="metric-value-atm" id="diffusionRate">0.00</span>
+                    </div>
+                    <div class="metric-row-atm">
+                        <span>Temperature:</span>
+                        <span class="metric-value-atm" id="tempDisplay">20.0°C</span>
+                    </div>
+                    <div class="metric-row-atm">
+                        <span>Pressure:</span>
+                        <span class="metric-value-atm" id="pressureDisplay">1.013 bar</span>
+                    </div>
+                </div>
+            </main>
+            
+            <aside class="analysis-panel">
+                <div class="analysis-section">
+                    <h4>Coherence Analysis</h4>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Coherence State C(x)</div>
+                        <div class="ucf-value" id="coherenceValue">0.0000</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Rupture Events δ(t-t₀)</div>
+                        <div class="ucf-value" id="ruptureValue">0</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Rebirth State R[χ]</div>
+                        <div class="ucf-value" id="rebirthValue">0.0000</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Molecular Synergy</div>
+                        <div class="ucf-value" id="synergyValue">0.0000</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Quantum Tunneling</div>
+                        <div class="ucf-value" id="quantumValue">0.0000</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Emergent Complexity</div>
+                        <div class="ucf-value" id="complexityValue">0.0000</div>
+                    </div>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>Detected Molecules</h4>
+                    <div id="detectedMolecules">
+                        <div style="color: #6c757d; font-size: 0.8rem; text-align: center; padding: 20px;">
+                            No molecules detected
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>Atmospheric Intensity</h4>
+                    <div style="font-size: 0.8rem; color: #6c757d; margin-bottom: 5px;">
+                        Molecular Concentration (ppm)
+                    </div>
+                    <div class="intensity-bar">
+                        <div class="intensity-fill" id="intensityFill"></div>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #495057; margin-top: 5px; text-align: center;">
+                        <span id="intensityValue">0.00</span> ppm
+                    </div>
+                </div>
+                
+                <div class="analysis-section">
+                    <h4>Memory Integration</h4>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Buffer Length</div>
+                        <div class="ucf-value" id="memoryLength">0</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Adaptation Level</div>
+                        <div class="ucf-value" id="adaptationLevel">0.0%</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="clearAtmosphere()">🧹 Clear Atmosphere</button>
+            <button class="control-btn" onclick="triggerRupture()">💥 Trigger Rupture</button>
+            <button class="control-btn" onclick="enhanceCoherence()">🌊 Boost Coherence</button>
+            <button class="control-btn" onclick="activateRegeneration()">🔄 Activate Regeneration</button>
+        </div>
+    </div>
+
+    <script>
+        class UCFAtmosphericSystem {
+            constructor() {
+                this.canvas = document.getElementById('atmosphereCanvas');
+                this.setupCanvas();
+                
+                this.gl = this.canvas.getContext('webgl2', { 
+                    antialias: true, 
+                    alpha: false, 
+                    powerPreference: "high-performance" 
+                });
+                
+                if (!this.gl) {
+                    console.error('WebGL2 not supported');
+                    return;
+                }
+                
+                // UCF State Variables
+                this.ucfState = {
+                    coherence: 0.0,
+                    rupture: 0,
+                    rebirth: 0.0,
+                    time: 0,
+                    memoryTrace: new Float32Array(500),
+                    memoryIndex: 0,
+                    molecularSynergy: 0.0,
+                    temperatureField: 20.0,
+                    entropyGradient: 0.0,
+                    quantumTunneling: 0.0,
+                    emergentComplexity: 0.0,
+                    adaptationState: 0.0,
+                    spatialGradients: new Float32Array(50),
+                    temporalCorrelations: new Float32Array(25)
+                };
+                
+                // Atmospheric System
+                this.atmosphere = {
+                    molecules: [],
+                    totalConcentration: 0,
+                    dominantScent: null,
+                    atmosphericPressure: 1.013,
+                    humidity: 0.5,
+                    airflow: 0.1,
+                    diffusionRate: 0.05
+                };
+                
+                // Scent molecular databases
+                this.scentProfiles = {
+                    agarwood: {
+                        color: [0.8, 0.6, 0.2],
+                        baseFreq: 0.618,
+                        temperatureOptimal: 35.0,
+                        synergy: ['honey', 'smoke'],
+                        compounds: {
+                            pec: { mw: 250.29, intensity: 0.8, volatility: 0.6, threshold: 0.001 },
+                            agarospirol: { mw: 222.37, intensity: 0.7, volatility: 0.5, threshold: 0.005 }
+                        }
+                    },
+                    honey: {
+                        color: [1.0, 0.8, 0.3],
+                        baseFreq: 0.786,
+                        temperatureOptimal: 25.0,
+                        synergy: ['rose', 'citrus'],
+                        compounds: {
+                            phenylacetic: { mw: 136.15, intensity: 0.9, volatility: 0.8, threshold: 0.002 },
+                            methyl_anthranilate: { mw: 151.16, intensity: 0.7, volatility: 0.6, threshold: 0.001 }
+                        }
+                    },
+                    ocean: {
+                        color: [0.2, 0.6, 0.9],
+                        baseFreq: 0.577,
+                        temperatureOptimal: 15.0,
+                        synergy: ['mint'],
+                        compounds: {
+                            dimethyl_sulfide: { mw: 62.13, intensity: 1.0, volatility: 1.0, threshold: 0.0001 },
+                            geosmin: { mw: 182.30, intensity: 0.8, volatility: 0.4, threshold: 0.00001 }
+                        }
+                    },
+                    rose: {
+                        color: [0.9, 0.3, 0.5],
+                        baseFreq: 0.707,
+                        temperatureOptimal: 22.0,
+                        synergy: ['honey', 'citrus'],
+                        compounds: {
+                            phenylethyl_alcohol: { mw: 122.16, intensity: 0.95, volatility: 0.7, threshold: 0.003 },
+                            geraniol: { mw: 154.25, intensity: 0.8, volatility: 0.8, threshold: 0.002 }
+                        }
+                    },
+                    citrus: {
+                        color: [0.9, 0.9, 0.2],
+                        baseFreq: 0.866,
+                        temperatureOptimal: 20.0,
+                        synergy: ['mint', 'rose'],
+                        compounds: {
+                            limonene: { mw: 136.23, intensity: 0.85, volatility: 0.9, threshold: 0.01 },
+                            citral: { mw: 152.23, intensity: 0.9, volatility: 0.8, threshold: 0.0002 }
+                        }
+                    },
+                    mint: {
+                        color: [0.3, 0.9, 0.6],
+                        baseFreq: 0.654,
+                        temperatureOptimal: 18.0,
+                        synergy: ['citrus', 'ocean'],
+                        compounds: {
+                            menthol: { mw: 156.27, intensity: 0.95, volatility: 0.6, threshold: 0.0008 },
+                            eucalyptol: { mw: 154.25, intensity: 0.85, volatility: 0.8, threshold: 0.001 }
+                        }
+                    },
+                    smoke: {
+                        color: [0.4, 0.3, 0.2],
+                        baseFreq: 0.433,
+                        temperatureOptimal: 45.0,
+                        synergy: ['agarwood'],
+                        compounds: {
+                            guaiacol: { mw: 124.14, intensity: 0.9, volatility: 0.5, threshold: 0.001 },
+                            vanillin: { mw: 152.15, intensity: 0.85, volatility: 0.6, threshold: 0.0001 }
+                        }
+                    }
+                };
+                
+                this.init();
+            }
+            
+            setupCanvas() {
+                const resize = () => {
+                    this.canvas.width = this.canvas.offsetWidth;
+                    this.canvas.height = this.canvas.offsetHeight;
+                    
+                    if (this.gl) {
+                        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                    }
+                };
+                resize();
+                window.addEventListener('resize', resize);
+            }
+            
+            init() {
+                this.setupMoleculeInteraction();
+                this.createShaders();
+                this.setupGeometry();
+                this.createParticles();
+                this.animate();
+            }
+            
+            setupMoleculeInteraction() {
+                const moleculeItems = document.querySelectorAll('.molecule-item');
+                
+                moleculeItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const scent = e.target.closest('.molecule-item').dataset.scent;
+                        const compound = e.target.closest('.molecule-item').dataset.compound;
+                        this.addMoleculeToAtmosphere(scent, compound);
+                        
+                        // Visual feedback
+                        e.target.closest('.molecule-item').style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            e.target.closest('.molecule-item').style.transform = '';
+                        }, 200);
+                    });
+                });
+            }
+            
+            addMoleculeToAtmosphere(scentType, compound) {
+                const profile = this.scentProfiles[scentType];
+                const compoundData = profile.compounds[compound];
+                
+                if (!compoundData) return;
+                
+                const baseConcentration = compoundData.intensity * compoundData.volatility;
+                const temperatureFactor = Math.exp(-((profile.temperatureOptimal - this.ucfState.temperatureField) ** 2) / 100);
+                const humidityFactor = 1.0 - (this.atmosphere.humidity - 0.5) * 0.3;
+                const pressureFactor = this.atmosphere.atmosphericPressure / 1.013;
+                
+                const molecule = {
+                    id: Date.now() + Math.random(),
+                    scent: scentType,
+                    compound: compound,
+                    concentration: baseConcentration * temperatureFactor * humidityFactor * pressureFactor,
+                    baseConcentration: baseConcentration,
+                    mw: compoundData.mw,
+                    threshold: compoundData.threshold,
+                    volatility: compoundData.volatility,
+                    timeAdded: this.ucfState.time,
+                    decayRate: 0.001 / (compoundData.volatility + 0.1),
+                    bindingAffinity: Math.random() * 0.5 + compoundData.volatility * 0.5,
+                    spatialPosition: { 
+                        x: Math.random(), 
+                        y: Math.random(), 
+                        z: Math.random() 
+                    },
+                    diffusionRate: compoundData.volatility * this.atmosphere.diffusionRate,
+                    cooperativity: profile.synergy.length > 0 ? 1.2 : 1.0,
+                    persistenceBonus: 1.0 + compoundData.intensity * 0.5
+                };
+                
+                // Apply synergistic effects with existing molecules
+                const synergyPartners = this.atmosphere.molecules.filter(m => 
+                    profile.synergy.includes(m.scent));
+                
+                if (synergyPartners.length > 0) {
+                    const synergyFactor = 1.0 + synergyPartners.length * 0.15;
+                    molecule.concentration *= synergyFactor;
+                    molecule.cooperativity *= synergyFactor;
+                }
+                
+                this.atmosphere.molecules.push(molecule);
+                this.updateAtmosphere();
+                this.createMolecularParticles(scentType, Math.floor(5 + molecule.concentration * 10));
+                
+                console.log(`Added ${compound} (${scentType}) - Concentration: ${molecule.concentration.toFixed(4)}`);
+            }
+            
+            updateAtmosphere() {
+                let totalConc = 0;
+                const scentTotals = {};
+                
+                // Update molecules and calculate concentrations
+                this.atmosphere.molecules = this.atmosphere.molecules.filter(mol => {
+                    // Apply slower decay with persistence
+                    const effectiveDecayRate = mol.decayRate * (1.0 / mol.persistenceBonus);
+                    mol.concentration *= Math.exp(-effectiveDecayRate);
+                    
+                    // Update spatial position with diffusion
+                    mol.spatialPosition.x += (Math.random() - 0.5) * mol.diffusionRate * 0.01;
+                    mol.spatialPosition.y += (Math.random() - 0.5) * mol.diffusionRate * 0.01;
+                    mol.spatialPosition.z += (Math.random() - 0.5) * mol.diffusionRate * 0.01;
+                    
+                    // Boundary conditions
+                    mol.spatialPosition.x = Math.max(0, Math.min(1, mol.spatialPosition.x));
+                    mol.spatialPosition.y = Math.max(0, Math.min(1, mol.spatialPosition.y));
+                    mol.spatialPosition.z = Math.max(0, Math.min(1, mol.spatialPosition.z));
+                    
+                    if (mol.concentration < 0.005) return false;
+                    
+                    totalConc += mol.concentration;
+                    scentTotals[mol.scent] = (scentTotals[mol.scent] || 0) + mol.concentration;
+                    return true;
+                });
+                
+                this.atmosphere.totalConcentration = totalConc;
+                this.atmosphere.diffusionRate = 0.05 + totalConc * 0.1;
+                
+                // Determine dominant scent
+                let maxScent = null;
+                let maxConc = 0;
+                for (const [scent, conc] of Object.entries(scentTotals)) {
+                    if (conc > maxConc) {
+                        maxScent = scent;
+                        maxConc = conc;
+                    }
+                }
+                this.atmosphere.dominantScent = maxScent;
+                
+                this.updateUCFCoherence();
+            }
+            
+            updateUCFCoherence() {
+                const molecules = this.atmosphere.molecules;
+                const currentTime = this.ucfState.time;
+                
+                if (molecules.length === 0) {
+                    this.ucfState.coherence *= 0.98;
+                    this.ucfState.rebirth *= 0.99;
+                    this.ucfState.emergentComplexity *= 0.97;
+                    return;
+                }
+                
+                // Calculate coherence with memory integration
+                let coherenceSum = 0;
+                let synergyEffect = 0;
+                let quantumTunneling = 0;
+                
+                molecules.forEach((mol, i) => {
+                    const age = currentTime - mol.timeAdded;
+                    const profile = this.scentProfiles[mol.scent];
+                    const compound = profile.compounds[mol.compound];
+                    
+                    const shortTermWeight = Math.exp(-age * 0.05);
+                    const mediumTermWeight = Math.exp(-age * 0.01);
+                    const longTermWeight = Math.exp(-age * 0.002);
+                    
+                    const tempFactor = Math.exp(-((profile.temperatureOptimal - this.ucfState.temperatureField) ** 2) / 50);
+                    
+                    const molecularContrib = (mol.concentration * compound.mw / 200.0) * 
+                                            (shortTermWeight * 0.5 + mediumTermWeight * 0.3 + longTermWeight * 0.2) *
+                                            tempFactor * compound.intensity;
+                    
+                    coherenceSum += molecularContrib;
+                    
+                    if (compound.intensity > 0.8) {
+                        quantumTunneling += molecularContrib * compound.intensity * 
+                                          Math.sin(currentTime * profile.baseFreq + i * 0.618);
+                    }
+                });
+                
+                // Calculate synergistic effects
+                const scentTypes = [...new Set(molecules.map(m => m.scent))];
+                scentTypes.forEach(scent1 => {
+                    const profile1 = this.scentProfiles[scent1];
+                    scentTypes.forEach(scent2 => {
+                        if (scent1 !== scent2 && profile1.synergy.includes(scent2)) {
+                            const conc1 = molecules.filter(m => m.scent === scent1).reduce((s, m) => s + m.concentration, 0);
+                            const conc2 = molecules.filter(m => m.scent === scent2).reduce((s, m) => s + m.concentration, 0);
+                            synergyEffect += Math.sqrt(conc1 * conc2) * 0.3;
+                        }
+                    });
+                });
+                
+                this.ucfState.coherence = coherenceSum + synergyEffect;
+                this.ucfState.molecularSynergy = synergyEffect;
+                this.ucfState.quantumTunneling = quantumTunneling;
+                
+                // Update memory traces
+                this.ucfState.memoryTrace[this.ucfState.memoryIndex] = this.ucfState.coherence;
+                this.ucfState.memoryIndex = (this.ucfState.memoryIndex + 1) % 500;
+                
+                // Rupture detection
+                const recentMemory = [];
+                for (let i = 1; i <= 10; i++) {
+                    const idx = (this.ucfState.memoryIndex - i + 500) % 500;
+                    recentMemory.push(this.ucfState.memoryTrace[idx]);
+                }
+                
+                const recentAvg = recentMemory.reduce((a, b) => a + b, 0) / 10;
+                const coherenceDiff = Math.abs(this.ucfState.coherence - recentAvg);
+                
+                if (coherenceDiff > 0.3 || synergyEffect > 0.8) {
+                    this.ucfState.rupture++;
+                }
+                
+                // Entropy and complexity
+                let entropy = 0;
+                scentTypes.forEach(scent => {
+                    const p = molecules.filter(m => m.scent === scent).length / molecules.length;
+                    if (p > 0) entropy -= p * Math.log2(p);
+                });
+                this.ucfState.entropyGradient = entropy;
+                
+                this.ucfState.emergentComplexity = Math.tanh(
+                    (synergyEffect * entropy + quantumTunneling * 0.1)
+                );
+                
+                // Rebirth state calculation
+                let rebirthSum = 0;
+                const alpha = 0.618;
+                
+                for (let i = 0; i < 50; i++) {
+                    const weight = Math.exp(-i * 0.05) * alpha;
+                    const idx = (this.ucfState.memoryIndex - i + 500) % 500;
+                    rebirthSum += this.ucfState.memoryTrace[idx] * weight;
+                }
+                
+                this.ucfState.rebirth = rebirthSum / 50.0 + 
+                                       this.ucfState.quantumTunneling * 0.1 + 
+                                       this.ucfState.emergentComplexity * 0.2;
+                
+                // Temperature modulation
+                this.ucfState.temperatureField += (Math.random() - 0.5) * 0.1;
+                this.ucfState.temperatureField = Math.max(10, Math.min(50, this.ucfState.temperatureField));
+                
+                this.updateDisplays();
+            }
+            
+            updateDisplays() {
+                document.getElementById('coherenceValue').textContent = this.ucfState.coherence.toFixed(4);
+                document.getElementById('ruptureValue').textContent = this.ucfState.rupture;
+                document.getElementById('rebirthValue').textContent = this.ucfState.rebirth.toFixed(4);
+                document.getElementById('synergyValue').textContent = this.ucfState.molecularSynergy.toFixed(4);
+                document.getElementById('quantumValue').textContent = this.ucfState.quantumTunneling.toFixed(4);
+                document.getElementById('complexityValue').textContent = this.ucfState.emergentComplexity.toFixed(4);
+                
+                document.getElementById('fieldState').textContent = 
+                    this.ucfState.coherence > 0.5 ? 'Stable' : this.ucfState.coherence > 0.2 ? 'Variable' : 'Disrupted';
+                document.getElementById('moleculeCount').textContent = this.atmosphere.molecules.length;
+                document.getElementById('diffusionRate').textContent = this.atmosphere.diffusionRate.toFixed(2);
+                document.getElementById('tempDisplay').textContent = this.ucfState.temperatureField.toFixed(1) + '°C';
+                document.getElementById('pressureDisplay').textContent = this.atmosphere.atmosphericPressure.toFixed(3) + ' bar';
+                
+                const intensity = Math.min(this.atmosphere.totalConcentration * 100, 100);
+                document.getElementById('intensityFill').style.width = intensity + '%';
+                document.getElementById('intensityValue').textContent = 
+                    (this.atmosphere.totalConcentration * 1000).toFixed(2);
+                
+                document.getElementById('memoryLength').textContent = this.ucfState.memoryTrace.filter(x => x > 0).length;
+                document.getElementById('adaptationLevel').textContent = (this.ucfState.adaptationState * 100).toFixed(1) + '%';
+                
+                this.updateDetectedMoleculesDisplay();
+            }
+            
+            updateDetectedMoleculesDisplay() {
+                const container = document.getElementById('detectedMolecules');
+                if (this.atmosphere.molecules.length === 0) {
+                    container.innerHTML = '<div style="color: #6c757d; font-size: 0.8rem; text-align: center; padding: 20px;">No molecules detected</div>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                const scentGroups = {};
+                this.atmosphere.molecules.forEach(mol => {
+                    if (!scentGroups[mol.scent]) scentGroups[mol.scent] = [];
+                    scentGroups[mol.scent].push(mol);
+                });
+                
+                Object.entries(scentGroups).forEach(([scent, molecules]) => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'molecule-detected';
+                    
+                    const totalConc = molecules.reduce((sum, mol) => sum + mol.concentration, 0);
+                    const synergyBoost = this.ucfState.molecularSynergy > 0.1 ? ' ⚡' : '';
+                    
+                    groupDiv.innerHTML = `
+                        <strong>${scent.toUpperCase()}${synergyBoost}</strong><br>
+                        <span style="font-size: 0.7rem;">Compounds: ${molecules.length}</span><br>
+                        Conc: ${(totalConc * 1000).toFixed(1)} ppm<br>
+                        <span style="font-size: 0.7rem; color: #6c757d;">
+                            ${molecules.map(m => m.compound.replace('_', '-').substring(0, 8)).join(', ')}
+                        </span>
+                    `;
+                    
+                    if (this.ucfState.molecularSynergy > 0.1) {
+                        groupDiv.style.borderColor = '#28a745';
+                        groupDiv.style.background = '#e8f5e8';
+                    }
+                    
+                    container.appendChild(groupDiv);
+                });
+            }
+            
+            createShaders() {
+                const vs = `#version 300 es
+                in vec2 a_position;
+                out vec2 v_uv;
+                void main() {
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                    v_uv = a_position;
+                }`;
+                
+                const fs = `#version 300 es
+                precision highp float;
+                in vec2 v_uv;
+                out vec4 fragColor;
+                
+                uniform vec2 u_resolution;
+                uniform float u_time;
+                uniform vec3 u_dominantColor;
+                uniform float u_coherence;
+                uniform float u_intensity;
+                uniform float u_synergy;
+                uniform float u_quantum;
+                uniform float u_complexity;
+                uniform float u_temperature;
+                uniform float u_diffusion;
+                
+                float hash(vec3 p) {
+                    p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+                    p *= 17.0;
+                    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+                }
+                
+                float noise(vec3 p) {
+                    vec3 i = floor(p);
+                    vec3 f = fract(p);
+                    f = f * f * (3.0 - 2.0 * f);
+                    
+                    return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                                   mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+                               mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                                   mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+                }
+                
+                float fractalNoise(vec3 p, int octaves) {
+                    float value = 0.0;
+                    float amplitude = 0.5;
+                    for(int i = 0; i < 8; i++) {
+                        if(i >= octaves) break;
+                        value += amplitude * noise(p);
+                        p *= 2.0 + u_complexity * 0.5;
+                        amplitude *= 0.5;
+                    }
+                    return value;
+                }
+                
+                vec3 molecularFlow(vec2 uv) {
+                    vec3 p = vec3(uv * 2.0, u_time * 0.05);
+                    
+                    float baseFlow = fractalNoise(p + vec3(u_coherence * 0.5), 6);
+                    
+                    float synergyFlow = 0.0;
+                    if(u_synergy > 0.1) {
+                        vec3 synergyP = p * (1.0 + u_synergy) + vec3(u_time * 0.1, 0.0, u_synergy * 2.0);
+                        synergyFlow = fractalNoise(synergyP, 4) * u_synergy * 0.8;
+                    }
+                    
+                    float quantumField = 0.0;
+                    if(u_quantum > 0.05) {
+                        vec3 quantumP = p + vec3(sin(u_time * 3.0 + uv.x * 10.0) * u_quantum);
+                        quantumField = smoothstep(0.6, 0.8, fractalNoise(quantumP, 3)) * u_quantum;
+                    }
+                    
+                    // Diffusion field
+                    vec3 diffusionP = p * (1.5 + u_diffusion);
+                    float diffusionField = fractalNoise(diffusionP + vec3(u_time * 0.03), 5) * u_diffusion;
+                    
+                    return vec3(baseFlow + diffusionField, synergyFlow, quantumField);
+                }
+                
+                void main() {
+                    vec2 uv = v_uv;
+                    uv.x *= u_resolution.x / u_resolution.y;
+                    
+                    vec3 molecularFlows = molecularFlow(uv);
+                    float baseFlow = molecularFlows.x;
+                    float synergyFlow = molecularFlows.y;
+                    float quantumFlow = molecularFlows.z;
+                    
+                    vec3 atmosphereColor = u_dominantColor;
+                    
+                    float molecularDensity = baseFlow * 0.4 + synergyFlow * 0.3 + quantumFlow * 0.3;
+                    molecularDensity = clamp(molecularDensity, 0.0, 1.0);
+                    
+                    float intensityFactor = 0.2 + u_intensity * 0.8;
+                    intensityFactor *= (1.0 + u_synergy * 0.5);
+                    
+                    atmosphereColor *= intensityFactor * (0.7 + molecularDensity * 0.8);
+                    
+                    if(quantumFlow > 0.5 && u_quantum > 0.1) {
+                        vec3 quantumGlow = vec3(1.0, 0.9, 0.7) * (quantumFlow - 0.5) * 2.0 * u_quantum;
+                        atmosphereColor += quantumGlow * 0.4;
+                    }
+                    
+                    if(synergyFlow > 0.3 && u_synergy > 0.1) {
+                        vec3 synergyGlow = mix(u_dominantColor, vec3(1.0, 0.8, 0.6), 0.6);
+                        synergyGlow *= (synergyFlow - 0.3) * u_synergy * 0.6;
+                        atmosphereColor = mix(atmosphereColor, atmosphereColor + synergyGlow, 0.7);
+                    }
+                    
+                    if(u_complexity > 0.2) {
+                        vec3 complexityP = vec3(uv * 3.0, u_time * 0.08);
+                        float complexPattern = abs(sin(fractalNoise(complexityP, 4) * 6.28)) * u_complexity;
+                        
+                        vec3 emergentColor = vec3(
+                            0.7 + sin(complexPattern * 3.0) * 0.3,
+                            0.6 + cos(complexPattern * 2.5) * 0.4,
+                            0.8 + sin(complexPattern * 4.0) * 0.2
+                        );
+                        
+                        atmosphereColor = mix(atmosphereColor, emergentColor * u_dominantColor, complexPattern * 0.3);
+                    }
+                    
+                    float vignette = 1.0 - length(v_uv) * (0.4 - u_coherence * 0.1);
+                    vignette = max(vignette, 0.3);
+                    atmosphereColor *= vignette;
+                    
+                    float tempColorShift = (u_temperature - 20.0) / 30.0;
+                    if(tempColorShift > 0.0) {
+                        atmosphereColor.r *= 1.0 + tempColorShift * 0.2;
+                        atmosphereColor.g *= 1.0 + tempColorShift * 0.1;
+                    } else {
+                        atmosphereColor.b *= 1.0 - tempColorShift * 0.2;
+                    }
+                    
+                    float coherenceShimmer = sin(u_time * 2.0 + length(uv) * 5.0 + u_coherence * 3.0) * 0.02;
+                    atmosphereColor += vec3(coherenceShimmer) * u_dominantColor;
+                    
+                    atmosphereColor = clamp(atmosphereColor, vec3(0.0), vec3(1.2));
+                    
+                    fragColor = vec4(atmosphereColor, 1.0);
+                }`;
+                
+                const vertShader = this.compileShader(this.gl.VERTEX_SHADER, vs);
+                const fragShader = this.compileShader(this.gl.FRAGMENT_SHADER, fs);
+                
+                this.program = this.gl.createProgram();
+                this.gl.attachShader(this.program, vertShader);
+                this.gl.attachShader(this.program, fragShader);
+                this.gl.linkProgram(this.program);
+                
+                if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
+                    console.error('Shader linking failed:', this.gl.getProgramInfoLog(this.program));
+                }
+                
+                this.uniforms = {
+                    resolution: this.gl.getUniformLocation(this.program, 'u_resolution'),
+                    time: this.gl.getUniformLocation(this.program, 'u_time'),
+                    dominantColor: this.gl.getUniformLocation(this.program, 'u_dominantColor'),
+                    coherence: this.gl.getUniformLocation(this.program, 'u_coherence'),
+                    intensity: this.gl.getUniformLocation(this.program, 'u_intensity'),
+                    synergy: this.gl.getUniformLocation(this.program, 'u_synergy'),
+                    quantum: this.gl.getUniformLocation(this.program, 'u_quantum'),
+                    complexity: this.gl.getUniformLocation(this.program, 'u_complexity'),
+                    temperature: this.gl.getUniformLocation(this.program, 'u_temperature'),
+                    diffusion: this.gl.getUniformLocation(this.program, 'u_diffusion')
+                };
+            }
+            
+            compileShader(type, source) {
+                const shader = this.gl.createShader(type);
+                this.gl.shaderSource(shader, source);
+                this.gl.compileShader(shader);
+                
+                if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+                    console.error('Shader compilation failed:', this.gl.getShaderInfoLog(shader));
+                    return null;
+                }
+                
+                return shader;
+            }
+            
+            setupGeometry() {
+                const vertices = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+                const buffer = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
+                
+                const vao = this.gl.createVertexArray();
+                this.gl.bindVertexArray(vao);
+                
+                const posLoc = this.gl.getAttribLocation(this.program, 'a_position');
+                this.gl.enableVertexAttribArray(posLoc);
+                this.gl.vertexAttribPointer(posLoc, 2, this.gl.FLOAT, false, 0, 0);
+                
+                this.vao = vao;
+            }
+            
+            createParticles() {
+                this.particles = [];
+            }
+            
+            createMolecularParticles(scentType, count) {
+                const profile = this.scentProfiles[scentType];
+                const color = profile.color;
+                
+                for (let i = 0; i < count; i++) {
+                    const particle = {
+                        x: Math.random(),
+                        y: Math.random(),
+                        vx: (Math.random() - 0.5) * 0.002,
+                        vy: (Math.random() - 0.5) * 0.002,
+                        life: 1.0,
+                        decay: 0.002 + Math.random() * 0.001,
+                        color: color,
+                        size: 2 + Math.random() * 3,
+                        scent: scentType
+                    };
+                    
+                    this.particles.push(particle);
+                }
+            }
+            
+            updateParticles() {
+                this.particles = this.particles.filter(particle => {
+                    particle.x += particle.vx + (Math.random() - 0.5) * 0.0005;
+                    particle.y += particle.vy + (Math.random() - 0.5) * 0.0005;
+                    particle.life -= particle.decay;
+                    
+                    // Boundary wrapping
+                    if (particle.x < 0) particle.x = 1;
+                    if (particle.x > 1) particle.x = 0;
+                    if (particle.y < 0) particle.y = 1;
+                    if (particle.y > 1) particle.y = 0;
+                    
+                    return particle.life > 0;
+                });
+            }
+            
+            renderParticles() {
+                this.particles.forEach(particle => {
+                    const alpha = particle.life * 0.3;
+                    const size = particle.size * particle.life;
+                    
+                    const x = particle.x * this.canvas.width;
+                    const y = particle.y * this.canvas.height;
+                    
+                    const ctx = this.canvas.getContext('2d');
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+                    gradient.addColorStop(0, `rgba(${Math.floor(particle.color[0]*255)}, ${Math.floor(particle.color[1]*255)}, ${Math.floor(particle.color[2]*255)}, ${alpha})`);
+                    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            render() {
+                this.updateAtmosphere();
+                this.updateParticles();
+                
+                // Render atmosphere
+                this.gl.useProgram(this.program);
+                this.gl.bindVertexArray(this.vao);
+                
+                const dominantColor = this.atmosphere.dominantScent ? 
+                    this.scentProfiles[this.atmosphere.dominantScent].color : [0.2, 0.4, 0.8];
+                
+                this.gl.uniform2f(this.uniforms.resolution, this.canvas.width, this.canvas.height);
+                this.gl.uniform1f(this.uniforms.time, this.ucfState.time);
+                this.gl.uniform3f(this.uniforms.dominantColor, dominantColor[0], dominantColor[1], dominantColor[2]);
+                this.gl.uniform1f(this.uniforms.coherence, this.ucfState.coherence);
+                this.gl.uniform1f(this.uniforms.intensity, Math.min(this.atmosphere.totalConcentration, 1.0));
+                this.gl.uniform1f(this.uniforms.synergy, this.ucfState.molecularSynergy);
+                this.gl.uniform1f(this.uniforms.quantum, this.ucfState.quantumTunneling);
+                this.gl.uniform1f(this.uniforms.complexity, this.ucfState.emergentComplexity);
+                this.gl.uniform1f(this.uniforms.temperature, this.ucfState.temperatureField);
+                this.gl.uniform1f(this.uniforms.diffusion, this.atmosphere.diffusionRate);
+                
+                this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
+                
+                // Render particles on top
+                this.renderParticles();
+                
+                this.ucfState.time += 0.016;
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.render();
+            }
+        }
+        
+        // Global control functions
+        function clearAtmosphere() {
+            if (window.ucfSystem) {
+                window.ucfSystem.atmosphere.molecules = [];
+                window.ucfSystem.atmosphere.totalConcentration = 0;
+                window.ucfSystem.atmosphere.dominantScent = null;
+                window.ucfSystem.ucfState.coherence = 0;
+                window.ucfSystem.ucfState.rupture = 0;
+                window.ucfSystem.ucfState.rebirth = 0;
+                window.ucfSystem.ucfState.molecularSynergy = 0;
+                window.ucfSystem.ucfState.quantumTunneling = 0;
+                window.ucfSystem.ucfState.emergentComplexity = 0;
+                window.ucfSystem.ucfState.memoryTrace.fill(0);
+                window.ucfSystem.particles = [];
+                console.log('🧹 Atmosphere cleared');
+            }
+        }
+        
+        function triggerRupture() {
+            if (window.ucfSystem) {
+                window.ucfSystem.ucfState.rupture++;
+                window.ucfSystem.ucfState.coherence = 0.1;
+                console.log('💥 Rupture event triggered');
+            }
+        }
+        
+        function enhanceCoherence() {
+            if (window.ucfSystem) {
+                window.ucfSystem.ucfState.coherence = Math.min(1.0, window.ucfSystem.ucfState.coherence + 0.3);
+                console.log('🌊 Coherence enhanced');
+            }
+        }
+        
+        function activateRegeneration() {
+            if (window.ucfSystem) {
+                window.ucfSystem.ucfState.rebirth = Math.min(1.0, window.ucfSystem.ucfState.rebirth + 0.5);
+                console.log('🔄 Regeneration activated');
+            }
+        }
+        
+        // Initialize system
+        window.addEventListener('DOMContentLoaded', () => {
+            window.ucfSystem = new UCFAtmosphericSystem();
+            console.log('🌟 UCF Atmospheric Molecular Simulation initialized');
+            console.log('   ⚛️ Molecular diffusion with UCF framework');
+            console.log('   🌊 Coherence-Rupture-Regeneration dynamics');
+            console.log('   🧬 Synergistic molecular interactions');
+            console.log('   🌀 Quantum tunneling effects');
+            console.log('   📊 Real-time atmospheric monitoring');
+        });
+    </script>
+</body>
+</html>

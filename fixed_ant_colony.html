@@ -1,0 +1,3818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coherence-Sim: Ant Colony</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #8FBC8F 30%, #D2B48C 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        .header {
+            text-align: center;
+            color: #2d1810;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            max-width: 900px;
+            margin: 10px auto;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-group {
+            background: rgba(255,255,255,0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .primary { background: #8B4513; }
+        .primary:hover { background: #A0522D; transform: translateY(-1px); }
+        .secondary { background: #CD853F; }
+        .secondary:hover { background: #DAA520; transform: translateY(-1px); }
+        .danger { background: #DC143C; }
+        .danger:hover { background: #B22222; transform: translateY(-1px); }
+        .special { background: #9932CC; }
+        .special:hover { background: #8A2BE2; transform: translateY(-1px); }
+
+        .visualization-controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .visualization-controls h3 {
+            color: #1f1f1f;
+            margin-top: 0;
+            text-align: center;
+            border-bottom: 2px solid #8B4513;
+            padding-bottom: 10px;
+        }
+
+        .control-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .control-section {
+            background: rgba(139, 69, 19, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(139, 69, 19, 0.2);
+        }
+
+        .control-section h4 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #8B4513;
+            font-size: 1.1em;
+            border-bottom: 1px solid rgba(139, 69, 19, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .control-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d1810;
+            font-size: 0.9em;
+            cursor: pointer;
+            padding: 3px 0;
+            transition: background-color 0.2s ease;
+        }
+
+        .control-section label:hover {
+            background-color: rgba(139, 69, 19, 0.1);
+            border-radius: 4px;
+            padding-left: 5px;
+        }
+
+        .control-section input[type="checkbox"] {
+            margin-right: 8px;
+            width: 14px;
+            height: 14px;
+            accent-color: #8B4513;
+        }
+
+        .new-feature {
+            background: rgba(153, 50, 204, 0.05);
+            border: 1px solid rgba(153, 50, 204, 0.2);
+        }
+
+        .new-feature h4 {
+            color: #9932CC;
+            border-bottom: 1px solid rgba(153, 50, 204, 0.3);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.6em;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .coherence { color: #8B4513; }
+        .population { color: #228B22; }
+        .rupture { color: #DC143C; }
+        .rebirth { color: #9370DB; }
+        .food { color: #FF8C00; }
+        .tunnels { color: #A0522D; }
+        .pheromones { color: #32CD32; }
+        .castes { color: #4169E1; }
+        .chambers { color: #9932CC; }
+        .decisions { color: #FF6347; }
+        .territory { color: #8B0000; }
+        .warfare { color: #B22222; }
+
+        .canvas-container {
+            position: relative;
+            margin: 0 auto;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+        }
+
+        .canvas-label {
+            text-align: center;
+            font-weight: bold;
+            color: #2d1810;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        #antColony, #nestInterior {
+            border: 3px solid #2d1810;
+            border-radius: 12px;
+            background: #F5DEB3;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+        }
+
+        #nestInterior {
+            background: #2F1B14;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #2d1810;
+            line-height: 1.7;
+        }
+
+        .info-panel h3 {
+            color: #1f1f1f;
+            margin-top: 0;
+            border-bottom: 2px solid #8B4513;
+            padding-bottom: 8px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .feature-card {
+            background: rgba(139, 69, 19, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #8B4513;
+        }
+
+        .feature-card h4 {
+            margin-top: 0;
+            color: #8B4513;
+        }
+
+        .new-feature-card {
+            background: rgba(153, 50, 204, 0.1);
+            border-left: 4px solid #9932CC;
+        }
+
+        .new-feature-card h4 {
+            color: #9932CC;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #8B4513;
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+            color: #2d1810;
+        }
+
+        .nest-entrance {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #2F1B14;
+            border-radius: 50%;
+            border: 2px solid #8B4513;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nest-entrance:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🐜 Coherence-Sim Ant Colony</h1>
+        <p>
+            <strong>Advanced Coherence-Based Simulation:</strong> Watch realistic ants with morphogenic movement organise into dynamic castes, 
+            create multi-level underground chambers, establish collective decision-making through pheromone consensus, and develop sophisticated 
+            territorial defense systems.
+        </p>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <button id="playPause" class="primary">⏸️ Pause</button>
+            <button id="reset" class="secondary">🔄 Reset Colony</button>
+            <button id="addAnts" class="primary">🐜 Add Ants</button>
+        </div>
+        
+        <div class="control-group">
+            <button id="addFood" class="primary">🍯 Add Food Source</button>
+            <button id="addObstacle" class="secondary">🪨 Add Obstacle</button>
+            <button id="triggerRupture" class="danger">⚡ Trigger Rupture</button>
+        </div>
+
+        <div class="control-group">
+            <button id="addRival" class="special">👑 Add Rival Colony</button>
+            <button id="triggerDecision" class="special">🗳️ Colony Vote</button>
+        </div>
+
+        <div class="control-group">
+            <label>Simulation Speed:</label>
+            <div class="slider-container">
+                <input type="range" id="speedSlider" class="slider" min="0.1" max="3" step="0.1" value="1">
+                <span id="speedValue" class="value-display">1.0x</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Field Sensitivity:</label>
+            <div class="slider-container">
+                <input type="range" id="ucfSlider" class="slider" min="0.5" max="2" step="0.1" value="1">
+                <span id="ucfValue" class="value-display">1.0x</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button id="zoomIn" class="primary">🔍➕ Zoom In</button>
+            <button id="zoomOut" class="primary">🔍➖ Zoom Out</button>
+            <button id="resetView" class="secondary">🎯 Reset View</button>
+        </div>
+    </div>
+
+    <!-- Enhanced Visualization Controls -->
+    <div class="visualization-controls">
+        <h3>🔬 Advanced UCF Visualization Layers</h3>
+        
+        <div class="control-sections">
+            <div class="control-section">
+                <h4>🌊 Field Dynamics</h4>
+                <label><input type="checkbox" id="showCoherenceField" checked> Coherence Field</label>
+                <label><input type="checkbox" id="showRuptureZones"> Rupture Zones</label>
+                <label><input type="checkbox" id="showRebirthFields"> Rebirth Fields</label>
+                <label><input type="checkbox" id="showMemoryEntanglement"> Memory Entanglement</label>
+                <label><input type="checkbox" id="showTemporalDecay"> Temporal Decay Patterns</label>
+            </div>
+
+            <div class="control-section">
+                <h4>🧬 Genetic & Caste Evolution</h4>
+                <label><input type="checkbox" id="showGeneticSequences"> Genetic Sequences</label>
+                <label><input type="checkbox" id="showMutationEvents"> Mutation Events</label>
+                <label><input type="checkbox" id="showCasteTransitions"> Caste Transitions</label>
+                <label><input type="checkbox" id="showTraitExpressions"> Trait Expressions</label>
+                <label><input type="checkbox" id="showEvolutionPressure"> Evolution Pressure</label>
+            </div>
+
+            <div class="control-section">
+                <h4>🌀 Chemical Communication</h4>
+                <label><input type="checkbox" id="showPheromoneTrails" checked> Pheromone Trails</label>
+                <label><input type="checkbox" id="showChemicalGradients"> Chemical Gradients</label>
+                <label><input type="checkbox" id="showInformationFlow"> Information Flow</label>
+                <label><input type="checkbox" id="showSocialNetworks"> Social Networks</label>
+                <label><input type="checkbox" id="showCommunicationPaths"> Communication Paths</label>
+            </div>
+
+            <div class="control-section">
+                <h4>🗺️ Tunnel & Construction</h4>
+                <label><input type="checkbox" id="showTunnelNetwork"> Tunnel Network</label>
+                <label><input type="checkbox" id="showConstructionPaths"> Construction Activity</label>
+                <label><input type="checkbox" id="showStructuralIntegrity"> Structural Integrity</label>
+                <label><input type="checkbox" id="showBuildingAlgorithms"> Building Algorithms</label>
+                <label><input type="checkbox" id="showArchitecturalPlanning"> Architectural Planning</label>
+            </div>
+
+            <div class="control-section">
+                <h4>⚡ Energy & Resources</h4>
+                <label><input type="checkbox" id="showEnergyFlows"> Energy Flows</label>
+                <label><input type="checkbox" id="showResourceDistribution"> Resource Distribution</label>
+                <label><input type="checkbox" id="showMetabolicRates"> Metabolic Rates</label>
+                <label><input type="checkbox" id="showForagingEfficiency"> Foraging Efficiency</label>
+                <label><input type="checkbox" id="showNutrientNetworks"> Nutrient Networks</label>
+            </div>
+
+            <div class="control-section">
+                <h4>🧠 Intelligence & Learning</h4>
+                <label><input type="checkbox" id="showLearningPaths"> Learning Paths</label>
+                <label><input type="checkbox" id="showKnowledgeDistribution"> Knowledge Distribution</label>
+                <label><input type="checkbox" id="showAdaptationRates"> Adaptation Rates</label>
+                <label><input type="checkbox" id="showIntelligenceNetworks"> Intelligence Networks</label>
+                <label><input type="checkbox" id="showEmergentBehaviors"> Emergent Behaviors</label>
+            </div>
+
+            <div class="control-section new-feature">
+                <h4>🏰 Underground Chambers</h4>
+                <label><input type="checkbox" id="showChamberNetwork"> Chamber Network</label>
+                <label><input type="checkbox" id="showChamberTypes"> Specialized Chambers</label>
+                <label><input type="checkbox" id="showChamberFlow"> Chamber Connections</label>
+                <label><input type="checkbox" id="showStorageSystem"> Storage Systems</label>
+                <label><input type="checkbox" id="showWasteManagement"> Waste Management</label>
+            </div>
+
+            <div class="control-section new-feature">
+                <h4>🗳️ Collective Decisions</h4>
+                <label><input type="checkbox" id="showDecisionNodes"> Decision Nodes</label>
+                <label><input type="checkbox" id="showVotingPheromones"> Voting Pheromones</label>
+                <label><input type="checkbox" id="showConsensusFormation"> Consensus Formation</label>
+                <label><input type="checkbox" id="showDecisionOutcomes"> Decision Outcomes</label>
+                <label><input type="checkbox" id="showLeadershipEmergence"> Leadership Emergence</label>
+            </div>
+
+            <div class="control-section new-feature">
+                <h4>⚔️ Territory & Warfare</h4>
+                <label><input type="checkbox" id="showTerritoryBounds"> Territory Boundaries</label>
+                <label><input type="checkbox" id="showCombatFormations"> Combat Formations</label>
+                <label><input type="checkbox" id="showDefenseStrategies"> Defense Strategies</label>
+                <label><input type="checkbox" id="showRaidPaths"> Raid Paths</label>
+                <label><input type="checkbox" id="showWarfareTactics"> Warfare Tactics</label>
+            </div>
+
+            <div class="control-section new-feature">
+                <h4>👑 Advanced Castes</h4>
+                <label><input type="checkbox" id="showSuperMajors"> Super-Major Emergence</label>
+                <label><input type="checkbox" id="showHybridCastes"> Hybrid Castes</label>
+                <label><input type="checkbox" id="showCasteSpecialization"> Caste Specialization</label>
+                <label><input type="checkbox" id="showCasteHierarchy"> Caste Hierarchy</label>
+                <label><input type="checkbox" id="showCasteEvolution"> Real-time Evolution</label>
+            </div>
+
+            <div class="control-section new-feature">
+                <h4>🔹 Interior View Controls</h4>
+                <label><input type="checkbox" id="showNestEntrances" checked> Nest Entrances</label>
+                <label><input type="checkbox" id="showTunnelConnections" checked> Tunnel Connections</label>
+                <label><input type="checkbox" id="showInteriorAnts" checked> Interior Ant Movement</label>
+                <label><input type="checkbox" id="showChamberDetails" checked> Chamber Details</label>
+                <label><input type="checkbox" id="showAirFlow"> Air Flow Patterns</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value coherence" id="avgCoherence">0.000</div>
+            <div class="stat-label">Colony Coherence</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value population" id="population">0</div>
+            <div class="stat-label">Total Ants</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value food" id="totalFood">0.00</div>
+            <div class="stat-label">Food Stored</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value pheromones" id="pheromoneIntensity">0.00</div>
+            <div class="stat-label">Pheromone Network</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value tunnels" id="tunnelLength">0</div>
+            <div class="stat-label">Tunnel Network</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value chambers" id="chamberCount">0</div>
+            <div class="stat-label">Active Chambers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value castes" id="casteCount">0</div>
+            <div class="stat-label">Active Castes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value decisions" id="activeDecisions">0</div>
+            <div class="stat-label">Colony Decisions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value territory" id="territorySize">0</div>
+            <div class="stat-label">Territory Size</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value warfare" id="combatUnits">0</div>
+            <div class="stat-label">Combat Units</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value rupture" id="ruptureCount">0</div>
+            <div class="stat-label">Active Ruptures</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value rebirth" id="rebirthCount">0</div>
+            <div class="stat-label">Rebirth Events</div>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <div class="canvas-label">🌍 Surface Colony View</div>
+            <canvas id="antColony" width="800" height="600"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+            <div class="canvas-label">🔹 Interior Nest Webcam</div>
+            <canvas id="nestInterior" width="500" height="600"></canvas>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <h3>🧬 Ant Colony Features</h3>
+        <div class="feature-grid">
+            <div class="feature-card new-feature-card">
+                <h4>🐜 Realistic Ant Morphology</h4>
+                <p>Detailed ant anatomy with head, thorax, abdomen, six legs, and antennae. Realistic morphogenic movement with leg coordination and natural gait patterns.</p>
+            </div>
+            <div class="feature-card new-feature-card">
+                <h4>⚖️ Environmental Size Dampening</h4>
+                <p>Intelligent size regulation prevents ants from growing too large. Environmental factors naturally limit growth while preserving evolutionary advantages.</p>
+            </div>
+            <div class="feature-card new-feature-card">
+                <h4>🔹 Interior Nest Webcam</h4>
+                <p>Live view into the underground nest structure. Watch ants move through chambers, construct tunnels, and organize interior spaces in real-time.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🧠 Emergent Caste System</h4>
+                <p>Worker, soldier, scout, nurse, engineer, diplomat, architect, and super-major castes emerge naturally through coherence-based specialisation.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🌀 Pheromone Networks</h4>
+                <p>Complex chemical communication emerges through UCF temporal memory integration, creating persistent trail networks and decision-making systems.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🗺️ Tunnel Construction</h4>
+                <p>Underground tunnel systems built through collective intelligence. Network topology emerges from field optimization with realistic structural integrity.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🏰 Multi-Level Chambers</h4>
+                <p>Complex underground chamber systems with specialized functions: nurseries, food storage, waste disposal, royal quarters, and workshops.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🗳️ Collective Decision Making</h4>
+                <p>Democratic decision-making through pheromone-based voting systems. Ants contribute to colony-wide choices about resources, territory, and survival.</p>
+            </div>
+            <div class="feature-card">
+                <h4>⚔️ Territory & Combat</h4>
+                <p>Advanced territorial defense with organised combat formations, strategic resource control, and coordinated warfare tactics between colonies.</p>
+            </div>
+            <div class="feature-card">
+                <h4>🔄 Memory Entanglement</h4>
+                <p>Past decisions influence current behavior through non-local temporal coherence, creating emergent collective memory and learning.</p>
+            </div>
+        </div>
+        <p><strong>Current Status:</strong> <span id="simInfo">Initializing UCF field dynamics... Colony establishing coherence patterns...</span></p>
+    </div>
+
+    <script>
+        // Enhanced UCF Configuration with Environmental Dampening
+        const UCF = {
+            COHERENCE_BASE: 0.7,
+            RUPTURE_THRESHOLD: 0.3,
+            REBIRTH_TEMPERATURE: 2.0,
+            MEMORY_DEPTH: 120,
+            FIELD_RESOLUTION: 20,
+            EMERGENCE_FACTOR: 1.0,
+            
+            // Environmental Dampening System
+            MAX_ANT_SIZE: 8.0,
+            SIZE_DAMPENING_FACTOR: 0.95,
+            ENVIRONMENTAL_PRESSURE: 1.2,
+            CROWDING_PRESSURE: 0.001,
+            
+            // Ant-specific parameters
+            PHEROMONE_COHERENCE_RANGE: 100,
+            CHEMICAL_COHERENCE_RANGE: 150,
+            TEMPORAL_COHERENCE_DECAY: 0.015,
+            SPATIAL_COHERENCE_AMPLIFIER: 3.5,
+            COLLECTIVE_INTELLIGENCE_THRESHOLD: 0.65,
+            
+            // Colony-specific
+            NEST_INFLUENCE_RADIUS: 80,
+            FORAGING_COHERENCE_BONUS: 0.15,
+            TUNNEL_CONSTRUCTION_THRESHOLD: 0.6,
+            
+            // Advanced features
+            CHAMBER_CREATION_THRESHOLD: 0.7,
+            DECISION_CONSENSUS_THRESHOLD: 0.8,
+            TERRITORY_EXPANSION_THRESHOLD: 0.75,
+            CASTE_EVOLUTION_THRESHOLD: 0.85,
+            
+            // Interior system
+            NEST_DEPTH_LEVELS: 4,
+            CHAMBER_CONNECTION_RADIUS: 60
+        };
+
+        // Enhanced Ant Genetics System
+        class AntGenetics {
+            constructor() {
+                this.sequences = {
+                    foraging: this.generateSequence(8),
+                    construction: this.generateSequence(6),
+                    combat: this.generateSequence(5),
+                    chemical: this.generateSequence(10),
+                    navigation: this.generateSequence(7),
+                    social: this.generateSequence(4),
+                    strength: this.generateSequence(6),
+                    intelligence: this.generateSequence(9),
+                    leadership: this.generateSequence(7),
+                    decision: this.generateSequence(5),
+                    adaptation: this.generateSequence(8),
+                    specialization: this.generateSequence(6)
+                };
+                this.mutations = 0;
+                this.castePreference = Math.random();
+                this.evolutionPotential = Math.random();
+                this.sizeGenes = Math.random();
+            }
+
+            generateSequence(length) {
+                const bases = ['A', 'T', 'G', 'C'];
+                return Array.from({length}, () => bases[Math.floor(Math.random() * 4)]).join('');
+            }
+
+            mutate(intensity = 0.08) {
+                Object.keys(this.sequences).forEach(trait => {
+                    if (Math.random() < intensity) {
+                        const seq = this.sequences[trait].split('');
+                        const pos = Math.floor(Math.random() * seq.length);
+                        const bases = ['A', 'T', 'G', 'C'];
+                        seq[pos] = bases[Math.floor(Math.random() * 4)];
+                        this.sequences[trait] = seq.join('');
+                        this.mutations++;
+                    }
+                });
+                
+                if (Math.random() < intensity * 0.5) {
+                    this.sizeGenes += (Math.random() - 0.5) * 0.1;
+                    this.sizeGenes = Math.max(0.5, Math.min(1.5, this.sizeGenes));
+                }
+            }
+
+            getTraitStrength(trait) {
+                const sequence = this.sequences[trait] || '';
+                const gcContent = (sequence.match(/[GC]/g) || []).length / sequence.length;
+                const repetition = this.calculateRepetition(sequence);
+                return Math.max(0.1, Math.min(1.0, gcContent + repetition * 0.25));
+            }
+
+            calculateRepetition(sequence) {
+                const patterns = {};
+                for (let i = 0; i < sequence.length - 1; i++) {
+                    const pair = sequence.substring(i, i + 2);
+                    patterns[pair] = (patterns[pair] || 0) + 1;
+                }
+                return Math.max(...Object.values(patterns)) / sequence.length;
+            }
+
+            crossover(partner) {
+                const child = new AntGenetics();
+                Object.keys(this.sequences).forEach(trait => {
+                    const crossPoint = Math.floor(this.sequences[trait].length / 2);
+                    const parent1 = Math.random() < 0.5 ? this : partner;
+                    const parent2 = parent1 === this ? partner : this;
+                    
+                    child.sequences[trait] = 
+                        parent1.sequences[trait].substring(0, crossPoint) + 
+                        parent2.sequences[trait].substring(crossPoint);
+                });
+                
+                child.sizeGenes = (this.sizeGenes + partner.sizeGenes) / 2 + (Math.random() - 0.5) * 0.1;
+                child.sizeGenes = Math.max(0.5, Math.min(1.5, child.sizeGenes));
+                
+                return child;
+            }
+        }
+
+        // Enhanced Pheromone System
+        class PheromoneSystem {
+            constructor() {
+                this.trails = [];
+                this.deposits = new Map();
+                this.gridSize = 20;
+                this.decisionPheromones = [];
+                this.votingNodes = [];
+            }
+
+            depositPheromone(x, y, type, intensity, antId, surface = 'exterior') {
+                this.trails.push({
+                    x, y, type, intensity, antId, surface,
+                    timestamp: Date.now(),
+                    decayRate: 0.995 + Math.random() * 0.004
+                });
+
+                const gridKey = `${Math.floor(x / this.gridSize)}_${Math.floor(y / this.gridSize)}_${surface}`;
+                if (!this.deposits.has(gridKey)) {
+                    this.deposits.set(gridKey, []);
+                }
+                this.deposits.get(gridKey).push(this.trails[this.trails.length - 1]);
+            }
+
+            depositDecisionPheromone(x, y, decision, vote, intensity, antId, surface = 'exterior') {
+                this.decisionPheromones.push({
+                    x, y, decision, vote, intensity, antId, surface,
+                    timestamp: Date.now(),
+                    decayRate: 0.99
+                });
+            }
+
+            getPheromoneStrength(x, y, type = null, surface = 'exterior') {
+                let strength = 0;
+                const gridX = Math.floor(x / this.gridSize);
+                const gridY = Math.floor(y / this.gridSize);
+
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const gridKey = `${gridX + dx}_${gridY + dy}_${surface}`;
+                        const deposits = this.deposits.get(gridKey) || [];
+                        
+                        deposits.forEach(trail => {
+                            if ((type === null || trail.type === type) && trail.surface === surface) {
+                                const distance = Math.sqrt((x - trail.x) ** 2 + (y - trail.y) ** 2);
+                                if (distance < UCF.PHEROMONE_COHERENCE_RANGE) {
+                                    strength += trail.intensity * Math.exp(-distance / 40);
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                return strength;
+            }
+
+            getDecisionConsensus(x, y, decision, surface = 'exterior') {
+                let yesVotes = 0;
+                let noVotes = 0;
+                
+                this.decisionPheromones.forEach(pheromone => {
+                    if (pheromone.decision === decision && pheromone.surface === surface) {
+                        const distance = Math.sqrt((x - pheromone.x) ** 2 + (y - pheromone.y) ** 2);
+                        if (distance < 100) {
+                            const weight = pheromone.intensity * Math.exp(-distance / 50);
+                            if (pheromone.vote === 'yes') yesVotes += weight;
+                            else noVotes += weight;
+                        }
+                    }
+                });
+                
+                return { yesVotes, noVotes, consensus: yesVotes / (yesVotes + noVotes + 0.001) };
+            }
+
+            update() {
+                this.trails = this.trails.filter(trail => {
+                    trail.intensity *= trail.decayRate;
+                    return trail.intensity > 0.001 && Date.now() - trail.timestamp < 300000;
+                });
+
+                this.decisionPheromones = this.decisionPheromones.filter(pheromone => {
+                    pheromone.intensity *= pheromone.decayRate;
+                    return pheromone.intensity > 0.01 && Date.now() - pheromone.timestamp < 120000;
+                });
+
+                this.deposits.clear();
+                this.trails.forEach(trail => {
+                    const gridKey = `${Math.floor(trail.x / this.gridSize)}_${Math.floor(trail.y / this.gridSize)}_${trail.surface}`;
+                    if (!this.deposits.has(gridKey)) {
+                        this.deposits.set(gridKey, []);
+                    }
+                    this.deposits.get(gridKey).push(trail);
+                });
+            }
+        }
+
+        // Interior Nest System
+        class InteriorNestSystem {
+            constructor(nestCenter) {
+                this.nestCenter = nestCenter;
+                this.chambers = [];
+                this.tunnels = [];
+                this.entrances = [];
+                this.interiorAnts = new Map();
+                this.initializeInterior();
+            }
+
+            initializeInterior() {
+                this.entrances.push({
+                    x: this.nestCenter.x,
+                    y: this.nestCenter.y,
+                    interiorX: 250,
+                    interiorY: 50,
+                    id: 0,
+                    active: true
+                });
+
+                const levels = [
+                    { y: 80, chambers: ['royal', 'nursery'] },
+                    { y: 180, chambers: ['storage', 'workshop'] },
+                    { y: 280, chambers: ['waste', 'military'] },
+                    { y: 380, chambers: ['emergency', 'growth'] }
+                ];
+
+                levels.forEach((level, levelIndex) => {
+                    level.chambers.forEach((type, chamberIndex) => {
+                        this.chambers.push({
+                            x: 100 + chamberIndex * 200,
+                            y: level.y,
+                            type: type,
+                            level: levelIndex,
+                            radius: 40 + Math.random() * 20,
+                            capacity: 20 + levelIndex * 10,
+                            occupancy: 0,
+                            temperature: 22 + Math.random() * 4,
+                            humidity: 0.6 + Math.random() * 0.2,
+                            id: this.chambers.length,
+                            specialization: 0.5 + Math.random() * 0.5
+                        });
+                    });
+                });
+
+                this.createTunnelNetwork();
+            }
+
+            createTunnelNetwork() {
+                this.tunnels.push({
+                    from: { x: 250, y: 50 },
+                    to: { x: 200, y: 80 },
+                    width: 8,
+                    structural: 1.0,
+                    traffic: 0
+                });
+
+                for (let i = 0; i < this.chambers.length; i++) {
+                    for (let j = i + 1; j < this.chambers.length; j++) {
+                        const chamber1 = this.chambers[i];
+                        const chamber2 = this.chambers[j];
+                        const distance = Math.sqrt(
+                            (chamber1.x - chamber2.x) ** 2 + 
+                            (chamber1.y - chamber2.y) ** 2
+                        );
+
+                        if (distance < UCF.CHAMBER_CONNECTION_RADIUS || 
+                            Math.abs(chamber1.level - chamber2.level) === 1) {
+                            this.tunnels.push({
+                                from: { x: chamber1.x, y: chamber1.y },
+                                to: { x: chamber2.x, y: chamber2.y },
+                                width: 4 + Math.random() * 4,
+                                structural: 0.8 + Math.random() * 0.2,
+                                traffic: 0
+                            });
+                        }
+                    }
+                }
+            }
+
+            getAvailableChamber(antCaste) {
+                const preferences = {
+                    'royal': ['royal'],
+                    'nurse': ['nursery', 'royal'],
+                    'worker': ['storage', 'workshop'],
+                    'soldier': ['military', 'entrance'],
+                    'engineer': ['workshop', 'growth'],
+                    'diplomat': ['royal', 'workshop'],
+                    'architect': ['growth', 'workshop']
+                };
+
+                const preferred = preferences[antCaste] || ['storage'];
+                
+                for (const pref of preferred) {
+                    const chamber = this.chambers.find(c => 
+                        c.type === pref && c.occupancy < c.capacity
+                    );
+                    if (chamber) return chamber;
+                }
+
+                return this.chambers.find(c => c.occupancy < c.capacity);
+            }
+
+            enterNest(ant) {
+                const chamber = this.getAvailableChamber(ant.caste);
+                if (chamber) {
+                    ant.currentLocation = 'interior';
+                    ant.interiorX = chamber.x + (Math.random() - 0.5) * chamber.radius;
+                    ant.interiorY = chamber.y + (Math.random() - 0.5) * chamber.radius;
+                    ant.currentChamber = chamber.id;
+                    chamber.occupancy++;
+                    this.interiorAnts.set(ant.id, ant);
+                    return true;
+                }
+                return false;
+            }
+
+            exitNest(ant) {
+                if (this.interiorAnts.has(ant.id)) {
+                    const chamber = this.chambers.find(c => c.id === ant.currentChamber);
+                    if (chamber) chamber.occupancy = Math.max(0, chamber.occupancy - 1);
+                    
+                    ant.currentLocation = 'exterior';
+                    ant.x = this.nestCenter.x + (Math.random() - 0.5) * 60;
+                    ant.y = this.nestCenter.y + (Math.random() - 0.5) * 60;
+                    ant.currentChamber = null;
+                    this.interiorAnts.delete(ant.id);
+                    return true;
+                }
+                return false;
+            }
+
+            update() {
+                this.chambers.forEach(chamber => {
+                    chamber.temperature += (Math.random() - 0.5) * 0.1;
+                    chamber.humidity += (Math.random() - 0.5) * 0.02;
+                });
+
+                this.tunnels.forEach(tunnel => {
+                    tunnel.traffic *= 0.95;
+                });
+            }
+        }
+
+        // Underground Chamber System
+        class ChamberSystem {
+            constructor(nestCenter) {
+                this.chambers = [];
+                this.nestCenter = nestCenter;
+                this.connections = [];
+                this.initializeBaseChambers();
+            }
+
+            initializeBaseChambers() {
+                this.chambers.push({
+                    x: this.nestCenter.x,
+                    y: this.nestCenter.y + 20,
+                    type: 'royal',
+                    level: 1,
+                    capacity: 50,
+                    occupancy: 0,
+                    specialization: 1.0,
+                    temperature: 25,
+                    humidity: 0.7,
+                    id: 0
+                });
+
+                this.chambers.push({
+                    x: this.nestCenter.x - 40,
+                    y: this.nestCenter.y + 15,
+                    type: 'nursery',
+                    level: 1,
+                    capacity: 30,
+                    occupancy: 0,
+                    specialization: 0.8,
+                    temperature: 24,
+                    humidity: 0.8,
+                    id: 1
+                });
+            }
+
+            createChamber(x, y, type, coherenceLevel) {
+                if (coherenceLevel > UCF.CHAMBER_CREATION_THRESHOLD) {
+                    const chamber = {
+                        x, y, type,
+                        level: Math.floor(coherenceLevel * 3) + 1,
+                        capacity: 20 + coherenceLevel * 30,
+                        occupancy: 0,
+                        specialization: coherenceLevel,
+                        temperature: 22 + Math.random() * 6,
+                        humidity: 0.5 + Math.random() * 0.4,
+                        id: this.chambers.length,
+                        createdTime: Date.now()
+                    };
+                    
+                    this.chambers.push(chamber);
+                    this.createConnections(chamber);
+                    return chamber;
+                }
+                return null;
+            }
+
+            createConnections(newChamber) {
+                this.chambers.forEach(chamber => {
+                    if (chamber.id !== newChamber.id) {
+                        const distance = Math.sqrt(
+                            (chamber.x - newChamber.x) ** 2 + 
+                            (chamber.y - newChamber.y) ** 2
+                        );
+                        
+                        if (distance < 80) {
+                            this.connections.push({
+                                from: chamber.id,
+                                to: newChamber.id,
+                                length: distance,
+                                traffic: 0,
+                                efficiency: 0.8 + Math.random() * 0.2
+                            });
+                        }
+                    }
+                });
+            }
+
+            update() {
+                this.chambers.forEach(chamber => {
+                    chamber.temperature += (Math.random() - 0.5) * 0.2;
+                    chamber.humidity += (Math.random() - 0.5) * 0.05;
+                    chamber.occupancy *= 0.95;
+                });
+
+                this.connections.forEach(connection => {
+                    connection.traffic *= 0.9;
+                });
+            }
+        }
+
+        // Collective Decision System
+        class DecisionSystem {
+            constructor() {
+                this.activeDecisions = [];
+                this.decisionHistory = [];
+                this.leadershipNodes = [];
+            }
+
+            proposeDecision(type, location, proposer) {
+                const decision = {
+                    id: Math.random().toString(36),
+                    type: type,
+                    location: location,
+                    proposer: proposer,
+                    startTime: Date.now(),
+                    duration: 30000,
+                    votes: { yes: 0, no: 0 },
+                    participants: new Set(),
+                    consensus: 0,
+                    status: 'voting'
+                };
+                
+                this.activeDecisions.push(decision);
+                return decision;
+            }
+
+            vote(decisionId, antId, vote, influence) {
+                const decision = this.activeDecisions.find(d => d.id === decisionId);
+                if (decision && decision.status === 'voting') {
+                    decision.participants.add(antId);
+                    if (vote === 'yes') {
+                        decision.votes.yes += influence;
+                    } else {
+                        decision.votes.no += influence;
+                    }
+                    
+                    decision.consensus = decision.votes.yes / (decision.votes.yes + decision.votes.no);
+                    
+                    if (decision.consensus > UCF.DECISION_CONSENSUS_THRESHOLD && decision.participants.size > 5) {
+                        decision.status = 'decided';
+                        decision.outcome = 'approved';
+                    } else if (decision.consensus < 0.3 && decision.participants.size > 5) {
+                        decision.status = 'decided';
+                        decision.outcome = 'rejected';
+                    }
+                }
+            }
+
+            update() {
+                const now = Date.now();
+                
+                this.activeDecisions = this.activeDecisions.filter(decision => {
+                    if (now - decision.startTime > decision.duration) {
+                        decision.status = 'decided';
+                        decision.outcome = decision.consensus > 0.5 ? 'approved' : 'rejected';
+                        this.decisionHistory.push(decision);
+                        return false;
+                    }
+                    return decision.status === 'voting';
+                });
+            }
+        }
+
+        // Territory & Combat System
+        class TerritorySystem {
+            constructor(nestCenter) {
+                this.territoryBounds = [];
+                this.combatZones = [];
+                this.defenseFormations = [];
+                this.nestCenter = nestCenter;
+                this.territorySize = 0;
+                this.initializeTerritory();
+            }
+
+            initializeTerritory() {
+                for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 8) {
+                    this.territoryBounds.push({
+                        x: this.nestCenter.x + Math.cos(angle) * 100,
+                        y: this.nestCenter.y + Math.sin(angle) * 100,
+                        strength: 0.5,
+                        guardian: null
+                    });
+                }
+                this.calculateTerritorySize();
+            }
+
+            expandTerritory(direction, strength) {
+                if (strength > UCF.TERRITORY_EXPANSION_THRESHOLD) {
+                    const expansion = {
+                        x: this.nestCenter.x + Math.cos(direction) * 150,
+                        y: this.nestCenter.y + Math.sin(direction) * 150,
+                        strength: strength,
+                        guardian: null,
+                        newExpansion: true,
+                        timestamp: Date.now()
+                    };
+                    
+                    this.territoryBounds.push(expansion);
+                    this.calculateTerritorySize();
+                }
+            }
+
+            createCombatFormation(center, type, ants) {
+                this.combatZones.push({
+                    center: center,
+                    type: type,
+                    ants: ants,
+                    formation: this.generateFormation(type, ants.length),
+                    effectiveness: 0.5 + Math.random() * 0.5,
+                    timestamp: Date.now()
+                });
+            }
+
+            generateFormation(type, antCount) {
+                const formation = [];
+                
+                switch (type) {
+                    case 'defensive':
+                        for (let i = 0; i < antCount; i++) {
+                            const angle = (i / antCount) * 2 * Math.PI;
+                            formation.push({
+                                x: Math.cos(angle) * 30,
+                                y: Math.sin(angle) * 30,
+                                role: 'defender'
+                            });
+                        }
+                        break;
+                    case 'offensive':
+                        for (let i = 0; i < antCount; i++) {
+                            const row = Math.floor(i / 3);
+                            const col = i % 3;
+                            formation.push({
+                                x: row * 10,
+                                y: (col - 1) * 15,
+                                role: 'attacker'
+                            });
+                        }
+                        break;
+                    case 'patrol':
+                        for (let i = 0; i < antCount; i++) {
+                            formation.push({
+                                x: i * 20,
+                                y: 0,
+                                role: 'scout'
+                            });
+                        }
+                        break;
+                }
+                
+                return formation;
+            }
+
+            calculateTerritorySize() {
+                if (this.territoryBounds.length < 3) return;
+                
+                let area = 0;
+                for (let i = 0; i < this.territoryBounds.length; i++) {
+                    const j = (i + 1) % this.territoryBounds.length;
+                    area += this.territoryBounds[i].x * this.territoryBounds[j].y;
+                    area -= this.territoryBounds[j].x * this.territoryBounds[i].y;
+                }
+                this.territorySize = Math.abs(area) / 2;
+            }
+
+            update() {
+                this.territoryBounds.forEach(bound => {
+                    bound.strength *= 0.999;
+                });
+
+                const now = Date.now();
+                this.combatZones = this.combatZones.filter(zone => 
+                    now - zone.timestamp < 60000
+                );
+            }
+        }
+
+        // Enhanced Emergent Ant with FIXED movement system
+        class EmergentAnt {
+            constructor(x, y, id, genetics = null) {
+                this.id = id;
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                
+                this.currentLocation = 'exterior';
+                this.interiorX = 0;
+                this.interiorY = 0;
+                this.currentChamber = null;
+                
+                this.coherenceState = UCF.COHERENCE_BASE + (Math.random() - 0.5) * 0.15;
+                this.coherenceHistory = Array(UCF.MEMORY_DEPTH).fill(this.coherenceState);
+                this.ruptureState = false;
+                this.rebirthField = 0;
+                this.memoryEntanglement = new Map();
+                
+                this.genetics = genetics || new AntGenetics();
+                
+                this.caste = null;
+                this.casteStability = 0;
+                this.hybridCaste = null;
+                this.evolutionLevel = 0;
+                
+                this.energy = 1.0;
+                this.age = 0;
+                this.baseSize = 2.5 + this.genetics.sizeGenes * 2;
+                this.size = this.baseSize;
+                this.environmentalPressure = 0;
+                this.speed = 1 + this.genetics.getTraitStrength('navigation') * 1.5;
+                this.strength = this.genetics.getTraitStrength('strength');
+                
+                this.carryingFood = 0;
+                this.maxCarry = 0.2 + this.strength * 0.3;
+                this.chemicalSensitivity = this.genetics.getTraitStrength('chemical');
+                this.intelligence = this.genetics.getTraitStrength('intelligence');
+                this.socialBond = this.genetics.getTraitStrength('social');
+                this.leadership = this.genetics.getTraitStrength('leadership');
+                this.decisionInfluence = this.genetics.getTraitStrength('decision');
+                this.adaptability = this.genetics.getTraitStrength('adaptation');
+                this.specialization = this.genetics.getTraitStrength('specialization');
+                
+                this.currentBehavior = 'exploring';
+                this.behaviorHistory = [];
+                this.target = null;
+                this.lastPheromoneDeposit = 0;
+                this.lastDecisionVote = 0;
+                this.combatFormation = null;
+                this.territoryAssignment = null;
+                
+                this.experiencePoints = 0;
+                this.adaptationRate = 0;
+                this.knownFoodSources = [];
+                this.pathMemory = [];
+                
+                this.walkCycle = Math.random() * Math.PI * 2;
+                this.bodyAngle = 0;
+                this.legPhases = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+                this.antennaPhase = Math.random() * Math.PI * 2;
+                this.headBob = 0;
+                this.thoraxRotation = 0;
+                this.abdomenWiggle = 0;
+                
+                this.interiorTarget = null;
+                this.lastChamberChange = 0;
+            }
+
+            update(ants, environment, time, pheromoneSystem) {
+                this.age++;
+                
+                this.applyEnvironmentalDampening(ants);
+                
+                this.computeUCFCoherence(ants, environment, time, pheromoneSystem);
+                this.detectRupture(time);
+                this.computeRebirth(time);
+
+                if (!this.caste || this.casteStability < 10) {
+                    this.emergeCaste(ants, environment);
+                }
+
+                this.checkCasteEvolution(ants, environment);
+
+                if (this.currentLocation === 'interior') {
+                    this.executeInteriorBehavior(ants, environment, pheromoneSystem);
+                } else {
+                    if (this.ruptureState) {
+                        this.executeRupturedBehavior();
+                    } else {
+                        this.executeBehavior(ants, environment, pheromoneSystem);
+                    }
+                }
+
+                this.participateInDecisions(environment.decisionSystem, pheromoneSystem);
+                
+                this.updateEnergyMetabolism(environment);
+                this.updatePhysics();
+                this.updateMemory();
+                this.updateRealisticAnimation();
+                
+                this.updatePheromoneDeposition(pheromoneSystem);
+
+                this.checkLocationTransitions(environment);
+            }
+
+            applyEnvironmentalDampening(ants) {
+                let pressure = UCF.ENVIRONMENTAL_PRESSURE;
+                
+                const nearbyAnts = ants.filter(ant => 
+                    ant.id !== this.id && 
+                    Math.sqrt((ant.x - this.x) ** 2 + (ant.y - this.y) ** 2) < 100
+                ).length;
+                pressure += nearbyAnts * UCF.CROWDING_PRESSURE;
+                
+                if (this.energy < 0.5) pressure += (0.5 - this.energy) * 2;
+                pressure += (this.age / 10000) * 0.5;
+                if (this.ruptureState) pressure += 0.5;
+                
+                this.environmentalPressure = pressure;
+                
+                if (this.size > UCF.MAX_ANT_SIZE) {
+                    this.size *= UCF.SIZE_DAMPENING_FACTOR;
+                }
+                
+                const targetSize = this.baseSize / Math.sqrt(pressure);
+                if (this.size > targetSize) {
+                    this.size = Math.max(targetSize, this.size * 0.98);
+                }
+                
+                this.size = Math.max(1.5, this.size);
+            }
+
+            updateRealisticAnimation() {
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                
+                this.walkCycle += speed * 0.3 + 0.1;
+                
+                if (speed > 0.01) {
+                    this.bodyAngle = Math.atan2(this.vy, this.vx) + Math.PI;
+                }
+                
+                this.antennaPhase += 0.15 + speed * 0.1;
+                this.headBob = Math.sin(this.walkCycle * 2) * speed * 2;
+                this.thoraxRotation = Math.sin(this.walkCycle * 1.5) * speed * 0.5;
+                this.abdomenWiggle = Math.sin(this.walkCycle * 1.8) * speed * 1.5;
+                
+                this.legPhases = this.legPhases.map((phase, index) => 
+                    (phase + speed * 0.4 + (index % 2) * Math.PI) % (2 * Math.PI)
+                );
+            }
+
+            executeInteriorBehavior(ants, environment, pheromoneSystem) {
+                const now = Date.now();
+                
+                const currentChamber = environment.interiorNest.chambers.find(c => c.id === this.currentChamber);
+                
+                if (now - this.lastChamberChange > 10000 && Math.random() < 0.05) {
+                    if (Math.random() < 0.3) {
+                        environment.interiorNest.exitNest(this);
+                        return;
+                    } else {
+                        const targetChamber = environment.interiorNest.getAvailableChamber(this.caste);
+                        if (targetChamber && targetChamber.id !== this.currentChamber) {
+                            if (currentChamber) currentChamber.occupancy--;
+                            this.currentChamber = targetChamber.id;
+                            targetChamber.occupancy++;
+                            this.interiorTarget = {
+                                x: targetChamber.x + (Math.random() - 0.5) * targetChamber.radius,
+                                y: targetChamber.y + (Math.random() - 0.5) * targetChamber.radius
+                            };
+                            this.lastChamberChange = now;
+                        }
+                    }
+                }
+                
+                if (this.interiorTarget) {
+                    const dx = this.interiorTarget.x - this.interiorX;
+                    const dy = this.interiorTarget.y - this.interiorY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 5) {
+                        const moveSpeed = 0.5;
+                        this.interiorX += (dx / distance) * moveSpeed;
+                        this.interiorY += (dy / distance) * moveSpeed;
+                    } else {
+                        if (currentChamber) {
+                            this.interiorTarget = {
+                                x: currentChamber.x + (Math.random() - 0.5) * currentChamber.radius * 0.8,
+                                y: currentChamber.y + (Math.random() - 0.5) * currentChamber.radius * 0.8
+                            };
+                        }
+                    }
+                }
+                
+                if (currentChamber) {
+                    switch (currentChamber.type) {
+                        case 'storage':
+                            if (this.carryingFood > 0) {
+                                environment.totalFood += this.carryingFood;
+                                this.carryingFood = 0;
+                            }
+                            break;
+                        case 'nursery':
+                            if (this.caste === 'nurse') {
+                                this.energy += 0.001;
+                            }
+                            break;
+                        case 'workshop':
+                            if (this.caste === 'engineer' || this.caste === 'architect') {
+                                this.experiencePoints += 2;
+                            }
+                            break;
+                    }
+                }
+                
+                if (Math.random() < 0.1) {
+                    pheromoneSystem.depositPheromone(this.interiorX, this.interiorY, 'interior', this.coherenceState, this.id, 'interior');
+                }
+            }
+
+            checkLocationTransitions(environment) {
+                if (this.currentLocation === 'exterior') {
+                    const distanceToNest = Math.sqrt(
+                        (this.x - environment.nestCenter.x) ** 2 + 
+                        (this.y - environment.nestCenter.y) ** 2
+                    );
+                    
+                    // FIX: Low energy ants should prioritize entering nest
+                    const entryProbability = this.energy < 0.3 ? 0.15 : 0.02;
+                    
+                    if (distanceToNest < 30 && Math.random() < entryProbability) {
+                        if (environment.interiorNest.enterNest(this)) {
+                            this.lastChamberChange = Date.now();
+                        }
+                    }
+                }
+            }
+
+            computeUCFCoherence(ants, environment, time, pheromoneSystem) {
+                let spatialCoherence = UCF.COHERENCE_BASE;
+                let temporalCoherence = 0;
+                let chemicalCoherence = 0;
+                let socialCoherence = 0;
+                
+                const relevantAnts = this.currentLocation === 'interior' 
+                    ? Array.from(environment.interiorNest.interiorAnts.values())
+                    : ants.filter(ant => ant.currentLocation === 'exterior');
+                
+                relevantAnts.forEach(other => {
+                    if (other.id !== this.id) {
+                        let dx, dy;
+                        if (this.currentLocation === 'interior') {
+                            dx = this.interiorX - other.interiorX;
+                            dy = this.interiorY - other.interiorY;
+                        } else {
+                            dx = this.x - other.x;
+                            dy = this.y - other.y;
+                        }
+                        
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < UCF.CHEMICAL_COHERENCE_RANGE) {
+                            const entanglement = Math.exp(-distance / 60) * 
+                                (other.coherenceState + 0.1) * UCF.SPATIAL_COHERENCE_AMPLIFIER;
+                            spatialCoherence += entanglement;
+                            
+                            this.memoryEntanglement.set(other.id, {
+                                entanglement,
+                                time,
+                                distance,
+                                casteAlignment: this.caste === other.caste ? 1.3 : 0.9,
+                                leadershipResonance: this.leadership * other.leadership,
+                                decisionAlignment: Math.abs(this.decisionInfluence - other.decisionInfluence) < 0.3 ? 1.2 : 0.8
+                            });
+                        }
+                        
+                        if (distance < 50) {
+                            const casteCompatibility = this.calculateCasteCompatibility(other);
+                            socialCoherence += casteCompatibility * Math.exp(-distance / 30);
+                        }
+                    }
+                });
+
+                const pheromoneStrength = this.currentLocation === 'interior'
+                    ? pheromoneSystem.getPheromoneStrength(this.interiorX, this.interiorY, null, 'interior')
+                    : pheromoneSystem.getPheromoneStrength(this.x, this.y, null, 'exterior');
+                chemicalCoherence = pheromoneStrength * this.chemicalSensitivity;
+
+                const decisionCoherence = this.calculateDecisionCoherence(environment.decisionSystem);
+                const chamberCoherence = this.calculateChamberCoherence(environment.chamberSystem);
+
+                let nestProximityCoherence = 0;
+                if (this.currentLocation === 'interior') {
+                    nestProximityCoherence = 0.3;
+                } else {
+                    const distanceToNest = Math.sqrt((this.x - environment.nestCenter.x) ** 2 + 
+                                                    (this.y - environment.nestCenter.y) ** 2);
+                    if (distanceToNest < UCF.NEST_INFLUENCE_RADIUS) {
+                        nestProximityCoherence = Math.exp(-distanceToNest / 40) * 0.3;
+                    }
+                }
+
+                temporalCoherence = this.coherenceHistory.reduce((sum, val, idx) => {
+                    const decay = Math.exp(-idx * UCF.TEMPORAL_COHERENCE_DECAY);
+                    return sum + val * decay;
+                }, 0) / UCF.MEMORY_DEPTH;
+
+                const weights = {
+                    spatial: 0.25,
+                    temporal: 0.2,
+                    chemical: 0.2,
+                    social: 0.1,
+                    decision: 0.1,
+                    chamber: 0.1,
+                    nest: 0.05
+                };
+
+                this.coherenceState = 
+                    weights.spatial * spatialCoherence +
+                    weights.temporal * temporalCoherence +
+                    weights.chemical * chemicalCoherence +
+                    weights.social * socialCoherence +
+                    weights.decision * decisionCoherence +
+                    weights.chamber * chamberCoherence +
+                    weights.nest * nestProximityCoherence;
+
+                this.coherenceState *= (1 + this.intelligence * 0.15 + this.leadership * 0.1);
+                this.coherenceState = Math.max(0.1, Math.min(1.2, this.coherenceState));
+
+                this.coherenceHistory.shift();
+                this.coherenceHistory.push(this.coherenceState);
+            }
+
+            calculateDecisionCoherence(decisionSystem) {
+                let coherence = 0.5;
+                
+                decisionSystem.activeDecisions.forEach(decision => {
+                    let distance;
+                    if (this.currentLocation === 'interior') {
+                        distance = Math.sqrt(
+                            (this.interiorX - decision.location.x) ** 2 + 
+                            (this.interiorY - decision.location.y) ** 2
+                        );
+                    } else {
+                        distance = Math.sqrt(
+                            (this.x - decision.location.x) ** 2 + 
+                            (this.y - decision.location.y) ** 2
+                        );
+                    }
+                    
+                    if (distance < 100) {
+                        const proximity = Math.exp(-distance / 50);
+                        const involvement = decision.participants.has(this.id) ? 1.5 : 1.0;
+                        coherence += proximity * involvement * this.decisionInfluence * 0.3;
+                    }
+                });
+                
+                return Math.min(1.0, coherence);
+            }
+
+            calculateChamberCoherence(chamberSystem) {
+                let coherence = 0.5;
+                
+                chamberSystem.chambers.forEach(chamber => {
+                    let distance;
+                    if (this.currentLocation === 'interior') {
+                        distance = Math.sqrt(
+                            (this.interiorX - chamber.x) ** 2 + 
+                            (this.interiorY - chamber.y) ** 2
+                        );
+                    } else {
+                        distance = Math.sqrt(
+                            (this.x - chamber.x) ** 2 + 
+                            (this.y - chamber.y) ** 2
+                        );
+                    }
+                    
+                    if (distance < 60) {
+                        const proximity = Math.exp(-distance / 30);
+                        const specialization = chamber.specialization;
+                        coherence += proximity * specialization * 0.4;
+                    }
+                });
+                
+                return Math.min(1.0, coherence);
+            }
+
+            emergeCaste(ants, environment) {
+                const traits = {
+                    worker: this.genetics.getTraitStrength('foraging') + this.genetics.getTraitStrength('construction'),
+                    soldier: this.genetics.getTraitStrength('combat') + this.genetics.getTraitStrength('strength'),
+                    scout: this.genetics.getTraitStrength('navigation') + this.genetics.getTraitStrength('intelligence'),
+                    nurse: this.genetics.getTraitStrength('social') + this.genetics.getTraitStrength('chemical'),
+                    engineer: this.genetics.getTraitStrength('construction') + this.genetics.getTraitStrength('intelligence'),
+                    diplomat: this.genetics.getTraitStrength('social') + this.genetics.getTraitStrength('decision'),
+                    super_major: this.genetics.getTraitStrength('strength') + this.genetics.getTraitStrength('leadership'),
+                    architect: this.genetics.getTraitStrength('construction') + this.genetics.getTraitStrength('specialization')
+                };
+
+                const foodScarcity = environment.foodSources.length < 3 ? 1.5 : 1.0;
+                const colonySize = ants.length;
+                const threatLevel = environment.territorySystem.combatZones.length * 0.5;
+                const chamberNeed = environment.chamberSystem.chambers.length < colonySize / 10 ? 1.3 : 1.0;
+
+                traits.worker *= foodScarcity;
+                traits.soldier *= (1 + threatLevel);
+                traits.scout *= (colonySize < 20 ? 1.4 : 0.8);
+                traits.nurse *= (colonySize > 30 ? 1.2 : 0.7);
+                traits.engineer *= chamberNeed;
+                traits.super_major *= (threatLevel > 0.5 ? 2.0 : 0.5);
+
+                if (this.coherenceState > UCF.COLLECTIVE_INTELLIGENCE_THRESHOLD) {
+                    const dominantTrait = Object.keys(traits).reduce((a, b) => 
+                        traits[a] > traits[b] ? a : b);
+                    traits[dominantTrait] *= 1.3;
+                }
+
+                const newCaste = Object.keys(traits).reduce((a, b) => 
+                    traits[a] > traits[b] ? a : b);
+
+                if (this.caste !== newCaste) {
+                    this.caste = newCaste;
+                    this.casteStability = 0;
+                    this.adaptSpecialization();
+                } else {
+                    this.casteStability++;
+                }
+
+                this.checkHybridCaste(traits);
+            }
+
+            checkHybridCaste(traits) {
+                const sortedTraits = Object.entries(traits).sort((a, b) => b[1] - a[1]);
+                const topTwo = sortedTraits.slice(0, 2);
+                
+                if (topTwo[0][1] - topTwo[1][1] < 0.3 && this.adaptability > 0.7) {
+                    this.hybridCaste = `${topTwo[0][0]}_${topTwo[1][0]}`;
+                    this.specialization *= 1.2;
+                }
+            }
+
+            checkCasteEvolution(ants, environment) {
+                if (this.coherenceState > UCF.CASTE_EVOLUTION_THRESHOLD && 
+                    this.experiencePoints > 100 && 
+                    Math.random() < 0.001) {
+                    
+                    this.evolutionLevel++;
+                    
+                    const sizeIncrease = 1.05 + (this.evolutionLevel * 0.02);
+                    this.baseSize *= sizeIncrease;
+                    this.strength *= 1.02;
+                    this.intelligence *= 1.02;
+                    
+                    this.applyEnvironmentalDampening(ants);
+                    
+                    if (this.evolutionLevel > 2 && this.caste === 'soldier') {
+                        this.caste = 'super_major';
+                        this.baseSize *= 1.3;
+                        this.maxCarry *= 1.5;
+                    }
+                }
+            }
+
+            adaptSpecialization() {
+                const sizeMultiplier = Math.min(1.4, 1 + this.environmentalPressure * 0.1);
+                
+                switch (this.caste) {
+                    case 'worker':
+                        this.maxCarry *= 1.2;
+                        this.speed *= 1.1;
+                        this.currentBehavior = 'foraging';
+                        break;
+                    case 'soldier':
+                        this.baseSize *= Math.min(sizeMultiplier, 1.3);
+                        this.strength *= 1.3;
+                        this.currentBehavior = 'patrolling';
+                        break;
+                    case 'scout':
+                        this.speed *= 1.3;
+                        this.chemicalSensitivity *= 1.2;
+                        this.currentBehavior = 'scouting';
+                        break;
+                    case 'nurse':
+                        this.socialBond *= 1.3;
+                        this.currentBehavior = 'nurturing';
+                        break;
+                    case 'engineer':
+                        this.intelligence *= 1.3;
+                        this.currentBehavior = 'construction';
+                        break;
+                    case 'diplomat':
+                        this.leadership *= 1.4;
+                        this.decisionInfluence *= 1.5;
+                        this.currentBehavior = 'decision_making';
+                        break;
+                    case 'super_major':
+                        this.baseSize *= Math.min(sizeMultiplier, 1.8);
+                        this.strength *= 1.8;
+                        this.leadership *= 1.5;
+                        this.currentBehavior = 'commanding';
+                        break;
+                    case 'architect':
+                        this.intelligence *= 1.2;
+                        this.specialization *= 1.4;
+                        this.currentBehavior = 'chamber_planning';
+                        break;
+                }
+            }
+
+            calculateCasteCompatibility(other) {
+                if (!this.caste || !other.caste) return 1.0;
+                
+                const compatibility = {
+                    'worker': { 'worker': 1.2, 'soldier': 0.9, 'scout': 1.1, 'nurse': 1.0, 'engineer': 1.3, 'diplomat': 0.8, 'super_major': 0.7, 'architect': 1.1 },
+                    'soldier': { 'worker': 0.9, 'soldier': 1.4, 'scout': 1.0, 'nurse': 0.8, 'engineer': 0.7, 'diplomat': 0.6, 'super_major': 1.6, 'architect': 0.8 },
+                    'scout': { 'worker': 1.1, 'soldier': 1.0, 'scout': 1.3, 'nurse': 0.9, 'engineer': 1.0, 'diplomat': 1.2, 'super_major': 0.8, 'architect': 0.9 },
+                    'nurse': { 'worker': 1.0, 'soldier': 0.8, 'scout': 0.9, 'nurse': 1.5, 'engineer': 0.9, 'diplomat': 1.1, 'super_major': 0.6, 'architect': 0.8 },
+                    'engineer': { 'worker': 1.3, 'soldier': 0.7, 'scout': 1.0, 'nurse': 0.9, 'engineer': 1.4, 'diplomat': 0.8, 'super_major': 0.9, 'architect': 1.6 },
+                    'diplomat': { 'worker': 0.8, 'soldier': 0.6, 'scout': 1.2, 'nurse': 1.1, 'engineer': 0.8, 'diplomat': 1.5, 'super_major': 1.1, 'architect': 0.9 },
+                    'super_major': { 'worker': 0.7, 'soldier': 1.6, 'scout': 0.8, 'nurse': 0.6, 'engineer': 0.9, 'diplomat': 1.1, 'super_major': 1.8, 'architect': 1.0 },
+                    'architect': { 'worker': 1.1, 'soldier': 0.8, 'scout': 0.9, 'nurse': 0.8, 'engineer': 1.6, 'diplomat': 0.9, 'super_major': 1.0, 'architect': 1.3 }
+                };
+                
+                return compatibility[this.caste]?.[other.caste] || 1.0;
+            }
+
+            executeBehavior(ants, environment, pheromoneSystem) {
+                switch (this.currentBehavior) {
+                    case 'foraging':
+                        this.executeForaging(environment, pheromoneSystem);
+                        break;
+                    case 'returning':
+                        this.returnToNest(environment, pheromoneSystem);
+                        break;
+                    case 'resting':
+                        this.executeResting(environment);
+                        break;
+                    case 'construction':
+                        this.executeConstruction(environment);
+                        break;
+                    case 'patrolling':
+                        this.executePatrolling(ants, environment);
+                        break;
+                    case 'scouting':
+                        this.executeScouting(environment, pheromoneSystem);
+                        break;
+                    case 'nurturing':
+                        this.executeNurturing(ants, environment);
+                        break;
+                    case 'decision_making':
+                        this.executeDecisionMaking(ants, environment, pheromoneSystem);
+                        break;
+                    case 'commanding':
+                        this.executeCommanding(ants, environment);
+                        break;
+                    case 'chamber_planning':
+                        this.executeChamberPlanning(environment);
+                        break;
+                    case 'combat':
+                        this.executeCombat(ants, environment);
+                        break;
+                    default:
+                        this.executeExploration(pheromoneSystem);
+                }
+            }
+
+            // FIX: New resting behavior that actively returns to nest
+            executeResting(environment) {
+                const distanceToNest = Math.sqrt(
+                    (this.x - environment.nestCenter.x) ** 2 + 
+                    (this.y - environment.nestCenter.y) ** 2
+                );
+                
+                if (distanceToNest < 30 && Math.random() < 0.15) {
+                    if (environment.interiorNest.enterNest(this)) {
+                        this.currentBehavior = 'nurturing';
+                    }
+                } else {
+                    // Strong movement toward nest when resting
+                    this.navigateToward(environment.nestCenter.x, environment.nestCenter.y);
+                }
+                
+                if (this.energy > 0.7) {
+                    this.currentBehavior = 'foraging';
+                }
+            }
+
+            executeDecisionMaking(ants, environment, pheromoneSystem) {
+                const decisions = this.identifyDecisionNeeds(environment);
+                
+                decisions.forEach(decisionType => {
+                    if (Math.random() < 0.1 * this.leadership) {
+                        const decision = environment.decisionSystem.proposeDecision(
+                            decisionType,
+                            { x: this.x, y: this.y },
+                            this.id
+                        );
+                        
+                        pheromoneSystem.depositPheromone(this.x, this.y, 'decision', this.decisionInfluence, this.id);
+                    }
+                });
+            }
+
+            identifyDecisionNeeds(environment) {
+                const needs = [];
+                
+                if (environment.foodSources.length < 2) needs.push('resource');
+                if (environment.chamberSystem.chambers.length < environment.ants?.length / 15) needs.push('expansion');
+                if (environment.territorySystem.combatZones.length > 0) needs.push('defense');
+                
+                return needs;
+            }
+
+            executeCommanding(ants, environment) {
+                const nearbyAnts = ants.filter(ant => 
+                    ant.id !== this.id && 
+                    Math.sqrt((ant.x - this.x) ** 2 + (ant.y - this.y) ** 2) < 100
+                );
+                
+                if (environment.territorySystem.combatZones.length > 0) {
+                    const soldiers = nearbyAnts.filter(ant => 
+                        ant.caste === 'soldier' || ant.caste === 'super_major'
+                    );
+                    
+                    if (soldiers.length > 3) {
+                        environment.territorySystem.createCombatFormation(
+                            { x: this.x, y: this.y },
+                            'defensive',
+                            soldiers.map(s => s.id)
+                        );
+                    }
+                }
+            }
+
+            executeChamberPlanning(environment) {
+                if (this.coherenceState > UCF.CHAMBER_CREATION_THRESHOLD) {
+                    const optimalLocation = this.findOptimalChamberLocation(environment);
+                    
+                    if (optimalLocation) {
+                        const chamberType = this.determineChamberType(environment);
+                        environment.chamberSystem.createChamber(
+                            optimalLocation.x, 
+                            optimalLocation.y, 
+                            chamberType, 
+                            this.coherenceState
+                        );
+                    }
+                }
+            }
+
+            findOptimalChamberLocation(environment) {
+                const candidates = [];
+                
+                for (let attempts = 0; attempts < 10; attempts++) {
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = 40 + Math.random() * 60;
+                    const x = environment.nestCenter.x + Math.cos(angle) * distance;
+                    const y = environment.nestCenter.y + Math.sin(angle) * distance;
+                    
+                    const nearbyChambersCount = environment.chamberSystem.chambers.filter(chamber => {
+                        const dist = Math.sqrt((chamber.x - x) ** 2 + (chamber.y - y) ** 2);
+                        return dist < 50;
+                    }).length;
+                    
+                    if (nearbyChambersCount < 3) {
+                        candidates.push({ x, y, score: this.coherenceState - nearbyChambersCount * 0.2 });
+                    }
+                }
+                
+                return candidates.length > 0 ? 
+                    candidates.reduce((best, candidate) => 
+                        candidate.score > best.score ? candidate : best
+                    ) : null;
+            }
+
+            determineChamberType(environment) {
+                const chamberTypes = ['storage', 'nursery', 'workshop', 'waste', 'royal'];
+                const typeCounts = {};
+                
+                chamberTypes.forEach(type => {
+                    typeCounts[type] = environment.chamberSystem.chambers.filter(c => c.type === type).length;
+                });
+                
+                return Object.entries(typeCounts).reduce((least, [type, count]) =>
+                    count < typeCounts[least] ? type : least, chamberTypes[0]
+                );
+            }
+
+            participateInDecisions(decisionSystem, pheromoneSystem) {
+                const now = Date.now();
+                if (now - this.lastDecisionVote < 5000) return;
+                
+                decisionSystem.activeDecisions.forEach(decision => {
+                    let distance;
+                    if (this.currentLocation === 'interior') {
+                        distance = Math.sqrt(
+                            (this.interiorX - decision.location.x) ** 2 + 
+                            (this.interiorY - decision.location.y) ** 2
+                        );
+                    } else {
+                        distance = Math.sqrt(
+                            (this.x - decision.location.x) ** 2 + 
+                            (this.y - decision.location.y) ** 2
+                        );
+                    }
+                    
+                    if (distance < 150 && !decision.participants.has(this.id)) {
+                        const vote = this.makeVotingDecision(decision);
+                        const influence = this.decisionInfluence * (this.leadership + 0.5);
+                        
+                        decisionSystem.vote(decision.id, this.id, vote, influence);
+                        
+                        const surface = this.currentLocation === 'interior' ? 'interior' : 'exterior';
+                        const x = this.currentLocation === 'interior' ? this.interiorX : this.x;
+                        const y = this.currentLocation === 'interior' ? this.interiorY : this.y;
+                        
+                        pheromoneSystem.depositDecisionPheromone(
+                            x, y, decision.type, vote, influence, this.id, surface
+                        );
+                        
+                        this.lastDecisionVote = now;
+                    }
+                });
+            }
+
+            makeVotingDecision(decision) {
+                let favorability = 0.5;
+                
+                switch (decision.type) {
+                    case 'resource':
+                        favorability += this.genetics.getTraitStrength('foraging') * 0.4;
+                        break;
+                    case 'expansion':
+                        favorability += this.genetics.getTraitStrength('construction') * 0.4;
+                        break;
+                    case 'defense':
+                        favorability += this.genetics.getTraitStrength('combat') * 0.4;
+                        break;
+                    case 'migration':
+                        favorability += this.genetics.getTraitStrength('navigation') * 0.4;
+                        break;
+                }
+                
+                favorability += this.leadership * 0.2;
+                favorability += (Math.random() - 0.5) * 0.3;
+                
+                return favorability > 0.5 ? 'yes' : 'no';
+            }
+
+            executeForaging(environment, pheromoneSystem) {
+                if (this.carryingFood >= this.maxCarry) {
+                    this.currentBehavior = 'returning';
+                    return;
+                }
+
+                let nearestFood = null;
+                let minDistance = Infinity;
+                
+                environment.foodSources.forEach(food => {
+                    if (food.amount > 0) {
+                        const distance = Math.sqrt((food.x - this.x) ** 2 + (food.y - this.y) ** 2);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestFood = food;
+                        }
+                    }
+                });
+
+                if (nearestFood && minDistance < 20) {
+                    const collectAmount = Math.min(0.02, nearestFood.amount, this.maxCarry - this.carryingFood);
+                    this.carryingFood += collectAmount;
+                    nearestFood.amount -= collectAmount;
+                    this.experiencePoints += collectAmount * 10;
+                    
+                    pheromoneSystem.depositPheromone(this.x, this.y, 'food', this.carryingFood * 2, this.id);
+                } else if (nearestFood) {
+                    this.navigateToward(nearestFood.x, nearestFood.y);
+                } else {
+                    this.followPheromoneGradient(pheromoneSystem, 'food');
+                }
+            }
+
+            returnToNest(environment, pheromoneSystem) {
+                const nest = environment.nestCenter;
+                const distance = Math.sqrt((nest.x - this.x) ** 2 + (nest.y - this.y) ** 2);
+                
+                if (distance < 30) {
+                    environment.totalFood += this.carryingFood;
+                    this.carryingFood = 0;
+                    this.currentBehavior = 'foraging';
+                    this.experiencePoints += 5;
+                } else {
+                    this.navigateToward(nest.x, nest.y);
+                    
+                    if (this.carryingFood > 0) {
+                        pheromoneSystem.depositPheromone(this.x, this.y, 'trail', this.carryingFood, this.id);
+                    }
+                }
+            }
+
+            executeConstruction(environment) {
+                const nest = environment.nestCenter;
+                const distance = Math.sqrt((nest.x - this.x) ** 2 + (nest.y - this.y) ** 2);
+                
+                if (distance > 100) {
+                    this.navigateToward(nest.x, nest.y);
+                } else {
+                    if (this.coherenceState > UCF.TUNNEL_CONSTRUCTION_THRESHOLD) {
+                        this.buildTunnel(environment);
+                    }
+                }
+            }
+
+            buildTunnel(environment) {
+                if (Math.random() < 0.05) {
+                    environment.tunnelNetwork.push({
+                        x: this.x,
+                        y: this.y,
+                        builder: this.id,
+                        integrity: this.coherenceState,
+                        timestamp: Date.now()
+                    });
+                    environment.totalTunnelLength += 5;
+                    this.experiencePoints += 3;
+                }
+            }
+
+            executePatrolling(ants, environment) {
+                const nest = environment.nestCenter;
+                const patrolRadius = 120;
+                const angle = this.age * 0.01;
+                const targetX = nest.x + Math.cos(angle) * patrolRadius;
+                const targetY = nest.y + Math.sin(angle) * patrolRadius;
+                
+                this.navigateToward(targetX, targetY);
+                this.checkForThreats(environment);
+            }
+
+            executeScouting(environment, pheromoneSystem) {
+                if (!this.target || this.distanceTo(this.target) < 20) {
+                    this.target = {
+                        x: Math.random() * 800,
+                        y: Math.random() * 600
+                    };
+                }
+                
+                this.navigateToward(this.target.x, this.target.y);
+                this.scoutForResources(environment, pheromoneSystem);
+            }
+
+            executeNurturing(ants, environment) {
+                const nearbyAnts = ants.filter(ant => 
+                    ant.id !== this.id && this.distanceTo(ant) < 50
+                );
+                
+                nearbyAnts.forEach(ant => {
+                    if (ant.energy < 0.5) {
+                        ant.energy += 0.002;
+                        this.energy -= 0.001;
+                        this.experiencePoints += 1;
+                    }
+                });
+            }
+
+            // FIX: Enhanced exploration with baseline movement
+            executeExploration(pheromoneSystem) {
+                // CRITICAL FIX: Always have baseline movement
+                const baseMovement = 0.015;
+                const explorationAngle = Math.random() * 2 * Math.PI;
+                const explorationStrength = baseMovement + 0.01 * this.coherenceState;
+                
+                this.vx += Math.cos(explorationAngle) * explorationStrength;
+                this.vy += Math.sin(explorationAngle) * explorationStrength;
+                
+                if (Math.random() < 0.3) {
+                    this.followPheromoneGradient(pheromoneSystem, null);
+                }
+            }
+
+            executeRupturedBehavior() {
+                this.vx += (Math.random() - 0.5) * 0.8;
+                this.vy += (Math.random() - 0.5) * 0.8;
+                this.energy -= 0.015;
+                
+                if (Math.random() < 0.1) {
+                    this.caste = null;
+                    this.casteStability = 0;
+                }
+            }
+
+            // FIX: Movement decoupled from coherence
+            navigateToward(targetX, targetY) {
+                const dx = targetX - this.x;
+                const dy = targetY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    const moveStrength = 0.03 * this.speed;
+                    // FIX: Coherence modifies movement by ±15%, not multiplies
+                    const coherenceBonus = 1 + (this.coherenceState - 0.5) * 0.3;
+                    this.vx += (dx / distance) * moveStrength * coherenceBonus;
+                    this.vy += (dy / distance) * moveStrength * coherenceBonus;
+                }
+            }
+
+            followPheromoneGradient(pheromoneSystem, type) {
+                const sampleDistance = 20;
+                const currentStrength = pheromoneSystem.getPheromoneStrength(this.x, this.y, type);
+                
+                let bestDirection = null;
+                let bestStrength = currentStrength;
+                
+                for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 4) {
+                    const testX = this.x + Math.cos(angle) * sampleDistance;
+                    const testY = this.y + Math.sin(angle) * sampleDistance;
+                    const strength = pheromoneSystem.getPheromoneStrength(testX, testY, type);
+                    
+                    if (strength > bestStrength) {
+                        bestStrength = strength;
+                        bestDirection = angle;
+                    }
+                }
+                
+                if (bestDirection !== null) {
+                    const moveStrength = 0.025 * this.chemicalSensitivity;
+                    this.vx += Math.cos(bestDirection) * moveStrength;
+                    this.vy += Math.sin(bestDirection) * moveStrength;
+                }
+            }
+
+            updatePheromoneDeposition(pheromoneSystem) {
+                const now = Date.now();
+                if (now - this.lastPheromoneDeposit > 500) {
+                    let shouldDeposit = false;
+                    let pheromoneType = 'general';
+                    let intensity = this.coherenceState * 0.5;
+                    
+                    if (this.carryingFood > 0) {
+                        shouldDeposit = true;
+                        pheromoneType = 'trail';
+                        intensity = this.carryingFood * 2;
+                    } else if (this.caste === 'scout' && this.coherenceState > 0.7) {
+                        shouldDeposit = true;
+                        pheromoneType = 'exploration';
+                        intensity = this.coherenceState;
+                    } else if (this.leadership > 0.7 && Math.random() < 0.1) {
+                        shouldDeposit = true;
+                        pheromoneType = 'leadership';
+                        intensity = this.leadership;
+                    }
+                    
+                    if (shouldDeposit) {
+                        const surface = this.currentLocation === 'interior' ? 'interior' : 'exterior';
+                        const x = this.currentLocation === 'interior' ? this.interiorX : this.x;
+                        const y = this.currentLocation === 'interior' ? this.interiorY : this.y;
+                        
+                        pheromoneSystem.depositPheromone(x, y, pheromoneType, intensity, this.id, surface);
+                        this.lastPheromoneDeposit = now;
+                    }
+                }
+            }
+
+            distanceTo(target) {
+                const dx = this.x - target.x;
+                const dy = this.y - target.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            detectRupture(time) {
+                if (this.coherenceHistory.length < 10) return false;
+
+                const recent = this.coherenceHistory.slice(-10);
+                const gradient = recent[9] - recent[0];
+                const variance = this.calculateVariance(recent);
+                
+                const conditions = {
+                    gradientRupture: Math.abs(gradient) > UCF.RUPTURE_THRESHOLD,
+                    energyRupture: this.energy < 0.05,
+                    isolationRupture: this.coherenceState < 0.15,
+                    stressRupture: variance > 0.25,
+                    leadershipRupture: this.leadership > 0.8 && this.coherenceState < 0.3
+                };
+
+                const severeConditions = Object.values(conditions).filter(Boolean).length;
+                const rupture = severeConditions >= 2;
+                
+                if (rupture && !this.ruptureState) {
+                    this.ruptureState = true;
+                    this.lastRuptureTime = time;
+                    this.adaptationRate += 0.15;
+                }
+                
+                return rupture;
+            }
+
+            calculateVariance(values) {
+                const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+                const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+                return squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+            }
+
+            computeRebirth(time) {
+                if (!this.ruptureState) return;
+
+                let rebirthSum = 0;
+                let weightSum = 0;
+
+                this.memoryEntanglement.forEach((memory) => {
+                    if (time > memory.time) {
+                        const timeDiff = time - memory.time;
+                        const coherenceWeight = Math.exp(memory.entanglement / UCF.REBIRTH_TEMPERATURE);
+                        const casteWeight = memory.casteAlignment || 1.0;
+                        const leadershipWeight = memory.leadershipResonance || 1.0;
+                        const historicalField = memory.entanglement * Math.exp(-timeDiff * 0.02);
+                        
+                        rebirthSum += historicalField * coherenceWeight * casteWeight * leadershipWeight;
+                        weightSum += coherenceWeight;
+                    }
+                });
+
+                const geneticResilience = this.strength * 0.7 + this.adaptability * 0.3;
+                rebirthSum += geneticResilience + 0.4;
+                weightSum += 2;
+
+                if (weightSum > 0) {
+                    this.rebirthField = rebirthSum / weightSum;
+                    
+                    if (this.rebirthField > 0.3) {
+                        this.executeRebirth();
+                    }
+                }
+            }
+
+            executeRebirth() {
+                this.ruptureState = false;
+                this.energy = Math.min(1.0, this.energy + this.rebirthField * 0.5);
+                this.coherenceState = this.rebirthField * 0.85;
+                
+                if (this.rebirthField > 0.8 && Math.random() < 0.04) {
+                    this.genetics.mutate(0.03);
+                }
+                
+                this.casteStability = 0;
+                this.experiencePoints += 25;
+            }
+
+            // FIX: Increased energy recovery and auto-return to nest
+            updateEnergyMetabolism(environment) {
+                const baseMetabolism = 0.0002;
+                const sizeMetabolism = (this.size / this.baseSize) * 0.00005;
+                const activityMultiplier = this.currentBehavior === 'foraging' ? 1.1 : 
+                                         this.currentBehavior === 'construction' ? 1.2 : 
+                                         this.currentBehavior === 'patrolling' ? 1.1 :
+                                         this.currentBehavior === 'commanding' ? 1.3 :
+                                         this.currentBehavior === 'nurturing' ? 0.9 : 1.0;
+                
+                this.energy -= (baseMetabolism + sizeMetabolism) * activityMultiplier / (this.strength + 0.5);
+                
+                // FIX: Much faster energy recovery inside nest
+                if (this.currentLocation === 'interior') {
+                    this.energy += 0.002; // 5x faster than before!
+                } else {
+                    const nestDistance = Math.sqrt((this.x - environment.nestCenter.x) ** 2 + 
+                                                   (this.y - environment.nestCenter.y) ** 2);
+                    if (nestDistance < UCF.NEST_INFLUENCE_RADIUS) {
+                        this.energy += 0.0006; // 2x faster near nest
+                    }
+                }
+                
+                // FIX: Auto-return when low energy
+                if (this.energy < 0.3 && this.currentLocation === 'exterior') {
+                    this.currentBehavior = 'resting';
+                    this.target = null;
+                }
+                
+                this.energy = Math.max(0, Math.min(1.0, this.energy));
+            }
+
+            // FIX: Reduced friction and minimum velocity
+            updatePhysics() {
+                if (this.currentLocation === 'exterior') {
+                    const maxSpeed = this.speed * (this.currentBehavior === 'scouting' ? 1.4 : 
+                                                   this.caste === 'super_major' ? 0.8 : 1.0);
+                    const velocity = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    
+                    if (velocity > maxSpeed) {
+                        this.vx = (this.vx / velocity) * maxSpeed;
+                        this.vy = (this.vy / velocity) * maxSpeed;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    const margin = 20;
+                    if (this.x < margin || this.x > 800 - margin) {
+                        this.vx *= -0.8;
+                    }
+                    if (this.y < margin || this.y > 600 - margin) {
+                        this.vy *= -0.8;
+                    }
+
+                    this.x = Math.max(margin, Math.min(800 - margin, this.x));
+                    this.y = Math.max(margin, Math.min(600 - margin, this.y));
+
+                    // FIX: Reduced friction (was 0.95, now 0.98)
+                    this.vx *= 0.98;
+                    this.vy *= 0.98;
+                    
+                    // FIX: Prevent complete stillness
+                    if (velocity < 0.05) {
+                        const jitterAngle = Math.random() * 2 * Math.PI;
+                        this.vx += Math.cos(jitterAngle) * 0.03;
+                        this.vy += Math.sin(jitterAngle) * 0.03;
+                    }
+                }
+            }
+
+            updateMemory() {
+                if (this.pathMemory.length > 100) {
+                    this.pathMemory.shift();
+                }
+                
+                const x = this.currentLocation === 'interior' ? this.interiorX : this.x;
+                const y = this.currentLocation === 'interior' ? this.interiorY : this.y;
+                
+                this.pathMemory.push({ 
+                    x: x, 
+                    y: y, 
+                    behavior: this.currentBehavior,
+                    location: this.currentLocation
+                });
+            }
+
+            scoutForResources(environment, pheromoneSystem) {
+                environment.foodSources.forEach(food => {
+                    const distance = this.distanceTo(food);
+                    if (distance < 40 && !this.knownFoodSources.includes(food)) {
+                        this.knownFoodSources.push(food);
+                        pheromoneSystem.depositPheromone(this.x, this.y, 'discovery', 1.0, this.id);
+                        this.experiencePoints += 20;
+                    }
+                });
+            }
+
+            checkForThreats(environment) {
+                if (environment.threatLevel > 0.5) {
+                    this.currentBehavior = 'defending';
+                }
+            }
+
+            executeCombat(ants, environment) {
+                // Placeholder for combat behavior
+            }
+        }
+
+        // Enhanced Environment System
+        class AntEnvironment {
+            constructor() {
+                this.nestCenter = { x: 400, y: 300 };
+                this.foodSources = this.generateFoodSources();
+                this.tunnelNetwork = [];
+                this.totalFood = 0;
+                this.totalTunnelLength = 0;
+                this.threatLevel = 0;
+                this.obstacles = [];
+                
+                this.chamberSystem = new ChamberSystem(this.nestCenter);
+                this.decisionSystem = new DecisionSystem();
+                this.territorySystem = new TerritorySystem(this.nestCenter);
+                this.interiorNest = new InteriorNestSystem(this.nestCenter);
+                
+                this.initializeNest();
+            }
+
+            generateFoodSources() {
+                const sources = [];
+                for (let i = 0; i < 4; i++) {
+                    sources.push({
+                        x: Math.random() * 600 + 100,
+                        y: Math.random() * 400 + 100,
+                        amount: 5 + Math.random() * 15,
+                        type: ['sugar', 'protein', 'seeds'][Math.floor(Math.random() * 3)],
+                        radius: 15 + Math.random() * 10
+                    });
+                }
+                return sources;
+            }
+
+            initializeNest() {
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i / 3) * 2 * Math.PI;
+                    this.tunnelNetwork.push({
+                        x: this.nestCenter.x + Math.cos(angle) * 30,
+                        y: this.nestCenter.y + Math.sin(angle) * 30,
+                        builder: -1,
+                        integrity: 1.0,
+                        timestamp: Date.now()
+                    });
+                }
+                this.totalTunnelLength = 90;
+            }
+
+            addFoodSource() {
+                this.foodSources.push({
+                    x: Math.random() * 600 + 100,
+                    y: Math.random() * 400 + 100,
+                    amount: 3 + Math.random() * 8,
+                    type: ['sugar', 'protein', 'seeds'][Math.floor(Math.random() * 3)],
+                    radius: 12 + Math.random() * 8
+                });
+            }
+
+            addObstacle() {
+                this.obstacles.push({
+                    x: Math.random() * 600 + 100,
+                    y: Math.random() * 400 + 100,
+                    radius: 20 + Math.random() * 30,
+                    type: 'rock'
+                });
+            }
+
+            addRivalColony() {
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 300 + Math.random() * 200;
+                const rivalCenter = {
+                    x: this.nestCenter.x + Math.cos(angle) * distance,
+                    y: this.nestCenter.y + Math.sin(angle) * distance
+                };
+                
+                this.territorySystem.combatZones.push({
+                    center: rivalCenter,
+                    type: 'rival_territory',
+                    ants: [],
+                    formation: [],
+                    effectiveness: 0.8,
+                    timestamp: Date.now()
+                });
+                
+                this.threatLevel += 0.5;
+            }
+
+            triggerColonyDecision() {
+                const decisionTypes = ['migration', 'expansion', 'resource', 'defense'];
+                const randomType = decisionTypes[Math.floor(Math.random() * decisionTypes.length)];
+                
+                this.decisionSystem.proposeDecision(
+                    randomType,
+                    this.nestCenter,
+                    -1
+                );
+            }
+
+            update() {
+                this.foodSources.forEach(food => {
+                    if (food.amount < 10) {
+                        food.amount += 0.005;
+                    }
+                });
+
+                this.tunnelNetwork = this.tunnelNetwork.filter(tunnel => {
+                    tunnel.integrity -= 0.0001;
+                    return tunnel.integrity > 0.1;
+                });
+
+                this.threatLevel *= 0.99;
+                
+                this.chamberSystem.update();
+                this.decisionSystem.update();
+                this.territorySystem.update();
+                this.interiorNest.update();
+            }
+        }
+
+        // Main Simulation with Fixed Movement
+        class UCFAntColonySimulation {
+            constructor() {
+                this.canvas = document.getElementById('antColony');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.interiorCanvas = document.getElementById('nestInterior');
+                this.interiorCtx = this.interiorCanvas.getContext('2d');
+                
+                this.ants = [];
+                this.environment = new AntEnvironment();
+                this.pheromoneSystem = new PheromoneSystem();
+                this.time = 0;
+                this.isRunning = true;
+                this.simulationSpeed = 1.0;
+                this.ucfSensitivity = 1.0;
+                
+                this.zoom = 1.0;
+                this.minZoom = 0.5;
+                this.maxZoom = 4.0;
+                this.panX = 0;
+                this.panY = 0;
+                this.isDragging = false;
+                this.lastMouseX = 0;
+                this.lastMouseY = 0;
+                
+                this.visualizations = {
+                    showCoherenceField: true,
+                    showRuptureZones: false,
+                    showRebirthFields: false,
+                    showMemoryEntanglement: false,
+                    showTemporalDecay: false,
+                    showGeneticSequences: false,
+                    showMutationEvents: false,
+                    showCasteTransitions: false,
+                    showTraitExpressions: false,
+                    showEvolutionPressure: false,
+                    showPheromoneTrails: true,
+                    showChemicalGradients: false,
+                    showInformationFlow: false,
+                    showSocialNetworks: false,
+                    showCommunicationPaths: false,
+                    showTunnelNetwork: false,
+                    showConstructionPaths: false,
+                    showStructuralIntegrity: false,
+                    showBuildingAlgorithms: false,
+                    showArchitecturalPlanning: false,
+                    showEnergyFlows: false,
+                    showResourceDistribution: false,
+                    showMetabolicRates: false,
+                    showForagingEfficiency: false,
+                    showNutrientNetworks: false,
+                    showLearningPaths: false,
+                    showKnowledgeDistribution: false,
+                    showAdaptationRates: false,
+                    showIntelligenceNetworks: false,
+                    showEmergentBehaviors: false,
+                    showChamberNetwork: false,
+                    showChamberTypes: false,
+                    showChamberFlow: false,
+                    showStorageSystem: false,
+                    showWasteManagement: false,
+                    showDecisionNodes: false,
+                    showVotingPheromones: false,
+                    showConsensusFormation: false,
+                    showDecisionOutcomes: false,
+                    showLeadershipEmergence: false,
+                    showTerritoryBounds: false,
+                    showCombatFormations: false,
+                    showDefenseStrategies: false,
+                    showRaidPaths: false,
+                    showWarfareTactics: false,
+                    showSuperMajors: false,
+                    showHybridCastes: false,
+                    showCasteSpecialization: false,
+                    showCasteHierarchy: false,
+                    showCasteEvolution: false,
+                    showNestEntrances: true,
+                    showTunnelConnections: true,
+                    showInteriorAnts: true,
+                    showChamberDetails: true,
+                    showAirFlow: false
+                };
+                
+                this.initializeColony();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            initializeColony() {
+                const initialAnts = 15;
+                for (let i = 0; i < initialAnts; i++) {
+                    const angle = (i / initialAnts) * 2 * Math.PI;
+                    const radius = 20 + Math.random() * 30;
+                    const x = this.environment.nestCenter.x + Math.cos(angle) * radius;
+                    const y = this.environment.nestCenter.y + Math.sin(angle) * radius;
+                    
+                    this.ants.push(new EmergentAnt(x, y, i));
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('playPause').addEventListener('click', () => {
+                    this.isRunning = !this.isRunning;
+                    document.getElementById('playPause').textContent = this.isRunning ? '⏸️ Pause' : '▶️ Play';
+                });
+
+                document.getElementById('reset').addEventListener('click', () => {
+                    this.resetSimulation();
+                });
+
+                document.getElementById('addAnts').addEventListener('click', () => {
+                    this.addAnts(5);
+                });
+
+                document.getElementById('addFood').addEventListener('click', () => {
+                    this.environment.addFoodSource();
+                });
+
+                document.getElementById('addObstacle').addEventListener('click', () => {
+                    this.environment.addObstacle();
+                });
+
+                document.getElementById('triggerRupture').addEventListener('click', () => {
+                    this.triggerRupture();
+                });
+
+                document.getElementById('addRival').addEventListener('click', () => {
+                    this.environment.addRivalColony();
+                });
+
+                document.getElementById('triggerDecision').addEventListener('click', () => {
+                    this.environment.triggerColonyDecision();
+                });
+
+                document.getElementById('speedSlider').addEventListener('input', (e) => {
+                    this.simulationSpeed = parseFloat(e.target.value);
+                    document.getElementById('speedValue').textContent = this.simulationSpeed.toFixed(1) + 'x';
+                });
+
+                document.getElementById('ucfSlider').addEventListener('input', (e) => {
+                    this.ucfSensitivity = parseFloat(e.target.value);
+                    UCF.EMERGENCE_FACTOR = this.ucfSensitivity;
+                    document.getElementById('ucfValue').textContent = this.ucfSensitivity.toFixed(1) + 'x';
+                });
+
+                document.getElementById('zoomIn').addEventListener('click', () => {
+                    this.zoomIn();
+                });
+
+                document.getElementById('zoomOut').addEventListener('click', () => {
+                    this.zoomOut();
+                });
+
+                document.getElementById('resetView').addEventListener('click', () => {
+                    this.resetView();
+                });
+
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    if (e.deltaY < 0) {
+                        this.zoomAtPoint(mouseX, mouseY, 1.1);
+                    } else {
+                        this.zoomAtPoint(mouseX, mouseY, 0.9);
+                    }
+                });
+
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.isDragging = true;
+                    this.lastMouseX = e.clientX;
+                    this.lastMouseY = e.clientY;
+                    this.canvas.style.cursor = 'grabbing';
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.isDragging) {
+                        const deltaX = e.clientX - this.lastMouseX;
+                        const deltaY = e.clientY - this.lastMouseY;
+                        
+                        this.panX += deltaX / this.zoom;
+                        this.panY += deltaY / this.zoom;
+                        
+                        this.lastMouseX = e.clientX;
+                        this.lastMouseY = e.clientY;
+                    }
+                });
+
+                this.canvas.addEventListener('mouseup', () => {
+                    this.isDragging = false;
+                    this.canvas.style.cursor = 'grab';
+                });
+
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.isDragging = false;
+                    this.canvas.style.cursor = 'default';
+                });
+
+                this.canvas.style.cursor = 'grab';
+
+                Object.keys(this.visualizations).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.addEventListener('change', (e) => {
+                            this.visualizations[key] = e.target.checked;
+                        });
+                    }
+                });
+            }
+
+            resetSimulation() {
+                this.ants = [];
+                this.environment = new AntEnvironment();
+                this.pheromoneSystem = new PheromoneSystem();
+                this.time = 0;
+                this.resetView();
+                this.initializeColony();
+            }
+
+            zoomIn() {
+                this.zoom = Math.min(this.maxZoom, this.zoom * 1.2);
+            }
+
+            zoomOut() {
+                this.zoom = Math.max(this.minZoom, this.zoom / 1.2);
+            }
+
+            zoomAtPoint(mouseX, mouseY, zoomFactor) {
+                const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom * zoomFactor));
+                
+                if (newZoom !== this.zoom) {
+                    const worldX = (mouseX - this.canvas.width/2) / this.zoom - this.panX;
+                    const worldY = (mouseY - this.canvas.height/2) / this.zoom - this.panY;
+                    
+                    this.zoom = newZoom;
+                    
+                    this.panX = (mouseX - this.canvas.width/2) / this.zoom - worldX;
+                    this.panY = (mouseY - this.canvas.height/2) / this.zoom - worldY;
+                }
+            }
+
+            resetView() {
+                this.zoom = 1.0;
+                this.panX = 0;
+                this.panY = 0;
+            }
+
+            applyZoomTransform(ctx) {
+                ctx.translate(this.canvas.width/2, this.canvas.height/2);
+                ctx.scale(this.zoom, this.zoom);
+                ctx.translate(this.panX, this.panY);
+                ctx.translate(-this.canvas.width/2, -this.canvas.height/2);
+            }
+
+            resetZoomTransform(ctx) {
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+            }
+
+            addAnts(count) {
+                for (let i = 0; i < count; i++) {
+                    const parent = this.ants[Math.floor(Math.random() * this.ants.length)];
+                    const angle = Math.random() * 2 * Math.PI;
+                    const radius = 25 + Math.random() * 25;
+                    const x = this.environment.nestCenter.x + Math.cos(angle) * radius;
+                    const y = this.environment.nestCenter.y + Math.sin(angle) * radius;
+                    
+                    this.ants.push(new EmergentAnt(x, y, this.ants.length, parent?.genetics));
+                }
+            }
+
+            triggerRupture() {
+                const targets = Math.min(3, this.ants.length);
+                for (let i = 0; i < targets; i++) {
+                    const ant = this.ants[Math.floor(Math.random() * this.ants.length)];
+                    ant.ruptureState = true;
+                    ant.lastRuptureTime = this.time;
+                }
+            }
+
+            update() {
+                if (!this.isRunning) return;
+
+                this.environment.ants = this.ants;
+                this.environment.update();
+                this.pheromoneSystem.update();
+
+                this.ants.forEach(ant => {
+                    ant.update(this.ants, this.environment, this.time, this.pheromoneSystem);
+                });
+
+                this.ants = this.ants.filter(ant => ant.energy > 0 && ant.age < 30000);
+
+                this.handleReproduction();
+
+                this.time++;
+                this.updateStatistics();
+            }
+
+            handleReproduction() {
+                if (this.ants.length < 80 && Math.random() < 0.008) {
+                    const nest = this.environment.nestCenter;
+                    const x = nest.x + (Math.random() - 0.5) * 60;
+                    const y = nest.y + (Math.random() - 0.5) * 60;
+                    
+                    this.ants.push(new EmergentAnt(x, y, this.ants.length));
+                }
+            }
+
+            render() {
+                this.ctx.fillStyle = '#F5DEB3';
+                this.ctx.fillRect(0, 0, 800, 600);
+
+                this.ctx.save();
+                this.applyZoomTransform(this.ctx);
+
+                this.renderVisualizationLayers();
+                this.renderEnvironment();
+                this.renderPheromoneTrails();
+                this.renderAnts();
+                
+                this.ctx.restore();
+                
+                this.renderZoomIndicator();
+                
+                this.renderInteriorView();
+            }
+
+            renderZoomIndicator() {
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                this.ctx.fillRect(10, 10, 120, 30);
+                this.ctx.strokeStyle = '#8B4513';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(10, 10, 120, 30);
+                
+                this.ctx.fillStyle = '#2d1810';
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(`🔍 Zoom: ${this.zoom.toFixed(1)}x`, 15, 28);
+            }
+
+            renderInteriorView() {
+                this.interiorCtx.fillStyle = '#2F1B14';
+                this.interiorCtx.fillRect(0, 0, 500, 600);
+                
+                if (this.visualizations.showChamberDetails) {
+                    this.renderInteriorChambers();
+                }
+                
+                if (this.visualizations.showTunnelConnections) {
+                    this.renderInteriorTunnels();
+                }
+                
+                if (this.visualizations.showInteriorAnts) {
+                    this.renderInteriorAnts();
+                }
+                
+                this.renderInteriorPheromones();
+                
+                this.renderDepthIndicators();
+            }
+
+            renderInteriorChambers() {
+                this.environment.interiorNest.chambers.forEach(chamber => {
+                    const typeColors = {
+                        royal: '#FFD700',
+                        nursery: '#FFB6C1',
+                        storage: '#8B4513',
+                        workshop: '#708090',
+                        waste: '#556B2F',
+                        military: '#B22222',
+                        emergency: '#FF4500',
+                        growth: '#32CD32'
+                    };
+                    
+                    this.interiorCtx.fillStyle = typeColors[chamber.type] || '#654321';
+                    this.interiorCtx.globalAlpha = 0.3;
+                    this.interiorCtx.beginPath();
+                    this.interiorCtx.arc(chamber.x, chamber.y, chamber.radius, 0, 2 * Math.PI);
+                    this.interiorCtx.fill();
+                    
+                    this.interiorCtx.globalAlpha = 0.8;
+                    this.interiorCtx.strokeStyle = typeColors[chamber.type] || '#654321';
+                    this.interiorCtx.lineWidth = 2;
+                    this.interiorCtx.stroke();
+                    
+                    this.interiorCtx.globalAlpha = 1.0;
+                    this.interiorCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    this.interiorCtx.font = '10px Arial';
+                    this.interiorCtx.fillText(chamber.type, chamber.x - 20, chamber.y - chamber.radius - 5);
+                    this.interiorCtx.fillText(`${chamber.occupancy}/${chamber.capacity}`, chamber.x - 15, chamber.y + chamber.radius + 15);
+                    
+                    const tempColor = chamber.temperature > 24 ? 'red' : chamber.temperature < 20 ? 'blue' : 'green';
+                    this.interiorCtx.fillStyle = tempColor;
+                    this.interiorCtx.beginPath();
+                    this.interiorCtx.arc(chamber.x + chamber.radius - 5, chamber.y - chamber.radius + 5, 3, 0, 2 * Math.PI);
+                    this.interiorCtx.fill();
+                    
+                    const humidityColor = chamber.humidity > 0.7 ? 'darkblue' : chamber.humidity < 0.5 ? 'orange' : 'lightblue';
+                    this.interiorCtx.fillStyle = humidityColor;
+                    this.interiorCtx.beginPath();
+                    this.interiorCtx.arc(chamber.x + chamber.radius - 5, chamber.y - chamber.radius + 12, 2, 0, 2 * Math.PI);
+                    this.interiorCtx.fill();
+                });
+            }
+
+            renderInteriorTunnels() {
+                this.environment.interiorNest.tunnels.forEach(tunnel => {
+                    this.interiorCtx.strokeStyle = `rgba(139, 69, 19, ${tunnel.structural})`;
+                    this.interiorCtx.lineWidth = tunnel.width;
+                    this.interiorCtx.beginPath();
+                    this.interiorCtx.moveTo(tunnel.from.x, tunnel.from.y);
+                    this.interiorCtx.lineTo(tunnel.to.x, tunnel.to.y);
+                    this.interiorCtx.stroke();
+                    
+                    if (tunnel.traffic > 0.1) {
+                        this.interiorCtx.strokeStyle = `rgba(255, 255, 0, ${tunnel.traffic})`;
+                        this.interiorCtx.lineWidth = 2;
+                        this.interiorCtx.stroke();
+                    }
+                });
+            }
+
+            renderInteriorAnts() {
+                this.environment.interiorNest.interiorAnts.forEach(ant => {
+                    this.renderRealisticAnt(ant, this.interiorCtx, true);
+                });
+            }
+
+            renderInteriorPheromones() {
+                this.pheromoneSystem.trails.forEach(trail => {
+                    if (trail.surface === 'interior') {
+                        const alpha = Math.min(0.8, trail.intensity);
+                        
+                        const colors = {
+                            food: `rgba(255, 215, 0, ${alpha})`,
+                            trail: `rgba(0, 255, 0, ${alpha})`,
+                            exploration: `rgba(0, 100, 255, ${alpha})`,
+                            leadership: `rgba(255, 105, 180, ${alpha})`,
+                            interior: `rgba(139, 69, 19, ${alpha})`,
+                            general: `rgba(139, 69, 19, ${alpha})`
+                        };
+                        
+                        this.interiorCtx.fillStyle = colors[trail.type] || colors.general;
+                        this.interiorCtx.beginPath();
+                        this.interiorCtx.arc(trail.x, trail.y, 2 + trail.intensity * 3, 0, 2 * Math.PI);
+                        this.interiorCtx.fill();
+                    }
+                });
+            }
+
+            renderDepthIndicators() {
+                this.interiorCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                this.interiorCtx.font = '12px Arial';
+                this.interiorCtx.fillText('🏠 Interior Nest View', 10, 20);
+                this.interiorCtx.fillText('Level 1 - Royal & Nursery', 10, 100);
+                this.interiorCtx.fillText('Level 2 - Storage & Workshop', 10, 200);
+                this.interiorCtx.fillText('Level 3 - Waste & Military', 10, 300);
+                this.interiorCtx.fillText('Level 4 - Emergency & Growth', 10, 400);
+                
+                this.interiorCtx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+                this.interiorCtx.lineWidth = 3;
+                this.interiorCtx.beginPath();
+                this.interiorCtx.arc(250, 50, 15, 0, 2 * Math.PI);
+                this.interiorCtx.stroke();
+                this.interiorCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                this.interiorCtx.fillText('🚪 Main Entrance', 200, 35);
+            }
+
+            renderVisualizationLayers() {
+                if (this.visualizations.showCoherenceField) this.renderCoherenceField();
+                if (this.visualizations.showRuptureZones) this.renderRuptureZones();
+                if (this.visualizations.showRebirthFields) this.renderRebirthFields();
+                if (this.visualizations.showMemoryEntanglement) this.renderMemoryEntanglement();
+                if (this.visualizations.showTemporalDecay) this.renderTemporalDecay();
+                if (this.visualizations.showGeneticSequences) this.renderGeneticSequences();
+                if (this.visualizations.showMutationEvents) this.renderMutationEvents();
+                if (this.visualizations.showCasteTransitions) this.renderCasteTransitions();
+                if (this.visualizations.showTraitExpressions) this.renderTraitExpressions();
+                if (this.visualizations.showEvolutionPressure) this.renderEvolutionPressure();
+                if (this.visualizations.showChemicalGradients) this.renderChemicalGradients();
+                if (this.visualizations.showInformationFlow) this.renderInformationFlow();
+                if (this.visualizations.showSocialNetworks) this.renderSocialNetworks();
+                if (this.visualizations.showCommunicationPaths) this.renderCommunicationPaths();
+                if (this.visualizations.showChamberNetwork) this.renderChamberNetwork();
+                if (this.visualizations.showChamberTypes) this.renderChamberTypes();
+                if (this.visualizations.showDecisionNodes) this.renderDecisionNodes();
+                if (this.visualizations.showVotingPheromones) this.renderVotingPheromones();
+                if (this.visualizations.showTerritoryBounds) this.renderTerritoryBounds();
+                if (this.visualizations.showCombatFormations) this.renderCombatFormations();
+                if (this.visualizations.showSuperMajors) this.renderSuperMajors();
+                if (this.visualizations.showHybridCastes) this.renderHybridCastes();
+                if (this.visualizations.showNestEntrances) this.renderNestEntrances();
+            }
+
+            renderNestEntrances() {
+                this.environment.interiorNest.entrances.forEach(entrance => {
+                    if (entrance.active) {
+                        this.ctx.fillStyle = '#2F1B14';
+                        this.ctx.beginPath();
+                        this.ctx.arc(entrance.x, entrance.y, 15, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                        
+                        this.ctx.strokeStyle = '#8B4513';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.stroke();
+                        
+                        const activity = Array.from(this.environment.interiorNest.interiorAnts.values()).length;
+                        this.ctx.fillStyle = `rgba(255, 255, 0, ${Math.min(1, activity / 10)})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(entrance.x, entrance.y, 8, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
+                });
+            }
+
+            renderCoherenceField() {
+                for (let x = 0; x < 800; x += 20) {
+                    for (let y = 0; y < 600; y += 20) {
+                        let fieldStrength = 0;
+                        
+                        this.ants.filter(ant => ant.currentLocation === 'exterior').forEach(ant => {
+                            const dx = x - ant.x;
+                            const dy = y - ant.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < UCF.CHEMICAL_COHERENCE_RANGE) {
+                                fieldStrength += ant.coherenceState * Math.exp(-distance / 60);
+                            }
+                        });
+
+                        if (fieldStrength > 0.15) {
+                            const intensity = Math.min(1, fieldStrength);
+                            this.ctx.fillStyle = `rgba(139, 69, 19, ${intensity * 0.1})`;
+                            this.ctx.fillRect(x, y, 20, 20);
+                        }
+                    }
+                }
+            }
+
+            renderRuptureZones() {
+                this.ants.forEach(ant => {
+                    if (ant.ruptureState && ant.currentLocation === 'exterior') {
+                        this.ctx.strokeStyle = 'rgba(220, 20, 60, 0.8)';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, 25, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderRebirthFields() {
+                this.ants.forEach(ant => {
+                    if (ant.rebirthField > 0.2 && ant.currentLocation === 'exterior') {
+                        const radius = ant.rebirthField * 40;
+                        this.ctx.strokeStyle = `rgba(147, 112, 219, ${ant.rebirthField})`;
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, radius, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderMemoryEntanglement() {
+                this.ants.forEach(ant => {
+                    if (ant.currentLocation === 'exterior') {
+                        ant.memoryEntanglement.forEach((memory, otherId) => {
+                            const other = this.ants.find(a => a.id === parseInt(otherId));
+                            if (other && other.currentLocation === 'exterior' && memory.entanglement > 0.3) {
+                                this.ctx.strokeStyle = `rgba(139, 69, 19, ${memory.entanglement * 0.5})`;
+                                this.ctx.lineWidth = 1;
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(ant.x, ant.y);
+                                this.ctx.lineTo(other.x, other.y);
+                                this.ctx.stroke();
+                            }
+                        });
+                    }
+                });
+            }
+
+            renderSuperMajors() {
+                this.ants.forEach(ant => {
+                    if ((ant.caste === 'super_major' || ant.evolutionLevel > 2) && ant.currentLocation === 'exterior') {
+                        this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+                        this.ctx.lineWidth = 3;
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, ant.size + 5, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderHybridCastes() {
+                this.ants.forEach(ant => {
+                    if (ant.hybridCaste && ant.currentLocation === 'exterior') {
+                        this.ctx.strokeStyle = 'rgba(255, 105, 180, 0.7)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.setLineDash([5, 5]);
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, ant.size + 3, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                        this.ctx.setLineDash([]);
+                    }
+                });
+            }
+
+            renderTemporalDecay() {
+                this.ants.forEach(ant => {
+                    if (ant.currentLocation === 'exterior') {
+                        ant.coherenceHistory.forEach((coherence, index) => {
+                            if (index % 5 === 0) {
+                                const age = index / ant.coherenceHistory.length;
+                                const alpha = (1 - age) * coherence * 0.3;
+                                this.ctx.fillStyle = `rgba(139, 69, 19, ${alpha})`;
+                                this.ctx.beginPath();
+                                this.ctx.arc(ant.x + (Math.random() - 0.5) * age * 30, 
+                                            ant.y + (Math.random() - 0.5) * age * 30, 
+                                            2, 0, 2 * Math.PI);
+                                this.ctx.fill();
+                            }
+                        });
+                    }
+                });
+            }
+
+            renderGeneticSequences() {
+                this.ants.forEach((ant, index) => {
+                    if (index % 4 === 0 && ant.currentLocation === 'exterior') {
+                        const traits = Object.keys(ant.genetics.sequences);
+                        traits.slice(0, 6).forEach((trait, seqIndex) => {
+                            const strength = ant.genetics.getTraitStrength(trait);
+                            const barHeight = strength * 15;
+                            const x = ant.x - traits.length * 2 + seqIndex * 4;
+                            const y = ant.y - 25;
+                            
+                            this.ctx.fillStyle = `hsl(${seqIndex * 45}, 70%, 50%)`;
+                            this.ctx.fillRect(x, y - barHeight, 2, barHeight);
+                        });
+                    }
+                });
+            }
+
+            renderMutationEvents() {
+                this.ants.forEach(ant => {
+                    if (ant.genetics.mutations > 0 && ant.currentLocation === 'exterior') {
+                        const intensity = Math.min(1, ant.genetics.mutations / 10);
+                        this.ctx.strokeStyle = `rgba(255, 0, 255, ${intensity})`;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, 15, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderCasteTransitions() {
+                this.ants.forEach(ant => {
+                    if (ant.casteStability < 5 && ant.currentLocation === 'exterior') {
+                        this.ctx.strokeStyle = 'rgba(255, 165, 0, 0.6)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.setLineDash([3, 3]);
+                        this.ctx.beginPath();
+                        this.ctx.arc(ant.x, ant.y, ant.size + 6, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                        this.ctx.setLineDash([]);
+                    }
+                });
+            }
+
+            renderTraitExpressions() {
+                this.ants.forEach((ant, index) => {
+                    if (index % 5 === 0 && ant.currentLocation === 'exterior') {
+                        const traits = ['strength', 'intelligence', 'leadership', 'adaptability'];
+                        traits.forEach((trait, traitIndex) => {
+                            const strength = ant.genetics.getTraitStrength(trait);
+                            const barHeight = strength * 12;
+                            const x = ant.x - traits.length * 2 + traitIndex * 4;
+                            const y = ant.y + 20;
+                            
+                            this.ctx.fillStyle = `hsl(${traitIndex * 90}, 60%, ${40 + strength * 30}%)`;
+                            this.ctx.fillRect(x, y - barHeight, 3, barHeight);
+                        });
+                    }
+                });
+            }
+
+            renderEvolutionPressure() {
+                const pressureZones = [
+                    { x: 150, y: 150, pressure: this.environment.threatLevel, label: 'Threat' },
+                    { x: 300, y: 150, pressure: Math.max(0, 1 - this.environment.foodSources.length / 5), label: 'Food' },
+                    { x: 450, y: 150, pressure: Math.max(0, this.ants.length / 100), label: 'Population' },
+                    { x: 600, y: 150, pressure: Math.max(0, 1 - this.environment.chamberSystem.chambers.length / 20), label: 'Space' }
+                ];
+
+                pressureZones.forEach(zone => {
+                    const intensity = Math.min(1, zone.pressure);
+                    this.ctx.fillStyle = `rgba(255, ${255 * (1 - intensity)}, 0, 0.7)`;
+                    this.ctx.fillRect(zone.x - 15, zone.y - intensity * 40, 30, intensity * 40);
+                    
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(zone.label, zone.x - 12, zone.y + 15);
+                    this.ctx.fillText(`${(intensity * 100).toFixed(0)}%`, zone.x - 10, zone.y + 25);
+                });
+            }
+
+            renderChemicalGradients() {
+                for (let x = 0; x < 800; x += 40) {
+                    for (let y = 0; y < 600; y += 40) {
+                        const strength = this.pheromoneSystem.getPheromoneStrength(x, y, null, 'exterior');
+                        if (strength > 0.1) {
+                            this.ctx.fillStyle = `rgba(0, 255, 0, ${strength * 0.3})`;
+                            this.ctx.fillRect(x - 2, y - 2, 4, 4);
+                        }
+                    }
+                }
+            }
+
+            renderInformationFlow() {
+                this.ants.forEach(ant => {
+                    if (ant.leadership > 0.6 && ant.currentLocation === 'exterior') {
+                        const nearbyAnts = this.ants.filter(other => 
+                            other.id !== ant.id && 
+                            other.currentLocation === 'exterior' &&
+                            Math.sqrt((ant.x - other.x) ** 2 + (ant.y - other.y) ** 2) < 80
+                        );
+                        
+                        nearbyAnts.forEach(other => {
+                            this.ctx.strokeStyle = `rgba(0, 191, 255, ${ant.leadership * 0.4})`;
+                            this.ctx.lineWidth = 1;
+                            this.ctx.setLineDash([2, 2]);
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(ant.x, ant.y);
+                            this.ctx.lineTo(other.x, other.y);
+                            this.ctx.stroke();
+                            this.ctx.setLineDash([]);
+                        });
+                    }
+                });
+            }
+
+            renderSocialNetworks() {
+                const leaders = this.ants.filter(ant => ant.leadership > 0.7 && ant.currentLocation === 'exterior');
+                leaders.forEach(leader => {
+                    this.ctx.strokeStyle = 'rgba(147, 112, 219, 0.4)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(leader.x, leader.y, leader.leadership * 40, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                });
+            }
+
+            renderCommunicationPaths() {
+                this.pheromoneSystem.trails.forEach(trail => {
+                    if ((trail.type === 'leadership' || trail.type === 'decision') && trail.surface === 'exterior') {
+                        this.ctx.strokeStyle = `rgba(255, 20, 147, ${trail.intensity * 0.6})`;
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(trail.x, trail.y, 8, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderChamberNetwork() {
+                this.environment.chamberSystem.chambers.forEach(chamber => {
+                    this.ctx.strokeStyle = `rgba(153, 50, 204, ${chamber.specialization})`;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(chamber.x, chamber.y, 15 + chamber.level * 5, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                });
+
+                this.environment.chamberSystem.connections.forEach(conn => {
+                    const from = this.environment.chamberSystem.chambers.find(c => c.id === conn.from);
+                    const to = this.environment.chamberSystem.chambers.find(c => c.id === conn.to);
+                    
+                    if (from && to) {
+                        this.ctx.strokeStyle = `rgba(153, 50, 204, ${conn.efficiency * 0.5})`;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(from.x, from.y);
+                        this.ctx.lineTo(to.x, to.y);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            renderChamberTypes() {
+                const typeColors = {
+                    royal: '#FFD700',
+                    nursery: '#FFB6C1',
+                    storage: '#8B4513',
+                    workshop: '#708090',
+                    waste: '#556B2F'
+                };
+
+                this.environment.chamberSystem.chambers.forEach(chamber => {
+                    this.ctx.fillStyle = typeColors[chamber.type] || '#9932CC';
+                    this.ctx.beginPath();
+                    this.ctx.arc(chamber.x, chamber.y, 8, 0, 2 * Math.PI);
+                    this.ctx.fill();
+
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(chamber.type, chamber.x - 15, chamber.y - 20);
+                });
+            }
+
+            renderDecisionNodes() {
+                this.environment.decisionSystem.activeDecisions.forEach(decision => {
+                    const consensus = decision.consensus;
+                    const color = consensus > 0.6 ? 'green' : consensus < 0.4 ? 'red' : 'yellow';
+                    
+                    this.ctx.fillStyle = `rgba(${color === 'green' ? '0, 255, 0' : color === 'red' ? '255, 0, 0' : '255, 255, 0'}, 0.6)`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(decision.location.x, decision.location.y, 20, 0, 2 * Math.PI);
+                    this.ctx.fill();
+
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.fillText(`${(consensus * 100).toFixed(0)}%`, decision.location.x - 15, decision.location.y + 5);
+                });
+            }
+
+            renderVotingPheromones() {
+                this.pheromoneSystem.decisionPheromones.forEach(pheromone => {
+                    if (pheromone.surface === 'exterior') {
+                        const color = pheromone.vote === 'yes' ? 'rgba(0, 255, 0' : 'rgba(255, 0, 0';
+                        this.ctx.fillStyle = `${color}, ${pheromone.intensity})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(pheromone.x, pheromone.y, 3, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
+                });
+            }
+
+            renderTerritoryBounds() {
+                this.ctx.strokeStyle = 'rgba(139, 0, 0, 0.6)';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                
+                if (this.environment.territorySystem.territoryBounds.length > 2) {
+                    this.environment.territorySystem.territoryBounds.forEach((bound, index) => {
+                        if (index === 0) {
+                            this.ctx.moveTo(bound.x, bound.y);
+                        } else {
+                            this.ctx.lineTo(bound.x, bound.y);
+                        }
+                    });
+                    this.ctx.closePath();
+                    this.ctx.stroke();
+                }
+            }
+
+            renderCombatFormations() {
+                this.environment.territorySystem.combatZones.forEach(zone => {
+                    this.ctx.strokeStyle = 'rgba(178, 34, 34, 0.8)';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(zone.center.x, zone.center.y, 30, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+
+                    zone.formation.forEach(pos => {
+                        this.ctx.fillStyle = 'rgba(178, 34, 34, 0.6)';
+                        this.ctx.beginPath();
+                        this.ctx.arc(zone.center.x + pos.x, zone.center.y + pos.y, 3, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    });
+                });
+            }
+
+            renderEnvironment() {
+                const nest = this.environment.nestCenter;
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.beginPath();
+                this.ctx.arc(nest.x, nest.y, 25, 0, 2 * Math.PI);
+                this.ctx.fill();
+                
+                this.ctx.fillStyle = '#2F1B14';
+                this.ctx.beginPath();
+                this.ctx.arc(nest.x, nest.y, 12, 0, 2 * Math.PI);
+                this.ctx.fill();
+
+                if (this.visualizations.showTunnelNetwork) {
+                    this.ctx.strokeStyle = '#A0522D';
+                    this.ctx.lineWidth = 3;
+                    this.environment.tunnelNetwork.forEach(tunnel => {
+                        this.ctx.globalAlpha = tunnel.integrity;
+                        this.ctx.beginPath();
+                        this.ctx.arc(tunnel.x, tunnel.y, 8, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                    });
+                    this.ctx.globalAlpha = 1;
+                }
+
+                this.environment.foodSources.forEach(food => {
+                    const alpha = Math.min(1, food.amount / 10);
+                    this.ctx.globalAlpha = alpha;
+                    
+                    const colors = {
+                        sugar: '#FFD700',
+                        protein: '#CD853F',
+                        seeds: '#8B4513'
+                    };
+                    
+                    this.ctx.fillStyle = colors[food.type] || '#FFD700';
+                    this.ctx.beginPath();
+                    this.ctx.arc(food.x, food.y, food.radius, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.fillText(food.amount.toFixed(1), food.x - 15, food.y - food.radius - 5);
+                });
+                this.ctx.globalAlpha = 1;
+
+                this.environment.obstacles.forEach(obstacle => {
+                    this.ctx.fillStyle = '#696969';
+                    this.ctx.beginPath();
+                    this.ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                });
+            }
+
+            renderPheromoneTrails() {
+                if (!this.visualizations.showPheromoneTrails) return;
+                
+                this.pheromoneSystem.trails.forEach(trail => {
+                    if (trail.surface === 'exterior') {
+                        const alpha = Math.min(0.8, trail.intensity);
+                        
+                        const colors = {
+                            food: `rgba(255, 215, 0, ${alpha})`,
+                            trail: `rgba(0, 255, 0, ${alpha})`,
+                            exploration: `rgba(0, 100, 255, ${alpha})`,
+                            leadership: `rgba(255, 105, 180, ${alpha})`,
+                            general: `rgba(139, 69, 19, ${alpha})`
+                        };
+                        
+                        this.ctx.fillStyle = colors[trail.type] || colors.general;
+                        this.ctx.beginPath();
+                        this.ctx.arc(trail.x, trail.y, 2 + trail.intensity * 3, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
+                });
+            }
+
+            renderAnts() {
+                this.ants.forEach(ant => {
+                    if (ant.currentLocation === 'exterior') {
+                        this.renderRealisticAnt(ant, this.ctx, false);
+                    }
+                });
+            }
+
+            renderRealisticAnt(ant, ctx, isInterior) {
+                ctx.save();
+                
+                const x = isInterior ? ant.interiorX : ant.x;
+                const y = isInterior ? ant.interiorY : ant.y;
+                
+                ctx.translate(x, y);
+                ctx.rotate(ant.bodyAngle);
+
+                const casteColors = {
+                    worker: '#8B4513',
+                    soldier: '#2F1B14',
+                    scout: '#DAA520',
+                    nurse: '#CD853F',
+                    engineer: '#708090',
+                    diplomat: '#9370DB',
+                    super_major: '#B8860B',
+                    architect: '#4682B4'
+                };
+                
+                const bodyColor = ant.ruptureState ? '#8B0000' : '#654321';
+                const headColor = casteColors[ant.caste] || '#8B4513';
+
+                const renderSize = Math.max(1.5, Math.min(UCF.MAX_ANT_SIZE, ant.size));
+
+                this.drawPhotoRealisticLegs(ctx, ant, renderSize, '#1A0E08');
+
+                ctx.save();
+                ctx.translate(renderSize * 0.8, 0);
+                ctx.rotate(ant.abdomenWiggle * Math.PI / 180);
+                ctx.fillStyle = bodyColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, renderSize * 0.7, renderSize * 0.5, 0, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+
+                ctx.save();
+                ctx.rotate(ant.thoraxRotation * Math.PI / 180);
+                ctx.fillStyle = bodyColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, renderSize * 0.5, renderSize * 0.4, 0, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(-renderSize * 0.8, ant.headBob);
+                ctx.fillStyle = headColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, renderSize * 0.4, renderSize * 0.4, 0, 0, 2 * Math.PI);
+                ctx.fill();
+
+                this.drawPhotoRealisticAntennae(ctx, ant, renderSize);
+
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.ellipse(-renderSize * 0.1, -renderSize * 0.15, renderSize * 0.05, renderSize * 0.05, 0, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(-renderSize * 0.1, renderSize * 0.15, renderSize * 0.05, renderSize * 0.05, 0, 0, 2 * Math.PI);
+                ctx.fill();
+
+                ctx.restore();
+                ctx.restore();
+
+                this.renderAntInfo(ant, ctx, isInterior);
+            }
+
+            drawPhotoRealisticLegs(ctx, ant, renderSize, legColor) {
+                const legLength = renderSize * 0.9;
+                const legPositions = [
+                    { x: renderSize * 0.4, y: -renderSize * 0.35, side: 'left' },
+                    { x: renderSize * 0.4, y: renderSize * 0.35, side: 'right' },
+                    { x: 0, y: -renderSize * 0.4, side: 'left' },
+                    { x: 0, y: renderSize * 0.4, side: 'right' },
+                    { x: -renderSize * 0.4, y: -renderSize * 0.35, side: 'left' },
+                    { x: -renderSize * 0.4, y: renderSize * 0.35, side: 'right' }
+                ];
+
+                ctx.strokeStyle = legColor;
+                ctx.lineWidth = renderSize * 0.04;
+                ctx.lineCap = 'round';
+
+                legPositions.forEach((legPos, index) => {
+                    const legPhase = ant.legPhases[index];
+                    const legExtension = Math.sin(legPhase) * 0.4 + 0.6;
+                    const baseAngle = legPos.side === 'left' ? -Math.PI/2.5 : Math.PI/2.5;
+                    const legAngle = baseAngle + (legExtension - 0.5) * Math.PI/4;
+
+                    const coxaLength = legLength * 0.3;
+                    const femurLength = legLength * 0.4;
+                    const tibiaLength = legLength * 0.45;
+                    
+                    const coxaEndX = legPos.x + Math.cos(legAngle) * coxaLength;
+                    const coxaEndY = legPos.y + Math.sin(legAngle) * coxaLength;
+                    
+                    const legGradient = ctx.createLinearGradient(legPos.x, legPos.y, coxaEndX, coxaEndY);
+                    legGradient.addColorStop(0, legColor);
+                    legGradient.addColorStop(1, 'rgba(42, 24, 16, 0.8)');
+                    ctx.strokeStyle = legGradient;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(legPos.x, legPos.y);
+                    ctx.lineTo(coxaEndX, coxaEndY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = legColor;
+                    ctx.beginPath();
+                    ctx.arc(coxaEndX, coxaEndY, renderSize * 0.02, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    const femurAngle = legAngle + Math.sin(legPhase + Math.PI/4) * 0.3;
+                    const femurEndX = coxaEndX + Math.cos(femurAngle) * femurLength;
+                    const femurEndY = coxaEndY + Math.sin(femurAngle) * femurLength;
+                    
+                    ctx.lineWidth = renderSize * 0.05;
+                    ctx.strokeStyle = legColor;
+                    ctx.beginPath();
+                    ctx.moveTo(coxaEndX, coxaEndY);
+                    ctx.lineTo(femurEndX, femurEndY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = legColor;
+                    ctx.beginPath();
+                    ctx.arc(femurEndX, femurEndY, renderSize * 0.018, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    const tibiaAngle = femurAngle + Math.sin(legPhase + Math.PI/2) * 0.4;
+                    const tibiaEndX = femurEndX + Math.cos(tibiaAngle) * tibiaLength;
+                    const tibiaEndY = femurEndY + Math.sin(tibiaAngle) * tibiaLength;
+                    
+                    ctx.lineWidth = renderSize * 0.035;
+                    ctx.beginPath();
+                    ctx.moveTo(femurEndX, femurEndY);
+                    ctx.lineTo(tibiaEndX, tibiaEndY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = legColor;
+                    ctx.beginPath();
+                    ctx.arc(tibiaEndX, tibiaEndY, renderSize * 0.025, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    const clawAngle1 = tibiaAngle - 0.4;
+                    const clawAngle2 = tibiaAngle + 0.4;
+                    const clawLength = renderSize * 0.06;
+                    
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = renderSize * 0.015;
+                    ctx.beginPath();
+                    ctx.moveTo(tibiaEndX, tibiaEndY);
+                    ctx.quadraticCurveTo(
+                        tibiaEndX + Math.cos(clawAngle1) * clawLength * 0.7,
+                        tibiaEndY + Math.sin(clawAngle1) * clawLength * 0.7,
+                        tibiaEndX + Math.cos(clawAngle1) * clawLength,
+                        tibiaEndY + Math.sin(clawAngle1) * clawLength
+                    );
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(tibiaEndX, tibiaEndY);
+                    ctx.quadraticCurveTo(
+                        tibiaEndX + Math.cos(clawAngle2) * clawLength * 0.7,
+                        tibiaEndY + Math.sin(clawAngle2) * clawLength * 0.7,
+                        tibiaEndX + Math.cos(clawAngle2) * clawLength,
+                        tibiaEndY + Math.sin(clawAngle2) * clawLength
+                    );
+                    ctx.stroke();
+                    
+                    ctx.lineWidth = renderSize * 0.04;
+                });
+            }
+
+            drawPhotoRealisticAntennae(ctx, ant, renderSize) {
+                const antennaLength = renderSize * 0.7;
+                const antennaBase = renderSize * 0.25;
+                
+                ctx.strokeStyle = '#2A1810';
+                ctx.lineWidth = renderSize * 0.025;
+                ctx.lineCap = 'round';
+                
+                const leftAntennaAngle = -Math.PI/6 + Math.sin(ant.antennaPhase) * 0.4;
+                const leftMidX = antennaBase + Math.cos(leftAntennaAngle) * antennaLength * 0.6;
+                const leftMidY = -renderSize * 0.15 + Math.sin(leftAntennaAngle) * antennaLength * 0.6;
+                const leftEndX = leftMidX + Math.cos(leftAntennaAngle - 0.3) * antennaLength * 0.4;
+                const leftEndY = leftMidY + Math.sin(leftAntennaAngle - 0.3) * antennaLength * 0.4;
+                
+                ctx.lineWidth = renderSize * 0.03;
+                ctx.beginPath();
+                ctx.moveTo(antennaBase, -renderSize * 0.15);
+                ctx.lineTo(leftMidX, leftMidY);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#2A1810';
+                ctx.beginPath();
+                ctx.arc(leftMidX, leftMidY, renderSize * 0.012, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.lineWidth = renderSize * 0.02;
+                ctx.beginPath();
+                ctx.moveTo(leftMidX, leftMidY);
+                ctx.lineTo(leftEndX, leftEndY);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#1A0F08';
+                ctx.beginPath();
+                ctx.ellipse(leftEndX, leftEndY, renderSize * 0.035, renderSize * 0.015, leftAntennaAngle, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                const rightAntennaAngle = Math.PI/6 + Math.sin(ant.antennaPhase + Math.PI/3) * 0.4;
+                const rightMidX = antennaBase + Math.cos(rightAntennaAngle) * antennaLength * 0.6;
+                const rightMidY = renderSize * 0.15 + Math.sin(rightAntennaAngle) * antennaLength * 0.6;
+                const rightEndX = rightMidX + Math.cos(rightAntennaAngle + 0.3) * antennaLength * 0.4;
+                const rightEndY = rightMidY + Math.sin(rightAntennaAngle + 0.3) * antennaLength * 0.4;
+                
+                ctx.strokeStyle = '#2A1810';
+                ctx.lineWidth = renderSize * 0.03;
+                ctx.beginPath();
+                ctx.moveTo(antennaBase, renderSize * 0.15);
+                ctx.lineTo(rightMidX, rightMidY);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#2A1810';
+                ctx.beginPath();
+                ctx.arc(rightMidX, rightMidY, renderSize * 0.012, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.lineWidth = renderSize * 0.02;
+                ctx.beginPath();
+                ctx.moveTo(rightMidX, rightMidY);
+                ctx.lineTo(rightEndX, rightEndY);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#1A0F08';
+                ctx.beginPath();
+                ctx.ellipse(rightEndX, rightEndY, renderSize * 0.035, renderSize * 0.015, rightAntennaAngle, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            renderAntInfo(ant, ctx, isInterior) {
+                const x = isInterior ? ant.interiorX : ant.x;
+                const y = isInterior ? ant.interiorY : ant.y;
+                
+                if (ant.coherenceState > 0.6) {
+                    const auraRadius = ant.coherenceState * 20;
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
+                    gradient.addColorStop(0, `rgba(139, 69, 19, ${ant.coherenceState * 0.2})`);
+                    gradient.addColorStop(1, 'rgba(139, 69, 19, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, auraRadius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                if (ant.ruptureState) {
+                    ctx.strokeStyle = '#DC143C';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, ant.size + 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+
+                if (ant.carryingFood > 0.05) {
+                    const foodSize = 2 + (ant.carryingFood / ant.maxCarry) * 4;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(x + ant.size, y - ant.size, foodSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                if (ant.leadership > 0.8) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(x - ant.size, y - ant.size, 3, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
+                if (ant.environmentalPressure > UCF.ENVIRONMENTAL_PRESSURE + 0.5) {
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.beginPath();
+                    ctx.arc(x, y, ant.size + 12, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            updateStatistics() {
+                const avgCoherence = this.ants.reduce((sum, ant) => sum + ant.coherenceState, 0) / (this.ants.length || 1);
+                const population = this.ants.length;
+                const totalFood = this.environment.totalFood;
+                const pheromoneIntensity = this.pheromoneSystem.trails.reduce((sum, trail) => sum + trail.intensity, 0);
+                const tunnelLength = this.environment.totalTunnelLength;
+                const chamberCount = this.environment.chamberSystem.chambers.length;
+                const castes = new Set(this.ants.map(ant => ant.caste).filter(Boolean));
+                const activeDecisions = this.environment.decisionSystem.activeDecisions.length;
+                const territorySize = Math.floor(this.environment.territorySystem.territorySize);
+                const combatUnits = this.ants.filter(ant => ant.caste === 'soldier' || ant.caste === 'super_major').length;
+                const ruptureCount = this.ants.filter(ant => ant.ruptureState).length;
+                const rebirthCount = this.ants.filter(ant => ant.rebirthField > 0.3).length;
+
+                document.getElementById('avgCoherence').textContent = avgCoherence.toFixed(3);
+                document.getElementById('population').textContent = population;
+                document.getElementById('totalFood').textContent = totalFood.toFixed(2);
+                document.getElementById('pheromoneIntensity').textContent = pheromoneIntensity.toFixed(2);
+                document.getElementById('tunnelLength').textContent = tunnelLength;
+                document.getElementById('chamberCount').textContent = chamberCount;
+                document.getElementById('casteCount').textContent = castes.size;
+                document.getElementById('activeDecisions').textContent = activeDecisions;
+                document.getElementById('territorySize').textContent = territorySize;
+                document.getElementById('combatUnits').textContent = combatUnits;
+                document.getElementById('ruptureCount').textContent = ruptureCount;
+                document.getElementById('rebirthCount').textContent = rebirthCount;
+
+                const casteCounts = {};
+                this.ants.forEach(ant => {
+                    if (ant.caste) {
+                        casteCounts[ant.caste] = (casteCounts[ant.caste] || 0) + 1;
+                    }
+                });
+                
+                const casteInfo = Object.entries(casteCounts)
+                    .map(([caste, count]) => `${count} ${caste}s`)
+                    .join(', ');
+                
+                const evolutionInfo = this.ants.filter(ant => ant.evolutionLevel > 0).length;
+                const hybridInfo = this.ants.filter(ant => ant.hybridCaste).length;
+                const interiorInfo = this.environment.interiorNest.interiorAnts.size;
+                const avgSize = this.ants.reduce((sum, ant) => sum + ant.size, 0) / (this.ants.length || 1);
+                const restingAnts = this.ants.filter(ant => ant.currentBehavior === 'resting').length;
+                
+                const simInfo = `Active castes: ${casteInfo || 'emerging...'} | ` +
+                              `Evolved ants: ${evolutionInfo} | ` +
+                              `Hybrid castes: ${hybridInfo} | ` +
+                              `Interior ants: ${interiorInfo} | ` +
+                              `Resting ants: ${restingAnts} | ` +
+                              `Avg size: ${avgSize.toFixed(1)} | ` +
+                              `Food sources: ${this.environment.foodSources.length} | ` +
+                              `Chambers: ${chamberCount} | ` +
+                              `Decisions: ${activeDecisions} | ` +
+                              `Territory: ${territorySize} units | ` +
+                              `Pheromone trails: ${this.pheromoneSystem.trails.length}`;
+                document.getElementById('simInfo').textContent = simInfo;
+            }
+
+            animate() {
+                for (let i = 0; i < this.simulationSpeed; i++) {
+                    this.update();
+                }
+                
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new UCFAntColonySimulation();
+        });
+    </script>
+</body>
+</html>

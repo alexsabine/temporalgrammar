@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Quick Guide: Understanding How We Remember, Break, and Rebuild</title>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            line-height: 1.8;
+            color: #1a2332;
+            background: #e8ecf1;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 40px rgba(26, 35, 50, 0.15);
+            min-height: 100vh;
+        }
+        
+        .header-info {
+            background: linear-gradient(135deg, #2c4875 0%, #1a2332 100%);
+            color: white;
+            padding: 40px 60px;
+            border-bottom: 4px solid #4a90e2;
+        }
+        
+        .header-info h1 {
+            font-size: 2.8em;
+            margin-bottom: 0.3em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: white;
+        }
+        
+        .header-info p {
+            font-size: 1.2em;
+            color: white;
+            margin: 0.5em 0;
+            opacity: 0.95;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #1a2332;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            flex: 1;
+            min-width: 180px;
+            padding: 20px 30px;
+            background: #2c4875;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-right: 2px solid #1a2332;
+        }
+        
+        .tab-button:last-child {
+            border-right: none;
+        }
+        
+        .tab-button:hover {
+            background: #3d5a8c;
+            transform: translateY(-2px);
+        }
+        
+        .tab-button.active {
+            background: #1a2332;
+            border-bottom: 4px solid #4a90e2;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 60px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: #1a2332;
+            font-size: 2.8em;
+            margin-bottom: 0.5em;
+            padding-bottom: 0.3em;
+            border-bottom: 4px solid #2c4875;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: #1a2332;
+            font-size: 2.2em;
+            margin-top: 2em;
+            margin-bottom: 0.8em;
+            padding-bottom: 0.3em;
+            border-bottom: 2px solid #4a90e2;
+            font-weight: 600;
+        }
+        
+        h3 {
+            color: #2c4875;
+            font-size: 1.8em;
+            margin-top: 1.8em;
+            margin-bottom: 0.7em;
+            font-weight: 600;
+        }
+        
+        h4 {
+            color: #3d5a8c;
+            font-size: 1.4em;
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 1.2em;
+            line-height: 1.9;
+            font-size: 1.1em;
+        }
+        
+        .simple-box {
+            background: #f5f7fa;
+            border-left: 4px solid #4a90e2;
+            padding: 25px;
+            margin: 2em 0;
+            font-size: 1.05em;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            padding: 25px;
+            margin: 2em 0;
+        }
+        
+        .insight-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #3b82f6;
+            padding: 25px;
+            margin: 2em 0;
+        }
+        
+        .example-box {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 2px solid #10b981;
+            padding: 25px;
+            margin: 2em 0;
+        }
+        
+        .formalism-box {
+            background: #f8f9fa;
+            border: 2px solid #2c4875;
+            padding: 25px;
+            margin: 2em 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .formalism-box h4 {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            color: #1a2332;
+            margin-top: 0;
+        }
+        
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 2em 0;
+        }
+        
+        .signature-card {
+            background: white;
+            border: 3px solid #d1d9e6;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .signature-card:hover {
+            box-shadow: 0 8px 16px rgba(26, 35, 50, 0.15);
+            transform: translateY(-4px);
+        }
+        
+        .signature-card h4 {
+            margin-top: 0;
+            color: #1a2332;
+            font-size: 1.5em;
+        }
+        
+        .fragile { border-color: #ef4444; border-width: 3px; }
+        .resilient { border-color: #10b981; border-width: 3px; }
+        .oscillatory { border-color: #3b82f6; border-width: 3px; }
+        .chaotic { border-color: #8b5cf6; border-width: 3px; }
+        .dialectical { border-color: #f59e0b; border-width: 3px; }
+        
+        ul, ol {
+            margin-left: 2.5em;
+            margin-bottom: 1.5em;
+        }
+        
+        li {
+            margin-bottom: 0.8em;
+            line-height: 1.9;
+            font-size: 1.05em;
+        }
+        
+        strong {
+            color: #1a2332;
+            font-weight: 700;
+        }
+        
+        em {
+            color: #2c4875;
+            font-style: italic;
+        }
+        
+        .analogy {
+            background: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            padding: 20px;
+            margin: 1.5em 0;
+            font-style: italic;
+            font-size: 1.05em;
+        }
+        
+        @media (max-width: 768px) {
+            .tab-content { padding: 30px 20px; }
+            .header-info { padding: 20px; }
+            .header-info h1 { font-size: 2em; }
+            h1 { font-size: 2.2em; }
+            h2 { font-size: 1.8em; }
+            .tab-button { padding: 15px 15px; font-size: 14px; }
+            .signature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-info">
+            <h1>CRR Quick Guide</h1>
+            <p>Understanding how we remember, break, and rebuild through life</p>
+            <p style="font-size: 1em; margin-top: 1em; opacity: 0.9;">A simplified introduction to the Coherence-Rupture-Regeneration framework and how it helps to explore how any system (including you) maintain identity through change</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab(event, 'intro')">
+                The Big Idea
+            </button>
+            <button class="tab-button" onclick="openTab(event, 'philosophy')">
+                How We Experience Time
+            </button>
+            <button class="tab-button" onclick="openTab(event, 'fep')">
+                Making Sense of the World
+            </button>
+            <button class="tab-button" onclick="openTab(event, 'ml')">
+                How Machines Learn
+            </button>
+            <button class="tab-button" onclick="openTab(event, 'signatures')">
+                Your Life Patterns
+            </button>
+        </div>
+        
+        <!-- Introduction Tab -->
+        <div id="intro" class="tab-content active">
+            <h1>The Big Idea: Life is a Cycle of Building, Breaking, and Rebuilding</h1>
+            
+            <p>Have you ever noticed how life seems to follow a pattern? You build up knowledge and habits over time, then something disrupts everything, and you have to rebuild yourself somehow different than before. This isn't random; it's a fundamental pattern that appears everywhere from how we learn to how forests grow to how artificial intelligence works.</p>
+            
+            <h2>What is CRR?</h2>
+            
+            <p>CRR stands for <strong>Coherence-Rupture-Regeneration</strong>. It's a way of understanding how any system (including you!) maintains its identity while changing over time. Think of it as the mathematics of becoming.</p>
+            
+            <div class="signature-grid">
+                <div class="signature-card resilient">
+                    <h4>Coherence (C)</h4>
+                    <p><strong>The Building Phase</strong></p>
+                    <p>Everything you've learned, experienced, and integrated. Your accumulated memory and understanding. Like building up knowledge for an exam or developing a skill through practice.</p>
+                </div>
+                
+                <div class="signature-card fragile">
+                    <h4>Rupture (δ)</h4>
+                    <p><strong>The Breaking Point</strong></p>
+                    <p>Those moments when your current way of being can't handle what's happening. A crisis, a revelation, a contradiction that forces change. Like failing an exam and realising you need a new study approach.</p>
+                </div>
+                
+                <div class="signature-card oscillatory">
+                    <h4>Regeneration (R)</h4>
+                    <p><strong>The Rebuilding Phase</strong></p>
+                    <p>How you reconstruct yourself using the wisdom of your past. You don't start from scratch; you rebuild while keeping what was valuable. Like developing a better study method based on what worked before.</p>
+                </div>
+            </div>
+            
+            <h2>The Canonical Formalism: Simple Equations, Universal Implications</h2>
+            
+            <p>The mathematics may appear deceptively simple, but these three equations capture something fundamental about how systems maintain identity through change:</p>
+            
+            <div class="formalism-box">
+                <h4>The Complete CRR Framework:</h4>
+                
+                <p><strong>1. Coherence Integration:</strong></p>
+                <p style="font-size: 1.2em; margin: 1em 0; padding-left: 2em;">
+                    C(x,t) = ∫₀ᵗ L(x,τ) dτ
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this means:</strong> Coherence (C) is the integral; the accumulated sum; of all your memory density (L) over time. Think of L as the rate at which you're building understanding at each moment. The integral adds up every moment from the beginning (0) to now (t).
+                </p>
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>In everyday terms:</strong> You are the sum of all your experiences, weighted by how much coherence each one built. A transformative year contributes more than a year of routine.
+                </p>
+                
+                <p style="margin-top: 2em;"><strong>2. Rupture Detection:</strong></p>
+                <p style="font-size: 1.2em; margin: 1em 0; padding-left: 2em;">
+                    δ(t-t₀) = Dirac delta at rupture time
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this means:</strong> The delta function (δ) is a mathematical way of representing an instantaneous event. It's zero everywhere except at exactly time t₀, where it "fires." This captures the discontinuous, all-at-once nature of rupture moments.
+                </p>
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>In everyday terms:</strong> Some changes aren't gradual; they happen in a moment. The instant you understand a concept. The moment a relationship ends. These aren't smooth transitions; they're discontinuous jumps.
+                </p>
+                
+                <p style="margin-top: 2em;"><strong>3. Regeneration Operator:</strong></p>
+                <p style="font-size: 1.2em; margin: 1em 0; padding-left: 2em;">
+                    R[χ](x,t) = ∫₀ᵗ φ(x,τ)·e^(C(τ)/Ω)·Θ(t-τ) dτ
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this means:</strong> Regeneration rebuilds using your historical field signal (φ) weighted exponentially by how much coherence you had at each past moment (e^C/Ω). The Heaviside function (Θ) ensures causality; only the past influences the future, never the reverse.
+                </p>
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>In everyday terms:</strong> When you rebuild after a crisis, you don't use all past experiences equally. Moments when you had high coherence (deep understanding, strong connection) influence your regeneration exponentially more than confused or chaotic moments.
+                </p>
+                
+                <p style="margin-top: 2em; font-family: Georgia, serif;"><strong>Key Parameters:</strong></p>
+                <ul style="font-family: Georgia, serif;">
+                    <li><strong>L(x,τ):</strong> Memory density; the rate at which you're building (or losing) coherence at moment τ</li>
+                    <li><strong>φ(x,τ):</strong> Historical field signal; what you were doing/experiencing at time τ</li>
+                    <li><strong>Ω (Omega):</strong> System temperature; how flexible vs. rigid your reconstruction is</li>
+                    <li><strong>Θ(t-τ):</strong> Heaviside function; enforces causality (past → future, not future → past)</li>
+                    <li><strong>χ (Chi):</strong> Reconstruction parameter set; the specific conditions of your regeneration</li>
+                </ul>
+            </div>
+            
+            <div class="insight-box">
+                <h3>Why These Simple Equations Matter</h3>
+                <p>These three operations; integrate, rupture, regenerate; may look mathematically simple, but they enable <strong>non-Markovian temporal modeling</strong>. That's a fancy way of saying: systems whose future depends on their entire history, not just their current state.</p>
+                
+                <p>This single formalism helps to explore:</p>
+                <ul>
+                    <li>Why trauma affects you decades later (high C integration)</li>
+                    <li>Why some people are resilient and others fragile (different rupture patterns)</li>
+                    <li>Why AI systems catastrophically forget (no regeneration operator)</li>
+                    <li>Why ecosystems collapse or recover (different preservation parameters)</li>
+                    <li>How neurons become non-Markovian when embedded in coherence fields</li>
+                    <li>Why developmental stages have characteristic durations (C_crit/⟨L⟩)</li>
+                </ul>
+                
+                <p><strong>The universality comes from the fact that any system navigating time, memory, and change can be described by these three operations.</strong></p>
+            </div>
+            
+            <h2>Why This Matters</h2>
+            
+            <div class="highlight-box">
+                <h3>CRR might help to explain why:</h3>
+                <ul>
+                    <li>You can't just "keep growing" forever; sometimes you need to break down to break through</li>
+                    <li>Traumatic experiences don't just "go away"; they get metabolised into who you become</li>
+                    <li>Artificial intelligence "forgets" everything when learning something new (catastrophic forgetting)</li>
+                    <li>Some people are resilient while others are fragile (different patterns of rupture)</li>
+                    <li>Ecosystems collapse catastrophically or recover gracefully depending on their "memory signature"</li>
+                </ul>
+            </div>
+            
+            <h2>The Three Parts of Time</h2>
+            
+            <div class="example-box">
+                <h3>Think about learning to ride a bike:</h3>
+                
+                <p><strong>Past (Coherence):</strong> All your attempts, falls, and little victories accumulate. Each try builds up your body's "memory" of balance. Mathematically: C = ∫L(τ)dτ where each practice session contributes to the integral.</p>
+                
+                <p><strong>Present (Rupture):</strong> That moment when you realise "I'm doing it!" or when you fall hard. These are discrete moments where everything crystallises or breaks apart. The δ-function captures this instantaneous quality; not gradual, but sudden.</p>
+                
+                <p><strong>Future (Regeneration):</strong> Once you can ride, that accumulated experience guides you. Years later, you can still ride because your body regenerates that pattern using its deeply stored memory, weighted by how coherent those original experiences were.</p>
+            </div>
+            
+            <h2>Five Ways to Navigate This Cycle</h2>
+            
+            <p>People, organisations, and even ecosystems develop characteristic patterns; we call these <strong>memory signatures</strong>. Here are the five main types:</p>
+            
+            <div class="signature-grid">
+                <div class="signature-card fragile">
+                    <h4>Fragile</h4>
+                    <p>Builds up forever without breaking, then collapses catastrophically</p>
+                    <p><strong>Mathematical form:</strong> L > 0 accumulates monotonically, rupture thresholds too high</p>
+                    <p><em>Example: Someone who never processes trauma until they have a breakdown</em></p>
+                </div>
+                
+                <div class="signature-card resilient">
+                    <h4>Resilient</h4>
+                    <p>Has small crises regularly, prevents catastrophe, stays flexible</p>
+                    <p><strong>Mathematical form:</strong> Moderate L, rupture at intermediate thresholds, efficient regeneration</p>
+                    <p><em>Example: Someone who goes to therapy and processes emotions regularly</em></p>
+                </div>
+                
+                <div class="signature-card oscillatory">
+                    <h4>Oscillatory</h4>
+                    <p>Rhythmic building and releasing, like breathing</p>
+                    <p><strong>Mathematical form:</strong> L alternates sign (±), rupture times periodic</p>
+                    <p><em>Example: Creative people who cycle between intense work and necessary rest</em></p>
+                </div>
+                
+                <div class="signature-card chaotic">
+                    <h4>Chaotic</h4>
+                    <p>Breaks apart so often that nothing builds up</p>
+                    <p><strong>Mathematical form:</strong> Rupture thresholds extremely low, frequent δ impulses</p>
+                    <p><em>Example: Someone constantly starting over, never building depth</em></p>
+                </div>
+                
+                <div class="signature-card dialectical">
+                    <h4>Dialectical</h4>
+                    <p>Holds contradictions, synthesises opposites</p>
+                    <p><strong>Mathematical form:</strong> Multiple coherence fields L₁, L₂ interfere constructively and destructively</p>
+                    <p><em>Example: Integrating different cultural identities into something new</em></p>
+                </div>
+            </div>
+            
+            <div class="insight-box">
+                <h3>The Key Insight</h3>
+                <p>There's no "best" signature; each serves different purposes. Understanding your pattern might help you navigate it intentionally rather than being swept along by it.</p>
+            </div>
+            
+            <h2>Where You'll See This Pattern</h2>
+            
+            <ul>
+                <li><strong>Personal Growth:</strong> How you process experiences and develop wisdom</li>
+                <li><strong>Relationships:</strong> How couples navigate conflict and deepen connection</li>
+                <li><strong>Learning:</strong> How students build understanding (and why cramming doesn't work)</li>
+                <li><strong>Mental Health:</strong> Why some people are resilient and others fragile</li>
+                <li><strong>Organisations:</strong> How companies innovate (or stagnate)</li>
+                <li><strong>Ecosystems:</strong> Why some forests recover from fire and others don't</li>
+                <li><strong>Technology:</strong> Why AI systems forget and how to fix that</li>
+                <li><strong>Astrophysics:</strong> Black hole information paradox and thermodynamic evolution</li>
+                <li><strong>Neuroscience:</strong> How non-Markovian dynamics emerge from Markovian neurons</li>
+            </ul>
+            
+            <p style="margin-top: 2em; padding: 20px; background: #f5f7fa; border-left: 4px solid #2c4875;">
+                <strong>Ready to go deeper?</strong> The other tabs explore how CRR helps us understand time, surprise, learning, and the patterns that shape your life. Each section builds on the formalism introduced here while maintaining accessibility.
+            </p>
+        </div>
+        
+        <!-- Philosophy Tab -->
+        <div id="philosophy" class="tab-content">
+            <h1>How We Experience Time: The Philosophy of CRR</h1>
+            
+            <h2>Time and Physics</h2>
+            
+            <p>Physics treats time like a ruler; each moment independent, flowing uniformly forward. However, that isn't necessarily how we actually experience time. In CRR, experience is shaped by your accumulated past, punctuated by sudden moments of clarity or crisis, and projected into a future that's weighted by your history.</p>
+            
+            <div class="analogy">
+                Imagine reading a novel. Physics treats time like reading one word at a time, each independent. But your actual experience is cumulative; each page builds on the last, some moments suddenly reframe everything you've read (rupture!), and your anticipation of future pages is shaped by what came before.
+            </div>
+            
+            <h2>Three Irreducible Aspects of Lived Time</h2>
+            
+            <h3>1. The Past as Accumulation</h3>
+            
+            <p>In CRR, past experience is not separate snapshots filed away. Instead, everything you've lived through accumulates into a continuous field that shapes who you are now.</p>
+            
+            <div class="formalism-box">
+                <h4>Mathematical Form:</h4>
+                <p style="font-size: 1.1em; margin: 1em 0;">
+                    C[x](t) = ∫₀ᵗ L(x(τ), ẋ(τ), τ) dτ
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this captures:</strong>
+                </p>
+                <ul style="font-family: Georgia, serif;">
+                    <li><strong>Integral over entire past:</strong> τ ∈ [0, t] ;  every moment matters</li>
+                    <li><strong>Path-dependent:</strong> C depends on the trajectory x(·), not just current state x(t)</li>
+                    <li><strong>Extensive quantity:</strong> Coherence has units of energy/information; it accumulates</li>
+                    <li><strong>Non-decreasing when L ≥ 0:</strong> Time's arrow is built in</li>
+                </ul>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>Key insight:</strong> L(x,ẋ,τ) is the rate at which experience accumulates at moment τ. High activity (large ẋ) or far-from-equilibrium states (unusual x) contribute more to coherence buildup.
+                </p>
+            </div>
+            
+            <div class="example-box">
+                <h4>Everyday Example: Walking into a familiar room</h4>
+                <p>You don't consciously recall each time you've been there. Instead, all those experiences have accumulated into an immediate feeling of familiarity. That's <strong>coherence</strong>; the integrated weight of history.</p>
+                <p>Mathematically: Each visit contributed some L(τ) to the integral. A dramatic event in that room contributes more (higher |ẋ|) than routine visits.</p>
+            </div>
+            
+            <p>This is why trauma doesn't just "go away with time." It accumulates into your coherence field, shaping how you respond to the present. Healing isn't forgetting; it's reorganising that accumulated experience through rupture and regeneration.</p>
+            
+            <h3>2. The Present as Decisive Moments</h3>
+            
+            <p>Yet we also experience radical "nowness"; moments when everything crystallises. The moment you understand a concept. The instant you decide to speak. The snap of recognition.</p>
+            
+            <div class="formalism-box">
+                <h4>Mathematical Form:</h4>
+                <p style="font-size: 1.1em; margin: 1em 0;">
+                    δ(t-t₀) with ∫ δ(t-t₀) dt = 1
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this captures:</strong>
+                </p>
+                <ul style="font-family: Georgia, serif;">
+                    <li><strong>Infinite density at one point:</strong> δ(t-t₀) = ∞ when t = t₀, zero everywhere else</li>
+                    <li><strong>Instantaneous action:</strong> No duration; the entire effect happens at exactly t₀</li>
+                    <li><strong>Normalised intensity:</strong> Total "area" equals 1, despite being concentrated at a point</li>
+                    <li><strong>Discontinuous jump:</strong> Trajectory can leap instantaneously: x(t₀⁺) ≠ x(t₀⁻)</li>
+                </ul>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>Key insight:</strong> This isn't smoothing or averaging; it's genuine discontinuity. Like water freezing at exactly 0°C, not gradually becoming "ice-ish."
+                </p>
+            </div>
+            
+            <div class="example-box">
+                <h4>Everyday Example: "I need to leave this relationship" or "I want to have a baby"</h4>
+                <p>Often there's a specific moment when months or years of accumulated doubts crystallise into a clear decision. That's a <strong>rupture</strong>; not gradual change but an instantaneous reconfiguration of your entire situation.</p>
+                <p>Mathematically: The coherence C had been building, then at time t₀, a rupture δ(t-t₀) fires, discontinuously changing your state.</p>
+            </div>
+            
+            <p>These aren't smooth transitions. They're discontinuous jumps. The delta function is the only mathematical structure that captures this quality of lived experience.</p>
+            
+            <h3>3. The Future as Weighted Projection</h3>
+            
+            <p>You don't experience the future as blank. It's conditioned by your accumulated history, with recent high-coherence moments mattering more than distant ones.</p>
+            
+            <div class="formalism-box">
+                <h4>Mathematical Form:</h4>
+                <p style="font-size: 1.1em; margin: 1em 0;">
+                    R[χ](x,t) = ∫₀ᵗ φ(x,τ)·e^(C(τ)/Ω)·Θ(t-τ) dτ
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>What this captures:</strong>
+                </p>
+                <ul style="font-family: Georgia, serif;">
+                    <li><strong>Exponential weighting:</strong> e^(C/Ω) means high-coherence moments exponentially dominate</li>
+                    <li><strong>Historical field signal:</strong> φ(x,τ) encodes what you were doing at time τ</li>
+                    <li><strong>Causality enforced:</strong> Θ(t-τ) = 1 if τ ≤ t, zero otherwise; only past influences future</li>
+                    <li><strong>Temperature modulation:</strong> Ω controls flexibility; low Ω = rigid, high Ω = flexible</li>
+                </ul>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>Key insight:</strong> If you had C = 10 at τ₁ and C = 1 at τ₂, the influence from τ₁ is e^10/e^1 ≈ 12,000 times stronger! This is why formative experiences shape you so profoundly.
+                </p>
+            </div>
+            
+            <div class="example-box">
+                <h4>Everyday Example: A concert pianist versus a beginner</h4>
+                <p>When facing a difficult piece, the pianist's fingers seem to "know what to do" based on accumulated practice. That's <strong>regeneration</strong>; the weighted projection of integrated past experience into present action.</p>
+                <p>Mathematically: Years of high-coherence practice (large C) are exponentially weighted in the regeneration integral, making those patterns much more influential than recent casual playing.</p>
+            </div>
+            
+            <h2>Why Standard Physics Doesn't Always Capture This</h2>
+            
+            <div class="simple-box">
+                <p><strong>Classical Physics (Markovian):</strong></p>
+                <p style="margin-left: 2em;">P(x_t | x_{t-1}, x_{t-2}, ...) = P(x_t | x_{t-1})</p>
+                <p>Only the current moment matters. F=ma depends just on position and velocity now.</p>
+                
+                <p style="margin-top: 1em;"><strong>Lived Experience (Non-Markovian):</strong></p>
+                <p style="margin-left: 2em;">P(x_t | history) depends on ∫₀ᵗ L(τ) dτ</p>
+                <p>Your entire history matters, weighted by how coherent those experiences were. You're carrying the past forward.</p>
+            </div>
+            
+            <p>This is the gap CRR bridges. It gives us mathematics for systems that:</p>
+            <ul>
+                <li>Accumulate memory continuously (Coherence: ∫L dτ)</li>
+                <li>Undergo instantaneous reconfigurations (Rupture: δ(t-t₀))</li>
+                <li>Rebuild using exponentially-weighted history (Regeneration: e^(C/Ω))</li>
+            </ul>
+            
+            <h2>How Non-Markovian Dynamics Emerge</h2>
+            
+            <div class="formalism-box">
+                <h4>The Transition:</h4>
+                <p style="font-family: Georgia, serif;">
+                    <strong>When C ≈ 0:</strong> System is approximately Markovian
+                </p>
+                <p style="margin-left: 2em;">e^(C/Ω) ≈ e^0 = 1 → no exponential weighting → all history matters equally (i.e., not much)</p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>When C >> Ω:</strong> System becomes strongly non-Markovian
+                </p>
+                <p style="margin-left: 2em;">e^(C/Ω) >> 1 → past high-coherence states dominate present behaviour → deep memory effects</p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>After rupture:</strong> C resets to pC (partial preservation)
+                </p>
+                <p style="margin-left: 2em;">System can shift from non-Markovian back towards Markovian, then rebuild non-Markovian character</p>
+            </div>
+            
+            <p>This reveals something profound: <strong>memory itself is a form of agency</strong>; the active construction of temporal structure rather than passive storage. You're not just recording history; you're constructing your relationship to time.</p>
+            
+            <h2>The Temporality of Being Human</h2>
+            
+            <div class="insight-box">
+                <h3>What This Means for Your Life</h3>
+                
+                <p><strong>The CRR conjecture is that you are not just "in" time; you construct your temporality through how you accumulate, rupture, and regenerate.</strong></p>
+                
+                <p>Two people can experience the "same" ten years completely differently:</p>
+                <ul>
+                    <li>One might accumulate coherence steadily: C grows from 0 → 100</li>
+                    <li>Another might have frequent ruptures that prevent build-up: C oscillates 0 → 5 → 0 → 5</li>
+                    <li>A third might oscillate rhythmically: C varies as sin(2πt/T)</li>
+                </ul>
+                
+                <p>Your relationship with time isn't fixed; it's a skill you can develop by understanding and modulating your L, δ, and R patterns.</p>
+            </div>
+            
+            <h2>Memory as Active Construction, Not Storage</h2>
+            
+            <p>Traditional views treat memory like a hard drive; storing and retrieving fixed files. CRR shows memory is active construction:</p>
+            
+            <div class="highlight-box">
+                <h3>Every time you "remember," you're:</h3>
+                <ol>
+                    <li><strong>Accessing accumulated coherence</strong> (∫L dτ not discrete memories)</li>
+                    <li><strong>Potentially triggering rupture</strong> (memories become labile when recalled; a mini-δ)</li>
+                    <li><strong>Regenerating the memory in new form</strong> (∫φ·e^C dτ reconstructs it weighted by current coherence)</li>
+                </ol>
+                
+                <p>This could explain why therapy works: it doesn't erase traumatic memories but creates opportunities to rupture and regenerate them into a different coherent form. The integral is recalculated with different parameters.</p>
+            </div>
+            
+            <h2>Identity Through Change</h2>
+            
+            <p>The deepest philosophical question: How do you remain "you" while constantly changing?</p>
+            
+            <div class="analogy">
+                Like a river: the water molecules are different every moment, yet we say "the same river." What persists isn't the content but the <em>pattern of coherence-rupture-regeneration</em>. That pattern IS you.
+            </div>
+            
+            <p>Mathematically: Your identity is the trajectory x(t) that satisfies the CRR dynamics. Change the content (the specific x values) but maintain the signature (how C, δ, R relate), and you remain yourself.</p>
+            
+            <h2>Practical Implications</h2>
+            
+            <div class="example-box">
+                <h3>Understanding yourself:</h3>
+                <ul>
+                    <li><strong>If you're Fragile:</strong> You avoid rupture until it's catastrophic (high C_crit, rare δ). Work on having smaller, controlled ruptures (lower threshold)</li>
+                    <li><strong>If you're Chaotic:</strong> You rupture too often to build anything (low C_crit, frequent δ). Create spaces for coherence (longer accumulation periods)</li>
+                    <li><strong>If you're Resilient:</strong> You balance building and breaking well (moderate C_crit, efficient R). The challenge is not getting complacent</li>
+                </ul>
+            </div>
+            
+            <p>The goal isn't to avoid rupture (impossible) or maximise coherence (leads to fragility). It's to <strong>metabolise rupture</strong>; make breaking and rebuilding part of your growth process rather than something that happens <em>to</em> you.</p>
+            
+            <p>This is the difference between being a passive object in time versus an active agent constructing your temporality.</p>
+        </div>
+        
+        <!-- FEP Tab -->
+        <div id="fep" class="tab-content">
+            <h1>Making Sense of the World: How Your Brain Minimises Surprise</h1>
+            
+            <h2>What is the Free Energy Principle?</h2>
+            
+            <p>Imagine you're walking down a familiar street and suddenly see a purple elephant. Your brain would experience enormous "surprise"; a huge mismatch between what you expected and what you observed.</p>
+            
+            <p>The <strong>Free Energy Principle (FEP)</strong> says that all living things are fundamentally trying to minimise this kind of surprise. Not just psychological surprise, but physical surprise; the difference between what you expect and what happens.</p>
+            
+            <div class="analogy">
+                Think of your brain as constantly making predictions: "The ground will be solid when I step." "This food will taste like it looks." "My friend will respond to my text." Every moment, you're testing predictions. When they fail dramatically, you feel surprised; and your brain hates that.
+            </div>
+            
+            <div class="formalism-box">
+                <h4>Free Energy in Mathematical Terms:</h4>
+                <p style="font-size: 1.1em; margin: 1em 0;">
+                    F = D_KL[q(s|o)||p(s)] - 𝔼_q[ln p(o|s)]
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    <strong>Breaking this down:</strong>
+                </p>
+                <ul style="font-family: Georgia, serif;">
+                    <li><strong>F:</strong> Free energy (surprise you experience)</li>
+                    <li><strong>D_KL:</strong> Kullback-Leibler divergence (how wrong your beliefs q are compared to reality p)</li>
+                    <li><strong>First term:</strong> Complexity cost; how complicated your model is</li>
+                    <li><strong>Second term:</strong> Accuracy benefit; how well your model predicts observations</li>
+                </ul>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>The goal:</strong> Minimise F by making your internal model q match reality p, and making good predictions.
+                </p>
+            </div>
+            
+            <h2>Two Ways to Minimise Surprise</h2>
+            
+            <div class="signature-grid">
+                <div class="signature-card resilient">
+                    <h4>1. Update Your Model (Perception)</h4>
+                    <p><strong>Change q to match reality</strong></p>
+                    <p>Reduce D_KL by making your beliefs more accurate</p>
+                    <p><em>Example: "Oh, that's not a person; it's a coat rack in the dark"</em></p>
+                </div>
+                
+                <div class="signature-card oscillatory">
+                    <h4>2. Change Reality (Action)</h4>
+                    <p><strong>Change observations to match q</strong></p>
+                    <p>Make the world conform to your predictions</p>
+                    <p><em>Example: You expect to have coffee, so you make coffee</em></p>
+                </div>
+            </div>
+            
+            <p>You're constantly doing both; perceiving the world to update your model, and acting on the world to fulfill your predictions. This is called <strong>Active Inference</strong>.</p>
+            
+            <h2>The CRR-FEP Correspondence</h2>
+            
+            <p>Here's where it gets beautiful; CRR and FEP are describing the same thing from different angles:</p>
+            
+            <div class="formalism-box">
+                <h4>Mathematical Isomorphism:</h4>
+                
+                <p style="font-family: Georgia, serif;"><strong>Coherence ↔ Negative Free Energy:</strong></p>
+                <p style="margin-left: 2em;">C(t) = -∫₀ᵗ F(τ) dτ</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    High coherence = successfully minimised surprise over time. When things "make sense," C grows and F shrinks.
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;"><strong>Memory Density ↔ Surprise Reduction Rate:</strong></p>
+                <p style="margin-left: 2em;">L(x,τ) ∝ -dF/dt</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    When you're learning successfully, F decreases (surprise drops), so L is positive (coherence builds).
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;"><strong>Rupture ↔ Free Energy Crisis:</strong></p>
+                <p style="margin-left: 2em;">δ(t-t₀) fires when F >> F_typical</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    When observations become so surprising that your model can't accommodate them, rupture occurs.
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;"><strong>Regeneration ↔ Model Reconstruction:</strong></p>
+                <p style="margin-left: 2em;">R[χ] = new generative model using ∫φ·e^(-F/Ω) dτ</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Rebuild using states where F was low (successful predictions), weighted exponentially.
+                </p>
+            </div>
+            
+            <div class="insight-box">
+                <h3>Why This Matters</h3>
+                <p>CRR provides the temporal dynamics for how F changes over time through accumulation, crisis, and reconstruction. FEP tells us <em>what</em> is being minimised (surprise). CRR tells us <em>how</em> that minimisation unfolds through cycles of coherence-rupture-regeneration.</p>
+            </div>
+            
+            <h2>A Concrete Example: Child Development</h2>
+            
+            <div class="example-box">
+                <h3>The Conservation Task (Piaget)</h3>
+                
+                <p>A young child (age 4-5) sees two identical glasses with equal amounts of water. You pour one into a taller, thinner glass. They insist there's now "more water" in the tall glass.</p>
+                
+                <p><strong>Why?</strong> Their current model of the world is "taller means more." This has been working fine:</p>
+                <ul>
+                    <li>Coherence is building: C ≈ 690 coherence units</li>
+                    <li>Free energy is low: F ≈ 0.5 nats on average</li>
+                </ul>
+                
+                <p><strong>The rupture moment:</strong> Around age 6-7, they encounter the conservation task. This creates massive surprise:</p>
+                <ul>
+                    <li>F spikes to ~2.07 nats (4× the average)</li>
+                    <li>Their model literally cannot accommodate this observation</li>
+                    <li>Rupture condition met: F > 3σ_F</li>
+                </ul>
+                
+                <p><strong>Regeneration:</strong> They rebuild their understanding:</p>
+                <ul>
+                    <li>Old model: Centration (one dimension)</li>
+                    <li>New model: Decentration (multiple dimensions)</li>
+                    <li>Preservation parameter: p ≈ 50% (moderate preservation)</li>
+                </ul>
+                
+                <p>The child will never go back to thinking tall = more. The rupture created a permanent phase transition to a higher level of understanding with lower baseline free energy.</p>
+            </div>
+            
+            <h2>Stage Durations from CRR-FEP Dynamics</h2>
+            
+            <div class="formalism-box">
+                <h4>Duration Formulas (Two Equivalent Views):</h4>
+                
+                <p><strong>CRR Version:</strong></p>
+                <p style="margin-left: 2em;">Δt = C_crit / ⟨L⟩</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Time to accumulate critical coherence threshold
+                </p>
+                
+                <p style="margin-top: 1em;"><strong>FEP Version:</strong></p>
+                <p style="margin-left: 2em;">Δt = -ln(F_crit/F₀) / λ</p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Time to minimise free energy from F₀ to F_crit at learning rate λ
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1.5em;"><strong>Example: Sensorimotor Stage (Birth to 2 years)</strong></p>
+                <ul style="font-family: Georgia, serif;">
+                    <li>CRR: C_crit = 2.0, ⟨L⟩ = 1.0 → Δt = 2.0 years ✓</li>
+                    <li>FEP: F₀ = 100 (newborn), F_crit = 24, λ = 0.92 → Δt ≈ 1.55 years</li>
+                    <li>Both predict ~2 year duration!</li>
+                </ul>
+            </div>
+            
+            <h2>Why Some Experiences Change You and Others Don't</h2>
+            
+            <p>Not all surprises cause ruptures. You're surprised when you drop your keys, but it doesn't reorganise your worldview. Why?</p>
+            
+            <div class="insight-box">
+                <h3>Ruptures occur when:</h3>
+                <ol>
+                    <li><strong>High Coherence (C ≈ C_crit):</strong> You've built up a lot of successful prediction</li>
+                    <li><strong>Massive Surprise (F >> F_typical):</strong> Something happens that's WAY outside your model's range</li>
+                    <li><strong>Can't Be Ignored:</strong> It's important enough that you have to deal with it (high precision-weighting)</li>
+                </ol>
+                
+                <p>This is why first-time experiences often don't change you (low C; you have no model yet) but repeated anomalies eventually force rupture (high C model encountering systematic contradiction).</p>
+                
+                <p><strong>Mathematical criterion:</strong> Rupture when C ≥ C_crit AND F > θ_critical (typically 3σ_F)</p>
+            </div>
+            
+            <h2>Different Learning Signatures</h2>
+            
+            <p>People have different patterns of how they minimise surprise:</p>
+            
+            <div class="signature-grid">
+                <div class="signature-card fragile">
+                    <h4>Fragile Learners</h4>
+                    <p>Avoid surprise at all costs, build very rigid models</p>
+                    <p><strong>Math:</strong> High C_crit, low F tolerance → rare ruptures</p>
+                    <p><strong>Strength:</strong> Very efficient in stable environments (minimal F)</p>
+                    <p><strong>Weakness:</strong> Catastrophic failure when environment changes</p>
+                </div>
+                
+                <div class="signature-card resilient">
+                    <h4>Resilient Learners</h4>
+                    <p>Regularly test predictions, comfortable with moderate surprise</p>
+                    <p><strong>Math:</strong> Moderate C_crit, accepts F fluctuations</p>
+                    <p><strong>Strength:</strong> Adapt well to changing conditions</p>
+                    <p><strong>Weakness:</strong> May be less efficient than specialists</p>
+                </div>
+                
+                <div class="signature-card chaotic">
+                    <h4>Chaotic Learners</h4>
+                    <p>So much surprise they can't build stable models</p>
+                    <p><strong>Math:</strong> Very low C_crit, constant F fluctuations</p>
+                    <p><strong>Strength:</strong> Highly exploratory, creative</p>
+                    <p><strong>Weakness:</strong> Never develop deep expertise (low C)</p>
+                </div>
+            </div>
+            
+            <h2>Why This Matters for Mental Health</h2>
+            
+            <p>Mental health challenges often involve dysfunctional surprise-minimisation patterns:</p>
+            
+            <div class="highlight-box">
+                <h3>Common Patterns in FEP-CRR Terms:</h3>
+                
+                <p><strong>Anxiety:</strong></p>
+                <ul>
+                    <li>Model predicts danger: q(threat|cues) >> p(threat|cues)</li>
+                    <li>Reality rarely confirms: D_KL remains high, F stays elevated</li>
+                    <li>Coherence builds around false predictions</li>
+                    <li>Stuck in high free energy state</li>
+                </ul>
+                
+                <p><strong>Depression:</strong></p>
+                <ul>
+                    <li>Model predicts "nothing good will happen"</li>
+                    <li>Reduced action (active inference fails)</li>
+                    <li>Self-fulfilling prophecy confirms prediction</li>
+                    <li>Coherence builds around learned helplessness</li>
+                </ul>
+                
+                <p><strong>PTSD:</strong></p>
+                <ul>
+                    <li>Rupture so severe: δ with massive amplitude ρ</li>
+                    <li>Regeneration process incomplete: R fails to integrate</li>
+                    <li>Fragmented models: multiple incoherent q(s|o) coexist</li>
+                    <li>F oscillates unpredictably</li>
+                </ul>
+            </div>
+            
+            <h2>Active Inference and Development</h2>
+            
+            <div class="formalism-box">
+                <h4>Active Inference Extension:</h4>
+                <p style="font-family: Georgia, serif;">
+                    Organisms don't just minimise F passively; they <em>act</em> to sample observations that reduce expected free energy G:
+                </p>
+                <p style="margin: 1em 0 1em 2em;">
+                    G = 𝔼_q[D_KL[q(s|o,π)||q(s|π)]] - 𝔼_q[ln p(o|s)]
+                </p>
+                <p style="font-family: Georgia, serif;">
+                    where π represents available policies (action sequences).
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>Key insight:</strong> Development is active inference. Children actively sample their environment to minimise expected free energy across increasingly complex policy spaces.
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;">
+                    <strong>Rupture condition in Active Inference:</strong> Stage transitions occur when <em>no available policy</em> π can minimise G below threshold, given current model constraints. This forces model restructuring (rupture + regeneration).
+                </p>
+            </div>
+            
+            <h2>Practical Applications</h2>
+            
+            <div class="example-box">
+                <h3>For Learning:</h3>
+                <ul>
+                    <li>Don't avoid confusion (high F); it signals your model needs updating</li>
+                    <li>Build coherence slowly before seeking rupture (need sufficient C before productive crisis)</li>
+                    <li>After a breakthrough, consolidate (let regeneration complete: ∫φ·e^C dτ)</li>
+                </ul>
+                
+                <h3>For Teaching:</h3>
+                <ul>
+                    <li>Students need sufficient coherence before conceptual rupture (C ≥ C_threshold)</li>
+                    <li>Create "productive confusion"; F high enough to notice but not paralysing</li>
+                    <li>Support regeneration phase; new understanding needs time to consolidate</li>
+                </ul>
+                
+                <h3>For Therapy:</h3>
+                <ul>
+                    <li>Trauma = incomplete regeneration after rupture</li>
+                    <li>Healing = creating safe conditions to "re-rupture" and complete R</li>
+                    <li>Goal: flexible models that can minimise F across diverse contexts</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- ML Tab -->
+        <div id="ml" class="tab-content">
+            <h1>How Machines Learn: The Catastrophic Forgetting Problem</h1>
+            
+            <h2>Artificial Intelligence Has a Memory Problem</h2>
+            
+            <p>Imagine teaching a robot to play chess. It gets really good at chess. Then you try to teach it checkers. Suddenly, it completely forgets how to play chess. This isn't a bug; it's a fundamental problem called <strong>catastrophic forgetting</strong>.</p>
+            
+            <div class="analogy">
+                It's like if every time you learned a new skill, you completely forgot old skills. Learn to drive? Forget how to ride a bike. Learn Spanish? Forget English. That's what happens to most AI systems.
+            </div>
+            
+            <h2>Why Does This Happen?</h2>
+            
+            <p>Current AI systems are the textbook example of a <strong>fragile signature</strong>:</p>
+            
+            <div class="formalism-box">
+                <h4>The Fragile Signature in Neural Networks:</h4>
+                
+                <p style="font-family: Georgia, serif;"><strong>1. Monotonic coherence buildup:</strong></p>
+                <p style="margin-left: 2em;">
+                    L(θ, t) > 0 for single task<br>
+                    C(θ, t) = ∫₀ᵗ L(θ, τ) dτ grows unbounded
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    The network accumulates information about Task 1 with no mechanism to "hold space" for future tasks.
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;"><strong>2. No intermediate ruptures:</strong></p>
+                <p style="margin-left: 2em;">
+                    C_crit → ∞ (rupture threshold effectively infinite)<br>
+                    No δ(t-t_i) until forced by new task
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    No mechanism for controlled forgetting or reorganisation before catastrophe.
+                </p>
+                
+                <p style="font-family: Georgia, serif; margin-top: 1em;"><strong>3. Catastrophic collapse:</strong></p>
+                <p style="margin-left: 2em;">
+                    New task → massive uncontrolled δ<br>
+                    Preservation p ≈ 0 (total overwrite)
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Task 2 completely overwrites Task 1's learning rather than integrating with it.
+                </p>
+            </div>
+            
+            <h2>Current Solutions Don't Fix the Real Problem</h2>
+            
+            <div class="simple-box">
+                <h3>Existing Approaches:</h3>
+                
+                <p><strong>1. Elastic Weight Consolidation (EWC)</strong></p>
+                <p style="margin-left: 2em;">Protect weights ∝ Fisher information: I_i = 𝔼[(∂log p/∂w_i)²]</p>
+                <p>Like putting locks on important memories. Better than nothing, but eventually you run out of room for new learning. <em>CRR perspective:</em> Partial preservation (p > 0) but no metabolised rupture; brittleness still accumulates.</p>
+                
+                <p style="margin-top: 1em;"><strong>2. Progressive Networks</strong></p>
+                <p style="margin-left: 2em;">Add new capacity: θ_new = θ_old ∪ θ_task</p>
+                <p>Like hiring a new person for each task. Works, but your system becomes enormous. <em>CRR perspective:</em> Avoids rupture entirely (δ never fires); no regeneration, no synthesis.</p>
+                
+                <p style="margin-top: 1em;"><strong>3. Memory Replay</strong></p>
+                <p style="margin-left: 2em;">Rehearse old data: 𝒟_train = 𝒟_new ∪ 𝒟_old</p>
+                <p>Like constantly reviewing old lessons. Helps maintain C, but doesn't transform. <em>CRR perspective:</em> Prevents forgetting but no regeneration; memory is repeated, not reorganised.</p>
+            </div>
+            
+            <p>None of these approaches <strong>metabolise forgetting</strong>; they all try to prevent it. That's the wrong goal.</p>
+            
+            <h2>The CRR Solution: Embrace Controlled Forgetting</h2>
+            
+            <p>Instead of trying to prevent forgetting, CRR says: <em>make forgetting part of the learning process</em>.</p>
+            
+            <div class="formalism-box">
+                <h4>CRR-Based Continual Learning Architecture:</h4>
+                
+                <p><strong>1. Monitor Coherence:</strong></p>
+                <p style="margin: 0.5em 0 0.5em 2em;">
+                    L(θ, θ̇, t) = integration_quality(θ) - interference_cost(θ̇)<br>
+                    C(θ, t) = ∫₀ᵗ L(θ, τ) dτ
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Track how well-integrated current knowledge is and how much new learning interferes.
+                </p>
+                
+                <p style="margin-top: 1em;"><strong>2. Detect Interference:</strong></p>
+                <p style="margin: 0.5em 0 0.5em 2em;">
+                    If |∇_θ ℒ_new · ∇_θ ℒ_old| < -θ_conflict → interference detected
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Notice when gradients point in opposite directions <em>before</em> catastrophe.
+                </p>
+                
+                <p style="margin-top: 1em;"><strong>3. Trigger Selective Rupture:</strong></p>
+                <p style="margin: 0.5em 0 0.5em 2em;">
+                    ρ_i(θ) · δ(t-t_i) = targeted_reset(weights, I_i)<br>
+                    where I_i = Σ_tasks e^(C_task/Ω) · |∂ℒ/∂w_i|²
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Selectively "forget" low-importance connections while protecting high-coherence ones.
+                </p>
+                
+                <p style="margin-top: 1em;"><strong>4. Regenerate with Synthesis:</strong></p>
+                <p style="margin: 0.5em 0 0.5em 2em;">
+                    R[θ](t) = ∫₀ᵗ ∇ℒ(τ) · e^(C(τ)/Ω) · exp(-(t-τ)/λ) dτ<br>
+                    Δw = -η∇ℒ_new + β·R[θ](t)
+                </p>
+                <p style="font-family: Georgia, serif; margin-left: 2em;">
+                    Rebuild using weighted memory of past gradients. High-coherence moments exponentially influence current learning.
+                </p>
+            </div>
+            
+            <h2>A Concrete Example</h2>
+            
+            <div class="example-box">
+                <h3>Learning Multiple Languages</h3>
+                
+                <p><strong>Current AI (Fragile Signature):</strong></p>
+                <ul>
+                    <li>Train on English: C_English = 1000, perfect English</li>
+                    <li>Train on Spanish: δ fires with p ≈ 0 → C_English → 0, C_Spanish = 1000</li>
+                    <li>Result: Can only know one language at a time</li>
+                    <li><em>Mathematical form:</em> C_total alternates between tasks, never combines</li>
+                </ul>
+                
+                <p><strong>CRR-Based AI (Resilient Signature):</strong></p>
+                <ul>
+                    <li>Build English coherence: C_English = 1000</li>
+                    <li>Start Spanish, detect interference: ∇ℒ_Spanish · ∇ℒ_English < 0 for conflicting weights</li>
+                    <li>Selective rupture: Reset low-I weights (articles, word order) with p = 0.3</li>
+                    <li>Preserve high-I weights: Core semantic representations with p = 0.9</li>
+                    <li>Regenerate: ∫(English gradients)·e^(C_English/Ω) guides Spanish learning</li>
+                    <li>Result: C_total = C_English + C_Spanish with shared representations</li>
+                    <li><em>Bonus:</em> Learning Spanish improves English through dialectical synthesis!</li>
+                </ul>
+            </div>
+            
+            <h2>Different Learning Signatures for Different Tasks</h2>
+            
+            <p>Just like people, AI systems could develop different signatures depending on what they're learning:</p>
+            
+            <div class="signature-grid">
+                <div class="signature-card resilient">
+                    <h4>Resilient Learning</h4>
+                    <p><strong>Best for:</strong> Continual learning across related tasks</p>
+                    <p><strong>Pattern:</strong> Regular small ruptures, good preservation</p>
+                    <p><em>Example: A robot learning multiple household tasks</em></p>
+                </div>
+                
+                <div class="signature-card oscillatory">
+                    <h4>Oscillatory Learning</h4>
+                    <p><strong>Best for:</strong> Tasks with natural phases</p>
+                    <p><strong>Pattern:</strong> Build expertise, consolidate, switch context</p>
+                    <p><em>Example: Alternating between learning and sleep-like consolidation</em></p>
+                </div>
+                
+                <div class="signature-card dialectical">
+                    <h4>Dialectical Learning</h4>
+                    <p><strong>Best for:</strong> Creative synthesis</p>
+                    <p><strong>Pattern:</strong> Hold contradictions, create novel solutions</p>
+                    <p><em>Example: Combining chess strategy with Go tactics to invent new game strategies</em></p>
+                </div>
+                
+                <div class="signature-card chaotic">
+                    <h4>Chaotic Learning</h4>
+                    <p><strong>Best for:</strong> Rapid exploration</p>
+                    <p><strong>Pattern:</strong> Frequent ruptures, low preservation</p>
+                    <p><em>Example: Early-stage architecture search</em></p>
+                </div>
+            </div>
+            
+            <h2>Why This Mirrors Biology</h2>
+            
+            <p>Interestingly, biological brains already do something like CRR:</p>
+            
+            <div class="insight-box">
+                <h3>How Your Brain Avoids Catastrophic Forgetting:</h3>
+                
+                <p><strong>Memory Reconsolidation:</strong> When you recall a memory, it becomes temporarily unstable (rupture opportunity), then reconsolidates with new information</p>
+                
+                <p><strong>Sleep:</strong> During sleep, your brain selectively strengthens some connections (high coherence) and weakens others (controlled forgetting)</p>
+                
+                <p><strong>Neurogenesis:</strong> Creating new neurons in certain brain regions provides fresh capacity while preserving important patterns</p>
+                
+                <p><strong>Multiple Memory Systems:</strong> Different types of memory (episodic, semantic, procedural) interfere less with each other</p>
+            </div>
+            
+            <h2>What Makes CRR Different from Other Approaches?</h2>
+            
+            <div class="simple-box">
+                <h3>The Key Innovation:</h3>
+                
+                <p>CRR doesn't just store information or protect it; it <strong>transforms</strong> memory through controlled rupture and regeneration cycles.</p>
+                
+                <p><strong>Old Approach:</strong> Learning Task B should not disturb Task A<br>
+                <strong>CRR Approach:</strong> Learning Task B creates an opportunity to reorganise both A and B into something better</p>
+                
+                <p>This is <strong>genuine learning</strong>; not just accumulation, but transformation.</p>
+            </div>
+            
+            <h2>Practical Implications</h2>
+            
+            <div class="example-box">
+                <h3>What This Means for AI Development:</h3>
+                
+                <p><strong>Robots:</strong> Could learn new tasks without forgetting old ones, and get better at old tasks when learning new ones</p>
+                
+                <p><strong>Personal Assistants:</strong> Could adapt to your changing needs without losing personality coherence</p>
+                
+                <p><strong>Medical Diagnosis:</strong> Could update with new medical knowledge while preserving what worked in the past</p>
+                
+                <p><strong>Creative AI:</strong> Could synthesise across different training data to create genuinely novel combinations</p>
+            </div>
+            
+            <h2>The Bigger Picture</h2>
+            
+            <p>Catastrophic forgetting isn't just a technical problem; it reveals something fundamental about intelligence.</p>
+            
+            <div class="highlight-box">
+                <h3>True Intelligence Requires:</h3>
+                <ul>
+                    <li><strong>Memory</strong> that accumulates meaningfully (Coherence)</li>
+                    <li><strong>Flexibility</strong> to reorganise when needed (Rupture)</li>
+                    <li><strong>Synthesis</strong> that creates something new from old and new together (Regeneration)</li>
+                </ul>
+                
+                <p>Current AI has memory but not metabolised rupture. That's why it can't truly learn continually; it can only accumulate until catastrophe.</p>
+            </div>
+            
+            <p>CRR offers a path towards AI systems that learn more like biological systems; through cycles of building, breaking, and rebuilding that create genuine transformation rather than just accumulation or replacement.</p>
+        </div>
+        
+        <!-- Signatures Tab -->
+        <div id="signatures" class="tab-content">
+            <h1>Your Life Patterns: Understanding Your Memory Signature</h1>
+            
+            <h2>What is a Memory Signature?</h2>
+            
+            <p>Your memory signature isn't about <em>what</em> you remember; it's about <em>how</em> you navigate the cycle of building up experience, encountering disruptions, and rebuilding yourself. It's your characteristic pattern of coherence, rupture, and regeneration.</p>
+            
+            <div class="insight-box">
+                <p><strong>Think of it as your "temporal fingerprint"</strong>; the unique way you move through time, accumulate experience, handle crises, and transform yourself.</p>
+            </div>
+            
+            <h2>The Five Primary Signatures</h2>
+            
+            <div class="signature-grid">
+                <div class="signature-card fragile">
+                    <h4>Fragile Signature: The Pressure Cooker</h4>
+                    
+                    <p><strong>How It Works:</strong> You build up coherence for a long time without releasing pressure. Everything seems fine, then suddenly everything collapses.</p>
+                    
+                    <p><strong>Everyday Examples:</strong></p>
+                    <ul>
+                        <li>Never dealing with relationship issues until you explode or walk away</li>
+                        <li>Cramming all semester, burnout during finals</li>
+                        <li>Being "fine" for years until a breakdown</li>
+                        <li>Organisations that resist all change until forced reorganisation</li>
+                    </ul>
+                    
+                    <p><strong>Strengths:</strong> Highly efficient in stable environments; deep expertise in familiar domains</p>
+                    
+                    <p><strong>Weaknesses:</strong> Catastrophic when faced with unavoidable change; rigid thinking; difficulty adapting</p>
+                    
+                    <p><strong>Path to Resilience:</strong> Practice small ruptures regularly (therapy, trying new things, honest conversations before crises)</p>
+                </div>
+                
+                <div class="signature-card resilient">
+                    <h4>Resilient Signature: The Flexible Oak</h4>
+                    
+                    <p><strong>How It Works:</strong> You build coherence but regularly process small disruptions before they become catastrophic. You bend but don't break.</p>
+                    
+                    <p><strong>Everyday Examples:</strong></p>
+                    <ul>
+                        <li>Regular therapy or journaling to process emotions</li>
+                        <li>Having difficult conversations before resentment builds</li>
+                        <li>Studying consistently with regular check-ins</li>
+                        <li>Companies that do iterative improvements</li>
+                    </ul>
+                    
+                    <p><strong>Strengths:</strong> Adaptable; maintains identity through change; learns from mistakes without shattering</p>
+                    
+                    <p><strong>Weaknesses:</strong> Can seem less decisive than fragile types; may not specialise as deeply</p>
+                    
+                    <p><strong>Path to Growth:</strong> Stay curious; don't become complacent; keep challenging yourself</p>
+                </div>
+                
+                <div class="signature-card oscillatory">
+                    <h4>Oscillatory Signature: The Rhythmic Dancer</h4>
+                    
+                    <p><strong>How It Works:</strong> You naturally cycle between building up and releasing, like breathing. Intensity followed by integration, work followed by rest.</p>
+                    
+                    <p><strong>Everyday Examples:</strong></p>
+                    <ul>
+                        <li>Creative people who have intense work periods then rest</li>
+                        <li>Athletes who train hard then recover</li>
+                        <li>Natural cycles of engagement and withdrawal in relationships</li>
+                        <li>Seasonal businesses or agricultural systems</li>
+                    </ul>
+                    
+                    <p><strong>Strengths:</strong> Sustainable long-term; natural rhythm prevents burnout; deep-rest deep-work balance</p>
+                    
+                    <p><strong>Weaknesses:</strong> May struggle with constant-demand environments; others might not understand your rhythm</p>
+                    
+                    <p><strong>Path to Growth:</strong> Honour your rhythm; build environments that support it; don't try to be "always on"</p>
+                </div>
+                
+                <div class="signature-card chaotic">
+                    <h4>Chaotic Signature: The Scattered Explorer</h4>
+                    
+                    <p><strong>How It Works:</strong> Ruptures happen so frequently that coherence never builds up. You're constantly starting over, never building depth.</p>
+                    
+                    <p><strong>Everyday Examples:</strong></p>
+                    <ul>
+                        <li>Jumping between projects/hobbies without finishing</li>
+                        <li>Relationships that end before deep connection forms</li>
+                        <li>Starting over frequently in career or location</li>
+                        <li>Information overload preventing focus</li>
+                    </ul>
+                    
+                    <p><strong>Strengths:</strong> Highly exploratory; creative; open to novelty; sees connections others miss</p>
+                    
+                    <p><strong>Weaknesses:</strong> Never develops deep expertise; others see you as flaky; hard to build on past success</p>
+                    
+                    <p><strong>Path to Resilience:</strong> Create containers for coherence (commitments, routines, practices that deepen over time)</p>
+                </div>
+                
+                <div class="signature-card dialectical">
+                    <h4>Dialectical Signature: The Synthesis Maker</h4>
+                    
+                    <p><strong>How It Works:</strong> You hold contradictions and allow them to interact until something new emerges. Multiple coherence streams interfere constructively.</p>
+                    
+                    <p><strong>Everyday Examples:</strong></p>
+                    <ul>
+                        <li>Integrating multiple cultural identities into hybrid identity</li>
+                        <li>Combining seemingly opposite ideas into novel solutions</li>
+                        <li>Both/and thinking instead of either/or</li>
+                        <li>Cross-disciplinary innovation</li>
+                    </ul>
+                    
+                    <p><strong>Strengths:</strong> Creative synthesis; handles complexity; sees beyond false dichotomies; integrative wisdom</p>
+                    
+                    <p><strong>Weaknesses:</strong> Can seem indecisive; others may want clearer positions; requires high cognitive load</p>
+                    
+                    <p><strong>Path to Growth:</strong> Trust the synthesis process; don't force premature resolution; cultivate tolerance for ambiguity</p>
+                </div>
+            </div>
+            
+            <h2>Signatures Across Your Lifespan</h2>
+            
+            <p>Your signature often changes as you age:</p>
+            
+            <div class="simple-box">
+                <h3>Typical Developmental Pattern:</h3>
+                
+                <p><strong>Early Childhood (0-5):</strong> Oscillatory; rapid cycling between building and breaking, high plasticity</p>
+                
+                <p><strong>Childhood/Adolescence (5-18):</strong> Transitioning to Resilient; learning to handle disruptions more gracefully</p>
+                
+                <p><strong>Young Adulthood (18-40):</strong> Risk of becoming Fragile if you stop growing, or deepening Resilience if you keep learning</p>
+                
+                <p><strong>Middle Age (40-65):</strong> Either rigid Fragility or wise Dialectical capacity</p>
+                
+                <p><strong>Later Life (65+):</strong> Either crystallised wisdom (Dialectical) or brittle fragility</p>
+            </div>
+            
+            <p>The key insight: <strong>signatures aren't fixed</strong>. You can shift your pattern intentionally.</p>
+            
+            <h2>How to Identify Your Signature</h2>
+            
+            <div class="example-box">
+                <h3>Ask yourself:</h3>
+                
+                <p><strong>How do you handle disruptions?</strong></p>
+                <ul>
+                    <li>Try to avoid them at all costs? (Fragile tendency)</li>
+                    <li>Process them regularly in small doses? (Resilient)</li>
+                    <li>Have natural cycles of intensity and rest? (Oscillatory)</li>
+                    <li>Experience constant disruption? (Chaotic)</li>
+                    <li>Use them to synthesise new understanding? (Dialectical)</li>
+                </ul>
+                
+                <p><strong>How do you build expertise?</strong></p>
+                <ul>
+                    <li>Go deeper and deeper in one area until crisis? (Fragile)</li>
+                    <li>Build steadily with regular integration? (Resilient)</li>
+                    <li>Cycle between intense immersion and rest? (Oscillatory)</li>
+                    <li>Jump between topics without deep development? (Chaotic)</li>
+                    <li>Combine multiple domains into something new? (Dialectical)</li>
+                </ul>
+                
+                <p><strong>When you face a crisis, what happens?</strong></p>
+                <ul>
+                    <li>Everything falls apart? (Fragile)</li>
+                    <li>You adapt and bounce back? (Resilient)</li>
+                    <li>It's part of your natural cycle? (Oscillatory)</li>
+                    <li>It's just another in a series of disruptions? (Chaotic)</li>
+                    <li>You synthesise a new way of being? (Dialectical)</li>
+                </ul>
+            </div>
+            
+            <h2>Signature Transitions: How to Change Your Pattern</h2>
+            
+            <div class="highlight-box">
+                <h3>Common Transitions:</h3>
+                
+                <p><strong>Fragile → Resilient:</strong></p>
+                <ul>
+                    <li>Lower your rupture threshold; have small crises on purpose</li>
+                    <li>Therapy, honest conversations, trying new things</li>
+                    <li>Build capacity to process emotions as they arise</li>
+                </ul>
+                
+                <p><strong>Chaotic → Oscillatory:</strong></p>
+                <ul>
+                    <li>Create containers; routines, commitments, practices</li>
+                    <li>Honour natural cycles instead of fighting them</li>
+                    <li>Build something deeper before moving on</li>
+                </ul>
+                
+                <p><strong>Resilient → Dialectical:</strong></p>
+                <ul>
+                    <li>Cultivate capacity for contradiction</li>
+                    <li>Cross-cultural exposure, philosophical inquiry</li>
+                    <li>Both/and thinking instead of either/or</li>
+                </ul>
+                
+                <p><strong>Any → Fragile (Warning Signs):</strong></p>
+                <ul>
+                    <li>Avoiding all difficult conversations</li>
+                    <li>Perfectionism that prevents experimentation</li>
+                    <li>Trauma that makes vulnerability feel dangerous</li>
+                </ul>
+            </div>
+            
+            <h2>Relationships and Signature Compatibility</h2>
+            
+            <p>Understanding signatures can illuminate relationship dynamics:</p>
+            
+            <div class="simple-box">
+                <p><strong>Fragile + Fragile:</strong> Stable until crisis, then both collapse</p>
+                
+                <p><strong>Fragile + Resilient:</strong> Resilient partner carries emotional load, may eventually resent it</p>
+                
+                <p><strong>Resilient + Resilient:</strong> Healthy growth together, but may become complacent</p>
+                
+                <p><strong>Oscillatory + Chaotic:</strong> Rhythm vs chaos; can complement or clash</p>
+                
+                <p><strong>Dialectical + Any:</strong> Can integrate different patterns but requires patience from both</p>
+            </div>
+            
+            <h2>Signature in Different Life Domains</h2>
+            
+            <p>You might have different signatures in different areas:</p>
+            
+            <div class="example-box">
+                <ul>
+                    <li><strong>Work:</strong> Resilient (adaptable, learning)</li>
+                    <li><strong>Relationships:</strong> Fragile (avoiding conflict)</li>
+                    <li><strong>Health:</strong> Oscillatory (intense then rest)</li>
+                    <li><strong>Creative projects:</strong> Chaotic (many starts, few finishes)</li>
+                </ul>
+                
+                <p>This is normal! The goal is awareness and intentional development where it matters most to you.</p>
+            </div>
+            
+            <h2>Practical Exercise: Map Your Signature</h2>
+            
+            <div class="insight-box">
+                <h3>Try This:</h3>
+                
+                <p><strong>1. Pick a domain</strong> (career, relationships, health, learning)</p>
+                
+                <p><strong>2. Track over the past year:</strong></p>
+                <ul>
+                    <li>How often did you experience ruptures/crises?</li>
+                    <li>How big were they?</li>
+                    <li>How did you rebuild afterward?</li>
+                    <li>What pattern do you see?</li>
+                </ul>
+                
+                <p><strong>3. Ask yourself:</strong></p>
+                <ul>
+                    <li>Is this pattern serving me?</li>
+                    <li>What would I like to change?</li>
+                    <li>What would that require?</li>
+                </ul>
+                
+                <p><strong>4. Experiment:</strong></p>
+                <ul>
+                    <li>If Fragile: Try one small rupture this week</li>
+                    <li>If Chaotic: Commit to one thing for a month</li>
+                    <li>If Resilient: Are you challenging yourself enough?</li>
+                </ul>
+            </div>
+            
+            <h2>The Deepest Insight</h2>
+            
+            <div class="highlight-box">
+                <p><strong>Your signature is not your destiny; it's your current strategy for navigating time and change.</strong></p>
+                
+                <p>Understanding it gives you agency. You can:</p>
+                <ul>
+                    <li>Work <em>with</em> your natural rhythm instead of against it</li>
+                    <li>Recognise when your pattern isn't serving you</li>
+                    <li>Intentionally cultivate the signature most appropriate for your goals</li>
+                    <li>Understand others' patterns and improve relationships</li>
+                    <li>Design environments that support healthy signatures</li>
+                </ul>
+                
+                <p>The goal isn't to have the "best" signature; it's to consciously navigate your cycles of coherence, rupture, and regeneration rather than being unconsciously swept through them.</p>
+            </div>
+            
+            <p style="margin-top: 3em; padding: 25px; background: linear-gradient(135deg, #2c4875 0%, #1a2332 100%); color: white;">
+                <strong style="color: white;">Remember:</strong> CRR isn't about avoiding rupture or maximising coherence. It's about metabolising change; making breaking and rebuilding part of your growth process rather than something that happens <em style="color: white;">to</em> you. That's the path from victim to agent, from passive to active, from stuck to evolving.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        function openTab(evt, tabName) {
+            var tabContents = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            var tabButtons = document.getElementsByClassName("tab-button");
+            for (var i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
+</body>
+</html>

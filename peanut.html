@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta viewport="width=device-width, initial-scale=1.0">
+    <title>CRR Peanut Calorimetry</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e8e8e8, #f5f5f5);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Georgia, serif;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .title h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+        
+        .title p {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .main-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        #experimentCanvas {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background: #f8f8f8;
+        }
+        
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .control-section {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 320px;
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+        
+        .control-label {
+            color: #555;
+            min-width: 110px;
+            font-size: 11px;
+        }
+        
+        .control-value {
+            color: #2c3e50;
+            font-weight: bold;
+            min-width: 70px;
+            text-align: right;
+            font-size: 11px;
+        }
+        
+        .control-slider {
+            flex: 1;
+            height: 18px;
+            background: #e0e0e0;
+            outline: none;
+            border-radius: 9px;
+            border: 1px solid #ccc;
+        }
+        
+        .button {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+            border: 1px solid #2980b9;
+            border-radius: 6px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .button:hover {
+            background: linear-gradient(145deg, #5dade2, #3498db);
+            transform: translateY(-1px);
+        }
+        
+        .button:disabled {
+            background: linear-gradient(145deg, #bdc3c7, #95a5a6);
+            color: #7f8c8d;
+            cursor: not-allowed;
+            border: 1px solid #95a5a6;
+        }
+        
+        .button.danger {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            border: 1px solid #c0392b;
+        }
+        
+        .button.danger:hover {
+            background: linear-gradient(145deg, #ec7063, #e74c3c);
+        }
+        
+        .button.success {
+            background: linear-gradient(145deg, #27ae60, #229954);
+            border: 1px solid #229954;
+        }
+        
+        .button.success:hover {
+            background: linear-gradient(145deg, #52be80, #27ae60);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .metric-label { color: #555; }
+        .metric-value { 
+            color: #2c3e50; 
+            font-weight: bold;
+        }
+        
+        .metric-highlight {
+            color: #e67e22 !important;
+        }
+        
+        .crr-info {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 9px;
+            color: #34495e;
+            line-height: 1.3;
+        }
+        
+        .phase-indicator {
+            text-align: center;
+            padding: 8px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border: 1px solid #bdc3c7;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>CRR Peanut Calorimetry Experiment</h1>
+        <p>
+            Coherence • Rupture • Regeneration Framework Applied to Energy Transfer<br/>
+            <em>Precise mathematical modeling of combustion and thermal dynamics</em>
+        </p>
+    </div>
+    
+    <div class="main-container">
+        <canvas id="experimentCanvas" width="500" height="600"></canvas>
+        
+        <div class="controls-panel">
+            <div class="control-section">
+                <div class="phase-indicator" id="phaseIndicator">SETUP PHASE</div>
+                
+                <button class="button success" id="ignitePeanutBtn">IGNITE PEANUT</button>
+                <button class="button" id="placeTestTubeBtn" disabled>PLACE TEST TUBE</button>
+                <button class="button danger" id="resetBtn">RESET EXPERIMENT</button>
+            </div>
+            
+            <div class="control-section">
+                <div class="section-title">APPARATUS SETTINGS</div>
+                
+                <div class="control-row">
+                    <span class="control-label">Water Volume:</span>
+                    <input type="range" class="control-slider" id="waterVolume" min="10" max="100" step="5" value="50">
+                    <span class="control-value" id="waterVolumeValue">50 mL</span>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label">Peanut Mass:</span>
+                    <input type="range" class="control-slider" id="peanutMass" min="0.5" max="2.0" step="0.1" value="1.0">
+                    <span class="control-value" id="peanutMassValue">1.0 g</span>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label">Bunsen Gas:</span>
+                    <input type="range" class="control-slider" id="bunsenGas" min="0.0" max="1.0" step="0.1" value="0.5">
+                    <span class="control-value" id="bunsenGasValue">50%</span>
+                </div>
+                
+                <div class="control-row">
+                    <span class="control-label">CRR Coupling:</span>
+                    <input type="range" class="control-slider" id="crrCoupling" min="0.1" max="1.0" step="0.05" value="0.65">
+                    <span class="control-value" id="crrCouplingValue">0.65</span>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="section-title">REAL-TIME MEASUREMENTS</div>
+                
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">Water Temp:</span>
+                        <span class="metric-value metric-highlight" id="waterTemp">20.0 °C</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Water Left:</span>
+                        <span class="metric-value" id="waterRemaining">50.0 mL</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Evap Rate:</span>
+                        <span class="metric-value" id="evapRate">0.00 mL/s</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">ΔT:</span>
+                        <span class="metric-value" id="deltaT">0.0 °C</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Heat (q):</span>
+                        <span class="metric-value" id="heatQ">0 J</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Calories:</span>
+                        <span class="metric-value" id="calories">0 cal</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Peanut Burned:</span>
+                        <span class="metric-value" id="peanutBurned">0.00 g</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Energy/gram:</span>
+                        <span class="metric-value metric-highlight" id="energyPerGram">0 J/g</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <div class="section-title">CRR DYNAMICS</div>
+                
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">Coherence:</span>
+                        <span class="metric-value" id="coherenceLevel">0.50</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Flame Temp:</span>
+                        <span class="metric-value" id="flameTemp">293 K</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Ruptures:</span>
+                        <span class="metric-value" id="ruptureCount">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Thermal Field:</span>
+                        <span class="metric-value" id="thermalField">0.00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section crr-info">
+                <strong>CRR Physics Model:</strong><br/>
+                <strong>Coherence:</strong> C(x) = ∫ L(x,τ) dτ<br/>
+                <strong>Rupture:</strong> δ(t-t₀) at critical thresholds<br/>
+                <strong>Regeneration:</strong> R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ<br/>
+                <strong>Heat Transfer:</strong> q = m·c·ΔT (4.18 J/g°C, 95% efficiency)<br/>
+                <strong>Evaporation:</strong> 2260 J/g × 6.0 boost = ~0.9 mL/s when boiling<br/>
+                <strong>Burn Time:</strong> 1g peanut = ~22 seconds of flame<br/>
+                <strong>Result:</strong> Sustained flame + visible water evaporation
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('experimentCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // CRR Experiment State
+        let expState = {
+            // Experiment phase
+            phase: 'setup', // setup, burning, measuring, complete
+            
+            // Apparatus parameters
+            waterVolume: 50, // mL (= grams for water)
+            peanutMass: 1.0, // grams
+            peanutMassRemaining: 1.0,
+            initialWaterTemp: 20.0, // °C
+            waterTemp: 20.0,
+            bunsenGasFlow: 0.5,
+            crrCoupling: 0.65,
+            
+            // CRR Fields (32-element arrays for spatial distribution)
+            bunsenCoherenceField: new Float32Array(32),
+            peanutCoherenceField: new Float32Array(32),
+            waterThermalField: new Float32Array(32),
+            thermalTransferField: new Float32Array(32),
+            
+            // Bunsen burner state
+            bunsenLit: false,
+            bunsenFlameIntensity: 0,
+            bunsenFlameSegments: [],
+            
+            // Peanut combustion state
+            peanutIgnited: false,
+            peanutFlameIntensity: 0,
+            peanutFlameSegments: [],
+            peanutBurnProgress: 0,
+            peanutTemp: 293.15,
+            
+            // Test tube state
+            testTubePresent: false,
+            testTubeY: -100,
+            testTubeTargetY: 240, // Closer to the peanut for better heat transfer
+            waterVolumeRemaining: 50, // mL
+            isBoiling: false,
+            steamParticles: [],
+            
+            // CRR Dynamics
+            coherenceLevel: 0.5,
+            ruptureEvents: 0,
+            emergenceLevel: 0,
+            
+            // Measurements
+            heatTransferred: 0, // Joules
+            deltaT: 0,
+            evaporationRate: 0, // mL/s
+            lastWaterVolume: 50,
+            
+            // Animation
+            time: 0,
+            lastFrameTime: 0
+        };
+        
+        // CRR Parameters
+        const crrParams = {
+            coherenceThreshold: 0.68,
+            ruptureThreshold: 0.82,
+            temporalIntegration: 0.06,
+            quantumNoise: 0.03,
+            combustionCoherence: 0.75,
+            thermalDiffusion: 0.08,
+            peanutEnergyDensity: 7800, // J/g (typical for peanuts)
+            burnRate: 0.0015, // g/frame - longer burn duration for observation
+            thermalEfficiency: 0.95, // 95% heat transfer for maximum evaporation
+            evaporationMultiplier: 6.0, // Strong educational boost for visible water loss
+            rebirthStrength: 0.35
+        };
+        
+        // Physical constants
+        const CONSTANTS = {
+            SPECIFIC_HEAT_WATER: 4.18, // J/g°C
+            BUTANE_FLAME_TEMP: 1970, // K
+            PEANUT_FLAME_TEMP: 1500, // K (oil combustion)
+            ROOM_TEMP: 293.15, // K
+            BOILING_POINT: 373.15, // K
+            ROOM_TEMP_C: 20.0 // °C
+        };
+        
+        // Initialize system
+        function initializeExperiment() {
+            // Initialize CRR fields
+            for (let i = 0; i < 32; i++) {
+                expState.bunsenCoherenceField[i] = 0.3 + Math.random() * 0.2;
+                expState.peanutCoherenceField[i] = 0.4 + Math.random() * 0.2;
+                expState.waterThermalField[i] = 0.2 + Math.random() * 0.1;
+                expState.thermalTransferField[i] = 0.1 + Math.random() * 0.05;
+            }
+            
+            // Initialize flame segments
+            expState.bunsenFlameSegments = [];
+            for (let i = 0; i < 10; i++) {
+                expState.bunsenFlameSegments.push({
+                    x: 0, y: 0, intensity: 0, temperature: CONSTANTS.ROOM_TEMP,
+                    age: 0, vx: 0, vy: 0
+                });
+            }
+            
+            expState.peanutFlameSegments = [];
+            for (let i = 0; i < 12; i++) {
+                expState.peanutFlameSegments.push({
+                    x: 0, y: 0, intensity: 0, temperature: CONSTANTS.ROOM_TEMP,
+                    age: 0, vx: 0, vy: 0
+                });
+            }
+            
+            // Initialize steam particles
+            expState.steamParticles = [];
+            for (let i = 0; i < 30; i++) {
+                expState.steamParticles.push({
+                    x: 0, y: 0, vx: 0, vy: 0, size: 0, alpha: 0, active: false
+                });
+            }
+            
+            expState.lastFrameTime = Date.now();
+        }
+        
+        // Core CRR Physics Update
+        function updateCRRPhysics() {
+            const currentTime = Date.now();
+            const deltaTime = Math.min((currentTime - expState.lastFrameTime) / 1000, 0.033);
+            expState.lastFrameTime = currentTime;
+            
+            let totalCoherence = 0;
+            
+            // 1. Bunsen burner CRR dynamics
+            if (expState.bunsenLit) {
+                for (let i = 0; i < 32; i++) {
+                    const prev = expState.bunsenCoherenceField[(i - 1 + 32) % 32];
+                    const next = expState.bunsenCoherenceField[(i + 1) % 32];
+                    const diffusion = (prev + next) * 0.5 - expState.bunsenCoherenceField[i];
+                    
+                    const gasInfluence = expState.bunsenGasFlow * expState.crrCoupling;
+                    const quantumFluctuation = (Math.random() - 0.5) * crrParams.quantumNoise;
+                    
+                    expState.bunsenCoherenceField[i] += diffusion * 0.03 + gasInfluence * 0.02 + quantumFluctuation;
+                    expState.bunsenCoherenceField[i] = Math.max(0.1, Math.min(0.95, expState.bunsenCoherenceField[i]));
+                    
+                    totalCoherence += expState.bunsenCoherenceField[i];
+                }
+                
+                // Bunsen flame dynamics
+                const targetIntensity = expState.bunsenGasFlow * 0.8;
+                expState.bunsenFlameIntensity += (targetIntensity - expState.bunsenFlameIntensity) * 0.1;
+            } else {
+                // Fade out bunsen flame when turned off
+                expState.bunsenFlameIntensity *= 0.85;
+            }
+            
+            // Update bunsen flame segments
+            expState.bunsenFlameSegments.forEach((segment, i) => {
+                segment.age += 0.12;
+                const ageDecay = Math.max(0, 1 - segment.age * 0.35);
+                segment.intensity = expState.bunsenFlameIntensity * ageDecay * (0.8 + Math.random() * 0.4);
+                
+                const buoyancy = segment.intensity * 1.2;
+                const turbulence = (Math.random() - 0.5) * 0.4;
+                
+                segment.vy = -buoyancy + turbulence;
+                segment.vx = turbulence * 0.8;
+                segment.x += segment.vx;
+                segment.y += segment.vy;
+                
+                if (segment.age > 2.5 || segment.intensity < 0.1) {
+                    segment.x = (Math.random() - 0.5) * 8;
+                    segment.y = 0;
+                    segment.intensity = expState.bunsenFlameIntensity * (0.6 + Math.random() * 0.4);
+                    segment.age = 0;
+                    segment.temperature = CONSTANTS.ROOM_TEMP + 
+                        (CONSTANTS.BUTANE_FLAME_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                }
+                
+                const targetTemp = CONSTANTS.ROOM_TEMP + 
+                    (CONSTANTS.BUTANE_FLAME_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                segment.temperature += (targetTemp - segment.temperature) * 0.1;
+            });
+            
+            // 2. Peanut combustion CRR dynamics
+            if (expState.peanutIgnited && expState.peanutMassRemaining > 0.01) {
+                for (let i = 0; i < 32; i++) {
+                    const prev = expState.peanutCoherenceField[(i - 1 + 32) % 32];
+                    const next = expState.peanutCoherenceField[(i + 1) % 32];
+                    const diffusion = (prev + next) * 0.5 - expState.peanutCoherenceField[i];
+                    
+                    const combustionInfluence = (expState.peanutMassRemaining / expState.peanutMass) * expState.crrCoupling;
+                    const thermalFeedback = expState.thermalTransferField[i] * 0.15;
+                    const quantumFluctuation = (Math.random() - 0.5) * crrParams.quantumNoise;
+                    
+                    expState.peanutCoherenceField[i] += diffusion * 0.04 + 
+                        combustionInfluence * 0.03 + 
+                        thermalFeedback * 0.02 +
+                        quantumFluctuation;
+                    
+                    expState.peanutCoherenceField[i] = Math.max(0.1, Math.min(0.95, expState.peanutCoherenceField[i]));
+                    totalCoherence += expState.peanutCoherenceField[i];
+                }
+                
+                // Peanut combustion
+                const massFactor = expState.peanutMassRemaining / expState.peanutMass;
+                const targetIntensity = massFactor * crrParams.combustionCoherence;
+                expState.peanutFlameIntensity += (targetIntensity - expState.peanutFlameIntensity) * 0.08;
+                
+                // Burn peanut mass
+                const burnAmount = crrParams.burnRate * expState.peanutFlameIntensity;
+                expState.peanutMassRemaining = Math.max(0, expState.peanutMassRemaining - burnAmount);
+                expState.peanutBurnProgress = 1 - (expState.peanutMassRemaining / expState.peanutMass);
+                
+                // Heat generation from peanut combustion
+                const energyReleased = burnAmount * crrParams.peanutEnergyDensity;
+                
+                // Peanut flame segments
+                expState.peanutFlameSegments.forEach((segment, i) => {
+                    segment.age += 0.1;
+                    const ageDecay = Math.max(0, 1 - segment.age * 0.3);
+                    segment.intensity = expState.peanutFlameIntensity * ageDecay * (0.7 + Math.random() * 0.6);
+                    
+                    const buoyancy = segment.intensity * 0.9;
+                    const turbulence = (Math.random() - 0.5) * 0.35;
+                    
+                    segment.vy = -buoyancy + turbulence;
+                    segment.vx = turbulence;
+                    segment.x += segment.vx;
+                    segment.y += segment.vy;
+                    
+                    if (segment.age > 3 || segment.intensity < 0.1) {
+                        segment.x = (Math.random() - 0.5) * 10;
+                        segment.y = 0;
+                        segment.intensity = expState.peanutFlameIntensity * (0.5 + Math.random() * 0.5);
+                        segment.age = 0;
+                        segment.temperature = CONSTANTS.ROOM_TEMP + 
+                            (CONSTANTS.PEANUT_FLAME_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                    }
+                    
+                    const targetTemp = CONSTANTS.ROOM_TEMP + 
+                        (CONSTANTS.PEANUT_FLAME_TEMP - CONSTANTS.ROOM_TEMP) * segment.intensity;
+                    segment.temperature += (targetTemp - segment.temperature) * 0.1;
+                });
+                
+                // 3. Thermal transfer to water (if test tube present)
+                if (expState.testTubePresent && expState.waterVolumeRemaining > 0) {
+                    const heatToWater = energyReleased * crrParams.thermalEfficiency;
+                    let tempIncrease = 0;
+                    
+                    if (expState.waterTemp < 100) {
+                        // Heat water: q = m·c·ΔT → ΔT = q / (m·c)
+                        tempIncrease = heatToWater / (expState.waterVolumeRemaining * CONSTANTS.SPECIFIC_HEAT_WATER);
+                        expState.waterTemp += tempIncrease;
+                        
+                        if (expState.waterTemp >= 100) {
+                            expState.waterTemp = 100;
+                            expState.isBoiling = true;
+                        } else {
+                            expState.evaporationRate = 0; // Not boiling yet
+                        }
+                    } else {
+                        // Water is boiling - use heat to evaporate water
+                        // Latent heat of vaporization for water: 2260 J/g
+                        // Apply educational multiplier for visible evaporation
+                        const evaporationRate = (heatToWater / 2260) * crrParams.evaporationMultiplier; // grams evaporated per frame
+                        const previousVolume = expState.waterVolumeRemaining;
+                        expState.waterVolumeRemaining = Math.max(0, expState.waterVolumeRemaining - evaporationRate);
+                        
+                        // Calculate evaporation rate in mL/s
+                        const volumeChange = previousVolume - expState.waterVolumeRemaining;
+                        expState.evaporationRate = volumeChange * 30; // Convert from per-frame to per-second (assuming ~30 fps)
+                        
+                        // Stop boiling if no water left
+                        if (expState.waterVolumeRemaining <= 0.01) {
+                            expState.waterVolumeRemaining = 0;
+                            expState.isBoiling = false;
+                            expState.evaporationRate = 0;
+                        } else {
+                            expState.isBoiling = true;
+                        }
+                        
+                        // Generate steam particles when boiling
+                        if (expState.isBoiling) {
+                            for (let i = 0; i < expState.steamParticles.length; i++) {
+                                if (!expState.steamParticles[i].active && Math.random() < 0.2) {
+                                    const particle = expState.steamParticles[i];
+                                    particle.active = true;
+                                    particle.x = (Math.random() - 0.5) * 20;
+                                    particle.y = 0;
+                                    particle.vx = (Math.random() - 0.5) * 2;
+                                    particle.vy = -2 - Math.random() * 2;
+                                    particle.size = 3 + Math.random() * 4;
+                                    particle.alpha = 0.6 + Math.random() * 0.3;
+                                }
+                            }
+                        }
+                    }
+                    
+                    expState.heatTransferred += heatToWater;
+                    expState.deltaT = expState.waterTemp - expState.initialWaterTemp;
+                    
+                    // Update water thermal field
+                    for (let i = 0; i < 32; i++) {
+                        expState.waterThermalField[i] += tempIncrease * 0.01;
+                        expState.waterThermalField[i] = Math.min(1, expState.waterThermalField[i]);
+                        
+                        // Thermal diffusion in water
+                        const prev = expState.waterThermalField[(i - 1 + 32) % 32];
+                        const next = expState.waterThermalField[(i + 1) % 32];
+                        const thermalDiff = (prev + next) * 0.5 - expState.waterThermalField[i];
+                        expState.waterThermalField[i] += thermalDiff * crrParams.thermalDiffusion;
+                    }
+                    
+                    // Update thermal transfer field
+                    for (let i = 0; i < 32; i++) {
+                        expState.thermalTransferField[i] = expState.peanutFlameIntensity * 0.5;
+                        expState.thermalTransferField[i] *= 0.96; // Decay
+                    }
+                }
+                
+                // Update steam particles
+                expState.steamParticles.forEach(particle => {
+                    if (particle.active) {
+                        particle.x += particle.vx;
+                        particle.y += particle.vy;
+                        particle.vy -= 0.05; // Buoyancy
+                        particle.alpha -= 0.008;
+                        particle.size += 0.15;
+                        
+                        if (particle.alpha <= 0 || particle.y < -150) {
+                            particle.active = false;
+                        }
+                    }
+                });
+                
+                // Check if peanut burned out
+                if (expState.peanutMassRemaining < 0.01) {
+                    expState.peanutIgnited = false;
+                    expState.peanutFlameIntensity = 0;
+                    expState.evaporationRate = 0;
+                    expState.phase = 'complete';
+                }
+            } else {
+                // Peanut not burning
+                expState.evaporationRate = 0;
+            }
+            
+            // Calculate overall coherence
+            expState.coherenceLevel = totalCoherence / 64; // 32 + 32 fields
+            
+            // CRR Rupture detection
+            if (expState.coherenceLevel > crrParams.ruptureThreshold) {
+                expState.ruptureEvents++;
+                
+                // Regeneration operator
+                for (let i = 0; i < 32; i++) {
+                    const historicalValue = (expState.peanutCoherenceField[i] + expState.bunsenCoherenceField[i]) * 0.5;
+                    const clampedCoherence = Math.max(0, Math.min(5, expState.coherenceLevel));
+                    const exponentialWeight = Math.exp(clampedCoherence);
+                    const rebirthValue = historicalValue * exponentialWeight * crrParams.rebirthStrength;
+                    
+                    if (isFinite(rebirthValue)) {
+                        expState.peanutCoherenceField[i] = Math.min(0.7, rebirthValue);
+                        expState.bunsenCoherenceField[i] = Math.min(0.7, rebirthValue);
+                    }
+                }
+            }
+            
+            expState.time += deltaTime;
+        }
+        
+        // Rendering functions
+        function drawBunsenBurner(x, y) {
+            // Base
+            ctx.fillStyle = '#666';
+            ctx.fillRect(x - 30, y + 20, 60, 15);
+            ctx.fillStyle = '#888';
+            ctx.fillRect(x - 35, y + 35, 70, 8);
+            
+            // Gas valve
+            ctx.fillStyle = '#555';
+            ctx.fillRect(x - 8, y + 25, 16, 12);
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, y + 31, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tube
+            const tubeGradient = ctx.createLinearGradient(x - 15, y - 50, x + 15, y - 50);
+            tubeGradient.addColorStop(0, '#444');
+            tubeGradient.addColorStop(0.5, '#666');
+            tubeGradient.addColorStop(1, '#444');
+            ctx.fillStyle = tubeGradient;
+            ctx.fillRect(x - 15, y - 80, 30, 100);
+            
+            // Air holes
+            for (let i = 0; i < 4; i++) {
+                ctx.fillStyle = '#222';
+                ctx.fillRect(x - 12 + i * 8, y - 70, 3, 8);
+            }
+            
+            // Top rim
+            ctx.fillStyle = '#888';
+            ctx.fillRect(x - 18, y - 82, 36, 4);
+        }
+        
+        function drawBunsenFlame(x, y) {
+            if (expState.bunsenFlameIntensity < 0.05) return;
+            
+            ctx.save();
+            
+            // Glow
+            const glowRadius = 80 + expState.bunsenFlameIntensity * 60;
+            const glowGradient = ctx.createRadialGradient(x, y - 90, 0, x, y - 90, glowRadius);
+            glowGradient.addColorStop(0, `rgba(100, 150, 255, ${expState.bunsenFlameIntensity * 0.4})`);
+            glowGradient.addColorStop(0.5, `rgba(100, 180, 255, ${expState.bunsenFlameIntensity * 0.2})`);
+            glowGradient.addColorStop(1, 'rgba(100, 200, 255, 0)');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(x - glowRadius, y - 90 - glowRadius, glowRadius * 2, glowRadius * 2);
+            
+            // Flame segments
+            expState.bunsenFlameSegments.forEach((segment, i) => {
+                if (segment.intensity < 0.1) return;
+                
+                const segmentX = x + segment.x;
+                const segmentY = y - 82 + segment.y;
+                
+                // Butane flame is blue at base, yellow at tip
+                let r, g, b;
+                const heightFactor = Math.abs(segment.y) / 40;
+                
+                if (heightFactor < 0.3) {
+                    r = 100; g = 150; b = 255;
+                } else if (heightFactor < 0.7) {
+                    const t = (heightFactor - 0.3) / 0.4;
+                    r = Math.floor(100 + (255 - 100) * t);
+                    g = Math.floor(150 + (200 - 150) * t);
+                    b = Math.floor(255 * (1 - t));
+                } else {
+                    r = 255; g = 200; b = 100;
+                }
+                
+                const segmentSize = segment.intensity * 50;
+                const segmentHeight = segmentSize * 1.8;
+                const alpha = segment.intensity * (1 - segment.age * 0.25);
+                
+                const gradient = ctx.createRadialGradient(
+                    segmentX, segmentY, 0,
+                    segmentX, segmentY - segmentHeight / 2, segmentHeight / 2
+                );
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+                gradient.addColorStop(0.5, `rgba(${r}, ${Math.floor(g * 0.9)}, ${Math.floor(b * 0.8)}, ${alpha * 0.7})`);
+                gradient.addColorStop(1, 'rgba(255, 150, 50, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                const baseWidth = segmentSize * 0.5;
+                const tipWidth = segmentSize * 0.15;
+                ctx.moveTo(segmentX - baseWidth, segmentY);
+                ctx.bezierCurveTo(
+                    segmentX - baseWidth * 0.7, segmentY - segmentHeight * 0.3,
+                    segmentX - tipWidth, segmentY - segmentHeight * 0.8,
+                    segmentX, segmentY - segmentHeight
+                );
+                ctx.bezierCurveTo(
+                    segmentX + tipWidth, segmentY - segmentHeight * 0.8,
+                    segmentX + baseWidth * 0.7, segmentY - segmentHeight * 0.3,
+                    segmentX + baseWidth, segmentY
+                );
+                ctx.closePath();
+                ctx.fill();
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawClampAndPeanut(x, y) {
+            // Clamp stand
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - 40, y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 40, y - 50);
+            ctx.lineTo(x - 40, y + 50);
+            ctx.stroke();
+            
+            // Peanut
+            const peanutSize = 8 + (expState.peanutMassRemaining / expState.peanutMass) * 6;
+            const burnDarkness = expState.peanutBurnProgress;
+            
+            ctx.fillStyle = `rgb(${Math.floor(200 - burnDarkness * 150)}, ${Math.floor(150 - burnDarkness * 100)}, ${Math.floor(100 - burnDarkness * 80)})`;
+            ctx.beginPath();
+            ctx.ellipse(x, y, peanutSize, peanutSize * 0.7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Peanut texture
+            ctx.strokeStyle = `rgba(100, 60, 30, ${0.5 + burnDarkness * 0.5})`;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(x, y, peanutSize * (0.3 + i * 0.25), 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        function drawPeanutFlame(x, y) {
+            if (expState.peanutFlameIntensity < 0.05) return;
+            
+            ctx.save();
+            
+            // Glow
+            const glowRadius = 100 + expState.peanutFlameIntensity * 80;
+            const glowGradient = ctx.createRadialGradient(x, y - 15, 0, x, y - 15, glowRadius);
+            glowGradient.addColorStop(0, `rgba(255, 180, 50, ${expState.peanutFlameIntensity * 0.6})`);
+            glowGradient.addColorStop(0.5, `rgba(255, 120, 30, ${expState.peanutFlameIntensity * 0.3})`);
+            glowGradient.addColorStop(1, 'rgba(255, 80, 0, 0)');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(x - glowRadius, y - 15 - glowRadius, glowRadius * 2, glowRadius * 2);
+            
+            // Flame segments
+            expState.peanutFlameSegments.forEach((segment, i) => {
+                if (segment.intensity < 0.1) return;
+                
+                const segmentX = x + segment.x;
+                const segmentY = y + segment.y;
+                
+                // Oil combustion flame (orange/yellow)
+                let r, g, b;
+                const temp = segment.temperature;
+                
+                if (temp < 800) {
+                    r = 255; g = 100; b = 50;
+                } else if (temp < 1200) {
+                    const t = (temp - 800) / 400;
+                    r = 255;
+                    g = Math.floor(100 + (200 - 100) * t);
+                    b = Math.floor(50 * (1 - t));
+                } else {
+                    r = 255; g = 200; b = 100;
+                }
+                
+                const segmentSize = segment.intensity * 60;
+                const segmentHeight = segmentSize * 1.5;
+                const alpha = segment.intensity * (1 - segment.age * 0.3);
+                
+                const gradient = ctx.createRadialGradient(
+                    segmentX, segmentY, 0,
+                    segmentX, segmentY - segmentHeight / 2, segmentHeight / 2
+                );
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+                gradient.addColorStop(0.5, `rgba(${r}, ${Math.floor(g * 0.85)}, ${Math.floor(b * 0.7)}, ${alpha * 0.7})`);
+                gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                const baseWidth = segmentSize * 0.6;
+                const tipWidth = segmentSize * 0.2;
+                ctx.moveTo(segmentX - baseWidth, segmentY);
+                ctx.bezierCurveTo(
+                    segmentX - baseWidth * 0.8, segmentY - segmentHeight * 0.3,
+                    segmentX - tipWidth, segmentY - segmentHeight * 0.7,
+                    segmentX, segmentY - segmentHeight
+                );
+                ctx.bezierCurveTo(
+                    segmentX + tipWidth, segmentY - segmentHeight * 0.7,
+                    segmentX + baseWidth * 0.8, segmentY - segmentHeight * 0.3,
+                    segmentX + baseWidth, segmentY
+                );
+                ctx.closePath();
+                ctx.fill();
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawTestTube(x, y) {
+            if (!expState.testTubePresent) return;
+            
+            // Glass tube
+            const tubeGradient = ctx.createLinearGradient(x - 15, y, x + 15, y);
+            tubeGradient.addColorStop(0, 'rgba(200, 230, 255, 0.4)');
+            tubeGradient.addColorStop(0.5, 'rgba(220, 240, 255, 0.6)');
+            tubeGradient.addColorStop(1, 'rgba(200, 230, 255, 0.4)');
+            
+            ctx.fillStyle = tubeGradient;
+            ctx.fillRect(x - 15, y - 100, 30, 100);
+            
+            // Glass highlights
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 12, y - 95);
+            ctx.lineTo(x - 12, y - 5);
+            ctx.stroke();
+            
+            // Water (based on remaining volume as percentage of maximum 100mL capacity)
+            const waterHeight = (expState.waterVolumeRemaining / 100) * 100; // Scale to tube height
+            const tempFactor = (expState.waterTemp - 20) / 80; // 0 at 20°C, 1 at 100°C
+            
+            const waterGradient = ctx.createLinearGradient(x - 15, y - waterHeight, x + 15, y - waterHeight);
+            waterGradient.addColorStop(0, `rgba(100, 150, ${Math.floor(255 - tempFactor * 100)}, 0.7)`);
+            waterGradient.addColorStop(0.5, `rgba(120, 170, ${Math.floor(255 - tempFactor * 120)}, 0.8)`);
+            waterGradient.addColorStop(1, `rgba(100, 150, ${Math.floor(255 - tempFactor * 100)}, 0.7)`);
+            
+            ctx.fillStyle = waterGradient;
+            ctx.fillRect(x - 15, y - waterHeight, 30, waterHeight);
+            
+            // Boiling bubbles animation
+            if (expState.isBoiling && expState.waterVolumeRemaining > 0) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                for (let i = 0; i < 8; i++) {
+                    const bubbleX = x - 12 + Math.random() * 24;
+                    const bubbleY = y - waterHeight + Math.random() * waterHeight * 0.8;
+                    const bubbleSize = 1 + Math.random() * 3;
+                    ctx.beginPath();
+                    ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Water surface shimmer
+            if (waterHeight > 0) {
+                ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + tempFactor * 0.3})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const waveX = x - 15 + i * 6;
+                    const waveY = y - waterHeight + Math.sin(expState.time * 3 + i) * 2;
+                    if (i === 0) ctx.moveTo(waveX, waveY);
+                    else ctx.lineTo(waveX, waveY);
+                }
+                ctx.stroke();
+            }
+            
+            // Tube rim
+            ctx.fillStyle = 'rgba(180, 200, 220, 0.8)';
+            ctx.fillRect(x - 18, y - 102, 36, 4);
+            
+            // Temperature indicator
+            const statusColor = expState.isBoiling ? '#e74c3c' : (tempFactor > 0.5 ? '#e67e22' : '#3498db');
+            const statusText = expState.isBoiling ? 'BOILING!' : `${expState.waterTemp.toFixed(1)}°C`;
+            ctx.fillStyle = statusColor;
+            ctx.font = 'bold 12px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText(statusText, x, y - 110);
+        }
+        
+        function drawSteam(x, y) {
+            expState.steamParticles.forEach(particle => {
+                if (particle.active) {
+                    const particleX = x + particle.x;
+                    const particleY = y - 100 + particle.y;
+                    
+                    const gradient = ctx.createRadialGradient(
+                        particleX, particleY, 0,
+                        particleX, particleY, particle.size
+                    );
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.alpha})`);
+                    gradient.addColorStop(0.5, `rgba(240, 245, 250, ${particle.alpha * 0.6})`);
+                    gradient.addColorStop(1, 'rgba(200, 220, 240, 0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(particleX, particleY, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+        
+        function drawCRRFieldVisualization() {
+            const x = 50;
+            const y = 520;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(x - 10, y - 10, 420, 70);
+            
+            ctx.fillStyle = '#34495e';
+            ctx.font = '10px Georgia';
+            ctx.fillText('CRR Coherence Fields:', x, y);
+            
+            // Bunsen field
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.5)';
+            ctx.fillText('Bunsen:', x, y + 20);
+            for (let i = 0; i < 16; i++) {
+                const height = expState.bunsenCoherenceField[i * 2] * 30;
+                ctx.fillRect(x + 50 + i * 10, y + 25 - height, 8, height);
+            }
+            
+            // Peanut field
+            ctx.fillStyle = 'rgba(230, 126, 34, 0.5)';
+            ctx.fillText('Peanut:', x + 200, y + 20);
+            for (let i = 0; i < 16; i++) {
+                const height = expState.peanutCoherenceField[i * 2] * 30;
+                ctx.fillRect(x + 250 + i * 10, y + 25 - height, 8, height);
+            }
+        }
+        
+        function render() {
+            // Background
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const bunsenX = 250;
+            const bunsenY = 450;
+            const peanutX = bunsenX;
+            const peanutY = bunsenY - 140;
+            
+            // Draw apparatus
+            drawBunsenBurner(bunsenX, bunsenY);
+            drawBunsenFlame(bunsenX, bunsenY);
+            drawClampAndPeanut(peanutX, peanutY);
+            
+            if (expState.peanutIgnited) {
+                drawPeanutFlame(peanutX, peanutY);
+            }
+            
+            drawTestTube(bunsenX, expState.testTubeY);
+            
+            if (expState.isBoiling) {
+                drawSteam(bunsenX, expState.testTubeY);
+            }
+            
+            drawCRRFieldVisualization();
+        }
+        
+        // Control handlers
+        document.getElementById('ignitePeanutBtn').addEventListener('click', () => {
+            if (expState.phase === 'setup') {
+                expState.bunsenLit = true;
+                expState.peanutIgnited = true;
+                expState.phase = 'burning';
+                
+                // Turn off bunsen burner after igniting peanut
+                setTimeout(() => {
+                    expState.bunsenLit = false;
+                }, 1000); // Keep it on for 1 second to show ignition
+                
+                document.getElementById('ignitePeanutBtn').disabled = true;
+                document.getElementById('placeTestTubeBtn').disabled = false;
+                updatePhaseIndicator();
+            }
+        });
+        
+        document.getElementById('placeTestTubeBtn').addEventListener('click', () => {
+            if (expState.phase === 'burning' && !expState.testTubePresent) {
+                expState.testTubePresent = true;
+                expState.phase = 'measuring';
+                document.getElementById('placeTestTubeBtn').disabled = true;
+                
+                // Animate test tube moving into position
+                const animateTestTube = () => {
+                    if (expState.testTubeY < expState.testTubeTargetY) {
+                        expState.testTubeY += 3;
+                        requestAnimationFrame(animateTestTube);
+                    }
+                };
+                animateTestTube();
+                updatePhaseIndicator();
+            }
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            location.reload();
+        });
+        
+        document.getElementById('waterVolume').addEventListener('input', (e) => {
+            if (expState.phase === 'setup') {
+                expState.waterVolume = parseFloat(e.target.value);
+                expState.waterVolumeRemaining = expState.waterVolume;
+                expState.lastWaterVolume = expState.waterVolume;
+                document.getElementById('waterVolumeValue').textContent = expState.waterVolume + ' mL';
+            }
+        });
+        
+        document.getElementById('peanutMass').addEventListener('input', (e) => {
+            if (expState.phase === 'setup') {
+                expState.peanutMass = parseFloat(e.target.value);
+                expState.peanutMassRemaining = expState.peanutMass;
+                document.getElementById('peanutMassValue').textContent = expState.peanutMass.toFixed(1) + ' g';
+            }
+        });
+        
+        document.getElementById('bunsenGas').addEventListener('input', (e) => {
+            expState.bunsenGasFlow = parseFloat(e.target.value);
+            document.getElementById('bunsenGasValue').textContent = (expState.bunsenGasFlow * 100).toFixed(0) + '%';
+        });
+        
+        document.getElementById('crrCoupling').addEventListener('input', (e) => {
+            expState.crrCoupling = parseFloat(e.target.value);
+            document.getElementById('crrCouplingValue').textContent = expState.crrCoupling.toFixed(2);
+        });
+        
+        function updatePhaseIndicator() {
+            const indicator = document.getElementById('phaseIndicator');
+            switch(expState.phase) {
+                case 'setup':
+                    indicator.textContent = 'SETUP PHASE';
+                    indicator.style.color = '#2c3e50';
+                    indicator.style.background = '#ecf0f1';
+                    break;
+                case 'burning':
+                    indicator.textContent = 'PEANUT IGNITED - PLACE TEST TUBE';
+                    indicator.style.color = '#e74c3c';
+                    indicator.style.background = '#fadbd8';
+                    break;
+                case 'measuring':
+                    indicator.textContent = 'MEASURING HEAT TRANSFER';
+                    indicator.style.color = '#27ae60';
+                    indicator.style.background = '#d5f4e6';
+                    break;
+                case 'complete':
+                    indicator.textContent = 'EXPERIMENT COMPLETE';
+                    indicator.style.color = '#3498db';
+                    indicator.style.background = '#d6eaf8';
+                    break;
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('waterTemp').textContent = expState.waterTemp.toFixed(1) + ' °C';
+            document.getElementById('waterRemaining').textContent = expState.waterVolumeRemaining.toFixed(1) + ' mL';
+            document.getElementById('evapRate').textContent = expState.evaporationRate.toFixed(3) + ' mL/s';
+            document.getElementById('deltaT').textContent = expState.deltaT.toFixed(1) + ' °C';
+            
+            const calories = expState.heatTransferred / 4.18; // J to cal
+            document.getElementById('heatQ').textContent = Math.round(expState.heatTransferred) + ' J';
+            document.getElementById('calories').textContent = Math.round(calories) + ' cal';
+            
+            const massBurned = expState.peanutMass - expState.peanutMassRemaining;
+            document.getElementById('peanutBurned').textContent = massBurned.toFixed(2) + ' g';
+            
+            const energyPerGram = massBurned > 0.01 ? expState.heatTransferred / massBurned : 0;
+            document.getElementById('energyPerGram').textContent = Math.round(energyPerGram) + ' J/g';
+            
+            document.getElementById('coherenceLevel').textContent = expState.coherenceLevel.toFixed(2);
+            document.getElementById('flameTemp').textContent = Math.round(expState.peanutTemp) + ' K';
+            document.getElementById('ruptureCount').textContent = expState.ruptureEvents;
+            
+            const avgThermal = expState.waterThermalField.reduce((a, b) => a + b) / 32;
+            document.getElementById('thermalField').textContent = avgThermal.toFixed(2);
+        }
+        
+        // Main loop
+        function mainLoop() {
+            updateCRRPhysics();
+            render();
+            updateUI();
+            requestAnimationFrame(mainLoop);
+        }
+        
+        // Initialize and start
+        initializeExperiment();
+        updatePhaseIndicator();
+        mainLoop();
+    </script>
+</body>
+</html>

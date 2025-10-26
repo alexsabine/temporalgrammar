@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Fidelity Lichen Symbiosis Microscopy</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0f;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .microscope-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: 
+                radial-gradient(circle at 25% 30%, rgba(15,25,35,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 75% 70%, rgba(20,30,25,0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0f 0%, #0f0f1a 100%);
+        }
+        
+        .microscope-view {
+            position: relative;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 40%),
+                radial-gradient(circle at center, #252520 0%, #1a1a0f 80%, #0f0f0a 100%);
+            border: 12px solid #333;
+            box-shadow: 
+                0 0 50px rgba(0,0,0,0.9),
+                inset 0 0 100px rgba(255,255,255,0.03),
+                inset 0 0 40px rgba(0,0,0,0.7);
+            overflow: hidden;
+        }
+        
+        .microscope-view::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            right: -8px;
+            bottom: -8px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 25% 15%, rgba(255,255,255,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: block;
+            image-rendering: smooth;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.95);
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 11px;
+            line-height: 1.6;
+            border: 1px solid #444;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.7);
+        }
+        
+        .microscope-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 10px;
+            border: 1px solid #444;
+            min-width: 220px;
+        }
+        
+        .growth-metrics {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 10px;
+            border: 1px solid #444;
+            min-width: 240px;
+        }
+        
+        .environmental-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 10px;
+            border: 1px solid #444;
+            min-width: 190px;
+        }
+        
+        .time-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.95);
+            padding: 15px 25px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #555;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+        }
+        
+        .param-row {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        
+        .param-slider {
+            width: 70px;
+            height: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 2px;
+        }
+        
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #5a7c59;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #5a7c59;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .play-btn:hover {
+            background: #4a6b49;
+            box-shadow: 0 0 15px rgba(90, 124, 89, 0.4);
+        }
+        
+        .highlight { color: #6a8c69; }
+        .time-display { 
+            font-family: 'Courier New', monospace; 
+            color: #6a8c69;
+            font-weight: bold;
+        }
+        
+        .magnification {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #6a8c69;
+            border: 1px solid #444;
+        }
+        
+        .symbiosis-indicator {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 9px;
+            color: #8fbc8f;
+            border: 1px solid #555;
+            min-width: 150px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="microscope-container">
+        <div class="microscope-view">
+            <canvas id="canvas"></canvas>
+            <div class="magnification">🔬 600x Magnification - Lichen Thallus Development</div>
+            <div class="symbiosis-indicator">
+                Symbiotic Stability: <span id="symbiosisLevel">Establishing</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="highlight">Microscope Controls</div>
+            <div>Click: Add lichen spore</div>
+            <div>Right-click: Add moisture</div>
+            <div>Shift+click: Pollutant stress</div>
+            <div>Ctrl+click: Add substrate</div>
+            <div>F: Force fragmentation</div>
+            <div>R: Reset specimen</div>
+            <div>Space: Pause observation</div>
+            <div style="margin-top: 10px; font-size: 9px; color: #888;">
+                Observing mycobiont-photobiont symbiosis in real-time
+            </div>
+        </div>
+        
+        <div class="microscope-info">
+            <div class="highlight">Specimen Analysis</div>
+            <div style="font-size: 9px; line-height: 1.4;">
+                <div>Species: <em>Xanthoria parietina</em></div>
+                <div>Type: Foliose lichen</div>
+                <div>Magnification: 600x</div>
+                <div>Field of view: 1.5mm²</div>
+                <div>Age: <span id="obsTime">0</span> days</div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <div class="highlight">Symbiotic Partners</div>
+                <div style="font-size: 9px;">
+                    <div>Mycobiont: <span id="fungalHealth">Healthy</span></div>
+                    <div>Photobiont: <span id="algalHealth">Establishing</span></div>
+                    <div>Symbiosis ratio: <span id="symbiosisRatio">1:1</span></div>
+                    <div>Coherence index: <span id="coherenceIndex">0.12</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="growth-metrics">
+            <div class="highlight">Growth Dynamics</div>
+            <div style="font-size: 9px; line-height: 1.4;">
+                <div>Thallus diameter: <span id="thallusDiam">0</span>μm</div>
+                <div>Cortex thickness: <span id="cortexThick">0</span>μm</div>
+                <div>Medulla depth: <span id="medullaDepth">0</span>μm</div>
+                <div>Soredia count: <span id="sorediumCount">0</span></div>
+                <div>Apothecia: <span id="apotheciaCount">0</span></div>
+                <div>Growth rate: <span id="growthRate">0.1</span>μm/day</div>
+            </div>
+            
+            <div style="margin-top: 8px;">
+                <div class="highlight">Physiological Status</div>
+                <div style="font-size: 9px;">
+                    <div>Photosynthesis: <span id="photosynthesis">Minimal</span></div>
+                    <div>Water uptake: <span id="waterUptake">0</span>μL/h</div>
+                    <div>Pollution tolerance: <span id="pollutionTolerance">High</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="environmental-controls">
+            <div class="highlight">Environment</div>
+            <div class="param-row">
+                <span>Humidity:</span>
+                <input type="range" class="param-slider" id="humidity" min="30" max="98" value="65">
+                <span id="humidityVal">65%</span>
+            </div>
+            <div class="param-row">
+                <span>Light:</span>
+                <input type="range" class="param-slider" id="light" min="5" max="80" value="40">
+                <span id="lightVal">40%</span>
+            </div>
+            <div class="param-row">
+                <span>Air Quality:</span>
+                <input type="range" class="param-slider" id="airQuality" min="20" max="100" value="85">
+                <span id="airQualityVal">85</span>
+            </div>
+            <div class="param-row">
+                <span>Substrate pH:</span>
+                <input type="range" class="param-slider" id="substratePhase" min="3" max="9" step="0.2" value="6.8">
+                <span id="phVal">6.8</span>
+            </div>
+            <div class="param-row">
+                <span>Time scale:</span>
+                <input type="range" class="param-slider" id="timeScale" min="1" max="50" value="10">
+                <span id="timeScaleVal">10x</span>
+            </div>
+        </div>
+        
+        <div class="time-controls">
+            <button class="play-btn" id="playBtn">⏸</button>
+            <div class="time-display">
+                Days: <span id="timeDisplay">0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            // Ultra-high-fidelity lichen symbiosis simulation
+            const GRID_SIZE = 800;
+            const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
+            const CENTER_X = GRID_SIZE / 2;
+            const CENTER_Y = GRID_SIZE / 2;
+            const VIEW_RADIUS = GRID_SIZE * 0.48;
+            
+            // Accelerated time parameters (lichen growth is extremely slow)
+            let simulationTime = 0;
+            let isPlaying = true;
+            let timeScaleMultiplier = 10;
+            
+            // Environmental parameters
+            let humidity = 65;
+            let lightLevel = 40;
+            let airQuality = 85;
+            let substratePhase = 6.8;
+            
+            // Canvas setup
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = canvas.height = GRID_SIZE;
+            
+            // High-resolution lichen cellular fields
+            let mycobiont = new Float32Array(TOTAL_CELLS);        // Fungal partner
+            let photobiont = new Float32Array(TOTAL_CELLS);       // Algal/cyanobacterial partner
+            let cortex = new Float32Array(TOTAL_CELLS);           // Protective outer layer
+            let medulla = new Float32Array(TOTAL_CELLS);          // Inner fungal layer
+            let soredia = new Float32Array(TOTAL_CELLS);          // Reproductive propagules
+            let apothecia = new Float32Array(TOTAL_CELLS);        // Sexual reproductive structures
+            let symbiosis = new Float32Array(TOTAL_CELLS);        // Symbiotic coherence
+            let moisture = new Float32Array(TOTAL_CELLS);
+            let nutrients = new Float32Array(TOTAL_CELLS);
+            let pollutants = new Float32Array(TOTAL_CELLS);
+            let substrateQuality = new Float32Array(TOTAL_CELLS);
+            let memory = new Float32Array(TOTAL_CELLS);           // UCF memory field
+            let coherence = new Float32Array(TOTAL_CELLS);        // UCF coherence
+            let temp = new Float32Array(TOTAL_CELLS);
+            
+            // Lichen symbiotic organism
+            class LichenSymbiont {
+                constructor(x, y, type = 'spore') {
+                    this.x = x;
+                    this.y = y;
+                    this.vx = (Math.random() - 0.5) * 0.02; // Very slow growth
+                    this.vy = (Math.random() - 0.5) * 0.02;
+                    this.type = type; // 'spore', 'mycobiont', 'photobiont', 'composite', 'soredium'
+                    this.age = 0;
+                    this.energy = 0.5 + Math.random() * 0.3;
+                    this.symbioticPartner = null;
+                    this.size = this.getTypeSize();
+                    this.maturationTime = this.getMaturationTime();
+                    this.symbioticStability = 0.1;
+                    this.generation = 0;
+                    this.pollutionTolerance = 0.7 + Math.random() * 0.3;
+                    this.growthPhase = Math.random() * Math.PI * 2;
+                }
+                
+                getTypeSize() {
+                    switch(this.type) {
+                        case 'spore': return 0.1 + Math.random() * 0.05;
+                        case 'mycobiont': return 0.3 + Math.random() * 0.2;
+                        case 'photobiont': return 0.15 + Math.random() * 0.1;
+                        case 'composite': return 0.8 + Math.random() * 0.6;
+                        case 'soredium': return 0.4 + Math.random() * 0.2;
+                        default: return 0.2;
+                    }
+                }
+                
+                getMaturationTime() {
+                    switch(this.type) {
+                        case 'spore': return 50 + Math.random() * 30;
+                        case 'mycobiont': return 100 + Math.random() * 50;
+                        case 'photobiont': return 80 + Math.random() * 40;
+                        case 'composite': return 500 + Math.random() * 200;
+                        default: return 100;
+                    }
+                }
+                
+                update(organisms) {
+                    this.age += timeScaleMultiplier * 0.1;
+                    this.growthPhase += 0.01;
+                    
+                    // Environmental stress calculation
+                    const stress = this.calculateEnvironmentalStress();
+                    const growthRate = Math.max(0.1, (1 - stress)) * timeScaleMultiplier * 0.1;
+                    
+                    if (stress > 0.9) {
+                        this.energy *= 0.98;
+                        this.symbioticStability *= 0.95;
+                        return [];
+                    }
+                    
+                    const newOrganisms = [];
+                    
+                    switch(this.type) {
+                        case 'spore':
+                            newOrganisms.push(...this.updateSpore(stress, growthRate, organisms));
+                            break;
+                        case 'mycobiont':
+                            newOrganisms.push(...this.updateMycobiont(stress, growthRate, organisms));
+                            break;
+                        case 'photobiont':
+                            newOrganisms.push(...this.updatePhotobiont(stress, growthRate));
+                            break;
+                        case 'composite':
+                            newOrganisms.push(...this.updateComposite(stress, growthRate));
+                            break;
+                        case 'soredium':
+                            newOrganisms.push(...this.updateSoredium(stress, growthRate));
+                            break;
+                    }
+                    
+                    this.energy *= 0.9999; // Very slow energy decay
+                    return newOrganisms;
+                }
+                
+                updateSpore(stress, growthRate, organisms) {
+                    // Spore germination and partner seeking
+                    const sensor = this.senseEnvironment(6);
+                    this.adjustDirection(sensor, 0.1);
+                    this.move(0.05 * growthRate);
+                    
+                    const newOrganisms = [];
+                    
+                    // Germinate into either mycobiont or photobiont
+                    if (this.age > this.maturationTime && this.energy > 0.3) {
+                        const germinationType = Math.random() < 0.6 ? 'mycobiont' : 'photobiont';
+                        const germinated = new LichenSymbiont(this.x, this.y, germinationType);
+                        germinated.energy = this.energy * 0.8;
+                        newOrganisms.push(germinated);
+                        this.energy = 0; // Consumed
+                    }
+                    
+                    return newOrganisms;
+                }
+                
+                updateMycobiont(stress, growthRate, organisms) {
+                    // Fungal partner - seeks photobiont for symbiosis
+                    const sensor = this.senseEnvironment(8);
+                    this.adjustDirection(sensor, 0.15);
+                    this.move(0.08 * growthRate);
+                    
+                    this.depositMaterial('mycobiont', 0.015 * growthRate);
+                    
+                    const newOrganisms = [];
+                    
+                    // Seek photobiont partner for symbiosis
+                    if (!this.symbioticPartner && this.age > 30) {
+                        const nearbyPhotobionts = this.findNearbyOrganisms(organisms, 'photobiont', 15);
+                        if (nearbyPhotobionts.length > 0) {
+                            const partner = nearbyPhotobionts[0];
+                            if (!partner.symbioticPartner) {
+                                // Form symbiotic relationship
+                                this.symbioticPartner = partner;
+                                partner.symbioticPartner = this;
+                                
+                                // Create composite lichen organism
+                                const composite = new LichenSymbiont(
+                                    (this.x + partner.x) / 2,
+                                    (this.y + partner.y) / 2,
+                                    'composite'
+                                );
+                                composite.energy = (this.energy + partner.energy) * 0.9;
+                                composite.symbioticStability = 0.8;
+                                composite.generation = Math.max(this.generation, partner.generation) + 1;
+                                newOrganisms.push(composite);
+                                
+                                // Partners consumed in symbiosis
+                                this.energy = 0;
+                                partner.energy = 0;
+                            }
+                        }
+                    }
+                    
+                    return newOrganisms;
+                }
+                
+                updatePhotobiont(stress, growthRate) {
+                    // Algal/cyanobacterial partner - photosynthesizes
+                    this.move(0.03 * growthRate); // Less mobile than mycobiont
+                    
+                    // Photosynthesis - creates energy from light
+                    const photosynthesisRate = lightLevel / 100 * growthRate * 0.02;
+                    this.energy = Math.min(1.2, this.energy + photosynthesisRate);
+                    
+                    this.depositMaterial('photobiont', 0.008 * growthRate);
+                    
+                    return [];
+                }
+                
+                updateComposite(stress, growthRate) {
+                    // Mature lichen - slow but steady growth
+                    const sensor = this.senseEnvironment(5);
+                    this.move(0.02 * growthRate); // Very slow radial growth
+                    
+                    // Maintain symbiotic stability
+                    this.symbioticStability += (0.9 - this.symbioticStability) * 0.001 * growthRate;
+                    
+                    // Deposit multiple lichen materials
+                    this.depositMaterial('composite', 0.02 * growthRate);
+                    this.depositMaterial('cortex', 0.015 * growthRate);
+                    this.depositMaterial('medulla', 0.01 * growthRate);
+                    
+                    const newOrganisms = [];
+                    
+                    // Asexual reproduction via soredia
+                    if (this.age > 200 && this.symbioticStability > 0.7 && Math.random() < 0.002 * timeScaleMultiplier) {
+                        for (let i = 0; i < 3; i++) {
+                            const soredium = new LichenSymbiont(
+                                this.x + (Math.random() - 0.5) * 30,
+                                this.y + (Math.random() - 0.5) * 30,
+                                'soredium'
+                            );
+                            soredium.energy = 0.6;
+                            soredium.symbioticStability = this.symbioticStability * 0.8;
+                            newOrganisms.push(soredium);
+                        }
+                        this.energy *= 0.7;
+                        this.depositMaterial('soredia', 0.1);
+                    }
+                    
+                    // Sexual reproduction via apothecia (rare)
+                    if (this.age > 500 && this.symbioticStability > 0.8 && Math.random() < 0.0005 * timeScaleMultiplier) {
+                        this.depositMaterial('apothecia', 0.2);
+                        
+                        // Release spores
+                        for (let i = 0; i < 8; i++) {
+                            const spore = new LichenSymbiont(
+                                this.x + (Math.random() - 0.5) * 50,
+                                this.y + (Math.random() - 0.5) * 50,
+                                'spore'
+                            );
+                            spore.energy = 0.4;
+                            spore.generation = this.generation + 1;
+                            newOrganisms.push(spore);
+                        }
+                        this.energy *= 0.5;
+                    }
+                    
+                    return newOrganisms;
+                }
+                
+                updateSoredium(stress, growthRate) {
+                    // Dispersal propagule containing both partners
+                    const sensor = this.senseEnvironment(4);
+                    this.adjustDirection(sensor, 0.08);
+                    this.move(0.12 * growthRate); // More mobile for dispersal
+                    
+                    const newOrganisms = [];
+                    
+                    // Mature into composite lichen
+                    if (this.age > 50 && this.energy > 0.4) {
+                        const mature = new LichenSymbiont(this.x, this.y, 'composite');
+                        mature.energy = this.energy * 0.9;
+                        mature.symbioticStability = this.symbioticStability;
+                        mature.generation = this.generation;
+                        newOrganisms.push(mature);
+                        this.energy = 0;
+                    }
+                    
+                    return newOrganisms;
+                }
+                
+                senseEnvironment(radius) {
+                    let bestSignal = -10;
+                    let bestAngle = this.getDirection();
+                    
+                    const numSensors = 8;
+                    for (let i = 0; i < numSensors; i++) {
+                        const angle = (i * Math.PI * 2) / numSensors;
+                        const sx = this.x + Math.cos(angle) * radius;
+                        const sy = this.y + Math.sin(angle) * radius;
+                        
+                        if (this.inView(sx, sy)) {
+                            const idx = Math.floor(sx) + Math.floor(sy) * GRID_SIZE;
+                            let signal = 0;
+                            
+                            // Different sensing for different types
+                            switch(this.type) {
+                                case 'spore':
+                                    signal = substrateQuality[idx] * 2 + moisture[idx] * 1.5;
+                                    break;
+                                case 'mycobiont':
+                                    signal = nutrients[idx] * 2 + substrateQuality[idx] * 1.5;
+                                    signal += photobiont[idx] * 3; // Seek photobiont partner
+                                    break;
+                                case 'photobiont':
+                                    signal = lightLevel / 100 * 2 + moisture[idx] * 1.2;
+                                    break;
+                                case 'composite':
+                                    signal = moisture[idx] + nutrients[idx] + substrateQuality[idx];
+                                    break;
+                                case 'soredium':
+                                    signal = substrateQuality[idx] * 1.8 + (1 - pollutants[idx]) * 2;
+                                    break;
+                            }
+                            
+                            // Avoid overcrowding
+                            const density = mycobiont[idx] + photobiont[idx] + soredia[idx] + cortex[idx];
+                            signal -= density * 1.5;
+                            
+                            // Air quality sensitivity
+                            signal -= pollutants[idx] * (2 - this.pollutionTolerance);
+                            
+                            if (signal > bestSignal) {
+                                bestSignal = signal;
+                                bestAngle = angle;
+                            }
+                        }
+                    }
+                    
+                    return { signal: bestSignal, angle: bestAngle };
+                }
+                
+                findNearbyOrganisms(organisms, targetType, radius) {
+                    return organisms.filter(org => {
+                        if (org.type !== targetType) return false;
+                        const dx = org.x - this.x;
+                        const dy = org.y - this.y;
+                        return Math.sqrt(dx * dx + dy * dy) <= radius;
+                    });
+                }
+                
+                adjustDirection(sensor, turnRate) {
+                    const currentAngle = this.getDirection();
+                    const angleDiff = this.normalizeAngle(sensor.angle - currentAngle);
+                    const newAngle = currentAngle + angleDiff * turnRate;
+                    
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    this.vx = Math.cos(newAngle) * speed;
+                    this.vy = Math.sin(newAngle) * speed;
+                }
+                
+                getDirection() {
+                    return Math.atan2(this.vy, this.vx);
+                }
+                
+                move(speed) {
+                    this.x += this.vx * speed;
+                    this.y += this.vy * speed;
+                    this.x = Math.max(5, Math.min(GRID_SIZE - 5, this.x));
+                    this.y = Math.max(5, Math.min(GRID_SIZE - 5, this.y));
+                }
+                
+                depositMaterial(type, amount) {
+                    const radius = this.size + 1;
+                    for (let dy = -radius; dy <= radius; dy++) {
+                        for (let dx = -radius; dx <= radius; dx++) {
+                            const px = Math.floor(this.x + dx);
+                            const py = Math.floor(this.y + dy);
+                            
+                            if (this.inView(px, py)) {
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist <= radius) {
+                                    const idx = px + py * GRID_SIZE;
+                                    const strength = Math.exp(-dist * dist / (radius * radius));
+                                    
+                                    switch(type) {
+                                        case 'mycobiont':
+                                            mycobiont[idx] = Math.min(1, mycobiont[idx] + amount * strength);
+                                            break;
+                                        case 'photobiont':
+                                            photobiont[idx] = Math.min(1, photobiont[idx] + amount * strength);
+                                            break;
+                                        case 'composite':
+                                            const compositeStrength = amount * strength * 0.6;
+                                            mycobiont[idx] = Math.min(1, mycobiont[idx] + compositeStrength);
+                                            photobiont[idx] = Math.min(1, photobiont[idx] + compositeStrength);
+                                            symbiosis[idx] = Math.min(1, symbiosis[idx] + amount * strength);
+                                            break;
+                                        case 'cortex':
+                                            cortex[idx] = Math.min(1, cortex[idx] + amount * strength);
+                                            break;
+                                        case 'medulla':
+                                            medulla[idx] = Math.min(1, medulla[idx] + amount * strength);
+                                            break;
+                                        case 'soredia':
+                                            soredia[idx] = Math.min(1, soredia[idx] + amount * strength);
+                                            break;
+                                        case 'apothecia':
+                                            apothecia[idx] = Math.min(1, apothecia[idx] + amount * strength);
+                                            break;
+                                    }
+                                    
+                                    // UCF fields
+                                    coherence[idx] = Math.min(1, coherence[idx] + amount * 0.5 * strength);
+                                    memory[idx] = Math.min(1, memory[idx] + amount * 0.1 * strength);
+                                    
+                                    // Resource consumption
+                                    nutrients[idx] = Math.max(0, nutrients[idx] - 0.001 * strength);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                inView(x, y) {
+                    if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
+                    const dx = x - CENTER_X;
+                    const dy = y - CENTER_Y;
+                    return (dx * dx + dy * dy) <= VIEW_RADIUS * VIEW_RADIUS;
+                }
+                
+                calculateEnvironmentalStress() {
+                    const humidityStress = Math.abs(humidity - 65) / 50;
+                    const lightStress = this.type === 'photobiont' ? 
+                        Math.max(0, (30 - lightLevel) / 30) : 
+                        Math.abs(lightLevel - 40) / 50;
+                    const pollutionStress = (100 - airQuality) / 100 / this.pollutionTolerance;
+                    const phStress = Math.abs(substratePhase - 6.5) / 3;
+                    return (humidityStress + lightStress + pollutionStress + phStress) / 4;
+                }
+                
+                normalizeAngle(angle) {
+                    while (angle > Math.PI) angle -= 2 * Math.PI;
+                    while (angle < -Math.PI) angle += 2 * Math.PI;
+                    return angle;
+                }
+            }
+            
+            let lichenOrganisms = [];
+            
+            function initializeSimulation() {
+                lichenOrganisms = [];
+                simulationTime = 0;
+                
+                // Clear all fields
+                mycobiont.fill(0);
+                photobiont.fill(0);
+                cortex.fill(0);
+                medulla.fill(0);
+                soredia.fill(0);
+                apothecia.fill(0);
+                symbiosis.fill(0);
+                coherence.fill(0);
+                memory.fill(0);
+                pollutants.fill(0);
+                
+                // Initialize substrate
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    nutrients[i] = 0.2 + Math.random() * 0.3;
+                    moisture[i] = (humidity / 100) * (0.3 + Math.random() * 0.4);
+                    substrateQuality[i] = 0.4 + Math.random() * 0.6;
+                    pollutants[i] = (100 - airQuality) / 100 * Math.random() * 0.5;
+                }
+                
+                // Add initial lichen spores at multiple locations
+                addLichenSpore(CENTER_X - 100, CENTER_Y - 80);
+                addLichenSpore(CENTER_X + 120, CENTER_Y + 50);
+                addLichenSpore(CENTER_X - 60, CENTER_Y + 100);
+            }
+            
+            function addLichenSpore(x, y) {
+                // Add lichen spores that will germinate
+                for (let i = 0; i < 8; i++) {
+                    const spore = new LichenSymbiont(
+                        x + (Math.random() - 0.5) * 30,
+                        y + (Math.random() - 0.5) * 30,
+                        'spore'
+                    );
+                    spore.energy = 0.6 + Math.random() * 0.3;
+                    lichenOrganisms.push(spore);
+                }
+            }
+            
+            function addMoisture(x, y) {
+                const radius = 35;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const px = Math.floor(x + dx);
+                        const py = Math.floor(y + dy);
+                        
+                        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                const idx = px + py * GRID_SIZE;
+                                const strength = Math.exp(-dist * dist / (radius * radius * 0.5));
+                                moisture[idx] = Math.min(1, moisture[idx] + 0.4 * strength);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function addPollutants(x, y) {
+                const radius = 40;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const px = Math.floor(x + dx);
+                        const py = Math.floor(y + dy);
+                        
+                        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                const idx = px + py * GRID_SIZE;
+                                const strength = Math.exp(-dist * dist / (radius * radius * 0.4));
+                                pollutants[idx] = Math.min(1, pollutants[idx] + 0.6 * strength);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function addSubstrate(x, y) {
+                const radius = 25;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const px = Math.floor(x + dx);
+                        const py = Math.floor(y + dy);
+                        
+                        if (px >= 0 && px < GRID_SIZE && py >= 0 && py < GRID_SIZE) {
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist <= radius) {
+                                const idx = px + py * GRID_SIZE;
+                                const strength = Math.exp(-dist * dist / (radius * radius * 0.3));
+                                substrateQuality[idx] = Math.min(1, substrateQuality[idx] + 0.5 * strength);
+                                nutrients[idx] = Math.min(1, nutrients[idx] + 0.3 * strength);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function forceFragmentation() {
+                // UCF Rupture event - fragment existing lichens
+                lichenOrganisms.forEach(organism => {
+                    if (organism.type === 'composite' && Math.random() < 0.7) {
+                        // Fragment into soredia
+                        for (let i = 0; i < 4; i++) {
+                            const fragment = new LichenSymbiont(
+                                organism.x + (Math.random() - 0.5) * 40,
+                                organism.y + (Math.random() - 0.5) * 40,
+                                'soredium'
+                            );
+                            fragment.energy = organism.energy * 0.3;
+                            fragment.symbioticStability = organism.symbioticStability * 0.6;
+                            lichenOrganisms.push(fragment);
+                        }
+                        organism.energy *= 0.2; // Severely damage original
+                    }
+                });
+            }
+            
+            function simulationStep() {
+                if (!isPlaying) return;
+                
+                // Update lichen organisms
+                const newOrganisms = [];
+                for (let organism of lichenOrganisms) {
+                    const offspring = organism.update(lichenOrganisms);
+                    newOrganisms.push(...offspring);
+                }
+                lichenOrganisms.push(...newOrganisms);
+                
+                // Remove dead organisms
+                lichenOrganisms = lichenOrganisms.filter(o => o.energy > 0.05);
+                
+                // Environmental processes
+                diffuse(moisture, 0.005);
+                diffuse(nutrients, 0.003);
+                diffuse(pollutants, 0.008);
+                diffuse(coherence, 0.001);
+                
+                if (memory) {
+                    for (let i = 0; i < TOTAL_CELLS; i++) {
+                        memory[i] *= 0.9998;
+                    }
+                    diffuse(memory, 0.002);
+                }
+                
+                // Natural processes
+                const evapRate = 1 - 0.0008;
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    moisture[i] *= evapRate;
+                    
+                    // Lichen water retention
+                    const lichenPresence = mycobiont[i] + photobiont[i] + cortex[i];
+                    if (lichenPresence > 0.1) {
+                        moisture[i] = Math.min(1, moisture[i] + lichenPresence * 0.002);
+                    }
+                    
+                    // Pollution degradation by lichens
+                    if (lichenPresence > 0.2) {
+                        pollutants[i] *= 0.995;
+                    }
+                }
+                
+                simulationTime += timeScaleMultiplier * 0.01;
+                updateUI();
+            }
+            
+            function diffuse(field, rate) {
+                temp.fill(0);
+                
+                for (let y = 1; y < GRID_SIZE - 1; y++) {
+                    for (let x = 1; x < GRID_SIZE - 1; x++) {
+                        const idx = x + y * GRID_SIZE;
+                        const neighbors = field[idx - 1] + field[idx + 1] + 
+                                        field[idx - GRID_SIZE] + field[idx + GRID_SIZE];
+                        temp[idx] = field[idx] + rate * (neighbors - 4 * field[idx]);
+                    }
+                }
+                
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    field[i] = Math.max(0, temp[i]);
+                }
+            }
+            
+            function updateUI() {
+                // Calculate detailed lichen metrics
+                let totalMycobiont = 0, totalPhotobiont = 0, totalCortex = 0;
+                let totalMedulla = 0, totalSoredia = 0, totalApothecia = 0;
+                let totalSymbiosis = 0, totalCoherence = 0;
+                
+                for (let i = 0; i < TOTAL_CELLS; i++) {
+                    totalMycobiont += mycobiont[i];
+                    totalPhotobiont += photobiont[i];
+                    totalCortex += cortex[i];
+                    totalMedulla += medulla[i];
+                    totalSoredia += soredia[i];
+                    totalApothecia += apothecia[i];
+                    totalSymbiosis += symbiosis[i];
+                    totalCoherence += coherence[i];
+                }
+                
+                const days = simulationTime;
+                
+                // Update microscopic measurements
+                document.getElementById('obsTime').textContent = days.toFixed(1);
+                document.getElementById('thallusDiam').textContent = Math.floor(totalSymbiosis * 50);
+                document.getElementById('cortexThick').textContent = Math.floor(totalCortex * 8);
+                document.getElementById('medullaDepth').textContent = Math.floor(totalMedulla * 12);
+                document.getElementById('sorediumCount').textContent = Math.floor(totalSoredia * 100);
+                document.getElementById('apotheciaCount').textContent = Math.floor(totalApothecia * 20);
+                document.getElementById('growthRate').textContent = (lichenOrganisms.length * timeScaleMultiplier * 0.02).toFixed(2);
+                
+                // Biological status
+                const symbiosisRatio = totalPhotobiont > 0 ? (totalMycobiont / totalPhotobiont).toFixed(1) : '1.0';
+                document.getElementById('symbiosisRatio').textContent = symbiosisRatio + ':1';
+                document.getElementById('coherenceIndex').textContent = (totalCoherence / Math.max(1, lichenOrganisms.length)).toFixed(3);
+                
+                const fungalHealth = totalMycobiont > 50 ? 'Thriving' : totalMycobiont > 20 ? 'Healthy' : totalMycobiont > 5 ? 'Establishing' : 'Sparse';
+                const algalHealth = totalPhotobiont > 30 ? 'Productive' : totalPhotobiont > 15 ? 'Active' : totalPhotobiont > 5 ? 'Establishing' : 'Limited';
+                document.getElementById('fungalHealth').textContent = fungalHealth;
+                document.getElementById('algalHealth').textContent = algalHealth;
+                
+                const symbiosisLevel = totalSymbiosis > 40 ? 'Mature' : totalSymbiosis > 20 ? 'Developing' : totalSymbiosis > 5 ? 'Establishing' : 'Initial';
+                document.getElementById('symbiosisLevel').textContent = symbiosisLevel;
+                
+                const photosynthesis = totalPhotobiont > 20 && lightLevel > 20 ? 'Active' : totalPhotobiont > 10 ? 'Moderate' : 'Minimal';
+                document.getElementById('photosynthesis').textContent = photosynthesis;
+                document.getElementById('waterUptake').textContent = (totalSymbiosis * 0.2).toFixed(2);
+                
+                const pollutionTolerance = airQuality > 80 ? 'High' : airQuality > 60 ? 'Medium' : 'Stressed';
+                document.getElementById('pollutionTolerance').textContent = pollutionTolerance;
+                
+                document.getElementById('timeDisplay').textContent = days.toFixed(1);
+            }
+            
+            function render() {
+                const imageData = context.createImageData(GRID_SIZE, GRID_SIZE);
+                const pixels = imageData.data;
+                
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const dx = x - CENTER_X;
+                        const dy = y - CENTER_Y;
+                        
+                        if (dx * dx + dy * dy > VIEW_RADIUS * VIEW_RADIUS) {
+                            continue; // Outside circular view
+                        }
+                        
+                        const idx = x + y * GRID_SIZE;
+                        const pixelIdx = idx * 4;
+                        
+                        const myco = mycobiont[idx];
+                        const photo = photobiont[idx];
+                        const cort = cortex[idx];
+                        const med = medulla[idx];
+                        const sore = soredia[idx];
+                        const apo = apothecia[idx];
+                        const symb = symbiosis[idx];
+                        const moist = moisture[idx];
+                        const pollut = pollutants[idx];
+                        const mem = memory[idx];
+                        
+                        const totalLichen = myco + photo + cort + med + sore + apo + symb;
+                        
+                        if (totalLichen > 0.01) {
+                            // Ultra-high-fidelity lichen rendering
+                            
+                            // Base lichen colors - subtle greens and grays
+                            let r = 45 + photo * 20 + mem * 15;
+                            let g = 55 + photo * 60 + myco * 25 + symb * 30;
+                            let b = 35 + photo * 10 + myco * 15;
+                            
+                            // Cortex - protective gray-green layer
+                            if (cort > 0.2) {
+                                const cortexIntensity = Math.min(1, cort * 1.5);
+                                r += cortexIntensity * 30;
+                                g += cortexIntensity * 35;
+                                b += cortexIntensity * 25;
+                            }
+                            
+                            // Medulla - inner white-gray fungal layer
+                            if (med > 0.3) {
+                                const medullaIntensity = Math.min(1, med * 1.2);
+                                r += medullaIntensity * 40;
+                                g += medullaIntensity * 35;
+                                b += medullaIntensity * 30;
+                            }
+                            
+                            // Mycobiont - fungal partner (grayish)
+                            if (myco > 0.2) {
+                                const mycoIntensity = Math.min(1, myco * 1.8);
+                                r += mycoIntensity * 25;
+                                g += mycoIntensity * 20;
+                                b += mycoIntensity * 15;
+                                
+                                // Hyphal threading pattern
+                                const threadPattern = Math.sin(x * 0.6) * Math.cos(y * 0.4) * mycoIntensity;
+                                r += threadPattern * 15;
+                                g += threadPattern * 12;
+                            }
+                            
+                            // Photobiont - algal partner (greenish)
+                            if (photo > 0.2) {
+                                const photoIntensity = Math.min(1, photo * 2);
+                                g += photoIntensity * 45;
+                                r += photoIntensity * 8;
+                                b += photoIntensity * 12;
+                                
+                                // Cellular chloroplast pattern
+                                const chloroplastPattern = Math.sin(x * 1.1 + y * 0.9) * photoIntensity;
+                                g += chloroplastPattern * 25;
+                                r += chloroplastPattern * 5;
+                            }
+                            
+                            // Soredia - reproductive granules (brighter spots)
+                            if (sore > 0.4) {
+                                const sorediumIntensity = Math.min(1, sore * 1.5);
+                                r += sorediumIntensity * 50;
+                                g += sorediumIntensity * 55;
+                                b += sorediumIntensity * 35;
+                                
+                                // Granular texture
+                                const granulePattern = Math.sin(x * 2.2) * Math.cos(y * 2.1) * sorediumIntensity;
+                                r += granulePattern * 20;
+                                g += granulePattern * 25;
+                                b += granulePattern * 15;
+                            }
+                            
+                            // Apothecia - sexual reproductive structures (distinctive colors)
+                            if (apo > 0.5) {
+                                const apotheciumIntensity = Math.min(1, apo * 1.8);
+                                r += apotheciumIntensity * 80;
+                                g += apotheciumIntensity * 40;
+                                b += apotheciumIntensity * 20;
+                            }
+                            
+                            // Symbiotic coherence - overall health glow
+                            if (symb > 0.3) {
+                                const symbiosisGlow = Math.min(1, symb * 1.2);
+                                r += symbiosisGlow * 15;
+                                g += symbiosisGlow * 20;
+                                b += symbiosisGlow * 10;
+                            }
+                            
+                            // Ultra-fine cellular detail
+                            const cellularDetail = Math.sin(x * 1.5 + y * 1.3) * 0.15;
+                            const lichenTexture = (cellularDetail) * totalLichen * 12;
+                            
+                            r += lichenTexture;
+                            g += lichenTexture * 1.2;
+                            b += lichenTexture * 0.8;
+                            
+                            // Moisture effect - darker when wet
+                            if (moist > 0.7) {
+                                r *= 0.8;
+                                g *= 0.85;
+                                b *= 0.8;
+                            }
+                            
+                            // Pollution stress - duller colors
+                            if (pollut > 0.3) {
+                                r *= (1 - pollut * 0.4);
+                                g *= (1 - pollut * 0.3);
+                                b *= (1 - pollut * 0.4);
+                            }
+                            
+                            // UCF memory traces - subtle historical patterns
+                            if (mem > 0.1) {
+                                const memoryTrace = Math.sin(x * 0.8 + mem * 10) * mem * 8;
+                                g += memoryTrace;
+                                b += memoryTrace * 0.6;
+                            }
+                            
+                            pixels[pixelIdx] = Math.max(0, Math.min(255, r));
+                            pixels[pixelIdx + 1] = Math.max(0, Math.min(255, g));
+                            pixels[pixelIdx + 2] = Math.max(0, Math.min(255, b));
+                            pixels[pixelIdx + 3] = 255;
+                        } else {
+                            // Substrate - rock/bark surface
+                            const substrateNoise = Math.sin(x * 0.2) * Math.cos(y * 0.3) * 8;
+                            const moistEffect = 1 - moist * 0.4;
+                            const pollutionEffect = 1 - pollut * 0.3;
+                            
+                            const subR = (50 + substrateNoise) * moistEffect * pollutionEffect;
+                            const subG = (45 + substrateNoise * 0.8) * moistEffect * pollutionEffect;
+                            const subB = (40 + substrateNoise * 0.6) * moistEffect * pollutionEffect;
+                            
+                            pixels[pixelIdx] = Math.max(0, Math.min(255, subR));
+                            pixels[pixelIdx + 1] = Math.max(0, Math.min(255, subG));
+                            pixels[pixelIdx + 2] = Math.max(0, Math.min(255, subB));
+                            pixels[pixelIdx + 3] = 255;
+                        }
+                    }
+                }
+                
+                context.putImageData(imageData, 0, 0);
+            }
+            
+            // Event handlers with circular view bounds
+            function getCanvasCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * GRID_SIZE / rect.width;
+                const y = (e.clientY - rect.top) * GRID_SIZE / rect.height;
+                
+                const dx = x - CENTER_X;
+                const dy = y - CENTER_Y;
+                if (dx * dx + dy * dy <= VIEW_RADIUS * VIEW_RADIUS) {
+                    return { x, y };
+                }
+                return null;
+            }
+            
+            canvas.addEventListener('click', (e) => {
+                const coords = getCanvasCoords(e);
+                if (!coords) return;
+                
+                if (e.shiftKey) {
+                    addPollutants(coords.x, coords.y);
+                } else if (e.ctrlKey) {
+                    addSubstrate(coords.x, coords.y);
+                } else {
+                    addLichenSpore(coords.x, coords.y);
+                }
+            });
+            
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const coords = getCanvasCoords(e);
+                if (coords) {
+                    addMoisture(coords.x, coords.y);
+                }
+            });
+            
+            // Controls
+            function setupControls() {
+                const params = ['humidity', 'light', 'airQuality', 'substratePhase', 'timeScale'];
+                params.forEach(param => {
+                    const slider = document.getElementById(param);
+                    const display = document.getElementById(param === 'timeScale' ? 'timeScaleVal' : 
+                                        param === 'substratePhase' ? 'phVal' : param + 'Val');
+                    
+                    slider.oninput = function() {
+                        const value = parseFloat(this.value);
+                        switch(param) {
+                            case 'humidity':
+                                humidity = value;
+                                display.textContent = value + '%';
+                                break;
+                            case 'light':
+                                lightLevel = value;
+                                display.textContent = value + '%';
+                                break;
+                            case 'airQuality':
+                                airQuality = value;
+                                display.textContent = value;
+                                break;
+                            case 'substratePhase':
+                                substratePhase = value;
+                                display.textContent = value;
+                                break;
+                            case 'timeScale':
+                                timeScaleMultiplier = value;
+                                display.textContent = value + 'x';
+                                break;
+                        }
+                    };
+                });
+            }
+            
+            window.addEventListener('keydown', (e) => {
+                switch (e.key.toLowerCase()) {
+                    case 'r':
+                        initializeSimulation();
+                        break;
+                    case 'f':
+                        forceFragmentation();
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        isPlaying = !isPlaying;
+                        document.getElementById('playBtn').innerHTML = isPlaying ? '⏸' : '▶';
+                        break;
+                }
+            });
+            
+            document.getElementById('playBtn').onclick = function() {
+                isPlaying = !isPlaying;
+                this.innerHTML = isPlaying ? '⏸' : '▶';
+            };
+            
+            function animationLoop() {
+                simulationStep();
+                render();
+                requestAnimationFrame(animationLoop);
+            }
+            
+            // Initialize
+            setupControls();
+            initializeSimulation();
+            animationLoop();
+        })();
+    </script>
+</body>
+</html>

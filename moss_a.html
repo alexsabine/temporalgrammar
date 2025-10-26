@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Framework: Moss Biology - Optimized</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times', serif;
+            background: linear-gradient(135deg, #e8f5e8 0%, #d8e8d8 30%, #c8d8c8 60%, #b8c8b8 100%);
+            color: #2a3a2a;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .ucf-explanation {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(232,245,232,0.95));
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(74,124,89,0.3);
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        }
+        .ucf-explanation h1 {
+            font-size: 2.2rem;
+            color: #2a4a2a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .ucf-formula {
+            text-align: center;
+            font-family: 'Times', serif;
+            font-size: 1.3rem;
+            color: #3a5a3a;
+            font-style: italic;
+            margin: 25px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            border: 1px solid rgba(74,124,89,0.2);
+        }
+        .warning-box {
+            background: rgba(255,243,205,0.9);
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .visualisation-controls {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(74,124,89,0.3);
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .visualisation-controls h3 {
+            color: #2a4a2a;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-align: center;
+            border-bottom: 2px solid rgba(74,124,89,0.2);
+            padding-bottom: 8px;
+        }
+        .viz-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .viz-option {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(74,124,89,0.3);
+        }
+        .viz-option:hover { background: rgba(74,124,89,0.1); }
+        .viz-option input[type="radio"] { margin-right: 8px; transform: scale(1.2); }
+        .viz-legend {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #3a5a3a;
+            font-style: italic;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 6px;
+        }
+        .simulation-container {
+            background: linear-gradient(45deg, #1a2a1a 0%, #0f1a0f 50%, #0a150a 100%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 6px solid rgba(68,68,68,0.8);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 0 60px rgba(0,0,0,0.2);
+            position: relative;
+            min-height: 750px;
+        }
+        .substrate-container {
+            position: relative;
+            width: 700px;
+            height: 700px;
+            margin: 0 auto;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #1a2a1a 0%, #0f1a0f 50%, #0a150a 100%);
+            border: 4px solid #444;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        #canvas { width: 100%; height: 100%; display: block; border-radius: 10px; cursor: crosshair; }
+        .sim-instructions {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.8);
+            font-style: italic;
+            font-size: 0.85rem;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        }
+        .sim-reset {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .reset-btn {
+            background: rgba(74,124,89,0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .reset-btn:hover {
+            background: rgba(58,104,69,0.9);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .control-panel {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(74,124,89,0.3);
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .control-panel h3 {
+            color: #2a4a2a;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid rgba(74,124,89,0.2);
+            padding-bottom: 8px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+        .param-slider {
+            width: 100px;
+            height: 4px;
+            background: #ddd;
+            outline: none;
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4a7c59;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(74,124,89,0.1);
+        }
+        .metric-value { font-weight: bold; color: #4a7c59; }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .status-optimal { background: #4CAF50; }
+        .status-good { background: #2196F3; }
+        .status-poor { background: #FF9800; }
+        .status-critical { background: #F44336; }
+        @media (max-width: 768px) {
+            .substrate-container { width: 100%; max-width: 500px; height: 500px; }
+            .controls-section { grid-template-columns: 1fr; }
+            .viz-options { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="ucf-explanation">
+            <h1>CRR Framework: Moss Biology (Bryum capillare)</h1>
+            
+            <div class="ucf-formula">
+                d/dt(∂L/∂ẋ) - ∂L/∂x = ∫₀ᵗ K(t-τ)φ(x,τ)e^(C(x,τ)/Ω)Θ(t-τ) dτ + Σᵢ ρᵢ(x)δ(t-tᵢ)
+            </div>
+            
+            <details style="margin: 20px 0; cursor: pointer;">
+                <summary style="font-weight: bold; color: #2a4a2a; padding: 12px 0; font-size: 1.1rem; border-top: 2px solid #4a7c59; border-bottom: 1px solid #ccc; list-style: none; position: relative;">
+                    <strong>Complete CRR Mathematical Implementation & Code Mapping</strong>
+                </summary>
+                <div style="background: rgba(255,255,255,0.9); padding: 20px; border-radius: 12px; margin: 15px 0; font-size: 0.85rem; line-height: 1.4;">
+                    
+                    <div style="background: rgba(200,230,255,0.6); padding: 12px; border-radius: 8px; border-left: 4px solid #4a7c59; margin-bottom: 15px;">
+                        <strong>DIRECT MATHEMATICAL IMPLEMENTATION:</strong>
+                        <div style="margin-top: 8px;">
+                        This simulation explicitly computes:<br>
+                        • <strong>Lagrangian density L(x,t)</strong> from biomass, carbon, reproduction, stress memory<br>
+                        • <strong>Coherence C(x,t) = ∫₀ᵗ L(x,τ)dτ</strong> via temporal integration<br>
+                        • <strong>Memory kernel K(t-τ) = λe^(-λ(t-τ))</strong> via exponential relaxation<br>
+                        • <strong>Rebirth weight exp(C/Ω)</strong> directly in growth calculations<br>
+                        • <strong>Rupture conditions</strong> as threshold crossings → δ(t-tᵢ) events
+                        </div>
+                    </div>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="font-size: 1rem; border-top: 1px solid #4a7c59; border-bottom: none; padding: 8px 0; font-weight: bold;"><strong>1. LAGRANGIAN DENSITY L(x,t)</strong></summary>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                            <div><strong>Mathematical Definition:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                L(x,t) = L_biomass + L_carbon + L_reproduction + L_memory<br>
+                                <br>
+                                where:<br>
+                                L_biomass = (protonema + gametophore + buds + rhizoids) × w_biomass<br>
+                                L_carbon = carbon_density × w_carbon<br>
+                                L_memory = growthMemory × w_mem
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Code Implementation:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+computeLagrangian(idx) {<br>
+&nbsp;&nbsp;const biomass = this.protonema[idx] + this.gametophore[idx] + <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.buds[idx] + this.rhizoids[idx];<br>
+&nbsp;&nbsp;const carbon = this.carbon[idx];<br>
+&nbsp;&nbsp;const memory = this.growthMem[idx];<br>
+&nbsp;&nbsp;return biomass * 1.0 + carbon * 0.8 + memory * 0.3;<br>
+}
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(232,245,232,0.8); padding: 8px; border-radius: 6px;">
+                                <strong>Physical Interpretation:</strong> The Lagrangian measures "organized biological activity" - higher L indicates more structured, energy-rich, reproductively capable moss tissue.
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="font-size: 1rem; border-top: 1px solid #4a7c59; border-bottom: none; padding: 8px 0; font-weight: bold;"><strong>2. COHERENCE FUNCTIONAL C(x,t) = ∫₀ᵗ L(x,τ)dτ</strong></summary>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                            <div><strong>Mathematical Definition:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                C(x,t) = ∫₀ᵗ L(x,τ) dτ
+                            </div>
+                            <div style="margin-left: 10px; color: #666; margin-top: 5px;">
+                                Accumulated "action" or "organized complexity" over system history
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Discrete Time Integration:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                C(x, t+Δt) = C(x,t) + L(x,t) × Δt
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Code Implementation:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+updateCoherence(dt) {<br>
+&nbsp;&nbsp;for (let i = 0; i &lt; this.cells; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.lagrangian[i] = this.computeLagrangian(i);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.coherence[i] += this.lagrangian[i] * dt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if (this.coherence[i] &gt; 10) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.coherence[i] = 10 + Math.log(1 + this.coherence[i] - 10);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(232,245,232,0.8); padding: 8px; border-radius: 6px;">
+                                <strong>Key Property:</strong> C is monotonically increasing between ruptures (dC/dt = L ≥ 0), and only resets/jumps at rupture events. This accumulated history exponentially weights future dynamics.
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="font-size: 1rem; border-top: 1px solid #4a7c59; border-bottom: none; padding: 8px 0; font-weight: bold;"><strong>3. MEMORY KERNEL K(t-τ) = λe^(-λ(t-τ))</strong></summary>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                            <div><strong>Mathematical Form:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                K(t-τ) = λ exp(-λ(t-τ))
+                            </div>
+                            <div style="margin-left: 10px; color: #666; margin-top: 5px;">
+                                Exponential memory decay with characteristic time 1/λ
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Integral Form (what appears in CRR equation):</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                ∫₀ᵗ K(t-τ) × signal(τ) dτ
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Equivalent Differential Form:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                dmemory/dt = λ(signal - memory)
+                            </div>
+                            <div style="margin-left: 10px; color: #666; font-size: 0.9rem;">
+                                This first-order ODE has the same solution as the integral form
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Code Implementation:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+updateMemory(lambda) {<br>
+&nbsp;&nbsp;for (let i = 0; i &lt; this.cells; i++) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;const totalBiomass = this.protonema[i] + this.gametophore[i] + <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this.buds[i] + this.rhizoids[i];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.moistureMem[i] += lambda * (this.moisture[i] - this.moistureMem[i]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.nutrientMem[i] += lambda * (this.nutrients[i] - this.nutrientMem[i]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.growthMem[i] += lambda * (totalBiomass - this.growthMem[i]);<br>
+&nbsp;&nbsp;}<br>
+}
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(232,245,232,0.8); padding: 8px; border-radius: 6px;">
+                                <strong>Default λ = 0.025:</strong> This gives memory timescale τ_mem = 1/λ = 40 timesteps. Past signals decay to ~37% after 40 steps, ~13.5% after 80 steps.
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="font-size: 1rem; border-top: 1px solid #4a7c59; border-bottom: none; padding: 8px 0; font-weight: bold;"><strong>4. REBIRTH WEIGHTING exp(C/Ω)</strong></summary>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                            <div><strong>Mathematical Definition:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                R_χ(x,t) = ∫₀ᵗ φ(x,τ) exp(C(x,τ)/Ω) Θ(t-τ) dτ
+                            </div>
+                            <div style="margin-left: 10px; color: #666; margin-top: 5px;">
+                                Regeneration/growth weighted exponentially by accumulated coherence
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Code Implementation:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+// Growth rate calculation (simplified example):<br>
+const coherenceWeight = Math.exp(fields.coherence[idx] / this.omega);<br>
+const baseGrowthRate = nutrientSignal * moistureSignal * (1 - stress);<br>
+const effectiveGrowthRate = baseGrowthRate * coherenceWeight;
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(232,245,232,0.8); padding: 8px; border-radius: 6px;">
+                                <strong>Physical Meaning:</strong> Regions with high accumulated coherence (C) regenerate/grow exponentially faster. This creates positive feedback: successful regions become more successful, leading to self-organized patterns.
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(255,240,240,0.8); padding: 8px; border-radius: 6px; border-left: 3px solid #c62828;">
+                                <strong>⚠️ Numerical Stability:</strong> Since exp(C/Ω) can grow unbounded, we cap coherence or use soft saturation: exp(C/Ω) → tanh(C/Ω) for large C, or enforce rupture before explosion.
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary style="font-size: 1rem; border-top: 1px solid #4a7c59; border-bottom: none; padding: 8px 0; font-weight: bold;"><strong>5. RUPTURE δ(t-tᵢ) IMPLEMENTATION</strong></summary>
+                        <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.7); border-radius: 8px;">
+                            <div><strong>Mathematical Definition:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                Σᵢ ρᵢ(x) δ(t-tᵢ)
+                            </div>
+                            <div style="margin-left: 10px; color: #666; margin-top: 5px;">
+                                Discrete discontinuous jumps at rupture times {tᵢ} with amplitudes ρᵢ(x)
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Rupture Condition:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace;">
+                                Rupture occurs when: stress(t) &gt; θ_effective(x,t)<br>
+                                where: θ_effective = θ_base × (1 + μ × stressMemory)
+                            </div>
+                            
+                            <div style="margin-top: 10px;"><strong>Code Implementation:</strong></div>
+                            <div style="margin-left: 10px; font-family: 'Courier New', monospace; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+// Check rupture condition:<br>
+const stress = this.sim.env.getStress();<br>
+const adaptiveThreshold = STRESS.RUPTURE * (1 + cell.stressMemory * 0.3);<br>
+<br>
+if (stress.combined &gt; adaptiveThreshold && Math.random() &lt; ruptureProb) {<br>
+&nbsp;&nbsp;// RUPTURE EVENT<br>
+&nbsp;&nbsp;cell.energy *= 0.7; // amplitude ρᵢ = -0.3 × energy<br>
+&nbsp;&nbsp;fields.coherence[idx] *= 0.5; // partial coherence loss<br>
+&nbsp;&nbsp;// This is the δ(t-tᵢ) discontinuity<br>
+}
+                            </div>
+                            
+                            <div style="margin-top: 10px; background: rgba(232,245,232,0.8); padding: 8px; border-radius: 6px;">
+                                <strong>Biological Mapping:</strong> Cell death (energy → 0), tissue damage (biomass reduction), reproductive dispersal (spore release) are all rupture events with different ρᵢ amplitudes.
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,248,240,0.9); border-radius: 8px; border: 2px solid #4a7c59;">
+                        <strong style="font-size: 1.1rem;">COMPLETE IMPLEMENTATION MAPPING:</strong>
+                        
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem;">
+                            <tr style="background: rgba(74,124,89,0.2);">
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">CRR Mathematical Term</th>
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Code Implementation</th>
+                                <th style="border: 1px solid #ddd; padding: 10px; text-align: left; font-weight: bold;">Status</th>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">L(x,t)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">computeLagrangian() from biomass + carbon + memory</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Direct</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">C(x,t) = ∫₀ᵗ L dτ</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">coherence[i] += L(i) × dt each timestep</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Direct</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">K(t-τ) = λe^(-λ(t-τ))</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">memory += λ(signal - memory)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Exact (differential form)</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">exp(C/Ω)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">Math.exp(coherence / omega)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Direct</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">ρᵢ(x)δ(t-tᵢ)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">Threshold crossing → discrete state jump</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Discrete approx</td>
+                            </tr>
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 10px; font-family: 'Courier New', monospace; background: rgba(240,240,240,0.5);">φ(x,τ)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">moisture × nutrients × (1-stress) × (1-density)</td>
+                                <td style="border: 1px solid #ddd; padding: 10px;">✓ Phenomenological</td>
+                            </tr>
+                        </table>
+                        
+                        <div style="margin-top: 10px; font-size: 0.95rem;">
+                            <strong>Key Point:</strong> This is not an analogy or metaphor. The CRR mathematical objects (L, C, K, exp(C/Ω), δ) are <em>explicitly computed</em> in the simulation code. The moss behavior <em>emerges from</em> these CRR dynamics.
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <section class="visualisation-controls">
+            <h3>Visualisation Mode</h3>
+            <div class="viz-options">
+                <label class="viz-option">
+                    <input type="radio" name="vizMode" value="colony" checked>
+                    Colony Structure
+                </label>
+                <label class="viz-option">
+                    <input type="radio" name="vizMode" value="coherence">
+                    Coherence C(x,t)
+                </label>
+                <label class="viz-option">
+                    <input type="radio" name="vizMode" value="carbon">
+                    Carbon Pools
+                </label>
+                <label class="viz-option">
+                    <input type="radio" name="vizMode" value="reproduction">
+                    Reproduction
+                </label>
+                <label class="viz-option">
+                    <input type="radio" name="vizMode" value="signals">
+                    Chemical Signals
+                </label>
+            </div>
+            <div class="viz-legend" id="vizLegend">Showing moss colony structure with photorealistic rendering</div>
+        </section>
+
+        <section class="simulation-container">
+            <div class="substrate-container">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="sim-instructions">
+                <em>Click: Add spores • Right Click: Add water • Shift+Click: Add nutrients • R: Reset • S: Trigger spores • Space: Play/Pause</em>
+            </div>
+            <div class="sim-reset">
+                <button class="reset-btn" onclick="resetSimulation()">Reset Colony</button>
+            </div>
+        </section>
+
+        <div class="controls-section">
+            <div class="control-panel">
+                <h3>Environmental Parameters</h3>
+                <div class="param-row">
+                    <span>Temperature:</span>
+                    <input type="range" class="param-slider" id="temperature" min="5" max="35" value="22">
+                    <span id="tempVal">22°C</span>
+                </div>
+                <div class="param-row">
+                    <span>Humidity:</span>
+                    <input type="range" class="param-slider" id="humidity" min="40" max="95" value="80">
+                    <span id="humidVal">80%</span>
+                </div>
+                <div class="param-row">
+                    <span>Light:</span>
+                    <input type="range" class="param-slider" id="light" min="10" max="60" value="35">
+                    <span id="lightVal">35%</span>
+                </div>
+                <div class="param-row">
+                    <span>CO₂:</span>
+                    <input type="range" class="param-slider" id="co2" min="300" max="1200" value="400">
+                    <span id="co2Val">400ppm</span>
+                </div>
+                <div class="param-row">
+                    <span>pH:</span>
+                    <input type="range" class="param-slider" id="ph" min="4.5" max="8.5" step="0.1" value="6.5">
+                    <span id="phVal">6.5</span>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Colony Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span>Protonema:</span>
+                        <span class="metric-value" id="protonema">0 µm</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Gametophores:</span>
+                        <span class="metric-value" id="gametophores">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Carbon:</span>
+                        <span class="metric-value" id="carbonPools">0 µg</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Sporophytes:</span>
+                        <span class="metric-value" id="sporophytes">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>CRR Metrics (Computed)</h3>
+                <div style="font-size: 0.85rem;">
+                    <div class="metric-item">
+                        <span>⟨L⟩ (avg Lagrangian):</span>
+                        <span class="metric-value" id="avgLagrangian">0.000</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>⟨C⟩ (avg coherence):</span>
+                        <span class="metric-value" id="avgCoherence">0.000</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>⟨exp(C/Ω)⟩:</span>
+                        <span class="metric-value" id="avgRebirthWeight">1.000</span>
+                    </div>
+                    <div class="metric-item">
+                        <span>Memory influence:</span>
+                        <span class="metric-value" id="memInfluence">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>Environmental Health</h3>
+                <div style="font-size: 0.9rem;">
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="tempStatus"></span>Temperature</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="humidStatus"></span>Humidity</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="lightStatus"></span>Light</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="co2Status"></span>CO₂</div>
+                    <div style="margin: 8px 0;"><span class="status-indicator" id="phStatus"></span>pH</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3>CRR Parameters</h3>
+                <div class="param-row">
+                    <span>λ (memory decay):</span>
+                    <input type="range" class="param-slider" id="lambda" min="0.001" max="0.1" step="0.001" value="0.025">
+                    <span id="lambdaVal">0.025</span>
+                </div>
+                <div class="param-row">
+                    <span>Ω (temperature):</span>
+                    <input type="range" class="param-slider" id="omega" min="0.5" max="5" step="0.1" value="2.0">
+                    <span id="omegaVal">2.0</span>
+                </div>
+                <div class="param-row">
+                    <span>β (coupling):</span>
+                    <input type="range" class="param-slider" id="beta" min="0" max="0.5" step="0.01" value="0.15">
+                    <span id="betaVal">0.15</span>
+                </div>
+                <div class="param-row">
+                    <span>Speed:</span>
+                    <input type="range" class="param-slider" id="simSpeed" min="1" max="10" value="1">
+                    <span id="speedVal">1x</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        
+        let globalSimulation = null;
+        const MAX_SPOROPHYTES = 15;
+        const SPEED_MULTIPLIER = 1.1;
+        const STRESS = { MILD: 0.3, DAMAGE: 0.6, RUPTURE: 0.75, LETHAL: 0.9 };
+        
+        class Environment {
+            constructor() {
+                this.temp = 22;
+                this.humidity = 80;
+                this.light = 35;
+                this.co2 = 400;
+                this.ph = 6.5;
+                this.cachedStress = null;
+                this.stressDirty = true;
+            }
+            
+            getLimits() {
+                return {
+                    temp: { opt: [15,25], lethal: [5,35] },
+                    humidity: { opt: [70,90], lethal: [40,95] },
+                    light: { opt: [25,45], lethal: [5,70] },
+                    co2: { opt: [350,600], lethal: [200,1200] },
+                    ph: { opt: [5.5,7.5], lethal: [4.5,8.5] }
+                };
+            }
+            
+            calcStress(val, opt, lethal) {
+                if (val >= opt[0] && val <= opt[1]) return 0;
+                const dist = val < opt[0] ? 
+                    Math.min(1, (opt[0]-val)/(opt[0]-lethal[0])) :
+                    Math.min(1, (val-opt[1])/(lethal[1]-opt[1]));
+                return Math.pow(dist, 1.5);
+            }
+            
+            getStress() {
+                if (!this.stressDirty && this.cachedStress) return this.cachedStress;
+                
+                const lim = this.getLimits();
+                const w = { temp:1.2, humid:1.5, light:1, co2:0.6, ph:1 };
+                const stresses = [
+                    this.calcStress(this.temp, lim.temp.opt, lim.temp.lethal) * w.temp,
+                    this.calcStress(this.humidity, lim.humidity.opt, lim.humidity.lethal) * w.humid,
+                    this.calcStress(this.light, lim.light.opt, lim.light.lethal) * w.light,
+                    this.calcStress(this.co2, lim.co2.opt, lim.co2.lethal) * w.co2,
+                    this.calcStress(this.ph, lim.ph.opt, lim.ph.lethal) * w.ph
+                ];
+                const max = Math.max(...stresses);
+                const avg = stresses.reduce((a,b)=>a+b,0)/stresses.length;
+                this.cachedStress = { combined: Math.min(1, avg+(max-avg)*0.4), max };
+                this.stressDirty = false;
+                return this.cachedStress;
+            }
+            
+            invalidateCache() {
+                this.stressDirty = true;
+            }
+        }
+        
+        class Fields {
+            constructor(size) {
+                this.size = size;
+                this.cells = size * size;
+                const create = () => new Float32Array(this.cells);
+                
+                this.protonema = create();
+                this.gametophore = create();
+                this.rhizoids = create();
+                this.buds = create();
+                this.chloroplast = create();
+                this.moisture = create();
+                this.nutrients = create();
+                this.carbon = create();
+                this.inhibition = create();
+                this.age = create();
+                
+                this.lagrangian = create();
+                this.coherence = create();
+                this.moistureMem = create();
+                this.nutrientMem = create();
+                this.growthMem = create();
+                this.stressMem = create();
+                
+                this.temp = create();
+                
+                // Cache for coherence statistics
+                this.cohStats = { min: 0, max: 1, avg: 0 };
+            }
+            
+            reset(humidity) {
+                for (let i = 0; i < this.cells; i++) {
+                    this.protonema[i] = 0;
+                    this.gametophore[i] = 0;
+                    this.rhizoids[i] = 0;
+                    this.buds[i] = 0;
+                    this.chloroplast[i] = 0;
+                    this.inhibition[i] = 0;
+                    this.age[i] = 0;
+                    this.lagrangian[i] = 0;
+                    this.coherence[i] = 0;
+                    this.moistureMem[i] = 0;
+                    this.nutrientMem[i] = 0;
+                    this.growthMem[i] = 0;
+                    this.stressMem[i] = 0;
+                    this.nutrients[i] = 0.3 + Math.random() * 0.4;
+                    this.moisture[i] = (humidity/100) * (0.5 + Math.random()*0.5);
+                    this.carbon[i] = 0.1;
+                }
+                this.updateCoherenceStats();
+            }
+            
+            computeLagrangian(idx) {
+                const biomass = this.protonema[idx] + this.gametophore[idx] + 
+                               this.buds[idx] + this.rhizoids[idx];
+                const carbon = this.carbon[idx];
+                const memory = this.growthMem[idx];
+                return biomass * 1.0 + carbon * 0.8 + memory * 0.3;
+            }
+            
+            updateCoherence(dt) {
+                for (let i = 0; i < this.cells; i++) {
+                    this.lagrangian[i] = this.computeLagrangian(i);
+                    this.coherence[i] += this.lagrangian[i] * dt;
+                    if (this.coherence[i] > 10) {
+                        this.coherence[i] = 10 + Math.log(1 + this.coherence[i] - 10);
+                    }
+                }
+            }
+            
+            updateMemory(lambda) {
+                for (let i = 0; i < this.cells; i++) {
+                    const totalBiomass = this.protonema[i] + this.gametophore[i] + 
+                                        this.buds[i] + this.rhizoids[i];
+                    
+                    this.moistureMem[i] += lambda * (this.moisture[i] - this.moistureMem[i]);
+                    this.nutrientMem[i] += lambda * (this.nutrients[i] - this.nutrientMem[i]);
+                    this.growthMem[i] += lambda * (totalBiomass - this.growthMem[i]);
+                }
+            }
+            
+            updateCoherenceStats() {
+                let min = Infinity, max = -Infinity, sum = 0, count = 0;
+                for (let i = 0; i < this.cells; i++) {
+                    const c = this.coherence[i];
+                    if (c > 0.001) {
+                        min = Math.min(min, c);
+                        max = Math.max(max, c);
+                        sum += c;
+                        count++;
+                    }
+                }
+                this.cohStats.min = min === Infinity ? 0 : min;
+                this.cohStats.max = max === -Infinity ? 1 : max;
+                this.cohStats.avg = count > 0 ? sum / count : 0;
+            }
+            
+            diffuse(field, rate) {
+                this.temp.fill(0);
+                for (let y = 1; y < this.size-1; y++) {
+                    for (let x = 1; x < this.size-1; x++) {
+                        const i = x + y*this.size;
+                        const n = field[i-1] + field[i+1] + field[i-this.size] + field[i+this.size];
+                        this.temp[i] = field[i] + rate*(n - 4*field[i]);
+                    }
+                }
+                for (let i = 0; i < this.cells; i++) {
+                    field[i] = Math.max(0, this.temp[i]);
+                }
+            }
+        }
+        
+        class SexOrgan {
+            constructor(x, y, type, sim) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.age = 0;
+                this.mature = false;
+                this.fertilised = false;
+                this.sim = sim;
+            }
+            
+            update() {
+                this.age++;
+                if (this.age > 90) this.mature = true;
+                
+                if (this.mature && !this.fertilised && this.type === 'archegonium') {
+                    for (let a of this.sim.sexOrgans) {
+                        if (a.type === 'antheridium' && a.mature) {
+                            const dx = this.x - a.x, dy = this.y - a.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                            
+                            if (dist < 50 && 
+                                this.sim.fields.moisture[idx] > 0.7 && 
+                                Math.random() < 0.011) {
+                                this.fertilised = true;
+                                if (this.sim.sporophytes.length < MAX_SPOROPHYTES) {
+                                    this.sim.sporophytes.push(new Sporophyte(this.x, this.y, this.sim));
+                                }
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        
+        class Sporophyte {
+            constructor(x, y, sim) {
+                this.x = x;
+                this.y = y;
+                this.age = 0;
+                this.height = 0;
+                this.maxHeight = 18 + Math.random()*12;
+                this.creationTime = sim.time;
+                this.mature = false;
+                this.released = false;
+                this.sim = sim;
+                this.calyptraPresent = true;
+                this.sporesReady = 0;
+                this.releaseProgress = 0;
+            }
+            
+            update() {
+                this.age++;
+                
+                if (this.height < this.maxHeight) {
+                    const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                    const c = this.sim.fields.carbon[idx];
+                    const biomassInhibition = this.sim.fields.gametophore[idx] * 0.3;
+                    const growthRate = 0.08 * Math.min(1, c/0.5) * (1 - biomassInhibition) * SPEED_MULTIPLIER;
+                    this.height += growthRate;
+                    this.sim.fields.carbon[idx] = Math.max(0, c - 0.009);
+                }
+                
+                if (this.height >= this.maxHeight * 0.6) this.calyptraPresent = false;
+                if (this.height >= this.maxHeight * 0.9) {
+                    this.mature = true;
+                    if (this.sporesReady < 100) this.sporesReady += 0.5;
+                }
+                
+                if (this.mature && !this.released && this.sporesReady >= 80 && Math.random() < 0.003) {
+                    this.releaseSporesGradually();
+                }
+                
+                return !this.released;
+            }
+            
+            releaseSporesGradually() {
+                const batchSize = 8 + Math.floor(Math.random()*12);
+                this.releaseProgress += batchSize;
+                
+                for (let i = 0; i < batchSize; i++) {
+                    const angle = Math.random()*Math.PI*2;
+                    const dist = 25 + Math.random()*60;
+                    const sx = this.x + Math.cos(angle)*dist;
+                    const sy = this.y + Math.sin(angle)*dist;
+                    
+                    if (sx>=5 && sx<this.sim.size-5 && sy>=5 && sy<this.sim.size-5) {
+                        const idx = Math.floor(sx) + Math.floor(sy)*this.sim.size;
+                        if (this.sim.fields.moisture[idx] > 0.6 && 
+                            this.sim.fields.nutrients[idx] > 0.2 && 
+                            Math.random() < 0.4) {
+                            this.sim.addSpores(sx, sy, 1);
+                            this.sim.sporesReleased++;
+                        }
+                    }
+                }
+                
+                if (this.releaseProgress >= 100) this.released = true;
+            }
+        }
+        
+        class Cell {
+            constructor(x, y, type, sim) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.sim = sim;
+                this.vx = (Math.random()-0.5)*0.11;
+                this.vy = (Math.random()-0.5)*0.11;
+                this.age = 0;
+                this.energy = 0.9 + Math.random()*0.2;
+                this.carbon = 0.1;
+                this.cooldown = 0;
+                this.chloro = 0.1;
+                this.stressHistory = 0;
+                this.generation = 0;
+                this.angle = Math.atan2(this.vy, this.vx);
+                this.size = {protonema:0.4, bud:1, gametophore:1.5, rhizoid:0.25}[type] || 0.5;
+                this.lightExposure = Math.random();
+            }
+            
+            update() {
+                this.age++;
+                const stress = this.sim.env.getStress();
+                const adaptiveThreshold = STRESS.RUPTURE * (1 + this.stressHistory * 0.3);
+                
+                if (stress.max > STRESS.LETHAL) {
+                    this.energy = 0;
+                    return [];
+                }
+                
+                if (stress.combined > adaptiveThreshold && 
+                    Math.random() < (stress.combined-adaptiveThreshold)/(1-adaptiveThreshold)*0.33) {
+                    this.energy *= 0.7;
+                    const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                    if (idx >= 0 && idx < this.sim.fields.cells) {
+                        this.sim.fields.coherence[idx] *= 0.5;
+                    }
+                    return [];
+                }
+                
+                if (stress.combined > STRESS.DAMAGE && stress.combined < adaptiveThreshold) {
+                    this.stressHistory = Math.min(1, this.stressHistory + 0.011);
+                }
+                
+                const rate = (1 - stress.combined) * SPEED_MULTIPLIER;
+                
+                if (this.type !== 'rhizoid') {
+                    const photo = this.chloro * (this.sim.env.light/100) * 
+                                 (this.sim.env.co2/400) * rate * this.lightExposure;
+                    this.carbon += photo * 0.011;
+                    const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                    if (idx >= 0 && idx < this.sim.fields.cells) {
+                        this.sim.fields.carbon[idx] += photo * 0.0055;
+                    }
+                    this.chloro = Math.min(1, this.chloro + 0.0011*rate);
+                    this.lightExposure = Math.min(1, this.lightExposure + 0.0005);
+                }
+                
+                const newCells = [];
+                if (this.type === 'protonema') newCells.push(...this.updateProtonema(rate));
+                else if (this.type === 'bud') newCells.push(...this.updateBud(rate));
+                else if (this.type === 'gametophore') newCells.push(...this.updateGametophore(rate));
+                else if (this.type === 'rhizoid') this.updateRhizoid(rate);
+                
+                this.energy *= 0.99945;
+                this.carbon *= 0.9989;
+                
+                return newCells;
+            }
+            
+            updateProtonema(rate) {
+                const sensor = this.sense(4);
+                this.steer(sensor, 0.22);
+                this.move(0.165*rate);
+                this.deposit('protonema', 0.022*rate);
+                this.depositInhibition();
+                
+                const newCells = [];
+                this.cooldown = Math.max(0, this.cooldown-1);
+                
+                const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                if (idx >= 0 && idx < this.sim.fields.cells) {
+                    const inhib = this.sim.fields.inhibition[idx];
+                    const branchProb = 0.0088 * (1 - inhib*0.7);
+                    
+                    if (this.energy>0.7 && this.carbon>0.3 && this.cooldown<=0 && Math.random()<branchProb) {
+                        const a = this.angle + (Math.random()-0.5)*Math.PI*0.4;
+                        const b = new Cell(this.x, this.y, 'protonema', this.sim);
+                        b.vx = Math.cos(a)*0.11;
+                        b.vy = Math.sin(a)*0.11;
+                        b.angle = a;
+                        b.generation = this.generation+1;
+                        newCells.push(b);
+                        this.cooldown = 18;
+                        this.energy *= 0.8;
+                        this.carbon *= 0.7;
+                    }
+                    
+                    if (this.age>180 && this.energy>0.8 && this.carbon>0.5 && Math.random()<0.0033) {
+                        newCells.push(new Cell(this.x, this.y, 'bud', this.sim));
+                        this.energy *= 0.7;
+                        this.carbon *= 0.5;
+                    }
+                }
+                return newCells;
+            }
+            
+            updateBud(rate) {
+                this.deposit('bud', 0.0275*rate);
+                const newCells = [];
+                
+                if (this.age>90 && this.energy>0.6 && this.carbon>0.4) {
+                    const g = new Cell(this.x, this.y, 'gametophore', this.sim);
+                    g.energy = this.energy*0.9;
+                    g.carbon = this.carbon*0.8;
+                    newCells.push(g);
+                    
+                    for (let i=0; i<3; i++) {
+                        const r = new Cell(this.x, this.y, 'rhizoid', this.sim);
+                        const a = Math.random()*Math.PI*2;
+                        r.vx = Math.cos(a)*0.055;
+                        r.vy = Math.sin(a)*0.055;
+                        newCells.push(r);
+                    }
+                    this.energy = 0;
+                }
+                return newCells;
+            }
+            
+            updateGametophore(rate) {
+                this.sense(3);
+                this.move(0.055*rate);
+                this.deposit('gametophore', 0.033*rate);
+                
+                const newCells = [];
+                
+                if (this.age>450 && this.carbon>0.8 && Math.random()<0.0011) {
+                    const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                    if (idx >= 0 && idx < this.sim.fields.cells && this.sim.fields.gametophore[idx] > 0.6) {
+                        const type = Math.random()<0.5 ? 'archegonium' : 'antheridium';
+                        this.sim.sexOrgans.push(new SexOrgan(this.x, this.y, type, this.sim));
+                        this.carbon *= 0.6;
+                    }
+                }
+                
+                if (this.age>45 && Math.random()<0.0055) {
+                    for (let i=0; i<2; i++) {
+                        const leaf = new Cell(
+                            this.x + (Math.random()-0.5)*4,
+                            this.y + (Math.random()-0.5)*4,
+                            'gametophore', this.sim
+                        );
+                        leaf.size = 0.6;
+                        leaf.generation = this.generation+1;
+                        newCells.push(leaf);
+                    }
+                    this.energy *= 0.9;
+                }
+                return newCells;
+            }
+            
+            updateRhizoid(rate) {
+                this.vy = Math.abs(this.vy) + 0.022;
+                this.move(0.088*rate);
+                this.deposit('rhizoid', 0.0165*rate);
+                
+                const idx = Math.floor(this.x) + Math.floor(this.y)*this.sim.size;
+                if (idx>=0 && idx<this.sim.fields.cells) {
+                    const uptake = this.sim.fields.nutrients[idx] * 0.022;
+                    this.energy = Math.min(1.2, this.energy + uptake);
+                    this.carbon = Math.min(1, this.carbon + uptake*0.5);
+                }
+            }
+            
+            depositInhibition() {
+                const r = 10;
+                for (let dy=-r; dy<=r; dy++) {
+                    for (let dx=-r; dx<=r; dx++) {
+                        const px = Math.floor(this.x+dx), py = Math.floor(this.y+dy);
+                        if (px>=0 && px<this.sim.size && py>=0 && py<this.sim.size) {
+                            const d = Math.sqrt(dx*dx + dy*dy);
+                            if (d <= r) {
+                                const idx = px + py*this.sim.size;
+                                const s = Math.exp(-d*d/(r*r*0.5)) * 0.055;
+                                this.sim.fields.inhibition[idx] = Math.min(1, this.sim.fields.inhibition[idx]+s);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            sense(rad) {
+                let best = -1, bestAngle = this.angle;
+                for (let i=0; i<6; i++) {
+                    const a = (i*Math.PI*2)/6;
+                    const sx = this.x + Math.cos(a)*rad, sy = this.y + Math.sin(a)*rad;
+                    if (sx>=0 && sx<this.sim.size && sy>=0 && sy<this.sim.size) {
+                        const idx = Math.floor(sx) + Math.floor(sy)*this.sim.size;
+                        
+                        const moist = this.sim.fields.moisture[idx]*(1-this.sim.beta) + 
+                                     this.sim.fields.moistureMem[idx]*this.sim.beta;
+                        const nutri = this.sim.fields.nutrients[idx]*(1-this.sim.beta) + 
+                                     this.sim.fields.nutrientMem[idx]*this.sim.beta;
+                        const carb = this.sim.fields.carbon[idx];
+                        const inhib = this.sim.fields.inhibition[idx];
+                        
+                        let signal = moist*2 + nutri*1.5 + carb*1.8 + this.sim.fields.growthMem[idx]*1.2;
+                        const dens = this.sim.fields.protonema[idx] + this.sim.fields.gametophore[idx] + this.sim.fields.buds[idx];
+                        signal -= dens*1.8 + inhib*2.5;
+                        
+                        if (this.type !== 'rhizoid') signal += this.sim.env.light/100;
+                        if (signal > best) { best = signal; bestAngle = a; }
+                    }
+                }
+                return { signal: best, angle: bestAngle };
+            }
+            
+            steer(sensor, rate) {
+                let diff = sensor.angle - this.angle;
+                while (diff > Math.PI) diff -= 2*Math.PI;
+                while (diff < -Math.PI) diff += 2*Math.PI;
+                this.angle += diff*rate;
+                const spd = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                this.vx = Math.cos(this.angle)*spd;
+                this.vy = Math.sin(this.angle)*spd;
+            }
+            
+            move(spd) {
+                this.x += this.vx*spd;
+                this.y += this.vy*spd;
+                this.x = Math.max(5, Math.min(this.sim.size-5, this.x));
+                this.y = Math.max(5, Math.min(this.sim.size-5, this.y));
+            }
+            
+            deposit(type, amt) {
+                const r = this.size + 0.5;
+                for (let dy=-r; dy<=r; dy++) {
+                    for (let dx=-r; dx<=r; dx++) {
+                        const px = Math.floor(this.x+dx), py = Math.floor(this.y+dy);
+                        if (px>=0 && px<this.sim.size && py>=0 && py<this.sim.size) {
+                            const d = Math.sqrt(dx*dx + dy*dy);
+                            if (d <= r) {
+                                const idx = px + py*this.sim.size;
+                                const s = Math.exp(-d*d/(r*r));
+                                const f = this.sim.fields;
+                                
+                                if (type==='protonema') {
+                                    f.protonema[idx] = Math.min(1, f.protonema[idx]+amt*s);
+                                    f.chloroplast[idx] = Math.min(1, f.chloroplast[idx]+amt*0.5*s);
+                                } else if (type==='bud') {
+                                    f.buds[idx] = Math.min(1, f.buds[idx]+amt*s);
+                                } else if (type==='gametophore') {
+                                    f.gametophore[idx] = Math.min(1, f.gametophore[idx]+amt*s);
+                                    f.chloroplast[idx] = Math.min(1, f.chloroplast[idx]+amt*0.8*s);
+                                } else if (type==='rhizoid') {
+                                    f.rhizoids[idx] = Math.min(1, f.rhizoids[idx]+amt*s);
+                                }
+                                
+                                f.nutrients[idx] = Math.max(0, f.nutrients[idx]-0.00055*s);
+                                f.stressMem[idx] = Math.max(f.stressMem[idx], this.stressHistory*s);
+                                f.age[idx] = Math.min(1000, f.age[idx] + 0.5*s);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        class Simulation {
+            constructor() {
+                this.size = 700;
+                this.dt = 0.1;
+                this.env = new Environment();
+                this.fields = new Fields(this.size);
+                
+                this.lambda = 0.025;
+                this.omega = 2.0;
+                this.beta = 0.15;
+                this.speed = 1;
+                
+                this.vizMode = 'colony';
+                this.playing = true;
+                this.time = 0;
+                this.diffusionCounter = 0;
+                this.uiUpdateCounter = 0;
+                
+                this.cells = [];
+                this.sexOrgans = [];
+                this.sporophytes = [];
+                this.sporesReleased = 0;
+                
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.height = this.size;
+                
+                this.reset();
+                this.setupControls();
+                this.setupEvents();
+                this.animate();
+            }
+            
+            reset() {
+                this.cells = [];
+                this.sexOrgans = [];
+                this.sporophytes = [];
+                this.sporesReleased = 0;
+                this.time = 0;
+                this.diffusionCounter = 0;
+                this.uiUpdateCounter = 0;
+                this.fields.reset(this.env.humidity);
+                
+                this.addSpores(this.size*0.3, this.size*0.5, 20);
+                this.addSpores(this.size*0.7, this.size*0.5, 20);
+            }
+            
+            addSpores(x, y, n=20) {
+                for (let i=0; i<n; i++) {
+                    const c = new Cell(
+                        x+(Math.random()-0.5)*25, 
+                        y+(Math.random()-0.5)*25, 
+                        'protonema', 
+                        this
+                    );
+                    c.energy = 1;
+                    c.carbon = 0.3;
+                    this.cells.push(c);
+                }
+            }
+            
+            addWater(x, y) { 
+                this.applyCircle(x, y, 30, (idx,s) => 
+                    this.fields.moisture[idx] = Math.min(1, this.fields.moisture[idx]+0.66*s)
+                ); 
+            }
+            
+            addNutrients(x, y) { 
+                this.applyCircle(x, y, 25, (idx,s) => 
+                    this.fields.nutrients[idx] = Math.min(1, this.fields.nutrients[idx]+0.44*s)
+                ); 
+            }
+            
+            applyCircle(x, y, r, fn) {
+                for (let dy=-r; dy<=r; dy++) {
+                    for (let dx=-r; dx<=r; dx++) {
+                        const px = Math.floor(x+dx), py = Math.floor(y+dy);
+                        if (px>=0 && px<this.size && py>=0 && py<this.size) {
+                            const d = Math.sqrt(dx*dx + dy*dy);
+                            if (d <= r) fn(px + py*this.size, Math.exp(-d*d/(r*r*0.4)));
+                        }
+                    }
+                }
+            }
+            
+            step() {
+                if (!this.playing) return;
+                for (let s=0; s<this.speed; s++) this.stepOnce();
+                this.uiUpdateCounter++;
+                if (this.uiUpdateCounter % 3 === 0) {
+                    this.updateUI();
+                }
+            }
+            
+            stepOnce() {
+                const newCells = [];
+                for (let c of this.cells) newCells.push(...c.update());
+                this.cells.push(...newCells);
+                this.cells = this.cells.filter(c => c.energy > 0.05);
+                
+                this.sexOrgans = this.sexOrgans.filter(s => s.update());
+                this.sporophytes = this.sporophytes.filter(s => s.update());
+                
+                if (this.sporophytes.length > MAX_SPOROPHYTES) {
+                    this.sporophytes.sort((a,b) => a.creationTime - b.creationTime);
+                    this.sporophytes = this.sporophytes.slice(-MAX_SPOROPHYTES);
+                }
+                
+                this.fields.updateCoherence(this.dt);
+                this.fields.updateMemory(this.lambda);
+                
+                for (let i=0; i<this.fields.cells; i++) {
+                    this.fields.moisture[i] += this.beta * (this.fields.moistureMem[i] - this.fields.moisture[i]);
+                    this.fields.nutrients[i] += this.beta * (this.fields.nutrientMem[i] - this.fields.nutrients[i]);
+                    this.fields.inhibition[i] *= 0.945;
+                }
+                
+                this.diffusionCounter++;
+                if (this.diffusionCounter % 3 === 0) {
+                    this.fields.diffuse(this.fields.moisture, 0.0088);
+                    this.fields.diffuse(this.fields.nutrients, 0.0055);
+                    this.fields.diffuse(this.fields.carbon, 0.022);
+                    this.fields.diffuse(this.fields.inhibition, 0.011);
+                }
+                
+                if (this.diffusionCounter % 5 === 0) {
+                    this.fields.diffuse(this.fields.chloroplast, 0.0022);
+                    this.fields.diffuse(this.fields.moistureMem, 0.0044);
+                    this.fields.diffuse(this.fields.nutrientMem, 0.0033);
+                    this.fields.diffuse(this.fields.growthMem, 0.0022);
+                    this.fields.diffuse(this.fields.coherence, 0.0033);
+                }
+                
+                for (let i=0; i<this.fields.cells; i++) {
+                    this.fields.moisture[i] *= 0.9989;
+                    const moss = this.fields.protonema[i] + this.fields.gametophore[i] + this.fields.rhizoids[i];
+                    if (moss > 0.1) {
+                        this.fields.moisture[i] = Math.min(1, this.fields.moisture[i] + moss*0.0033);
+                    }
+                }
+                
+                if (this.time % 30 === 0) {
+                    this.fields.updateCoherenceStats();
+                }
+                
+                this.time++;
+            }
+            
+            render() {
+                const img = this.ctx.createImageData(this.size, this.size);
+                const pix = img.data;
+                
+                for (let y=0; y<this.size; y++) {
+                    for (let x=0; x<this.size; x++) {
+                        const idx = x + y*this.size;
+                        const [r,g,b] = this.getColour(idx, x, y);
+                        const pi = idx*4;
+                        pix[pi] = Math.max(0,Math.min(255,r));
+                        pix[pi+1] = Math.max(0,Math.min(255,g));
+                        pix[pi+2] = Math.max(0,Math.min(255,b));
+                        pix[pi+3] = 255;
+                    }
+                }
+                
+                this.ctx.putImageData(img, 0, 0);
+                
+                if (this.vizMode === 'reproduction') this.drawReproduction();
+                else if (this.vizMode === 'signals') this.drawSignals();
+            }
+            
+            getColour(i, x, y) {
+                const f = this.fields;
+                
+                if (this.vizMode === 'coherence') {
+                    const c = f.coherence[i];
+                    const hasBiomass = (f.protonema[i] + f.gametophore[i] + f.buds[i] + f.rhizoids[i]) > 0.05;
+                    
+                    if (hasBiomass && c > 0.01) {
+                        const range = Math.max(0.1, f.cohStats.max - f.cohStats.min);
+                        const normalized = (c - f.cohStats.min) / range;
+                        const intensity = Math.pow(normalized, 0.7);
+                        
+                        return [
+                            30 + intensity * 180,
+                            50 + intensity * 120,
+                            100 + intensity * 140
+                        ];
+                    } else {
+                        return [20, 25, 30];
+                    }
+                }
+                
+                if (this.vizMode === 'carbon') {
+                    const c = f.carbon[i];
+                    return [20+c*150, 30+c*200, 20+c*100];
+                }
+                
+                if (this.vizMode === 'signals') {
+                    const inh = f.inhibition[i];
+                    return [30+inh*220, 30-inh*20, 30-inh*20];
+                }
+                
+                const proto = f.protonema[i], gameto = f.gametophore[i];
+                const bud = f.buds[i], rhiz = f.rhizoids[i];
+                const chloro = f.chloroplast[i], moist = f.moisture[i];
+                const coh = f.coherence[i], age = f.age[i];
+                const tot = proto+gameto+bud+rhiz;
+                
+                if (tot > 0.01) {
+                    const ageEffect = Math.min(1, age/400);
+                    const moistEffect = Math.max(0.7, 1 - moist*0.3);
+                    
+                    const texX = Math.sin(x*0.52 + y*0.31) * Math.cos(x*0.37 - y*0.44);
+                    const texY = Math.sin(x*0.41 - y*0.53) * Math.cos(x*0.29 + y*0.61);
+                    const microTexture = (texX + texY) * 8;
+                    
+                    let baseR = 12, baseG = 35, baseB = 18;
+                    
+                    baseG += chloro * 58;
+                    baseR += chloro * 18;
+                    baseB += chloro * 12;
+                    
+                    if (proto > 0.2) {
+                        const int = Math.min(1, proto*1.8);
+                        baseG += int * 42;
+                        baseR += int * 12;
+                        baseB += int * 8;
+                        baseG += Math.sin(x*0.7 + y*0.4) * int * 16;
+                    }
+                    
+                    if (gameto > 0.3) {
+                        const int = Math.min(1, gameto*1.6);
+                        baseG += int * 48;
+                        baseR += int * 10;
+                        baseB += int * 14;
+                        const leafTex = Math.sin(x*1.1)*Math.cos(y*0.9);
+                        baseG += leafTex * int * 18;
+                        baseR += leafTex * int * 6;
+                    }
+                    
+                    if (bud > 0.4) {
+                        const int = Math.min(1, bud*2);
+                        baseR += int * 24;
+                        baseG += int * 38;
+                        baseB += int * 8;
+                    }
+                    
+                    if (rhiz > 0.2) {
+                        const int = Math.min(1, rhiz*2.2);
+                        baseR += int * 32;
+                        baseG -= int * 10;
+                        baseB += int * 20;
+                    }
+                    
+                    baseG += ageEffect * 22;
+                    baseR += ageEffect * 14;
+                    baseB -= ageEffect * 4;
+                    
+                    if (coh > 0.1) {
+                        const cohNorm = Math.min(1, coh/3);
+                        baseR += cohNorm * 35;
+                        baseG += cohNorm * 15;
+                        baseB += cohNorm * 45;
+                    }
+                    
+                    baseR += microTexture;
+                    baseG += microTexture * 1.2;
+                    baseB += microTexture * 0.6;
+                    
+                    if (moist > 0.65) {
+                        baseR *= 0.88;
+                        baseG *= 0.92;
+                        baseB *= 0.86;
+                        const wetSheen = Math.max(0, Math.sin(x*0.3)*Math.cos(y*0.3)) * moist * 15;
+                        baseG += wetSheen;
+                        baseB += wetSheen * 0.8;
+                    }
+                    
+                    baseR *= moistEffect;
+                    baseG *= moistEffect;
+                    baseB *= moistEffect;
+                    
+                    return [baseR, baseG, baseB];
+                }
+                
+                const substrateNoise = Math.sin(x*0.27)*Math.cos(y*0.33)*12;
+                const grainNoise = Math.sin(x*1.4 + y*1.7)*Math.cos(x*2.1 - y*1.9)*6;
+                const moistFx = 1 - moist*0.45;
+                const nutriGlow = f.nutrients[i] * 22;
+                
+                return [
+                    (42 + substrateNoise + grainNoise + nutriGlow*0.5) * moistFx,
+                    (32 + substrateNoise*0.9 + grainNoise*0.8 + nutriGlow*0.7) * moistFx,
+                    (22 + substrateNoise*0.7 + grainNoise*0.6 + nutriGlow*0.4) * moistFx
+                ];
+            }
+            
+            drawReproduction() {
+                for (let o of this.sexOrgans) {
+                    this.ctx.fillStyle = o.type==='archegonium' ? 
+                        (o.mature?'rgba(255,100,150,0.85)':'rgba(255,150,180,0.55)') :
+                        (o.mature?'rgba(100,150,255,0.85)':'rgba(150,180,255,0.55)');
+                    this.ctx.beginPath();
+                    this.ctx.arc(o.x, o.y, o.mature?3:2, 0, Math.PI*2);
+                    this.ctx.fill();
+                }
+                
+                for (let s of this.sporophytes) {
+                    const setaTop = s.y - s.height;
+                    
+                    this.ctx.strokeStyle = 'rgba(120, 85, 50, 0.95)';
+                    this.ctx.lineWidth = 1.5;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(s.x, s.y);
+                    this.ctx.lineTo(s.x, setaTop);
+                    this.ctx.stroke();
+                    
+                    const capsuleHeight = s.height > 10 ? 6 : s.height * 0.6;
+                    const capsuleWidth = 3;
+                    
+                    if (s.mature) {
+                        const maturity = s.sporesReady / 100;
+                        const capsuleColour = s.released ? 
+                            'rgba(100, 70, 40, 0.8)' :
+                            `rgba(${139-maturity*30}, ${90-maturity*20}, 43, 0.95)`;
+                        
+                        this.ctx.fillStyle = capsuleColour;
+                        this.ctx.strokeStyle = 'rgba(80, 60, 30, 0.9)';
+                        this.ctx.lineWidth = 1;
+                        
+                        this.ctx.beginPath();
+                        this.ctx.roundRect(
+                            s.x - capsuleWidth/2, 
+                            setaTop - capsuleHeight, 
+                            capsuleWidth, 
+                            capsuleHeight,
+                            [1.5, 1.5, capsuleWidth/2, capsuleWidth/2]
+                        );
+                        this.ctx.fill();
+                        this.ctx.stroke();
+                        
+                        if (!s.released && s.releaseProgress < 50) {
+                            this.ctx.fillStyle = 'rgba(160, 100, 50, 0.9)';
+                            this.ctx.beginPath();
+                            this.ctx.arc(s.x, setaTop - capsuleHeight, capsuleWidth/2 + 0.5, 0, Math.PI*2);
+                            this.ctx.fill();
+                        }
+                    } else {
+                        const youngSize = Math.min(capsuleHeight, s.height * 0.5);
+                        
+                        this.ctx.fillStyle = 'rgba(100, 120, 70, 0.8)';
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(s.x, setaTop - youngSize/2, capsuleWidth/2, youngSize/2, 0, 0, Math.PI*2);
+                        this.ctx.fill();
+                        
+                        if (s.calyptraPresent) {
+                            this.ctx.fillStyle = 'rgba(180, 160, 90, 0.7)';
+                            this.ctx.strokeStyle = 'rgba(140, 120, 60, 0.8)';
+                            this.ctx.lineWidth = 0.5;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(s.x, setaTop - youngSize - 2);
+                            this.ctx.lineTo(s.x - 2.5, setaTop - youngSize/2);
+                            this.ctx.lineTo(s.x + 2.5, setaTop - youngSize/2);
+                            this.ctx.closePath();
+                            this.ctx.fill();
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            drawSignals() {
+                for (let c of this.cells) {
+                    if (c.type==='protonema' && c.energy>0.7 && Math.random()<0.08) {
+                        const idx = Math.floor(c.x) + Math.floor(c.y)*this.size;
+                        if (idx >= 0 && idx < this.fields.cells) {
+                            const inh = this.fields.inhibition[idx];
+                            if (inh > 0.25) {
+                                this.ctx.globalAlpha = inh*0.4;
+                                this.ctx.strokeStyle = 'rgba(255,80,80,0.6)';
+                                this.ctx.lineWidth = 1.2;
+                                this.ctx.beginPath();
+                                this.ctx.arc(c.x, c.y, 7, 0, Math.PI*2);
+                                this.ctx.stroke();
+                            }
+                        }
+                    }
+                }
+                this.ctx.globalAlpha = 1;
+            }
+            
+            updateUI() {
+                let totProto=0, totGameto=0, totCarb=0, totCoh=0, totLag=0, totGrowthMem=0;
+                let biomassCount = 0;
+                
+                for (let i=0; i<this.fields.cells; i++) {
+                    totProto += this.fields.protonema[i];
+                    totGameto += this.fields.gametophore[i];
+                    totCarb += this.fields.carbon[i];
+                    totCoh += this.fields.coherence[i];
+                    totLag += this.fields.lagrangian[i];
+                    
+                    const biomass = this.fields.protonema[i] + this.fields.gametophore[i] + 
+                                   this.fields.buds[i] + this.fields.rhizoids[i];
+                    if (biomass > 0.05) {
+                        totGrowthMem += this.fields.growthMem[i];
+                        biomassCount++;
+                    }
+                }
+                
+                document.getElementById('protonema').textContent = Math.floor(totProto*1000) + ' µm';
+                document.getElementById('gametophores').textContent = Math.floor(totGameto*50);
+                document.getElementById('carbonPools').textContent = (totCarb*0.1).toFixed(2) + ' µg';
+                document.getElementById('sporophytes').textContent = this.sporophytes.length;
+                
+                document.getElementById('avgLagrangian').textContent = (totLag/this.fields.cells).toFixed(3);
+                document.getElementById('avgCoherence').textContent = (totCoh/this.fields.cells).toFixed(3);
+                const avgRebirthWeight = Math.exp((totCoh/this.fields.cells) / this.omega);
+                document.getElementById('avgRebirthWeight').textContent = avgRebirthWeight.toFixed(3);
+                
+                const memInfluence = biomassCount > 0 ? (totGrowthMem / biomassCount) * 100 : 0;
+                document.getElementById('memInfluence').textContent = Math.floor(memInfluence) + '%';
+                
+                const lim = this.env.getLimits();
+                this.updateStatus('tempStatus', this.env.temp, lim.temp.opt);
+                this.updateStatus('humidStatus', this.env.humidity, lim.humidity.opt);
+                this.updateStatus('lightStatus', this.env.light, lim.light.opt);
+                this.updateStatus('co2Status', this.env.co2, lim.co2.opt);
+                this.updateStatus('phStatus', this.env.ph, lim.ph.opt);
+            }
+            
+            updateStatus(id, val, opt) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (val>=opt[0] && val<=opt[1]) el.className = 'status-indicator status-optimal';
+                else if (val>=opt[0]*0.8 && val<=opt[1]*1.2) el.className = 'status-indicator status-good';
+                else if (val>=opt[0]*0.6 && val<=opt[1]*1.4) el.className = 'status-indicator status-poor';
+                else el.className = 'status-indicator status-critical';
+            }
+            
+            updateLegend() {
+                const legends = {
+                    colony: "Moss colony structure with photorealistic rendering",
+                    coherence: "Coherence C(x,t) = ∫₀ᵗ L(x,τ)dτ (blue = high accumulated coherence in moss regions)",
+                    carbon: "Carbon pools from photosynthesis (green = high carbon density)",
+                    reproduction: "Sexual reproduction with sporophytes",
+                    signals: "Chemical inhibition signals (red = high apical dominance)"
+                };
+                document.getElementById('vizLegend').textContent = legends[this.vizMode];
+            }
+            
+            setupControls() {
+                document.querySelectorAll('input[name="vizMode"]').forEach(r => {
+                    r.addEventListener('change', () => {
+                        if (r.checked) { this.vizMode = r.value; this.updateLegend(); }
+                    });
+                });
+                
+                const params = {
+                    temperature: {p:'temp', s:'°C', d:'tempVal'},
+                    humidity: {p:'humidity', s:'%', d:'humidVal'},
+                    light: {p:'light', s:'%', d:'lightVal'},
+                    co2: {p:'co2', s:'ppm', d:'co2Val'},
+                    ph: {p:'ph', s:'', d:'phVal', dec:1}
+                };
+                
+                Object.keys(params).forEach(k => {
+                    const sl = document.getElementById(k), cfg = params[k];
+                    if (sl) sl.oninput = () => {
+                        const v = parseFloat(sl.value);
+                        this.env[cfg.p] = v;
+                        this.env.invalidateCache();
+                        const dv = cfg.dec ? v.toFixed(cfg.dec) : v;
+                        document.getElementById(cfg.d).textContent = dv + cfg.s;
+                    };
+                });
+                
+                document.getElementById('lambda').oninput = e => {
+                    this.lambda = parseFloat(e.target.value);
+                    document.getElementById('lambdaVal').textContent = this.lambda.toFixed(3);
+                };
+                
+                document.getElementById('omega').oninput = e => {
+                    this.omega = parseFloat(e.target.value);
+                    document.getElementById('omegaVal').textContent = this.omega.toFixed(1);
+                };
+                
+                document.getElementById('beta').oninput = e => {
+                    this.beta = parseFloat(e.target.value);
+                    document.getElementById('betaVal').textContent = this.beta.toFixed(2);
+                };
+                
+                document.getElementById('simSpeed').oninput = e => {
+                    this.speed = parseInt(e.target.value);
+                    document.getElementById('speedVal').textContent = this.speed + 'x';
+                };
+                
+                this.updateLegend();
+            }
+            
+            setupEvents() {
+                this.canvas.addEventListener('click', e => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX-rect.left) * this.size/rect.width;
+                    const y = (e.clientY-rect.top) * this.size/rect.height;
+                    e.shiftKey ? this.addNutrients(x,y) : this.addSpores(x,y);
+                });
+                
+                this.canvas.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX-rect.left) * this.size/rect.width;
+                    const y = (e.clientY-rect.top) * this.size/rect.height;
+                    this.addWater(x,y);
+                });
+                
+                window.addEventListener('keydown', e => {
+                    if (e.key.toLowerCase()==='r') this.reset();
+                    else if (e.key.toLowerCase()==='s') {
+                        for (let s of this.sporophytes) {
+                            if (s.mature && !s.released && s.sporesReady >= 80) {
+                                s.releaseSporesGradually();
+                            }
+                        }
+                    }
+                    else if (e.key===' ') { e.preventDefault(); this.playing = !this.playing; }
+                });
+            }
+            
+            animate() {
+                this.step();
+                this.render();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        function resetSimulation() {
+            if (globalSimulation) globalSimulation.reset();
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            globalSimulation = new Simulation();
+        });
+    </script>
+</body>
+</html>

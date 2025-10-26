@@ -1,0 +1,3319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta viewport="width=device-width, initial-scale=1.0">
+    <title>🦇 Enhanced CRR Bat Colony</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e0e8f0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .simulation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Enhanced Background Elements */
+        .night-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 85% 15%, rgba(30, 30, 80, 0.4) 0%, transparent 60%);
+            z-index: 1;
+        }
+
+        .moon {
+            position: absolute;
+            top: 12%;
+            right: 12%;
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle at 30% 30%, #f8fafc 0%, #e2e8f0 60%, #d1d5db 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 60px rgba(248, 250, 252, 0.8),
+                0 0 120px rgba(139, 92, 246, 0.5),
+                0 0 240px rgba(139, 92, 246, 0.2);
+            animation: moonPulse 4s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        @keyframes moonPulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 60px rgba(248, 250, 252, 0.8),
+                    0 0 120px rgba(139, 92, 246, 0.5),
+                    0 0 240px rgba(139, 92, 246, 0.2);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 80px rgba(248, 250, 252, 1.0),
+                    0 0 160px rgba(139, 92, 246, 0.6),
+                    0 0 320px rgba(139, 92, 246, 0.25);
+            }
+        }
+
+        /* Bioluminescent Ocean Canvas */
+        .bioluminescent-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1.5;
+        }
+
+        /* Network Visualization Canvas */
+        .network-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 3.5;
+        }
+
+        /* Bat Simulation Layer */
+        .bat-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            z-index: 4;
+        }
+
+        /* Collapsible Control System */
+        .control-toggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(5, 10, 25, 0.95);
+            border: 2px solid rgba(139, 92, 246, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            color: #8b5cf6;
+            transition: all 0.3s ease;
+            z-index: 11;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .control-toggle:hover {
+            background: rgba(139, 92, 246, 0.2);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transform: scale(1.1);
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(5, 10, 25, 0.95);
+            border: 1px solid rgba(100, 80, 200, 0.4);
+            border-radius: 12px;
+            min-width: 320px;
+            max-height: 85vh;
+            overflow-y: auto;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+            opacity: 0;
+            transform: scale(0.8) translateX(-50px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .control-panel.expanded {
+            opacity: 1;
+            transform: scale(1) translateX(0);
+            pointer-events: all;
+        }
+
+        .control-section {
+            border-bottom: 1px solid rgba(150, 100, 200, 0.2);
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(20, 30, 50, 0.8);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.3s ease;
+        }
+
+        .section-header:hover {
+            background: rgba(30, 40, 60, 0.9);
+        }
+
+        .section-title {
+            color: #d8b4fe;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-toggle {
+            color: #8b5cf6;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            padding: 20px;
+            transition: all 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+            overflow: hidden;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .control-label {
+            color: #c8b5e3;
+            flex: 1;
+        }
+
+        .control-value {
+            color: #8b5cf6;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #374151;
+            border-radius: 2px;
+            outline: none;
+            margin: 8px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #8b5cf6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Network Visualization Controls */
+        .network-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .network-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(15, 20, 40, 0.6);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .network-option:hover {
+            background: rgba(25, 30, 50, 0.8);
+        }
+
+        .network-option input[type="checkbox"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #8b5cf6;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .network-option input[type="checkbox"]:checked {
+            background: #8b5cf6;
+        }
+
+        .network-option input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 10px;
+            top: -2px;
+            left: 2px;
+        }
+
+        .network-label {
+            color: #d8b4fe;
+            font-size: 11px;
+            flex: 1;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 6px;
+            color: #e0e8f0;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        button.active {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: rgba(15, 20, 40, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #d8b4fe;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+
+        .math-display {
+            background: rgba(0, 5, 20, 0.9);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .equation {
+            color: #c4b5fd;
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        .rna-display {
+            background: rgba(0, 5, 20, 0.8);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+
+        .rna-sequence {
+            color: #4ade80;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 3px 0;
+        }
+
+        .crr-status {
+            background: rgba(20, 0, 40, 0.8);
+            border: 1px solid rgba(139, 92, 246, 0.6);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+
+        .crr-metric {
+            color: #fbbf24;
+            font-weight: bold;
+            margin: 3px 0;
+        }
+
+        .audio-status {
+            color: #4ade80;
+            font-size: 10px;
+            margin: 8px 0;
+            padding: 6px;
+            background: rgba(0, 20, 10, 0.5);
+            border-radius: 4px;
+        }
+
+        .hunt-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(139, 92, 246, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: none;
+            animation: huntPulse 0.8s infinite;
+            z-index: 12;
+        }
+
+        @keyframes huntPulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .audio-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(5, 10, 25, 0.95);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 12px;
+            min-width: 240px;
+            z-index: 11;
+        }
+
+        .audio-type {
+            font-weight: bold;
+            color: #8b5cf6;
+            margin-bottom: 8px;
+        }
+
+        .frequency-bar {
+            height: 6px;
+            background: #374151;
+            border-radius: 3px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .frequency-fill {
+            height: 100%;
+            transition: width 0.2s ease;
+            border-radius: 3px;
+        }
+
+        .audible { background: linear-gradient(90deg, #22c55e, #16a34a); }
+        .ultrasonic { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+        .click-instruction {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(5, 10, 25, 0.9);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #c8b5e3;
+            animation: fadeInOut 3s ease-in-out infinite;
+            z-index: 11;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* Network Legend */
+        .network-legend {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: rgba(5, 10, 25, 0.9);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 10px;
+            z-index: 11;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .network-legend.visible {
+            opacity: 1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .sonar-line { background: rgba(139, 92, 246, 0.7); }
+        .prey-line { background: rgba(34, 197, 94, 0.7); }
+        .comm-line { background: rgba(239, 68, 68, 0.7); }
+        .memory-line { background: rgba(251, 191, 36, 0.7); }
+
+        /* Star Control Indicator */
+        .star-indicator {
+            position: absolute;
+            bottom: 200px;
+            right: 20px;
+            background: rgba(5, 10, 25, 0.95);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 12px;
+            min-width: 200px;
+            z-index: 11;
+        }
+
+        .star-title {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 8px;
+        }
+
+        .star-status {
+            color: #e6d86b;
+            font-size: 10px;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="simulation-container">
+        <!-- Background Layer -->
+        <div class="night-background"></div>
+        <div class="moon" id="moonElement"></div>
+        
+        <!-- Bioluminescent Ocean Canvas -->
+        <canvas class="bioluminescent-canvas" id="bioluminescentCanvas"></canvas>
+        
+        <!-- Network Visualization Canvas -->
+        <canvas class="network-canvas" id="networkCanvas"></canvas>
+        
+        <!-- Bat Simulation Canvas -->
+        <canvas class="bat-canvas" id="batCanvas"></canvas>
+        
+        <!-- UI Elements -->
+        <div class="hunt-indicator" id="huntAlert">🦇 HUNTING ACTIVE</div>
+
+        
+        <div class="click-instruction">
+            🖱️ Click anywhere to release insects for the bats to hunt!
+        </div>
+
+        <!-- Collapsible Control System -->
+        <div class="control-toggle" id="controlToggle">+</div>
+        
+        <div class="control-panel" id="controlPanel">
+            <!-- Audio System -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('audio')">
+                    <div class="section-title">🔊 Audio System</div>
+                    <div class="section-toggle" id="audio-toggle">▼</div>
+                </div>
+                <div class="section-content" id="audio-content">
+                    <div class="button-group">
+                        <button id="audio-enable-btn" class="active">🔊 Enable Audio</button>
+                        <button id="ultrasound-mode-btn">🔊 Ultrasound Mode</button>
+                    </div>
+                    
+                    <div class="control-row">
+                        <span class="control-label">Master Volume:</span>
+                        <span class="control-value" id="volume-value">70%</span>
+                    </div>
+                    <input type="range" id="volume-slider" min="0" max="100" step="5" value="70">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Echolocation Volume:</span>
+                        <span class="control-value" id="echo-volume-value">50%</span>
+                    </div>
+                    <input type="range" id="echo-volume-slider" min="0" max="100" step="5" value="50">
+                    
+                    <div class="audio-status" id="audio-status">Audio Context: Initializing...</div>
+                </div>
+            </div>
+
+            <!-- Network Visualization -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('network')">
+                    <div class="section-title">🕸️ Network Visualization</div>
+                    <div class="section-toggle" id="network-toggle">▼</div>
+                </div>
+                <div class="section-content" id="network-content">
+                    <div class="network-controls">
+                        <div class="network-option">
+                            <input type="checkbox" id="show-sonar">
+                            <label class="network-label" for="show-sonar">Sonar Networks</label>
+                        </div>
+                        <div class="network-option">
+                            <input type="checkbox" id="show-prey">
+                            <label class="network-label" for="show-prey">Prey Detection</label>
+                        </div>
+                        <div class="network-option">
+                            <input type="checkbox" id="show-communication">
+                            <label class="network-label" for="show-communication">Communication Links</label>
+                        </div>
+                        <div class="network-option">
+                            <input type="checkbox" id="show-memory">
+                            <label class="network-label" for="show-memory">Memory Traces</label>
+                        </div>
+                    </div>
+                    
+                    <div class="control-row">
+                        <span class="control-label">Network Opacity:</span>
+                        <span class="control-value" id="network-opacity-value">60%</span>
+                    </div>
+                    <input type="range" id="network-opacity-slider" min="10" max="100" step="5" value="60">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Link Distance:</span>
+                        <span class="control-value" id="link-distance-value">120</span>
+                    </div>
+                    <input type="range" id="link-distance-slider" min="50" max="250" step="10" value="120">
+                </div>
+            </div>
+
+            <!-- Non-Markovian Stars -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('stars')">
+                    <div class="section-title">⭐ Non-Markovian Stars</div>
+                    <div class="section-toggle" id="stars-toggle">▼</div>
+                </div>
+                <div class="section-content" id="stars-content">
+                    <div class="control-row">
+                        <span class="control-label">Star Time Flow:</span>
+                        <span class="control-value" id="star-time-value">3.0</span>
+                    </div>
+                    <input type="range" id="star-time-slider" min="0.1" max="3.0" step="0.1" value="3.0">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Star Density:</span>
+                        <span class="control-value" id="star-density-value">300</span>
+                    </div>
+                    <input type="range" id="star-density-slider" min="50" max="300" step="25" value="300">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Memory Depth:</span>
+                        <span class="control-value" id="star-memory-value">1.0</span>
+                    </div>
+                    <input type="range" id="star-memory-slider" min="0.2" max="1.0" step="0.1" value="1.0">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Sparkle Intensity:</span>
+                        <span class="control-value" id="star-sparkle-value">3.0</span>
+                    </div>
+                    <input type="range" id="star-sparkle-slider" min="0.5" max="3.0" step="0.1" value="3.0">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Reflection Strength:</span>
+                        <span class="control-value" id="star-reflection-value">0.5</span>
+                    </div>
+                    <input type="range" id="star-reflection-slider" min="0.3" max="2.0" step="0.1" value="0.5">
+                </div>
+            </div>
+
+            <!-- Moonlight Controls (Reintroduced) -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('moonlight')">
+                    <div class="section-title">🌙 UCF Coherence Moonlight</div>
+                    <div class="section-toggle" id="moonlight-toggle">▼</div>
+                </div>
+                <div class="section-content" id="moonlight-content">
+                    <div class="control-row">
+                        <span class="control-label">Moonlight Intensity:</span>
+                        <span class="control-value" id="moonlight-intensity-value">1.0</span>
+                    </div>
+                    <input type="range" id="moonlight-intensity-slider" min="0.1" max="1.0" step="0.05" value="1.0">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Atmospheric Scattering:</span>
+                        <span class="control-value" id="atmospheric-scattering-value">0.8</span>
+                    </div>
+                    <input type="range" id="atmospheric-scattering-slider" min="0.2" max="1.0" step="0.05" value="0.8">
+                    
+                    <div class="control-row">
+                        <span class="control-label">UCF Interference:</span>
+                        <span class="control-value" id="interference-value">80%</span>
+                    </div>
+                    <input type="range" id="interference-slider" min="10" max="100" step="5" value="80">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Ocean Wave Amplitude:</span>
+                        <span class="control-value" id="wave-amplitude-value">0.8</span>
+                    </div>
+                    <input type="range" id="wave-amplitude-slider" min="0.1" max="0.8" step="0.05" value="0.8">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Wave Speed:</span>
+                        <span class="control-value" id="wave-speed-value">2.5</span>
+                    </div>
+                    <input type="range" id="wave-speed-slider" min="0.3" max="2.5" step="0.1" value="2.5">
+                </div>
+            </div>
+
+            <!-- Bioluminescent Ocean Controls -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('bioluminescent')">
+                    <div class="section-title">🌊 Bioluminescent Ocean</div>
+                    <div class="section-toggle" id="bioluminescent-toggle">▼</div>
+                </div>
+                <div class="section-content" id="bioluminescent-content">
+                    <div class="control-row">
+                        <span class="control-label">Wave Energy E:</span>
+                        <span class="control-value" id="wave-energy-value">0.99</span>
+                    </div>
+                    <input type="range" id="wave-energy-slider" min="0.1" max="2" step="0.01" value="0.99">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Plankton Density ρ:</span>
+                        <span class="control-value" id="plankton-density-value">0.00</span>
+                    </div>
+                    <input type="range" id="plankton-density-slider" min="0" max="1" step="0.01" value="0.00">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Memory τ:</span>
+                        <span class="control-value" id="ocean-memory-value">1.00</span>
+                    </div>
+                    <input type="range" id="ocean-memory-slider" min="0.1" max="1" step="0.01" value="1.00">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Ignition Threshold Ω:</span>
+                        <span class="control-value" id="ignition-threshold-value">0.93</span>
+                    </div>
+                    <input type="range" id="ignition-threshold-slider" min="0.1" max="1" step="0.01" value="0.93">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Glow Intensity:</span>
+                        <span class="control-value" id="glow-intensity-value">5.00</span>
+                    </div>
+                    <input type="range" id="glow-intensity-slider" min="1" max="5" step="0.01" value="5.00">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Moon Influence:</span>
+                        <span class="control-value" id="moon-influence-value">1.5</span>
+                    </div>
+                    <input type="range" id="moon-influence-slider" min="0.5" max="3.0" step="0.1" value="1.5">
+                </div>
+            </div>
+
+            <!-- CRR Parameters -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('crr')">
+                    <div class="section-title">🧬 CRR Hunting Parameters</div>
+                    <div class="section-toggle" id="crr-toggle">▼</div>
+                </div>
+                <div class="section-content" id="crr-content">
+                    <div class="control-row">
+                        <span class="control-label">Hunt Coherence Ω:</span>
+                        <span class="control-value" id="omega-value">1.5</span>
+                    </div>
+                    <input type="range" id="omega-slider" min="0.3" max="3.0" step="0.1" value="1.5">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Memory Density L(x,τ):</span>
+                        <span class="control-value" id="memory-density-value">0.2</span>
+                    </div>
+                    <input type="range" id="memory-density-slider" min="0.2" max="2.5" step="0.1" value="0.2">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Hunt Rupture Threshold:</span>
+                        <span class="control-value" id="rupture-threshold-value">2.7</span>
+                    </div>
+                    <input type="range" id="rupture-threshold-slider" min="0.8" max="3.0" step="0.1" value="2.7">
+                    
+                    <div class="control-row">
+                        <span class="control-label">Memory Window (s):</span>
+                        <span class="control-value" id="memory-window-value">8.5</span>
+                    </div>
+                    <input type="range" id="memory-window-slider" min="1.0" max="10.0" step="0.5" value="8.5">
+                </div>
+            </div>
+
+            <!-- Colony & Genetics -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('colony')">
+                    <div class="section-title">🦇 Colony & Genetics</div>
+                    <div class="section-toggle" id="colony-toggle">▼</div>
+                </div>
+                <div class="section-content" id="colony-content">
+                    <div class="control-row">
+                        <span class="control-label">Colony Size:</span>
+                        <span class="control-value" id="population-value">120</span>
+                    </div>
+                    <input type="range" id="population-slider" min="40" max="300" step="20" value="120">
+                    
+                    <div class="control-row">
+                        <span class="control-label">RNA Mutation Rate:</span>
+                        <span class="control-value" id="mutation-rate-value">0.025</span>
+                    </div>
+                    <input type="range" id="mutation-rate-slider" min="0.005" max="0.1" step="0.005" value="0.025">
+                    
+                    <div class="button-group">
+                        <button id="evolve-btn">🧬 Evolve Hunters</button>
+                        <button id="reset-genetics-btn">🔄 Reset Colony</button>
+                        <button id="clear-insects-btn">🧹 Clear Insects</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="control-section">
+                <div class="section-header" onclick="toggleSection('stats')">
+                    <div class="section-title">📊 Hunt Statistics</div>
+                    <div class="section-toggle" id="stats-toggle">▼</div>
+                </div>
+                <div class="section-content" id="stats-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Active Bats</div>
+                            <div class="stat-value" id="active-bats">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Prey Count</div>
+                            <div class="stat-value" id="prey-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Successful Hunts</div>
+                            <div class="stat-value" id="successful-hunts">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">RNA Generation</div>
+                            <div class="stat-value" id="generation">1</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Ruptures</div>
+                            <div class="stat-value" id="total-ruptures">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Avg Coherence</div>
+                            <div class="stat-value" id="avg-coherence">0.000</div>
+                        </div>
+                    </div>
+                    
+                    <div class="math-display">
+                        <div class="equation">C(x) = ∫ L(x,τ) dτ</div>
+                        <div class="equation">δ(t-t₀)</div>
+                        <div class="equation">R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ</div>
+                        <div class="equation">Current Ω: <span id="current-omega">1.5</span></div>
+                    </div>
+
+                    <div class="crr-status">
+                        <div style="color: #fbbf24; font-weight: bold; margin-bottom: 8px;">🧠 CRR System Status:</div>
+                        <div class="crr-metric" id="crr-memory-integration">Memory Integration: Active</div>
+                        <div class="crr-metric" id="crr-rupture-detection">Rupture Detection: Monitoring</div>
+                        <div class="crr-metric" id="crr-regeneration">Regeneration: Functional</div>
+                        <div class="crr-metric" id="crr-non-markovian">Non-Markovian: <span id="markov-status">Enabled</span></div>
+                    </div>
+
+                    <div class="rna-display">
+                        <div style="color: #4ade80; font-weight: bold; margin-bottom: 8px;">🧬 Hunter RNA Sequences:</div>
+                        <div class="rna-sequence" id="rna-hunting">UUGCAAGUUCG</div>
+                        <div class="rna-sequence" id="rna-echolocation">CGAUUCGGAUU</div>
+                        <div class="rna-sequence" id="rna-predation">AGUUCGCGUUC</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Legend -->
+        <div class="network-legend" id="networkLegend">
+            <div style="color: #d8b4fe; font-weight: bold; margin-bottom: 8px;">Network Legend</div>
+            <div class="legend-item">
+                <div class="legend-color sonar-line"></div>
+                <span>Sonar Networks</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color prey-line"></div>
+                <span>Prey Detection</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color comm-line"></div>
+                <span>Communication Links</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color memory-line"></div>
+                <span>Memory Traces</span>
+            </div>
+        </div>
+
+        <div class="audio-indicator">
+            <div class="audio-type" id="audio-mode">AUDIBLE SOUNDS ACTIVE</div>
+            <div>
+                <div style="font-size: 10px; color: #d8b4fe;">Wing Beats (20-200 Hz)</div>
+                <div class="frequency-bar"><div class="frequency-fill audible" id="wingbeat-bar"></div></div>
+            </div>
+            <div>
+                <div style="font-size: 10px; color: #d8b4fe;">Echolocation (20-80 kHz → 2-8 kHz)</div>
+                <div class="frequency-bar"><div class="frequency-fill ultrasonic" id="echolocation-bar"></div></div>
+            </div>
+            <div style="font-size: 10px; color: #c8b5e3; margin-top: 8px;">
+                Bats in range: <span id="audio-bat-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global function for collapsible sections
+        function toggleSection(sectionName) {
+            const content = document.getElementById(sectionName + '-content');
+            const toggle = document.getElementById(sectionName + '-toggle');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.classList.remove('collapsed');
+                toggle.textContent = '▼';
+            } else {
+                content.classList.add('collapsed');
+                toggle.classList.add('collapsed');
+                toggle.textContent = '▶';
+            }
+        }
+
+        // Enhanced CRR Bat Colony Simulation with True Non-Markovian Implementation and Bioluminescent Ocean
+        class EnhancedCRRBatColony {
+            constructor() {
+                this.setupCanvases();
+                this.initializeBioluminescentOcean();
+                this.initializeWebGL();
+                this.initializeAudio();
+                
+                // CRR Parameters (now actually functional) - Set to User's Precise Settings
+                this.omega = 1.5;
+                this.memoryDensity = 0.2;
+                this.ruptureThreshold = 2.7;
+                this.memoryWindow = 8.5; // seconds
+                
+                // Bioluminescent Ocean Parameters - Set to User's Precise Settings
+                this.oceanParams = {
+                    E: 0.99,       // Wave energy
+                    rho: 0.00,     // Plankton density
+                    tau: 1.00,     // Memory
+                    Om: 0.93,      // Ignition threshold
+                    gI: 5.00,      // Glow intensity
+                    moonInfluence: 1.5  // Moon influence
+                };
+                
+                // Star Parameters (New)
+                this.starParams = {
+                    timeFlow: 3.0,
+                    density: 300,
+                    memoryDepth: 1.0,
+                    sparkleIntensity: 3.0,
+                    reflectionStrength: 0.5
+                };
+                
+                // Reintroduced Moon Sliding Parameters
+                this.moonlightIntensity = 1.0;
+                this.atmosphericScattering = 0.8;
+                this.interference = 0.8;
+                this.waveAmplitude = 0.8;
+                this.waveSpeed = 2.5;
+                
+                // Network Visualization
+                this.showSonar = false;
+                this.showPrey = false;
+                this.showCommunication = false;
+                this.showMemory = false;
+                this.networkOpacity = 0.6;
+                this.linkDistance = 120;
+                
+                // Colony parameters
+                this.populationSize = 120;
+                this.mutationRate = 0.025;
+                this.generation = 1;
+                
+                // Audio system
+                this.audioEnabled = false;
+                this.ultrasoundMode = false;
+                this.masterVolume = 0.7;
+                this.echoVolume = 0.5;
+                
+                // Simulation state
+                this.bats = [];
+                this.insects = [];
+                this.time = 0;
+                this.successfulHunts = 0;
+                this.totalRuptures = 0;
+                this.dominantRNA = {
+                    hunting: 'UUGCAAGUUCG',
+                    echolocation: 'CGAUUCGGAUU',
+                    predation: 'AGUUCGCGUUC'
+                };
+                
+                // UI state
+                this.controlsExpanded = false;
+                
+                this.initializeBats();
+                this.initializeEventListeners();
+                this.animate();
+            }
+
+            setupCanvases() {
+                this.bioluminescentCanvas = document.getElementById('bioluminescentCanvas');
+                this.networkCanvas = document.getElementById('networkCanvas');
+                this.batCanvas = document.getElementById('batCanvas');
+                
+                this.bioluminescentCanvas.width = window.innerWidth;
+                this.bioluminescentCanvas.height = window.innerHeight;
+                this.networkCanvas.width = window.innerWidth;
+                this.networkCanvas.height = window.innerHeight;
+                this.batCanvas.width = window.innerWidth;
+                this.batCanvas.height = window.innerHeight;
+                
+                this.networkCtx = this.networkCanvas.getContext('2d');
+                this.gl = this.batCanvas.getContext('webgl2');
+                
+                if (!this.gl) {
+                    alert('WebGL2 not supported');
+                    return;
+                }
+            }
+
+            initializeBioluminescentOcean() {
+                this.bioluminescentGL = this.bioluminescentCanvas.getContext('webgl2');
+                if (!this.bioluminescentGL) {
+                    console.error('WebGL2 not supported for bioluminescent ocean');
+                    return;
+                }
+
+                // Bioluminescent Ocean Vertex Shader
+                const bioVertexShaderSource = `#version 300 es
+                in vec2 p;
+                void main(){gl_Position=vec4(p,0,1);}`;
+
+                // Enhanced Bioluminescent Ocean Fragment Shader with Non-Markovian Stars
+                const bioFragmentShaderSource = `#version 300 es
+                precision highp float;
+                out vec4 o;
+                uniform vec2 r;
+                uniform float t,E,rho,tau,Om,gI,moonInfluence;
+                uniform vec2 moonPos;
+                uniform float starTimeFlow, starDensity, starMemoryDepth, starSparkleIntensity, starReflectionStrength;
+
+                #define TAU 6.283185
+
+                // Hash function for star positions
+                float hash21(vec2 p) {
+                    p = fract(p * vec2(233.34, 851.73));
+                    p += dot(p, p + 23.45);
+                    return fract(p.x * p.y);
+                }
+
+                // Non-Markovian star memory function
+                float starMemory(vec2 starPos, float time, float memoryDepth) {
+                    float memory = 0.0;
+                    float weight = 1.0;
+                    
+                    // Sample past brightness states
+                    for(int i = 0; i < 8; i++) {
+                        float pastTime = time - float(i) * 0.2 * memoryDepth;
+                        float pastBrightness = sin(pastTime * 0.8 + starPos.x * 10.0) * 
+                                             cos(pastTime * 0.6 + starPos.y * 8.0);
+                        memory += pastBrightness * weight;
+                        weight *= 0.85; // Exponential decay
+                    }
+                    
+                    return memory * 0.1;
+                }
+
+                // Enhanced star field with non-Markovian behavior
+                float nonMarkovianStars(vec2 uv, float time) {
+                    if (uv.y < 0.0) return 0.0; // Only in sky
+                    
+                    vec2 grid = floor(uv * starDensity * 0.1);
+                    vec2 local = fract(uv * starDensity * 0.1);
+                    
+                    float stars = 0.0;
+                    
+                    // Check multiple grid cells for stars
+                    for(int x = -1; x <= 1; x++) {
+                        for(int y = -1; y <= 1; y++) {
+                            vec2 cell = grid + vec2(float(x), float(y));
+                            float hash = hash21(cell);
+                            
+                            if(hash > 0.85) { // Only some cells have stars
+                                vec2 starPos = cell + vec2(hash21(cell + 0.1), hash21(cell + 0.2));
+                                vec2 starUV = starPos / (starDensity * 0.1);
+                                
+                                vec2 toStar = uv - starUV;
+                                float starDist = length(toStar);
+                                
+                                if(starDist < 0.008) {
+                                    // Non-Markovian brightness calculation
+                                    float memoryInfluence = starMemory(starPos, time * starTimeFlow, starMemoryDepth);
+                                    
+                                    // Current brightness based on position and time
+                                    float currentBrightness = sin(time * starTimeFlow * 1.2 + starPos.x * 12.0) * 
+                                                            cos(time * starTimeFlow * 0.9 + starPos.y * 10.0);
+                                    
+                                    // Combine memory and current state (non-Markovian)
+                                    float brightness = (currentBrightness + memoryInfluence * starMemoryDepth) * 0.5 + 0.5;
+                                    
+                                    // Enhanced sparkle effect with more dynamic variations
+                                    float sparkle = sin(time * starTimeFlow * 8.0 + hash * TAU) * 
+                                                   cos(time * starTimeFlow * 6.0 + hash * TAU * 1.3) *
+                                                   sin(time * starTimeFlow * 12.0 + hash * TAU * 0.7) * 0.33 + 0.67;
+                                    
+                                    // Add secondary sparkle layer for more brilliance
+                                    float sparkle2 = cos(time * starTimeFlow * 15.0 + hash * TAU * 2.1) * 
+                                                    sin(time * starTimeFlow * 9.0 + hash * TAU * 1.7) * 0.5 + 0.5;
+                                    
+                                    // Combine sparkles with enhanced intensity
+                                    sparkle = pow(sparkle * sparkle2, 2.5) * starSparkleIntensity * 1.2;
+                                    
+                                    // Star intensity with distance falloff
+                                    float intensity = (1.0 - starDist / 0.008) * brightness * (1.0 + sparkle);
+                                    
+                                    // Different star colors based on memory states
+                                    float colorPhase = memoryInfluence * 3.0 + hash * TAU;
+                                    stars += intensity * (0.8 + 0.4 * sin(colorPhase));
+                                }
+                            }
+                        }
+                    }
+                    
+                    return stars;
+                }
+
+                // Star reflections in water
+                float starReflections(vec2 uv, float time) {
+                    if (uv.y > 0.0) return 0.0; // Only in water
+                    
+                    // Mirror the y coordinate for reflection
+                    vec2 reflectUV = vec2(uv.x, -uv.y - 0.1);
+                    
+                    // Add wave distortion to reflections
+                    vec2 waveDistortion = vec2(
+                        sin(uv.x * 15.0 + time * 3.0) * 0.02,
+                        cos(uv.x * 12.0 + time * 2.5) * 0.015
+                    );
+                    
+                    reflectUV += waveDistortion;
+                    
+                    float reflection = nonMarkovianStars(reflectUV, time) * starReflectionStrength;
+                    
+                    // Fade reflection with depth
+                    float depth = abs(uv.y);
+                    reflection *= exp(-depth * 2.0);
+                    
+                    // Add ripple effects
+                    float ripple = sin(length(uv) * 20.0 + time * 4.0) * 0.1 + 0.9;
+                    reflection *= ripple;
+                    
+                    return reflection;
+                }
+
+                // True horizontal ripples across the sea surface
+                float wave(vec2 p, float t) {
+                    float h = 0.;
+                    // Primary horizontal wave fronts moving vertically (like real ocean waves)
+                    for(int i = 0; i < 6; i++) {
+                        float freq = 3.0 + float(i) * 2.0;
+                        float amp = E * 0.025 / (1. + float(i) * 0.6);
+                        
+                        // True horizontal waves - emphasize y-direction movement with horizontal fronts
+                        float angle = TAU * 0.25 + float(i) * 0.3; // 90 degrees + small variation (using TAU instead of PI)
+                        vec2 dir = vec2(sin(angle) * 0.2, cos(angle)); // Mostly y-direction
+                        
+                        // Fast horizontal wave movement
+                        h += amp * sin(dot(p, dir) * freq + t * (10.0 + float(i) * 2.0));
+                    }
+                    
+                    // Additional horizontal ripples at different scales
+                    h += E * 0.012 * sin(p.y * 12.0 + t * 18.0); // Pure horizontal fronts
+                    h += E * 0.010 * sin(p.y * 16.0 + p.x * 0.5 + t * 22.0); // Mostly horizontal
+                    h += E * 0.008 * sin(p.y * 20.0 - p.x * 0.3 + t * 26.0); // Fast horizontal waves
+                    h += E * 0.006 * sin(p.y * 24.0 + p.x * 0.4 + t * 30.0); // High frequency horizontal
+                    
+                    // Cross-directional ripples for complexity but still horizontal-dominant
+                    h += E * 0.015 * sin((p.y + p.x * 0.1) * 8.0 + t * 16.0);
+                    h += E * 0.012 * sin((p.y - p.x * 0.1) * 10.0 + t * 20.0);
+                    
+                    return h;
+                }
+
+                // Enhanced wave velocity for proper turbulence
+                vec2 wave_velocity(vec2 p, float t) {
+                    float h = 0.005;
+                    float dx = wave(p + vec2(h, 0), t) - wave(p - vec2(h, 0), t);
+                    float dy = wave(p + vec2(0, h), t) - wave(p - vec2(0, h), t);
+                    return vec2(dx, dy) / (2. * h) * 4.0; // Enhanced for better turbulence
+                }
+
+                // Enhanced mnemonic field
+                float UCF_L(vec2 p, float t) {
+                    float mem = 0.;
+                    for(int i = 0; i < 6; i++) {
+                        float dt = float(i) * 0.05;
+                        float past_t = t - dt;
+                        vec2 past_vel = wave_velocity(p, past_t);
+                        mem += length(past_vel) * exp(-dt / tau);
+                    }
+                    return mem * 0.4;
+                }
+
+                // Enhanced rebirth operator
+                float rebirth(vec2 p, float t) {
+                    vec2 vel = wave_velocity(p, t);
+                    float turb = length(vel);
+                    float L = UCF_L(p, t);
+                    
+                    // Moon distance influence
+                    vec2 worldPos = (p * r.y / min(r.x, r.y)) + r * 0.5;
+                    float moonDist = distance(worldPos, moonPos);
+                    float moonBoost = moonInfluence / (1.0 + moonDist * 0.0003);
+                    
+                    // Enhanced activation
+                    float activation = smoothstep(Om * 0.2, Om, (turb + L * 0.6) * moonBoost);
+                    
+                    // Fast oscillating sparkle
+                    float osc = sin(turb / Om * TAU * 3.0 + t * 8.0 + moonDist * 0.005) * exp(-turb / (Om * 1.5));
+                    
+                    return activation * (1.3 + osc * 0.9 * moonBoost);
+                }
+
+                // Enhanced plankton with faster response
+                float plankton(vec2 p, float t) {
+                    vec2 grid = floor(p * 80.);
+                    vec2 local = fract(p * 80.) - 0.5;
+                    
+                    float n = fract(sin(dot(grid, vec2(42.1, 89.3))) * 43758.5);
+                    vec2 offset = (vec2(n, fract(n * 47.2)) - 0.5) * 0.2;
+                    
+                    float activation = rebirth(p + offset * 0.01, t);
+                    
+                    float d = length(local - offset);
+                    float glow = exp(-d * 35.) * activation * rho;
+                    
+                    // Faster temporal variation
+                    glow *= 1.3 + sin(t * 15. + n * TAU) * 0.5;
+                    
+                    return glow;
+                }
+
+                // Enhanced realistic moon reflection in water
+                float moonReflection(vec2 p, vec2 uv, float t) {
+                    vec2 worldPos = (uv * r.y / min(r.x, r.y)) + r * 0.5;
+                    vec2 moonWorldPos = moonPos;
+                    
+                    // Calculate reflection point - mirror moon position below horizon
+                    vec2 reflectionPoint = vec2(worldPos.x, r.y - (moonWorldPos.y - r.y * 0.5));
+                    float moonDist = distance(worldPos, reflectionPoint);
+                    
+                    // Wave distortion affects reflection strongly
+                    vec2 waveNormal = wave_velocity(p, t) * 1.2; // Stronger wave distortion
+                    vec2 distortedPos = worldPos + waveNormal * 80.0; // More visible distortion
+                    float distortedDist = distance(distortedPos, reflectionPoint);
+                    
+                    // Strong moon reflection with enhanced brightness
+                    float moonRefl = exp(-distortedDist * 0.006) * moonInfluence * 1.5;
+                    
+                    // Enhanced ripple caustics for visible moon path
+                    float caustics = sin(distortedDist * 0.08 + t * 8.0) * 0.5 + 0.5;
+                    caustics *= cos(distortedDist * 0.12 + t * 6.0) * 0.3 + 0.7;
+                    moonRefl *= caustics;
+                    
+                    // Enhanced Fresnel effect
+                    float fresnel = 1.0 - abs(uv.y + 0.5);
+                    moonRefl *= fresnel * fresnel * 2.0; // Stronger reflection
+                    
+                    // Add shimmering path effect
+                    float pathEffect = exp(-abs(worldPos.x - moonWorldPos.x) * 0.01) * 0.8;
+                    moonRefl += pathEffect * caustics * moonInfluence * 0.5;
+                    
+                    return moonRefl;
+                }
+
+                vec3 render(vec2 uv) {
+                    vec3 col = vec3(0.0);
+                    
+                    if (uv.y > 0.0) {
+                        // SKY RENDERING with Non-Markovian Stars
+                        vec3 skyColor = vec3(0.005, 0.01, 0.03);
+                        
+                        // Gradient sky
+                        float skyGradient = smoothstep(0.0, 1.0, uv.y);
+                        skyColor = mix(vec3(0.01, 0.02, 0.05), vec3(0.002, 0.005, 0.02), skyGradient);
+                        
+                        // Add stars
+                        float stars = nonMarkovianStars(uv, t);
+                        vec3 starColor = vec3(0.9, 0.95, 1.0) * stars;
+                        
+                        col = skyColor + starColor;
+                        
+                    } else {
+                        // OCEAN RENDERING
+                        vec2 p = uv * 6.0;
+                        float h = wave(p, t) * 0.15; // Much smaller wave height
+                        
+                        // Much darker base ocean for better sky integration
+                        vec3 ocean = vec3(0.001, 0.003, 0.008);
+                        
+                        // Subtle depth gradient
+                        float depth = 1. - smoothstep(-1., 1., uv.y + h * 0.2);
+                        ocean = mix(ocean, vec3(0., 0.001, 0.004), depth);
+                        
+                        // Bioluminescence
+                        float bio = 0.;
+                        for(int i = 0; i < 3; i++) {
+                            vec2 offset = vec2(sin(float(i) * 2.5), cos(float(i) * 2.5)) * 0.012;
+                            bio += plankton(p + offset, t + float(i) * 0.03);
+                        }
+                        
+                        // Bioluminescent glow
+                        vec3 glow_color = vec3(0.1, 0.5, 1.0) * bio * gI;
+                        
+                        // Realistic moon reflection
+                        float moonRefl = moonReflection(p, uv, t);
+                        vec3 moonReflColor = vec3(0.95, 0.98, 1.0) * moonRefl * 0.8;
+                        
+                        // Star reflections in water
+                        float starRefl = starReflections(uv, t);
+                        vec3 starReflColor = vec3(0.8, 0.9, 1.0) * starRefl;
+                        
+                        // Subtle wave highlights
+                        vec2 vel = wave_velocity(p, t);
+                        float highlight = smoothstep(0.4, 0.7, length(vel)) * 0.08;
+                        vec3 waveHighlight = vec3(0.05, 0.15, 0.25) * highlight;
+                        
+                        // Combine all elements
+                        col = ocean + glow_color + moonReflColor + starReflColor + waveHighlight;
+                        
+                        // Very subtle atmospheric effect near surface
+                        float atmo = exp(-abs(uv.y + 0.8) * 3.0) * 0.05;
+                        col += vec3(0., 0.03, 0.08) * atmo;
+                    }
+                    
+                    return col;
+                }
+
+                void main() {
+                    vec2 uv = (gl_FragCoord.xy - r * 0.5) / min(r.x, r.y) * 2.;
+                    
+                    vec3 col = render(uv);
+                    
+                    // Enhanced tone mapping for realistic water and sky
+                    col = 1. - exp(-col * 2.2);
+                    col = pow(col, vec3(0.8));
+                    
+                    // Subtle vignette
+                    float vig = 1. - length(uv * vec2(1.0, 0.3)) * 0.15;
+                    col *= vig;
+                    
+                    o = vec4(col, 1);
+                }`;
+
+                // Compile bioluminescent ocean shaders
+                this.bioVertexShader = this.compileBioShader(bioVertexShaderSource, this.bioluminescentGL.VERTEX_SHADER);
+                this.bioFragmentShader = this.compileBioShader(bioFragmentShaderSource, this.bioluminescentGL.FRAGMENT_SHADER);
+                this.bioProgram = this.createBioProgram(this.bioVertexShader, this.bioFragmentShader);
+
+                // Get uniform locations
+                this.bioUniforms = {
+                    r: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'r'),
+                    t: this.bioluminescentGL.getUniformLocation(this.bioProgram, 't'),
+                    E: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'E'),
+                    rho: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'rho'),
+                    tau: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'tau'),
+                    Om: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'Om'),
+                    gI: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'gI'),
+                    moonInfluence: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'moonInfluence'),
+                    moonPos: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'moonPos'),
+                    starTimeFlow: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'starTimeFlow'),
+                    starDensity: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'starDensity'),
+                    starMemoryDepth: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'starMemoryDepth'),
+                    starSparkleIntensity: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'starSparkleIntensity'),
+                    starReflectionStrength: this.bioluminescentGL.getUniformLocation(this.bioProgram, 'starReflectionStrength')
+                };
+
+                // Create geometry buffer for bioluminescent ocean
+                const bioBuffer = this.bioluminescentGL.createBuffer();
+                this.bioluminescentGL.bindBuffer(this.bioluminescentGL.ARRAY_BUFFER, bioBuffer);
+                this.bioluminescentGL.bufferData(this.bioluminescentGL.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), this.bioluminescentGL.STATIC_DRAW);
+                
+                this.bioVAO = this.bioluminescentGL.createVertexArray();
+                this.bioluminescentGL.bindVertexArray(this.bioVAO);
+                const bioLoc = this.bioluminescentGL.getAttribLocation(this.bioProgram, 'p');
+                this.bioluminescentGL.enableVertexAttribArray(bioLoc);
+                this.bioluminescentGL.vertexAttribPointer(bioLoc, 2, this.bioluminescentGL.FLOAT, false, 0, 0);
+            }
+
+            compileBioShader(source, type) {
+                const shader = this.bioluminescentGL.createShader(type);
+                this.bioluminescentGL.shaderSource(shader, source);
+                this.bioluminescentGL.compileShader(shader);
+                
+                if (!this.bioluminescentGL.getShaderParameter(shader, this.bioluminescentGL.COMPILE_STATUS)) {
+                    console.error('Bioluminescent shader compilation error:', this.bioluminescentGL.getShaderInfoLog(shader));
+                    return null;
+                }
+                return shader;
+            }
+
+            createBioProgram(vertexShader, fragmentShader) {
+                const program = this.bioluminescentGL.createProgram();
+                this.bioluminescentGL.attachShader(program, vertexShader);
+                this.bioluminescentGL.attachShader(program, fragmentShader);
+                this.bioluminescentGL.linkProgram(program);
+                
+                if (!this.bioluminescentGL.getProgramParameter(program, this.bioluminescentGL.LINK_STATUS)) {
+                    console.error('Bioluminescent program linking error:', this.bioluminescentGL.getProgramInfoLog(program));
+                    return null;
+                }
+                return program;
+            }
+
+            renderBioluminescentOcean() {
+                if (!this.bioluminescentGL || !this.bioProgram) return;
+
+                const moonPos = this.getMoonPosition();
+
+                this.bioluminescentGL.viewport(0, 0, this.bioluminescentCanvas.width, this.bioluminescentCanvas.height);
+                this.bioluminescentGL.clearColor(0, 0, 0, 1);
+                this.bioluminescentGL.clear(this.bioluminescentGL.COLOR_BUFFER_BIT);
+
+                this.bioluminescentGL.useProgram(this.bioProgram);
+                this.bioluminescentGL.bindVertexArray(this.bioVAO);
+
+                // Set uniforms
+                this.bioluminescentGL.uniform2f(this.bioUniforms.r, this.bioluminescentCanvas.width, this.bioluminescentCanvas.height);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.t, this.time * 0.02);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.E, this.oceanParams.E);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.rho, this.oceanParams.rho);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.tau, this.oceanParams.tau);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.Om, this.oceanParams.Om);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.gI, this.oceanParams.gI);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.moonInfluence, this.oceanParams.moonInfluence);
+                this.bioluminescentGL.uniform2f(this.bioUniforms.moonPos, moonPos.x, moonPos.y);
+                
+                // Star uniforms
+                this.bioluminescentGL.uniform1f(this.bioUniforms.starTimeFlow, this.starParams.timeFlow);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.starDensity, this.starParams.density);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.starMemoryDepth, this.starParams.memoryDepth);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.starSparkleIntensity, this.starParams.sparkleIntensity);
+                this.bioluminescentGL.uniform1f(this.bioUniforms.starReflectionStrength, this.starParams.reflectionStrength);
+
+                this.bioluminescentGL.drawArrays(this.bioluminescentGL.TRIANGLE_STRIP, 0, 4);
+            }
+
+            getMoonPosition() {
+                const moonElement = document.getElementById('moonElement');
+                const rect = moonElement.getBoundingClientRect();
+                return {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+            }
+
+            async initializeAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    const safeGainValue = (value) => Math.max(0.001, Math.min(1.0, isFinite(value) ? value : 0.5));
+                    
+                    this.masterGain = this.audioContext.createGain();
+                    this.masterGain.gain.setValueAtTime(safeGainValue(this.masterVolume), this.audioContext.currentTime);
+                    this.masterGain.connect(this.audioContext.destination);
+                    
+                    this.wingBeatGain = this.audioContext.createGain();
+                    this.wingBeatGain.gain.setValueAtTime(safeGainValue(0.3), this.audioContext.currentTime);
+                    this.wingBeatGain.connect(this.masterGain);
+                    
+                    this.echolocationGain = this.audioContext.createGain();
+                    this.echolocationGain.gain.setValueAtTime(safeGainValue(this.echoVolume), this.audioContext.currentTime);
+                    this.echolocationGain.connect(this.masterGain);
+                    
+                    this.createAmbientNightSound();
+                    document.getElementById('audio-status').textContent = 'Audio Context: Ready';
+                } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                    document.getElementById('audio-status').textContent = 'Audio Context: Failed';
+                }
+            }
+
+            createAmbientNightSound() {
+                try {
+                    const ambientOsc = this.audioContext.createOscillator();
+                    const ambientGain = this.audioContext.createGain();
+                    const ambientFilter = this.audioContext.createBiquadFilter();
+                    
+                    ambientOsc.type = 'sine';
+                    ambientOsc.frequency.setValueAtTime(40, this.audioContext.currentTime);
+                    
+                    ambientFilter.type = 'lowpass';
+                    ambientFilter.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                    
+                    ambientGain.gain.setValueAtTime(0.05, this.audioContext.currentTime);
+                    
+                    ambientOsc.connect(ambientFilter);
+                    ambientFilter.connect(ambientGain);
+                    ambientGain.connect(this.masterGain);
+                    
+                    ambientOsc.start();
+                    this.ambientOsc = ambientOsc;
+                } catch (error) {
+                    console.error('Ambient sound creation failed:', error);
+                }
+            }
+
+            initializeWebGL() {
+                // Enhanced Vertex shader with UCF properties and coherence lighting
+                const vertexShaderSource = `#version 300 es
+                    precision highp float;
+                    
+                    in vec2 a_position;
+                    in vec2 a_offset;
+                    in float a_rotation;
+                    in float a_coherence;
+                    in float a_wingPhase;
+                    in float a_size;
+                    in float a_type;
+                    
+                    uniform vec2 u_resolution;
+                    uniform float u_time;
+                    uniform vec2 u_moonPos;
+                    uniform float u_coherenceField;
+                    uniform float u_moonlightIntensity;
+                    
+                    out float v_coherence;
+                    out vec2 v_wingPos;
+                    out float v_wingPhase;
+                    out float v_moonDistance;
+                    out vec2 v_worldPos;
+                    out float v_type;
+                    out float v_ucfField;
+                    out float v_moonlightLevel;
+                    
+                    void main() {
+                        float c = cos(a_rotation);
+                        float s = sin(a_rotation);
+                        
+                        float scale = a_type < 0.5 ? (3.8 * a_size) : (0.9 * a_size);
+                        vec2 scaledPos = a_position * scale;
+                        
+                        vec2 rotatedPos = vec2(
+                            scaledPos.x * c - scaledPos.y * s,
+                            scaledPos.x * s + scaledPos.y * c
+                        );
+                        
+                        // Enhanced wing flapping with UCF influence
+                        float ucfInfluence = u_coherenceField * a_coherence;
+                        float wingFlap = a_type < 0.5 ? 
+                            sin(a_wingPhase + u_time * (12.0 + ucfInfluence * 2.0)) * (0.9 + ucfInfluence * 0.3) :
+                            sin(a_wingPhase + u_time * 28.0) * 0.4;
+                        
+                        if (abs(a_position.x) > 1.0) {
+                            rotatedPos.y += wingFlap * abs(a_position.x) * 0.7;
+                            rotatedPos.x *= (1.0 + wingFlap * 0.35);
+                        }
+                        
+                        vec2 worldPos = rotatedPos + a_offset;
+                        vec2 clipPos = ((worldPos / u_resolution) * 2.0 - 1.0) * vec2(1, -1);
+                        
+                        v_moonDistance = distance(worldPos, u_moonPos);
+                        v_coherence = a_coherence;
+                        v_wingPos = a_position;
+                        v_wingPhase = a_wingPhase;
+                        v_worldPos = worldPos;
+                        v_type = a_type;
+                        v_ucfField = ucfInfluence;
+                        
+                        // Calculate moonlight illumination level based on distance
+                        float distanceAttenuation = 1.0 / (1.0 + v_moonDistance * 0.0008);
+                        v_moonlightLevel = u_moonlightIntensity * distanceAttenuation;
+                        
+                        gl_Position = vec4(clipPos, 0.0, 1.0);
+                    }
+                `;
+
+                // Enhanced Fragment shader with coherence moonlight illumination
+                const fragmentShaderSource = `#version 300 es
+                    precision highp float;
+                    
+                    in float v_coherence;
+                    in vec2 v_wingPos;
+                    in float v_wingPhase;
+                    in float v_moonDistance;
+                    in vec2 v_worldPos;
+                    in float v_type;
+                    in float v_ucfField;
+                    in float v_moonlightLevel;
+                    
+                    uniform float u_time;
+                    uniform vec2 u_moonPos;
+                    uniform float u_interference;
+                    uniform float u_atmosphericScattering;
+                    uniform float u_waveAmplitude;
+                    
+                    out vec4 fragColor;
+                    
+                    void main() {
+                        vec3 color;
+                        
+                        // Atmospheric scattering factor
+                        float scatteringEffect = 1.0 - u_atmosphericScattering * 0.3;
+                        float moonlightReach = v_moonlightLevel * scatteringEffect;
+                        
+                        // Ocean wave influence on lighting
+                        float wavePhase = sin(v_worldPos.x * 0.008 + u_time * 0.3) * 
+                                         cos(v_worldPos.y * 0.006 + u_time * 0.25) * u_waveAmplitude;
+                        float waveInfluence = 1.0 + wavePhase * 0.2;
+                        
+                        if (v_type < 0.5) {
+                            // ENHANCED BAT RENDERING WITH COHERENCE MOONLIGHT ILLUMINATION
+                            color = vec3(0.0, 0.0, 0.0);
+                            
+                            // Base moonlight illumination with coherence enhancement
+                            float coherenceFieldBoost = v_coherence * (1.0 + v_ucfField);
+                            vec3 moonlight = vec3(0.65, 0.75, 0.95) * moonlightReach * coherenceFieldBoost * 0.8;
+                            
+                            // UCF interference creates dynamic lighting patterns with ocean influence
+                            float interferencePattern = sin(v_moonDistance * 0.02 + u_time * 0.5) * 
+                                                       cos(v_worldPos.x * 0.01 + u_time * 0.3) * 
+                                                       u_interference * waveInfluence;
+                            moonlight *= (1.0 + interferencePattern * 0.4);
+                            
+                            // Wing membrane vs body distinction with moonlight
+                            if (abs(v_wingPos.x) > 1.0) {
+                                // Wing membranes - more translucent, catch more moonlight
+                                color = vec3(0.04, 0.0, 0.0);
+                                moonlight *= (2.0 + v_ucfField * 0.7); // Wings catch more light
+                            } else {
+                                // Body - darker, less moonlight penetration
+                                color = vec3(0.02, 0.02, 0.02);
+                                moonlight *= (0.8 + v_ucfField * 0.3);
+                            }
+                            
+                            // Enhanced echolocation aura with moonlight interaction
+                            float echoGlow = v_coherence * (0.18 + v_ucfField * 0.12);
+                            vec3 sonarAura = vec3(0.45, 0.25, 0.85) * echoGlow;
+                            
+                            // UCF emergent wing pulse enhanced by moonlight
+                            float wingPulse = sin(v_wingPhase + v_ucfField * 2.0) * 0.12 + 0.88;
+                            
+                            // Combine all lighting: base color + moonlight + sonar + ambient
+                            color = color + moonlight + sonarAura + vec3(0.08 * moonlightReach);
+                            color *= wingPulse;
+                            
+                        } else {
+                            // ENHANCED INSECT RENDERING WITH COHERENCE MOONLIGHT
+                            color = vec3(0.42, 0.32, 0.12);
+                            
+                            // Moonlight on insect bodies - they're more reflective than bats
+                            vec3 insectMoonlight = vec3(0.85, 0.95, 1.05) * moonlightReach * 1.2;
+                            
+                            // UCF interference affects insect appearance with moonlight and wave influence
+                            float ucfDisturbance = sin(v_worldPos.x * 0.02 + u_time * 0.8) * 
+                                                  cos(v_worldPos.y * 0.02 + u_time * 0.6) * 
+                                                  u_interference * 0.3 * waveInfluence;
+                            
+                            // Enhanced wing shimmer with moonlight and UCF modulation
+                            if (abs(v_wingPos.x) > 0.6) {
+                                float shimmer = sin(v_wingPhase * 2.2 + u_time * 6.0 + ucfDisturbance) * 0.35 + 0.65;
+                                color *= shimmer;
+                                // Insect wings catch moonlight and shimmer
+                                color += vec3(0.25, 0.18, 0.12) * shimmer * moonlightReach * 1.5;
+                            }
+                            
+                            // Final moonlight application with atmospheric effects
+                            color += insectMoonlight * scatteringEffect + vec3(0.12, 0.12, 0.06) * moonlightReach;
+                            color *= (1.0 + ucfDisturbance);
+                        }
+                        
+                        fragColor = vec4(color, 1.0);
+                    }
+                `;
+
+                this.vertexShader = this.compileShader(vertexShaderSource, this.gl.VERTEX_SHADER);
+                this.fragmentShader = this.compileShader(fragmentShaderSource, this.gl.FRAGMENT_SHADER);
+                this.program = this.createProgram(this.vertexShader, this.fragmentShader);
+
+                this.attributeLocations = {
+                    position: this.gl.getAttribLocation(this.program, 'a_position'),
+                    offset: this.gl.getAttribLocation(this.program, 'a_offset'),
+                    rotation: this.gl.getAttribLocation(this.program, 'a_rotation'),
+                    coherence: this.gl.getAttribLocation(this.program, 'a_coherence'),
+                    wingPhase: this.gl.getAttribLocation(this.program, 'a_wingPhase'),
+                    size: this.gl.getAttribLocation(this.program, 'a_size'),
+                    type: this.gl.getAttribLocation(this.program, 'a_type')
+                };
+
+                this.uniformLocations = {
+                    resolution: this.gl.getUniformLocation(this.program, 'u_resolution'),
+                    time: this.gl.getUniformLocation(this.program, 'u_time'),
+                    moonPos: this.gl.getUniformLocation(this.program, 'u_moonPos'),
+                    coherenceField: this.gl.getUniformLocation(this.program, 'u_coherenceField'),
+                    interference: this.gl.getUniformLocation(this.program, 'u_interference'),
+                    moonlightIntensity: this.gl.getUniformLocation(this.program, 'u_moonlightIntensity'),
+                    atmosphericScattering: this.gl.getUniformLocation(this.program, 'u_atmosphericScattering'),
+                    waveAmplitude: this.gl.getUniformLocation(this.program, 'u_waveAmplitude')
+                };
+
+                // Enhanced creature geometry
+                const creatureVertices = new Float32Array([
+                    // Body triangles with better definition
+                    0, 2.2,  -0.9, -1.2,  0.9, -1.2,
+                    -0.9, -1.2,  0, -3.5,  0.9, -1.2,
+                    
+                    // Left wing membrane with enhanced structure
+                    -0.9, -1.2,  -4.5, 1.2,  -3.2, -2.4,
+                    -0.9, -1.2,  -3.2, -2.4,  -1.8, -1.8,
+                    
+                    // Right wing membrane with enhanced structure
+                    0.9, -1.2,  4.5, 1.2,  3.2, -2.4,
+                    0.9, -1.2,  3.2, -2.4,  1.8, -1.8,
+                    
+                    // Wing finger bones for realistic detail
+                    -0.9, -1.2,  -2.8, 0.6,  -2.6, -0.6,
+                    -2.8, 0.6,  -4.2, 0.9,  -4.0, -0.3,
+                    0.9, -1.2,  2.8, 0.6,  2.6, -0.6,
+                    2.8, 0.6,  4.2, 0.9,  4.0, -0.3
+                ]);
+
+                this.geometryBuffer = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.geometryBuffer);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, creatureVertices, this.gl.STATIC_DRAW);
+
+                // Instance buffers
+                this.offsetBuffer = this.gl.createBuffer();
+                this.rotationBuffer = this.gl.createBuffer();
+                this.coherenceBuffer = this.gl.createBuffer();
+                this.wingPhaseBuffer = this.gl.createBuffer();
+                this.sizeBuffer = this.gl.createBuffer();
+                this.typeBuffer = this.gl.createBuffer();
+
+                this.vao = this.gl.createVertexArray();
+                this.gl.bindVertexArray(this.vao);
+
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.geometryBuffer);
+                this.gl.enableVertexAttribArray(this.attributeLocations.position);
+                this.gl.vertexAttribPointer(this.attributeLocations.position, 2, this.gl.FLOAT, false, 0, 0);
+
+                this.gl.enable(this.gl.BLEND);
+                this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+            }
+
+            compileShader(source, type) {
+                const shader = this.gl.createShader(type);
+                this.gl.shaderSource(shader, source);
+                this.gl.compileShader(shader);
+                
+                if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+                    console.error('Shader compilation error:', this.gl.getShaderInfoLog(shader));
+                    return null;
+                }
+                return shader;
+            }
+
+            createProgram(vertexShader, fragmentShader) {
+                const program = this.gl.createProgram();
+                this.gl.attachShader(program, vertexShader);
+                this.gl.attachShader(program, fragmentShader);
+                this.gl.linkProgram(program);
+                
+                if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+                    console.error('Program linking error:', this.gl.getProgramInfoLog(program));
+                    return null;
+                }
+                return program;
+            }
+
+            initializeBats() {
+                this.bats = [];
+                for (let i = 0; i < this.populationSize; i++) {
+                    this.bats.push(this.createBat());
+                }
+            }
+
+            createBat() {
+                return {
+                    x: Math.random() * this.batCanvas.width,
+                    y: Math.random() * this.batCanvas.height,
+                    vx: (Math.random() - 0.5) * 7,
+                    vy: (Math.random() - 0.5) * 7,
+                    
+                    // RNA genetics
+                    rna: {
+                        hunting: this.generateRNASequence(11),
+                        echolocation: this.generateRNASequence(11),
+                        predation: this.generateRNASequence(11)
+                    },
+                    
+                    genetics: { 
+                        huntingRange: 110, 
+                        sonarPower: 1.2, 
+                        flightAgility: 1.0,
+                        dartingTendency: 0.5 + Math.random() * 1.0,
+                        swoopingAbility: 0.3 + Math.random() * 1.2,
+                        communicationRange: 150 + Math.random() * 100
+                    },
+                    
+                    // CRR Properties - Now actually functional!
+                    coherence: 0.7 + Math.random() * 0.3,
+                    memoryTrace: [], // Historical field φ(x,τ)
+                    coherenceIntegral: 0, // C(x) = ∫ L(x,τ) dτ
+                    lastRuptureTime: 0,
+                    ruptureCount: 0,
+                    regenerationWeight: 1.0,
+                    
+                    // Enhanced bat behavior state
+                    targetInsect: null,
+                    huntingMode: false,
+                    
+                    // Network state
+                    sonarConnections: [],
+                    communicationLinks: [],
+                    lastCommunication: 0,
+                    
+                    // Flight behavior variables
+                    lastDirectionChange: 0,
+                    currentFlightPattern: 'cruise',
+                    swoopTarget: null,
+                    dartCooldown: 0,
+                    energyLevel: 0.8 + Math.random() * 0.4,
+                    
+                    // Physical properties
+                    wingPhase: Math.random() * Math.PI * 2,
+                    wingBeatFreq: Math.max(6, 9 + Math.random() * 5),
+                    size: Math.max(0.6, 0.9 + Math.random() * 0.5),
+                    lastEchoClick: 0,
+                    fitness: 0,
+                    successfulHunts: 0,
+                    rotation: 0,
+                    
+                    // Moonlight illumination level
+                    moonlightLevel: 0
+                };
+            }
+
+            createInsect(x, y) {
+                return {
+                    x: x + (Math.random() - 0.5) * 60,
+                    y: y + (Math.random() - 0.5) * 60,
+                    vx: (Math.random() - 0.5) * 2.5,
+                    vy: (Math.random() - 0.5) * 2.5,
+                    size: 0.4 + Math.random() * 0.5,
+                    wingPhase: Math.random() * Math.PI * 2,
+                    wingBeatFreq: 22 + Math.random() * 18,
+                    wanderAngle: Math.random() * Math.PI * 2,
+                    lastTurn: 0,
+                    rotation: 0,
+                    alive: true,
+                    detectedBy: [],
+                    
+                    // Moonlight illumination level
+                    moonlightLevel: 0
+                };
+            }
+
+            generateRNASequence(length) {
+                const bases = ['A', 'U', 'G', 'C'];
+                let sequence = '';
+                for (let i = 0; i < length; i++) {
+                    sequence += bases[Math.floor(Math.random() * 4)];
+                }
+                return sequence;
+            }
+
+            // ====================
+            // CRR IMPLEMENTATION
+            // ====================
+
+            // Memory Integration: C(x) = ∫ L(x,τ) dτ
+            updateCoherenceIntegral(bat, dt) {
+                // Calculate memory density L(x,τ) based on current state
+                let memoryDensityL = this.memoryDensity;
+                
+                // Memory density influenced by hunting success, energy, and interactions
+                if (bat.huntingMode) {
+                    memoryDensityL *= 1.8; // Hunting increases memory density
+                }
+                if (bat.energyLevel > 0.7) {
+                    memoryDensityL *= (0.8 + bat.energyLevel * 0.4);
+                }
+                if (bat.targetInsect) {
+                    memoryDensityL *= 1.5; // Target fixation increases memory formation
+                }
+                
+                // UCF influence on memory density
+                memoryDensityL *= (1 + this.oceanParams.moonInfluence * bat.coherence * 0.3);
+                
+                // Integrate memory density over time
+                bat.coherenceIntegral += memoryDensityL * dt;
+                
+                // Store current state in memory trace
+                const memoryEntry = {
+                    time: this.time,
+                    x: bat.x,
+                    y: bat.y,
+                    vx: bat.vx,
+                    vy: bat.vy,
+                    huntingMode: bat.huntingMode,
+                    energyLevel: bat.energyLevel,
+                    memoryDensity: memoryDensityL,
+                    coherence: bat.coherence,
+                    sonarConnections: bat.sonarConnections.length,
+                    preyDetected: bat.targetInsect !== null
+                };
+                
+                bat.memoryTrace.push(memoryEntry);
+                
+                // Keep memory trace within window
+                const memoryWindowMs = this.memoryWindow * 1000;
+                bat.memoryTrace = bat.memoryTrace.filter(entry => 
+                    (this.time * 1000 - entry.time * 1000) < memoryWindowMs
+                );
+                
+                return memoryDensityL;
+            }
+
+            // Rupture Detection: δ(t-t₀)
+            detectRupture(bat) {
+                // Check if coherence integral exceeds rupture threshold
+                if (bat.coherenceIntegral > this.ruptureThreshold) {
+                    // Trigger rupture event
+                    this.triggerRupture(bat);
+                    return true;
+                }
+                
+                // Also check for behavioral rupture conditions
+                if (bat.energyLevel < 0.2 && bat.coherenceIntegral > this.ruptureThreshold * 0.6) {
+                    this.triggerRupture(bat);
+                    return true;
+                }
+                
+                // Spontaneous rupture based on UCF interference
+                const interferenceRuptureChance = this.oceanParams.moonInfluence * 0.002;
+                if (Math.random() < interferenceRuptureChance && bat.coherenceIntegral > this.ruptureThreshold * 0.4) {
+                    this.triggerRupture(bat);
+                    return true;
+                }
+                
+                return false;
+            }
+
+            // Rupture Event Processing
+            triggerRupture(bat) {
+                bat.lastRuptureTime = this.time;
+                bat.ruptureCount++;
+                this.totalRuptures++;
+                
+                // Rupture effects on bat state
+                const ruptureIntensity = Math.min(1.0, bat.coherenceIntegral / this.ruptureThreshold);
+                
+                // Reset coherence integral (catastrophic vs partial rupture)
+                if (ruptureIntensity > 0.8) {
+                    bat.coherenceIntegral *= 0.1; // Catastrophic rupture
+                    bat.energyLevel = Math.max(0.1, bat.energyLevel - 0.4);
+                } else {
+                    bat.coherenceIntegral *= 0.4; // Partial rupture
+                    bat.energyLevel = Math.max(0.2, bat.energyLevel - 0.2);
+                }
+                
+                // Rupture affects behavior
+                bat.huntingMode = false;
+                bat.targetInsect = null;
+                bat.currentFlightPattern = 'disoriented';
+                
+                // Clear recent memory (selective forgetting)
+                const forgettingRatio = ruptureIntensity * 0.7;
+                const keepCount = Math.floor(bat.memoryTrace.length * (1 - forgettingRatio));
+                bat.memoryTrace = bat.memoryTrace.slice(-keepCount);
+            }
+
+            // Regeneration Operator: R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ
+            applyRegeneration(bat, dt) {
+                if (bat.memoryTrace.length === 0) return;
+                
+                // Calculate regeneration based on memory-weighted integration
+                let regenerationVx = 0;
+                let regenerationVy = 0;
+                let regenerationEnergy = 0;
+                let regenerationCoherence = 0;
+                let totalWeight = 0;
+                
+                // Process memory trace with exponential weighting
+                bat.memoryTrace.forEach(memory => {
+                    // Θ(t-τ) - causality constraint (only past memories)
+                    if (memory.time <= this.time) {
+                        // Calculate exponential weight: e^(C(x)/Ω)
+                        const exponentialWeight = Math.exp(bat.coherenceIntegral / this.omega);
+                        
+                        // Time decay factor
+                        const timeDecay = Math.exp(-(this.time - memory.time) / this.memoryWindow);
+                        
+                        const totalWeight_local = exponentialWeight * timeDecay * bat.regenerationWeight;
+                        
+                        // Historical field φ(x,τ) influences
+                        if (memory.huntingMode && memory.preyDetected) {
+                            // Regenerate successful hunting patterns
+                            regenerationVx += memory.vx * totalWeight_local * 0.3;
+                            regenerationVy += memory.vy * totalWeight_local * 0.3;
+                            regenerationEnergy += 0.1 * totalWeight_local;
+                        }
+                        
+                        if (memory.sonarConnections > 2) {
+                            // Regenerate social behaviors
+                            regenerationCoherence += 0.05 * totalWeight_local;
+                        }
+                        
+                        if (memory.energyLevel > 0.7) {
+                            // Regenerate high-energy states
+                            regenerationEnergy += memory.energyLevel * totalWeight_local * 0.05;
+                        }
+                        
+                        totalWeight += totalWeight_local;
+                    }
+                });
+                
+                // Apply regeneration influences
+                if (totalWeight > 0) {
+                    const regenerationStrength = Math.min(1.0, totalWeight / 100);
+                    
+                    bat.vx += (regenerationVx / totalWeight) * regenerationStrength * dt;
+                    bat.vy += (regenerationVy / totalWeight) * regenerationStrength * dt;
+                    bat.energyLevel = Math.min(1.0, bat.energyLevel + (regenerationEnergy / totalWeight) * dt);
+                    bat.coherence = Math.min(2.0, bat.coherence + (regenerationCoherence / totalWeight) * dt);
+                    
+                    // Regeneration affects fitness
+                    bat.fitness += regenerationStrength * dt * 10;
+                }
+                
+                // Update regeneration weight based on recent ruptures
+                const timeSinceRupture = this.time - bat.lastRuptureTime;
+                if (timeSinceRupture < 2.0) {
+                    // Recently ruptured bats have reduced regeneration
+                    bat.regenerationWeight = 0.3 + (timeSinceRupture / 2.0) * 0.7;
+                } else {
+                    bat.regenerationWeight = Math.min(1.0, bat.regenerationWeight + dt * 0.1);
+                }
+            }
+
+            // ====================
+            // ORIGINAL METHODS (Enhanced with CRR)
+            // ====================
+
+            createEcholocationClick(bat) {
+                if (!this.audioEnabled || !this.audioContext) return;
+                
+                try {
+                    const safeFreqValue = (value) => Math.max(120, Math.min(9000, isFinite(value) ? value : 1200));
+                    const safeGainValue = (value) => Math.max(0.001, Math.min(0.35, isFinite(value) ? value : 0.12));
+                    
+                    const clickOsc = this.audioContext.createOscillator();
+                    const clickGain = this.audioContext.createGain();
+                    const clickFilter = this.audioContext.createBiquadFilter();
+                    
+                    const sonarPower = isFinite(bat.genetics.sonarPower) ? bat.genetics.sonarPower : 1.2;
+                    const coherence = isFinite(bat.coherence) ? bat.coherence : 0.7;
+                    
+                    let frequency = this.ultrasoundMode ? 
+                        safeFreqValue((25000 + sonarPower * 65000) / 10) :
+                        safeFreqValue(900 + sonarPower * 3500);
+                    
+                    clickOsc.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    clickOsc.type = 'square';
+                    
+                    clickFilter.type = 'bandpass';
+                    clickFilter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    clickFilter.Q.setValueAtTime(35, this.audioContext.currentTime);
+                    
+                    const volume = safeGainValue(coherence * 0.12 * this.calculateBatAudioDistance(bat));
+                    clickGain.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                    clickGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.018);
+                    
+                    clickOsc.connect(clickFilter);
+                    clickFilter.connect(clickGain);
+                    clickGain.connect(this.echolocationGain);
+                    
+                    clickOsc.start();
+                    clickOsc.stop(this.audioContext.currentTime + 0.018);
+                } catch (error) {
+                    console.error('Echolocation sound error:', error);
+                }
+            }
+
+            createHuntSuccessSound() {
+                if (!this.audioEnabled || !this.audioContext) return;
+                
+                try {
+                    const huntOsc = this.audioContext.createOscillator();
+                    const huntGain = this.audioContext.createGain();
+                    
+                    huntOsc.frequency.setValueAtTime(1300, this.audioContext.currentTime);
+                    huntOsc.frequency.exponentialRampToValueAtTime(850, this.audioContext.currentTime + 0.25);
+                    huntOsc.type = 'triangle';
+                    
+                    huntGain.gain.setValueAtTime(0.22, this.audioContext.currentTime);
+                    huntGain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.25);
+                    
+                    huntOsc.connect(huntGain);
+                    huntGain.connect(this.masterGain);
+                    
+                    huntOsc.start();
+                    huntOsc.stop(this.audioContext.currentTime + 0.25);
+                } catch (error) {
+                    console.error('Hunt success sound error:', error);
+                }
+            }
+
+            calculateBatAudioDistance(bat) {
+                const centerX = this.batCanvas.width / 2;
+                const centerY = this.batCanvas.height / 2;
+                const distance = Math.sqrt((bat.x - centerX) ** 2 + (bat.y - centerY) ** 2);
+                const maxDistance = Math.sqrt(centerX ** 2 + centerY ** 2);
+                const result = Math.max(0.15, 1 - (distance / maxDistance) * 0.85);
+                return isFinite(result) ? result : 0.6;
+            }
+
+            updateBats(dt) {
+                // Clear previous network connections
+                this.bats.forEach(bat => {
+                    bat.sonarConnections = [];
+                    bat.communicationLinks = [];
+                    bat.preyConnections = [];
+                });
+
+                this.bats.forEach(bat => {
+                    // ===== CRR PROCESSING =====
+                    
+                    // 1. Memory Integration: C(x) = ∫ L(x,τ) dτ
+                    this.updateCoherenceIntegral(bat, dt);
+                    
+                    // 2. Rupture Detection: δ(t-t₀)
+                    this.detectRupture(bat);
+                    
+                    // 3. Regeneration: R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ
+                    this.applyRegeneration(bat, dt);
+                    
+                    // ===== STANDARD PROCESSING =====
+                    
+                    this.decodeRNAToTraits(bat);
+                    this.processEcholocation(bat);
+                    this.updateNetworkConnections(bat);
+                    this.updateAuthenticFlightBehavior(bat, dt);
+                    this.huntBehavior(bat);
+                    this.applyFlocking(bat);
+                    this.updateMovement(bat, dt);
+                    
+                    // Update bat's moonlight illumination
+                    this.updateBatMoonlightLevel(bat);
+                });
+            }
+
+            // Calculate moonlight illumination for each bat (Ocean moonlight style)
+            updateBatMoonlightLevel(bat) {
+                const moonPos = this.getMoonPosition();
+                const distance = Math.sqrt((bat.x - moonPos.x) ** 2 + (bat.y - moonPos.y) ** 2);
+                
+                // Calculate base illumination
+                let illumination = this.oceanParams.moonInfluence / (1 + distance * 0.0005);
+                
+                // UCF coherence enhancement for bats
+                const coherencePhase = Math.sin(this.time * 0.002 + distance * 0.008) * this.oceanParams.moonInfluence;
+                const coherenceMod = 1 + coherencePhase * 0.2 * bat.coherence;
+                illumination *= coherenceMod;
+                
+                // Ocean wave influence on illumination
+                const waveInfluence = Math.sin(bat.x * 0.008 + this.time * this.oceanParams.E * 0.0003) * 
+                                    Math.cos(bat.y * 0.006 + this.time * this.oceanParams.E * 0.00025) * 
+                                    this.oceanParams.E * 0.1;
+                illumination *= (1 + waveInfluence);
+                
+                bat.moonlightLevel = Math.max(0, Math.min(1, illumination));
+            }
+
+            updateNetworkConnections(bat) {
+                this.bats.forEach(otherBat => {
+                    if (otherBat === bat) return;
+                    
+                    const distance = Math.sqrt((otherBat.x - bat.x) ** 2 + (otherBat.y - bat.y) ** 2);
+                    
+                    // Sonar network connections
+                    if (distance < bat.genetics.huntingRange) {
+                        bat.sonarConnections.push(otherBat);
+                    }
+                    
+                    // Communication links (enhanced)
+                    if (distance < bat.genetics.communicationRange && this.time - bat.lastCommunication > 0.3) {
+                        if (Math.random() < 0.15) {
+                            bat.communicationLinks.push(otherBat);
+                            bat.lastCommunication = this.time;
+                        }
+                    }
+                });
+
+                // Enhanced prey detection networks
+                this.insects.forEach(insect => {
+                    const distance = Math.sqrt((insect.x - bat.x) ** 2 + (insect.y - bat.y) ** 2);
+                    
+                    if (distance < bat.genetics.huntingRange * 1.2 && insect.alive) {
+                        const detectionChance = (1 - distance / (bat.genetics.huntingRange * 1.2)) * 
+                                              bat.genetics.sonarPower * 0.8;
+                        
+                        if (Math.random() < detectionChance || distance < bat.genetics.huntingRange * 0.7) {
+                            if (!insect.detectedBy.includes(bat)) {
+                                insect.detectedBy.push(bat);
+                            }
+                            
+                            if (!bat.preyConnections) bat.preyConnections = [];
+                            if (!bat.preyConnections.includes(insect)) {
+                                bat.preyConnections.push(insect);
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateAuthenticFlightBehavior(bat, dt) {
+                bat.lastDirectionChange += dt;
+                bat.dartCooldown = Math.max(0, bat.dartCooldown - dt);
+                
+                const ucfInfluence = bat.coherence * this.oceanParams.moonInfluence;
+                
+                if (bat.huntingMode && bat.targetInsect) {
+                    bat.currentFlightPattern = 'hunting';
+                } else if (bat.currentFlightPattern === 'disoriented') {
+                    if (this.time - bat.lastRuptureTime > 1.0) {
+                        bat.currentFlightPattern = 'cruise';
+                    }
+                } else if (bat.energyLevel > 0.7 && Math.random() < (bat.genetics.dartingTendency + ucfInfluence) * 0.008) {
+                    bat.currentFlightPattern = 'darting';
+                    bat.dartCooldown = 0.8 + Math.random() * 1.2;
+                } else if (Math.random() < (bat.genetics.swoopingAbility + ucfInfluence * 0.5) * 0.005) {
+                    bat.currentFlightPattern = 'swooping';
+                    bat.swoopTarget = {
+                        x: bat.x + (Math.random() - 0.5) * 200,
+                        y: bat.y + 100 + Math.random() * 150
+                    };
+                } else if (bat.lastDirectionChange > 2 + Math.random() * 3) {
+                    bat.currentFlightPattern = 'turning';
+                    bat.lastDirectionChange = 0;
+                } else {
+                    bat.currentFlightPattern = 'cruise';
+                }
+
+                switch (bat.currentFlightPattern) {
+                    case 'disoriented':
+                        const disorientation = Math.exp(-(this.time - bat.lastRuptureTime) / 0.5);
+                        bat.vx += (Math.random() - 0.5) * disorientation * 2;
+                        bat.vy += (Math.random() - 0.5) * disorientation * 2;
+                        bat.wingBeatFreq = Math.min(20, bat.wingBeatFreq * (1 + disorientation));
+                        break;
+                        
+                    case 'darting':
+                        if (bat.dartCooldown > 0) {
+                            const dartAngle = Math.random() * Math.PI * 2;
+                            const dartForce = (bat.genetics.dartingTendency + ucfInfluence) * 0.6;
+                            bat.vx += Math.cos(dartAngle) * dartForce;
+                            bat.vy += Math.sin(dartAngle) * dartForce;
+                            bat.wingBeatFreq = Math.min(18, bat.wingBeatFreq * 1.4);
+                        }
+                        break;
+                        
+                    case 'swooping':
+                        if (bat.swoopTarget) {
+                            const dx = bat.swoopTarget.x - bat.x;
+                            const dy = bat.swoopTarget.y - bat.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance > 20) {
+                                const swoopForce = (bat.genetics.swoopingAbility + ucfInfluence * 0.3) * 0.3;
+                                bat.vx += (dx / distance) * swoopForce;
+                                bat.vy += (dy / distance) * swoopForce;
+                            } else {
+                                bat.swoopTarget = null;
+                                bat.currentFlightPattern = 'cruise';
+                            }
+                        }
+                        break;
+                        
+                    case 'turning':
+                        const turnAngle = (Math.random() - 0.5) * Math.PI * 0.8 * (1 + ucfInfluence);
+                        const currentAngle = Math.atan2(bat.vy, bat.vx);
+                        const newAngle = currentAngle + turnAngle * 0.1;
+                        
+                        bat.vx += Math.cos(newAngle) * 0.2;
+                        bat.vy += Math.sin(newAngle) * 0.2;
+                        break;
+                        
+                    case 'hunting':
+                        bat.wingBeatFreq = Math.min(16, bat.wingBeatFreq * 1.2);
+                        break;
+                        
+                    case 'cruise':
+                        bat.wingBeatFreq = Math.max(6, bat.wingBeatFreq * 0.98);
+                        
+                        if (Math.random() < 0.03) {
+                            bat.vx += (Math.random() - 0.5) * 0.3;
+                            bat.vy += (Math.random() - 0.5) * 0.3;
+                        }
+                        break;
+                }
+
+                const preferredAltitude = this.batCanvas.height * (0.2 + bat.genetics.swoopingAbility * 0.4);
+                const altitudeDiff = preferredAltitude - bat.y;
+                
+                if (Math.abs(altitudeDiff) > 50) {
+                    bat.vy += altitudeDiff * 0.0008;
+                }
+
+                bat.energyLevel = Math.max(0.1, bat.energyLevel - dt * 0.002 + ucfInfluence * dt * 0.001);
+                if (bat.energyLevel < 0.3) {
+                    bat.vx *= 0.995;
+                    bat.vy *= 0.995;
+                }
+            }
+
+            updateInsects(dt) {
+                this.insects = this.insects.filter(insect => insect.alive);
+                
+                this.insects.forEach(insect => {
+                    insect.detectedBy = [];
+                    
+                    insect.lastTurn += dt;
+                    if (insect.lastTurn > 1.2 + Math.random() * 2.5) {
+                        insect.wanderAngle += (Math.random() - 0.5) * Math.PI * 0.6;
+                        insect.lastTurn = 0;
+                    }
+                    
+                    const wanderForce = 0.6;
+                    insect.vx += Math.cos(insect.wanderAngle) * wanderForce * dt;
+                    insect.vy += Math.sin(insect.wanderAngle) * wanderForce * dt;
+                    
+                    const speed = Math.sqrt(insect.vx ** 2 + insect.vy ** 2);
+                    if (speed > 2.5) {
+                        insect.vx = (insect.vx / speed) * 2.5;
+                        insect.vy = (insect.vy / speed) * 2.5;
+                    }
+                    
+                    insect.x += insect.vx;
+                    insect.y += insect.vy;
+                    
+                    if (insect.x < 0) insect.x = this.batCanvas.width;
+                    if (insect.x > this.batCanvas.width) insect.x = 0;
+                    if (insect.y < 0) insect.y = this.batCanvas.height;
+                    if (insect.y > this.batCanvas.height) insect.y = 0;
+                    
+                    insect.wingPhase += insect.wingBeatFreq * dt;
+                    insect.rotation = Math.atan2(insect.vy, insect.vx) + Math.PI / 2;
+                    
+                    this.updateInsectMoonlightLevel(insect);
+                });
+            }
+
+            updateInsectMoonlightLevel(insect) {
+                const moonPos = this.getMoonPosition();
+                const distance = Math.sqrt((insect.x - moonPos.x) ** 2 + (insect.y - moonPos.y) ** 2);
+                
+                let illumination = this.oceanParams.moonInfluence / (1 + distance * 0.0004) * 1.3;
+                
+                const coherencePhase = Math.sin(this.time * 0.003 + distance * 0.006) * this.oceanParams.moonInfluence;
+                const coherenceMod = 1 + coherencePhase * 0.15;
+                illumination *= coherenceMod;
+                
+                const waveInfluence = Math.sin(insect.x * 0.008 + this.time * this.oceanParams.E * 0.0003) * 
+                                    Math.cos(insect.y * 0.006 + this.time * this.oceanParams.E * 0.00025) * 
+                                    this.oceanParams.E * 0.15;
+                illumination *= (1 + waveInfluence);
+                
+                insect.moonlightLevel = Math.max(0, Math.min(1, illumination));
+            }
+
+            decodeRNAToTraits(bat) {
+                if (!bat.rna || !bat.rna.hunting || !bat.rna.echolocation || !bat.rna.predation) {
+                    bat.rna = {
+                        hunting: this.generateRNASequence(11),
+                        echolocation: this.generateRNASequence(11),
+                        predation: this.generateRNASequence(11)
+                    };
+                }
+                
+                const huntingFloat = this.rnaToFloat(bat.rna.hunting);
+                const echoFloat = this.rnaToFloat(bat.rna.echolocation);
+                const predationFloat = this.rnaToFloat(bat.rna.predation);
+                
+                bat.genetics.huntingRange = Math.max(60, Math.min(220, isFinite(huntingFloat) ? huntingFloat * 140 + 80 : 110));
+                bat.genetics.sonarPower = Math.max(0.3, Math.min(3.5, isFinite(echoFloat) ? echoFloat * 2.5 + 0.7 : 1.2));
+                bat.genetics.flightAgility = Math.max(0.2, Math.min(2.5, isFinite(predationFloat) ? predationFloat * 1.8 + 0.7 : 1.0));
+                bat.genetics.communicationRange = Math.max(80, Math.min(300, isFinite(huntingFloat + echoFloat) ? (huntingFloat + echoFloat) * 110 + 100 : 150));
+            }
+
+            rnaToFloat(sequence) {
+                if (!sequence || typeof sequence !== 'string' || sequence.length === 0) {
+                    return 0.5;
+                }
+                
+                let value = 0;
+                const bases = { 'A': 0, 'U': 1, 'G': 2, 'C': 3 };
+                const length = Math.min(8, sequence.length);
+                
+                for (let i = 0; i < length; i++) {
+                    const base = sequence[i];
+                    if (bases.hasOwnProperty(base)) {
+                        value += bases[base] * Math.pow(4, -(i + 1));
+                    }
+                }
+                
+                const result = value / (1 - Math.pow(4, -length));
+                return isFinite(result) ? result : 0.5;
+            }
+
+            processEcholocation(bat) {
+                const baseInterval = 0.08 + (1 - bat.genetics.sonarPower) * 0.35;
+                const coherenceModifier = 1 - (bat.coherence - 1) * 0.2;
+                const clickInterval = baseInterval * coherenceModifier;
+                
+                if (this.time - bat.lastEchoClick > clickInterval) {
+                    bat.lastEchoClick = this.time;
+                    this.createEcholocationClick(bat);
+                    
+                    const detectedInsects = this.getInsectsInRange(bat, bat.genetics.huntingRange);
+                    
+                    if (detectedInsects.length > 0 && !bat.targetInsect) {
+                        detectedInsects.sort((a, b) => {
+                            const distA = Math.sqrt((a.x - bat.x) ** 2 + (a.y - bat.y) ** 2);
+                            const distB = Math.sqrt((b.x - bat.x) ** 2 + (b.y - bat.y) ** 2);
+                            return distA - distB;
+                        });
+                        
+                        bat.targetInsect = detectedInsects[0];
+                        bat.huntingMode = true;
+                        bat.energyLevel = Math.min(1.0, bat.energyLevel + 0.1);
+                    }
+                }
+            }
+
+            huntBehavior(bat) {
+                if (bat.targetInsect && bat.targetInsect.alive) {
+                    const dx = bat.targetInsect.x - bat.x;
+                    const dy = bat.targetInsect.y - bat.y;
+                    const distance = Math.sqrt(dx ** 2 + dy ** 2);
+                    
+                    if (distance < 18) {
+                        bat.targetInsect.alive = false;
+                        bat.targetInsect = null;
+                        bat.huntingMode = false;
+                        bat.successfulHunts++;
+                        this.successfulHunts++;
+                        bat.energyLevel = Math.min(1.0, bat.energyLevel + 0.35);
+                        
+                        bat.coherence = Math.min(2.0, bat.coherence + 0.3);
+                        
+                        this.createHuntSuccessSound();
+                        
+                        document.getElementById('huntAlert').style.display = 'block';
+                        setTimeout(() => {
+                            document.getElementById('huntAlert').style.display = 'none';
+                        }, 1200);
+                        
+                    } else if (distance < bat.genetics.huntingRange) {
+                        const ucfBoost = 1 + bat.coherence * this.oceanParams.moonInfluence * 0.5;
+                        const huntSpeed = bat.genetics.flightAgility * 0.18 * ucfBoost;
+                        bat.vx += (dx / distance) * huntSpeed;
+                        bat.vy += (dy / distance) * huntSpeed;
+                        
+                        let predictionBoost = 1.0;
+                        if (bat.memoryTrace.length > 5) {
+                            const recentHunts = bat.memoryTrace.filter(m => m.huntingMode && m.preyDetected);
+                            if (recentHunts.length > 0) {
+                                predictionBoost = 1.3;
+                            }
+                        }
+                        
+                        const futureX = bat.targetInsect.x + bat.targetInsect.vx * 0.3 * predictionBoost;
+                        const futureY = bat.targetInsect.y + bat.targetInsect.vy * 0.3 * predictionBoost;
+                        const futureDx = futureX - bat.x;
+                        const futureDy = futureY - bat.y;
+                        const futureDistance = Math.sqrt(futureDx ** 2 + futureDy ** 2);
+                        
+                        if (futureDistance > 0) {
+                            bat.vx += (futureDx / futureDistance) * huntSpeed * 0.4;
+                            bat.vy += (futureDy / futureDistance) * huntSpeed * 0.4;
+                        }
+                        
+                    } else {
+                        bat.targetInsect = null;
+                        bat.huntingMode = false;
+                    }
+                } else {
+                    bat.targetInsect = null;
+                    bat.huntingMode = false;
+                }
+            }
+
+            getInsectsInRange(bat, range) {
+                return this.insects.filter(insect => {
+                    const distance = Math.sqrt((insect.x - bat.x) ** 2 + (insect.y - bat.y) ** 2);
+                    return distance < range && insect.alive;
+                });
+            }
+
+            applyFlocking(bat) {
+                const neighbors = this.bats.filter(other => {
+                    if (other === bat) return false;
+                    const distance = Math.sqrt((other.x - bat.x) ** 2 + (other.y - bat.y) ** 2);
+                    return distance < 85;
+                });
+
+                if (neighbors.length === 0) return;
+
+                let separation = { x: 0, y: 0 };
+                let alignment = { x: 0, y: 0 };
+                let cohesion = { x: 0, y: 0 };
+
+                neighbors.forEach(neighbor => {
+                    const dx = neighbor.x - bat.x;
+                    const dy = neighbor.y - bat.y;
+                    const distance = Math.sqrt(dx ** 2 + dy ** 2);
+
+                    if (distance > 0) {
+                        if (distance < 32) {
+                            const separationStrength = bat.huntingMode ? 0.6 : 1.0;
+                            separation.x -= (dx / distance) * separationStrength;
+                            separation.y -= (dy / distance) * separationStrength;
+                        }
+
+                        alignment.x += neighbor.vx;
+                        alignment.y += neighbor.vy;
+                        cohesion.x += neighbor.x;
+                        cohesion.y += neighbor.y;
+                    }
+                });
+
+                const count = neighbors.length;
+
+                bat.vx += separation.x * 0.025;
+                bat.vy += separation.y * 0.025;
+
+                alignment.x /= count;
+                alignment.y /= count;
+                bat.vx += (alignment.x - bat.vx) * 0.018;
+                bat.vy += (alignment.y - bat.vy) * 0.018;
+
+                cohesion.x /= count;
+                cohesion.y /= count;
+                bat.vx += (cohesion.x - bat.x) * 0.0012;
+                bat.vy += (cohesion.y - bat.y) * 0.0012;
+            }
+
+            updateMovement(bat, dt) {
+                bat.wingPhase += bat.wingBeatFreq * dt;
+
+                let maxSpeed = 4.2;
+                const ucfSpeedBoost = 1 + bat.coherence * this.oceanParams.moonInfluence * 0.3;
+                
+                if (bat.currentFlightPattern === 'darting') maxSpeed = 6.5 * ucfSpeedBoost;
+                else if (bat.currentFlightPattern === 'hunting') maxSpeed = 5.8 * ucfSpeedBoost;
+                else if (bat.currentFlightPattern === 'swooping') maxSpeed = 5.2 * ucfSpeedBoost;
+                else if (bat.currentFlightPattern === 'disoriented') maxSpeed = 2.0;
+                else if (bat.energyLevel < 0.3) maxSpeed = 2.8;
+
+                const speed = Math.sqrt(bat.vx ** 2 + bat.vy ** 2);
+                if (speed > maxSpeed) {
+                    bat.vx = (bat.vx / speed) * maxSpeed;
+                    bat.vy = (bat.vy / speed) * maxSpeed;
+                }
+
+                const margin = 60;
+                if (bat.x < margin) bat.vx += 0.12;
+                if (bat.x > this.batCanvas.width - margin) bat.vx -= 0.12;
+                if (bat.y < margin) bat.vy += 0.12;
+                if (bat.y > this.batCanvas.height - margin) bat.vy -= 0.12;
+
+                bat.x += bat.vx;
+                bat.y += bat.vy;
+                bat.rotation = Math.atan2(bat.vy, bat.vx) + Math.PI / 2;
+
+                const normalizedCoherence = Math.min(2.2, Math.max(0.1, bat.coherenceIntegral / this.ruptureThreshold));
+                bat.coherence = normalizedCoherence;
+                
+                const crrFitnessBonus = (bat.coherenceIntegral / 10) + (bat.regenerationWeight * 5) - (bat.ruptureCount * 2);
+                bat.fitness += dt * (0.12 + bat.coherence * 0.15 + bat.energyLevel * 0.08 + crrFitnessBonus);
+            }
+
+            renderNetworkVisualization() {
+                const ctx = this.networkCtx;
+                ctx.clearRect(0, 0, this.networkCanvas.width, this.networkCanvas.height);
+
+                const anyNetworkVisible = this.showSonar || this.showPrey || this.showCommunication || this.showMemory;
+                if (!anyNetworkVisible) {
+                    document.getElementById('networkLegend').classList.remove('visible');
+                    return;
+                }
+
+                document.getElementById('networkLegend').classList.add('visible');
+
+                ctx.save();
+                ctx.globalAlpha = this.networkOpacity;
+
+                if (this.showSonar) {
+                    ctx.strokeStyle = 'rgba(139, 92, 246, 0.7)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    
+                    this.bats.forEach(bat => {
+                        bat.sonarConnections.forEach(otherBat => {
+                            ctx.beginPath();
+                            ctx.moveTo(bat.x, bat.y);
+                            ctx.lineTo(otherBat.x, otherBat.y);
+                            ctx.stroke();
+                        });
+                        
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${0.1 * this.networkOpacity})`;
+                        ctx.lineWidth = 1;
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.arc(bat.x, bat.y, bat.genetics.huntingRange, 0, Math.PI * 2);
+                        ctx.stroke();
+                    });
+                }
+
+                if (this.showPrey) {
+                    ctx.strokeStyle = 'rgba(34, 197, 94, 0.9)';
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([]);
+                    
+                    this.bats.forEach(bat => {
+                        if (bat.preyConnections) {
+                            bat.preyConnections.forEach(insect => {
+                                if (insect.alive) {
+                                    const animationPhase = (this.time * 3) % 1;
+                                    ctx.globalAlpha = this.networkOpacity * (0.6 + 0.4 * Math.sin(animationPhase * Math.PI * 2));
+                                    
+                                    ctx.beginPath();
+                                    ctx.moveTo(bat.x, bat.y);
+                                    ctx.lineTo(insect.x, insect.y);
+                                    ctx.stroke();
+                                    
+                                    const pulseX = bat.x + (insect.x - bat.x) * animationPhase;
+                                    const pulseY = bat.y + (insect.y - bat.y) * animationPhase;
+                                    
+                                    ctx.fillStyle = `rgba(34, 197, 94, ${(1 - animationPhase) * this.networkOpacity})`;
+                                    ctx.beginPath();
+                                    ctx.arc(pulseX, pulseY, 4, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            });
+                        }
+                    });
+                    
+                    ctx.globalAlpha = this.networkOpacity;
+                    this.insects.forEach(insect => {
+                        if (insect.detectedBy.length > 0 && insect.alive) {
+                            const pulseIntensity = 0.8 + 0.2 * Math.sin(this.time * 4);
+                            ctx.strokeStyle = `rgba(34, 197, 94, ${pulseIntensity * this.networkOpacity})`;
+                            ctx.lineWidth = 3 + Math.sin(this.time * 5) * 1;
+                            ctx.beginPath();
+                            ctx.arc(insect.x, insect.y, 10 + Math.sin(this.time * 6) * 2, 0, Math.PI * 2);
+                            ctx.stroke();
+                            
+                            ctx.fillStyle = `rgba(34, 197, 94, ${0.9 * this.networkOpacity})`;
+                            ctx.font = '12px Consolas';
+                            ctx.fillText(insect.detectedBy.length.toString(), insect.x + 12, insect.y - 8);
+                        }
+                    });
+                }
+
+                if (this.showCommunication) {
+                    ctx.globalAlpha = this.networkOpacity;
+                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.9)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 4]);
+                    
+                    this.bats.forEach(bat => {
+                        bat.communicationLinks.forEach(otherBat => {
+                            ctx.shadowColor = 'rgba(255, 100, 100, 0.6)';
+                            ctx.shadowBlur = 8;
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(bat.x, bat.y);
+                            ctx.lineTo(otherBat.x, otherBat.y);
+                            ctx.stroke();
+                            
+                            ctx.shadowBlur = 0;
+                            
+                            const pulsePhase = (this.time * 2.5) % 1;
+                            const pulseX = bat.x + (otherBat.x - bat.x) * pulsePhase;
+                            const pulseY = bat.y + (otherBat.y - bat.y) * pulsePhase;
+                            
+                            ctx.fillStyle = `rgba(255, 120, 120, ${(1 - pulsePhase) * this.networkOpacity})`;
+                            ctx.beginPath();
+                            ctx.arc(pulseX, pulseY, 5 + pulsePhase * 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        });
+                        
+                        if (bat.communicationLinks.length > 0) {
+                            ctx.strokeStyle = `rgba(255, 100, 100, ${0.15 * this.networkOpacity})`;
+                            ctx.lineWidth = 1;
+                            ctx.setLineDash([]);
+                            ctx.beginPath();
+                            ctx.arc(bat.x, bat.y, bat.genetics.communicationRange, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    });
+                }
+
+                if (this.showMemory) {
+                    ctx.globalAlpha = this.networkOpacity * 0.8;
+                    ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([2, 2]);
+                    
+                    this.bats.forEach(bat => {
+                        if (bat.memoryTrace.length > 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(bat.memoryTrace[0].x, bat.memoryTrace[0].y);
+                            
+                            for (let i = 1; i < bat.memoryTrace.length; i++) {
+                                const memory = bat.memoryTrace[i];
+                                const alpha = (i / bat.memoryTrace.length) * this.networkOpacity * 0.6;
+                                
+                                ctx.globalAlpha = alpha;
+                                ctx.lineTo(memory.x, memory.y);
+                                ctx.stroke();
+                                
+                                if (memory.huntingMode || memory.preyDetected) {
+                                    ctx.fillStyle = `rgba(251, 191, 36, ${alpha})`;
+                                    ctx.beginPath();
+                                    ctx.arc(memory.x, memory.y, 3, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                                
+                                ctx.beginPath();
+                                ctx.moveTo(memory.x, memory.y);
+                            }
+                            
+                            ctx.globalAlpha = this.networkOpacity;
+                            ctx.fillStyle = `rgba(251, 191, 36, ${this.networkOpacity})`;
+                            ctx.beginPath();
+                            ctx.arc(bat.x, bat.y, 4, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            const coherenceRadius = 15 + (bat.coherenceIntegral / this.ruptureThreshold) * 25;
+                            ctx.strokeStyle = `rgba(251, 191, 36, ${this.networkOpacity * 0.5})`;
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([]);
+                            ctx.beginPath();
+                            ctx.arc(bat.x, bat.y, coherenceRadius, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    });
+                }
+
+                ctx.restore();
+            }
+
+            render() {
+                this.renderBioluminescentOcean();
+                this.renderNetworkVisualization();
+
+                const moonPos = this.getMoonPosition();
+
+                this.gl.clearColor(0, 0, 0, 0);
+                this.gl.viewport(0, 0, this.batCanvas.width, this.batCanvas.height);
+                this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+                const totalCreatures = this.bats.length + this.insects.length;
+                if (totalCreatures === 0) return;
+
+                this.gl.useProgram(this.program);
+
+                this.gl.uniform2f(this.uniformLocations.resolution, this.batCanvas.width, this.batCanvas.height);
+                this.gl.uniform1f(this.uniformLocations.time, this.time * 0.01);
+                this.gl.uniform2f(this.uniformLocations.moonPos, moonPos.x, moonPos.y);
+                this.gl.uniform1f(this.uniformLocations.coherenceField, this.oceanParams.moonInfluence);
+                this.gl.uniform1f(this.uniformLocations.interference, this.oceanParams.moonInfluence);
+                this.gl.uniform1f(this.uniformLocations.moonlightIntensity, this.oceanParams.moonInfluence);
+                this.gl.uniform1f(this.uniformLocations.atmosphericScattering, 0.6);
+                this.gl.uniform1f(this.uniformLocations.waveAmplitude, this.oceanParams.E);
+
+                // Prepare instance data
+                const offsets = new Float32Array(totalCreatures * 2);
+                const rotations = new Float32Array(totalCreatures);
+                const coherences = new Float32Array(totalCreatures);
+                const wingPhases = new Float32Array(totalCreatures);
+                const sizes = new Float32Array(totalCreatures);
+                const types = new Float32Array(totalCreatures);
+
+                let index = 0;
+
+                // Add bat data
+                this.bats.forEach(bat => {
+                    offsets[index * 2] = bat.x;
+                    offsets[index * 2 + 1] = bat.y;
+                    rotations[index] = bat.rotation;
+                    coherences[index] = bat.coherence;
+                    wingPhases[index] = bat.wingPhase;
+                    sizes[index] = bat.size;
+                    types[index] = 0; // bat
+                    index++;
+                });
+
+                // Add insect data
+                this.insects.forEach(insect => {
+                    offsets[index * 2] = insect.x;
+                    offsets[index * 2 + 1] = insect.y;
+                    rotations[index] = insect.rotation;
+                    coherences[index] = 0.6;
+                    wingPhases[index] = insect.wingPhase;
+                    sizes[index] = insect.size;
+                    types[index] = 1; // insect
+                    index++;
+                });
+
+                // Update buffers
+                this.updateInstanceBuffer(this.offsetBuffer, offsets, this.attributeLocations.offset, 2);
+                this.updateInstanceBuffer(this.rotationBuffer, rotations, this.attributeLocations.rotation, 1);
+                this.updateInstanceBuffer(this.coherenceBuffer, coherences, this.attributeLocations.coherence, 1);
+                this.updateInstanceBuffer(this.wingPhaseBuffer, wingPhases, this.attributeLocations.wingPhase, 1);
+                this.updateInstanceBuffer(this.sizeBuffer, sizes, this.attributeLocations.size, 1);
+                this.updateInstanceBuffer(this.typeBuffer, types, this.attributeLocations.type, 1);
+
+                this.gl.drawArraysInstanced(this.gl.TRIANGLES, 0, 30, totalCreatures);
+            }
+
+            updateInstanceBuffer(buffer, data, location, size) {
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.DYNAMIC_DRAW);
+                this.gl.enableVertexAttribArray(location);
+                this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
+                this.gl.vertexAttribDivisor(location, 1);
+            }
+
+            initializeEventListeners() {
+                // Control panel toggle
+                document.getElementById('controlToggle').addEventListener('click', () => {
+                    this.controlsExpanded = !this.controlsExpanded;
+                    const toggle = document.getElementById('controlToggle');
+                    const panel = document.getElementById('controlPanel');
+                    
+                    if (this.controlsExpanded) {
+                        toggle.textContent = '-';
+                        panel.classList.add('expanded');
+                    } else {
+                        toggle.textContent = '+';
+                        panel.classList.remove('expanded');
+                    }
+                });
+
+                // Network visualization controls
+                document.getElementById('show-sonar').addEventListener('change', (e) => {
+                    this.showSonar = e.target.checked;
+                });
+
+                document.getElementById('show-prey').addEventListener('change', (e) => {
+                    this.showPrey = e.target.checked;
+                });
+
+                document.getElementById('show-communication').addEventListener('change', (e) => {
+                    this.showCommunication = e.target.checked;
+                });
+
+                document.getElementById('show-memory').addEventListener('change', (e) => {
+                    this.showMemory = e.target.checked;
+                });
+
+                document.getElementById('network-opacity-slider').addEventListener('input', (e) => {
+                    this.networkOpacity = parseInt(e.target.value) / 100;
+                    document.getElementById('network-opacity-value').textContent = e.target.value + '%';
+                });
+
+                document.getElementById('link-distance-slider').addEventListener('input', (e) => {
+                    this.linkDistance = parseInt(e.target.value);
+                    document.getElementById('link-distance-value').textContent = this.linkDistance;
+                });
+
+                // Star controls
+                document.getElementById('star-time-slider').addEventListener('input', (e) => {
+                    this.starParams.timeFlow = parseFloat(e.target.value);
+                    document.getElementById('star-time-value').textContent = this.starParams.timeFlow.toFixed(1);
+                });
+
+                document.getElementById('star-density-slider').addEventListener('input', (e) => {
+                    this.starParams.density = parseInt(e.target.value);
+                    document.getElementById('star-density-value').textContent = this.starParams.density;
+                });
+
+                document.getElementById('star-memory-slider').addEventListener('input', (e) => {
+                    this.starParams.memoryDepth = parseFloat(e.target.value);
+                    document.getElementById('star-memory-value').textContent = this.starParams.memoryDepth.toFixed(1);
+                });
+
+                document.getElementById('star-sparkle-slider').addEventListener('input', (e) => {
+                    this.starParams.sparkleIntensity = parseFloat(e.target.value);
+                    document.getElementById('star-sparkle-value').textContent = this.starParams.sparkleIntensity.toFixed(1);
+                });
+
+                document.getElementById('star-reflection-slider').addEventListener('input', (e) => {
+                    this.starParams.reflectionStrength = parseFloat(e.target.value);
+                    document.getElementById('star-reflection-value').textContent = this.starParams.reflectionStrength.toFixed(1);
+                });
+
+                // Audio controls
+                document.getElementById('audio-enable-btn').addEventListener('click', async () => {
+                    if (!this.audioEnabled) {
+                        if (this.audioContext.state === 'suspended') {
+                            await this.audioContext.resume();
+                        }
+                        this.audioEnabled = true;
+                        document.getElementById('audio-enable-btn').textContent = '🔊 Audio ON';
+                        document.getElementById('audio-enable-btn').classList.add('active');
+                        document.getElementById('audio-status').textContent = 'Audio Context: Active';
+                    } else {
+                        this.audioEnabled = false;
+                        document.getElementById('audio-enable-btn').textContent = '🔇 Audio OFF';
+                        document.getElementById('audio-enable-btn').classList.remove('active');
+                        document.getElementById('audio-status').textContent = 'Audio Context: Muted';
+                    }
+                });
+
+                document.getElementById('ultrasound-mode-btn').addEventListener('click', () => {
+                    this.ultrasoundMode = !this.ultrasoundMode;
+                    if (this.ultrasoundMode) {
+                        document.getElementById('ultrasound-mode-btn').textContent = '🔊 Ultrasound ON';
+                        document.getElementById('ultrasound-mode-btn').classList.add('active');
+                        document.getElementById('audio-mode').textContent = 'ULTRASONIC MODE ACTIVE';
+                    } else {
+                        document.getElementById('ultrasound-mode-btn').textContent = '🔊 Ultrasound OFF';
+                        document.getElementById('ultrasound-mode-btn').classList.remove('active');
+                        document.getElementById('audio-mode').textContent = 'AUDIBLE SOUNDS ACTIVE';
+                    }
+                });
+
+                document.getElementById('volume-slider').addEventListener('input', (e) => {
+                    const newVolume = parseInt(e.target.value) / 100;
+                    this.masterVolume = Math.max(0.001, Math.min(1.0, isFinite(newVolume) ? newVolume : 0.7));
+                    document.getElementById('volume-value').textContent = Math.round(this.masterVolume * 100) + '%';
+                    if (this.masterGain && this.audioContext) {
+                        try {
+                            this.masterGain.gain.setTargetAtTime(this.masterVolume, this.audioContext.currentTime, 0.1);
+                        } catch (error) {
+                            console.error('Volume adjustment error:', error);
+                        }
+                    }
+                });
+
+                document.getElementById('echo-volume-slider').addEventListener('input', (e) => {
+                    const newEchoVolume = parseInt(e.target.value) / 100;
+                    this.echoVolume = Math.max(0.001, Math.min(1.0, isFinite(newEchoVolume) ? newEchoVolume : 0.5));
+                    document.getElementById('echo-volume-value').textContent = Math.round(this.echoVolume * 100) + '%';
+                    if (this.echolocationGain && this.audioContext) {
+                        try {
+                            this.echolocationGain.gain.setTargetAtTime(this.echoVolume, this.audioContext.currentTime, 0.1);
+                        } catch (error) {
+                            console.error('Echo volume adjustment error:', error);
+                        }
+                    }
+                });
+
+                // Moonlight controls (Reintroduced)
+                document.getElementById('moonlight-intensity-slider').addEventListener('input', (e) => {
+                    this.moonlightIntensity = parseFloat(e.target.value);
+                    document.getElementById('moonlight-intensity-value').textContent = this.moonlightIntensity.toFixed(2);
+                });
+
+                document.getElementById('atmospheric-scattering-slider').addEventListener('input', (e) => {
+                    this.atmosphericScattering = parseFloat(e.target.value);
+                    document.getElementById('atmospheric-scattering-value').textContent = this.atmosphericScattering.toFixed(2);
+                });
+
+                document.getElementById('interference-slider').addEventListener('input', (e) => {
+                    this.interference = parseInt(e.target.value) / 100;
+                    document.getElementById('interference-value').textContent = e.target.value + '%';
+                });
+
+                document.getElementById('wave-amplitude-slider').addEventListener('input', (e) => {
+                    this.waveAmplitude = parseFloat(e.target.value);
+                    document.getElementById('wave-amplitude-value').textContent = this.waveAmplitude.toFixed(2);
+                });
+
+                document.getElementById('wave-speed-slider').addEventListener('input', (e) => {
+                    this.waveSpeed = parseFloat(e.target.value);
+                    document.getElementById('wave-speed-value').textContent = this.waveSpeed.toFixed(1);
+                });
+
+                // Bioluminescent Ocean controls
+                document.getElementById('wave-energy-slider').addEventListener('input', (e) => {
+                    this.oceanParams.E = parseFloat(e.target.value);
+                    document.getElementById('wave-energy-value').textContent = this.oceanParams.E.toFixed(2);
+                });
+
+                document.getElementById('plankton-density-slider').addEventListener('input', (e) => {
+                    this.oceanParams.rho = parseFloat(e.target.value);
+                    document.getElementById('plankton-density-value').textContent = this.oceanParams.rho.toFixed(2);
+                });
+
+                document.getElementById('ocean-memory-slider').addEventListener('input', (e) => {
+                    this.oceanParams.tau = parseFloat(e.target.value);
+                    document.getElementById('ocean-memory-value').textContent = this.oceanParams.tau.toFixed(2);
+                });
+
+                document.getElementById('ignition-threshold-slider').addEventListener('input', (e) => {
+                    this.oceanParams.Om = parseFloat(e.target.value);
+                    document.getElementById('ignition-threshold-value').textContent = this.oceanParams.Om.toFixed(2);
+                });
+
+                document.getElementById('glow-intensity-slider').addEventListener('input', (e) => {
+                    this.oceanParams.gI = parseFloat(e.target.value);
+                    document.getElementById('glow-intensity-value').textContent = this.oceanParams.gI.toFixed(2);
+                });
+
+                document.getElementById('moon-influence-slider').addEventListener('input', (e) => {
+                    this.oceanParams.moonInfluence = parseFloat(e.target.value);
+                    document.getElementById('moon-influence-value').textContent = this.oceanParams.moonInfluence.toFixed(1);
+                });
+
+                // CRR controls
+                document.getElementById('omega-slider').addEventListener('input', (e) => {
+                    this.omega = parseFloat(e.target.value);
+                    document.getElementById('omega-value').textContent = this.omega.toFixed(1);
+                });
+
+                document.getElementById('memory-density-slider').addEventListener('input', (e) => {
+                    this.memoryDensity = parseFloat(e.target.value);
+                    document.getElementById('memory-density-value').textContent = this.memoryDensity.toFixed(1);
+                });
+
+                document.getElementById('rupture-threshold-slider').addEventListener('input', (e) => {
+                    this.ruptureThreshold = parseFloat(e.target.value);
+                    document.getElementById('rupture-threshold-value').textContent = this.ruptureThreshold.toFixed(1);
+                });
+
+                document.getElementById('memory-window-slider').addEventListener('input', (e) => {
+                    this.memoryWindow = parseFloat(e.target.value);
+                    document.getElementById('memory-window-value').textContent = this.memoryWindow.toFixed(1);
+                });
+
+                // Colony controls
+                document.getElementById('population-slider').addEventListener('input', (e) => {
+                    const newSize = parseInt(e.target.value);
+                    document.getElementById('population-value').textContent = newSize;
+                    
+                    if (newSize > this.populationSize) {
+                        while (this.bats.length < newSize) {
+                            this.bats.push(this.createBat());
+                        }
+                    } else if (newSize < this.populationSize) {
+                        this.bats = this.bats.slice(0, newSize);
+                    }
+                    
+                    this.populationSize = newSize;
+                });
+
+                document.getElementById('mutation-rate-slider').addEventListener('input', (e) => {
+                    this.mutationRate = parseFloat(e.target.value);
+                    document.getElementById('mutation-rate-value').textContent = this.mutationRate.toFixed(3);
+                });
+
+                // Action buttons
+                document.getElementById('evolve-btn').addEventListener('click', () => {
+                    this.evolveGeneration();
+                });
+
+                document.getElementById('reset-genetics-btn').addEventListener('click', () => {
+                    this.initializeBats();
+                    this.generation = 1;
+                    this.successfulHunts = 0;
+                    this.totalRuptures = 0;
+                });
+
+                document.getElementById('clear-insects-btn').addEventListener('click', () => {
+                    this.insects = [];
+                });
+
+                // Mouse click to add insects
+                this.batCanvas.addEventListener('click', (e) => {
+                    const rect = this.batCanvas.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const clickY = e.clientY - rect.top;
+                    
+                    const insectCount = 4 + Math.floor(Math.random() * 6);
+                    for (let i = 0; i < insectCount; i++) {
+                        this.insects.push(this.createInsect(clickX, clickY));
+                    }
+                });
+
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.bioluminescentCanvas.width = window.innerWidth;
+                    this.bioluminescentCanvas.height = window.innerHeight;
+                    this.networkCanvas.width = window.innerWidth;
+                    this.networkCanvas.height = window.innerHeight;
+                    this.batCanvas.width = window.innerWidth;
+                    this.batCanvas.height = window.innerHeight;
+                    this.gl.viewport(0, 0, this.batCanvas.width, this.batCanvas.height);
+                });
+            }
+
+            evolveGeneration() {
+                // Sort by fitness (including CRR components)
+                this.bats.sort((a, b) => b.fitness - a.fitness);
+
+                const survivalRate = 0.32;
+                const survivors = Math.floor(this.bats.length * survivalRate);
+                const survivorPool = this.bats.slice(0, survivors);
+
+                const newGeneration = [...survivorPool];
+
+                while (newGeneration.length < this.populationSize) {
+                    const parent1 = survivorPool[Math.floor(Math.random() * survivorPool.length)];
+                    const parent2 = survivorPool[Math.floor(Math.random() * survivorPool.length)];
+                    const offspring = this.crossover(parent1, parent2);
+                    this.mutate(offspring);
+                    newGeneration.push(offspring);
+                }
+
+                this.bats = newGeneration;
+                this.generation++;
+
+                // Reset all bats while preserving evolved traits
+                this.bats.forEach(bat => {
+                    bat.x = Math.random() * this.batCanvas.width;
+                    bat.y = Math.random() * this.batCanvas.height;
+                    bat.vx = (Math.random() - 0.5) * 7;
+                    bat.vy = (Math.random() - 0.5) * 7;
+                    bat.fitness = 0;
+                    bat.successfulHunts = 0;
+                    bat.coherence = 0.7 + Math.random() * 0.3;
+                    bat.targetInsect = null;
+                    bat.huntingMode = false;
+                    bat.currentFlightPattern = 'cruise';
+                    bat.energyLevel = 0.8 + Math.random() * 0.4;
+                    bat.wingPhase = Math.random() * Math.PI * 2;
+                    bat.sonarConnections = [];
+                    bat.communicationLinks = [];
+                    bat.lastCommunication = 0;
+                    bat.moonlightLevel = 0;
+                    
+                    // Reset CRR properties
+                    bat.memoryTrace = [];
+                    bat.coherenceIntegral = 0;
+                    bat.lastRuptureTime = 0;
+                    bat.ruptureCount = 0;
+                    bat.regenerationWeight = 1.0;
+                });
+            }
+
+            crossover(parent1, parent2) {
+                const offspring = this.createBat();
+
+                // RNA crossover
+                Object.keys(offspring.rna).forEach(trait => {
+                    const seq1 = parent1.rna[trait];
+                    const seq2 = parent2.rna[trait];
+                    const crossoverPoint = Math.floor(Math.random() * Math.min(seq1.length, seq2.length));
+
+                    offspring.rna[trait] = seq1.substring(0, crossoverPoint) + 
+                                         seq2.substring(crossoverPoint);
+                });
+
+                // Inherit some genetic traits
+                offspring.genetics.dartingTendency = (parent1.genetics.dartingTendency + parent2.genetics.dartingTendency) / 2;
+                offspring.genetics.swoopingAbility = (parent1.genetics.swoopingAbility + parent2.genetics.swoopingAbility) / 2;
+
+                return offspring;
+            }
+
+            mutate(bat) {
+                const bases = ['A', 'U', 'G', 'C'];
+
+                Object.keys(bat.rna).forEach(trait => {
+                    let sequence = bat.rna[trait];
+                    let mutated = '';
+
+                    for (let i = 0; i < sequence.length; i++) {
+                        if (Math.random() < this.mutationRate) {
+                            mutated += bases[Math.floor(Math.random() * 4)];
+                        } else {
+                            mutated += sequence[i];
+                        }
+                    }
+
+                    bat.rna[trait] = mutated;
+                });
+
+                // Mutate some genetic traits
+                if (Math.random() < this.mutationRate * 10) {
+                    bat.genetics.dartingTendency += (Math.random() - 0.5) * 0.2;
+                    bat.genetics.dartingTendency = Math.max(0, Math.min(2, bat.genetics.dartingTendency));
+                }
+                
+                if (Math.random() < this.mutationRate * 10) {
+                    bat.genetics.swoopingAbility += (Math.random() - 0.5) * 0.2;
+                    bat.genetics.swoopingAbility = Math.max(0, Math.min(2, bat.genetics.swoopingAbility));
+                }
+            }
+
+            updateUI() {
+                // Basic stats
+                document.getElementById('active-bats').textContent = this.bats.length;
+                document.getElementById('prey-count').textContent = this.insects.length;
+                document.getElementById('successful-hunts').textContent = this.successfulHunts;
+                document.getElementById('generation').textContent = this.generation;
+                document.getElementById('total-ruptures').textContent = this.totalRuptures;
+
+                // CRR-specific stats
+                const avgCoherence = this.bats.length > 0 ? 
+                    this.bats.reduce((sum, b) => sum + b.coherence, 0) / this.bats.length : 0;
+                document.getElementById('avg-coherence').textContent = avgCoherence.toFixed(3);
+
+                // Update current omega display
+                document.getElementById('current-omega').textContent = this.omega.toFixed(1);
+
+                // CRR system status
+                const totalMemoryEntries = this.bats.reduce((sum, b) => sum + b.memoryTrace.length, 0);
+                const avgCoherenceIntegral = this.bats.length > 0 ? 
+                    this.bats.reduce((sum, b) => sum + b.coherenceIntegral, 0) / this.bats.length : 0;
+                const recentRuptures = this.bats.filter(b => (this.time - b.lastRuptureTime) < 2.0).length;
+
+                document.getElementById('crr-memory-integration').textContent = 
+                    `Memory Integration: ${totalMemoryEntries} entries (${avgCoherenceIntegral.toFixed(2)} avg)`;
+                document.getElementById('crr-rupture-detection').textContent = 
+                    `Rupture Detection: ${recentRuptures} recent, ${this.totalRuptures} total`;
+                document.getElementById('crr-regeneration').textContent = 
+                    `Regeneration: ${this.bats.filter(b => b.regenerationWeight > 0.8).length}/${this.bats.length} active`;
+
+                // Markovian vs Non-Markovian status
+                const nonMarkovianBats = this.bats.filter(b => b.memoryTrace.length > 3).length;
+                const markovianRatio = nonMarkovianBats / Math.max(1, this.bats.length);
+                if (markovianRatio > 0.7) {
+                    document.getElementById('markov-status').textContent = 'Strongly Non-Markovian';
+                } else if (markovianRatio > 0.3) {
+                    document.getElementById('markov-status').textContent = 'Partially Non-Markovian';
+                } else {
+                    document.getElementById('markov-status').textContent = 'Mostly Markovian';
+                }
+
+                // Audio indicators
+                const batsInAudioRange = this.bats.filter(bat => 
+                    this.calculateBatAudioDistance(bat) > 0.3).length;
+                document.getElementById('audio-bat-count').textContent = batsInAudioRange;
+
+                const wingbeatActivity = Math.min(100, (batsInAudioRange / Math.max(1, this.bats.length)) * 100);
+                const echolocationActivity = Math.min(100, avgCoherence * 45);
+
+                document.getElementById('wingbeat-bar').style.width = `${wingbeatActivity}%`;
+                document.getElementById('echolocation-bar').style.width = `${echolocationActivity}%`;
+
+                // Update RNA displays
+                this.updateDominantRNA();
+                document.getElementById('rna-hunting').textContent = this.dominantRNA.hunting;
+                document.getElementById('rna-echolocation').textContent = this.dominantRNA.echolocation;
+                document.getElementById('rna-predation').textContent = this.dominantRNA.predation;
+            }
+
+            updateDominantRNA() {
+                if (this.bats.length === 0) return;
+
+                const topBats = [...this.bats].sort((a, b) => b.fitness - a.fitness).slice(0, Math.max(1, Math.floor(this.bats.length * 0.12)));
+
+                const rnaFreq = { hunting: {}, echolocation: {}, predation: {} };
+
+                topBats.forEach(bat => {
+                    [bat.rna.hunting, bat.rna.echolocation, bat.rna.predation].forEach((seq, i) => {
+                        const type = ['hunting', 'echolocation', 'predation'][i];
+                        rnaFreq[type][seq] = (rnaFreq[type][seq] || 0) + 1;
+                    });
+                });
+
+                Object.keys(rnaFreq).forEach(type => {
+                    const sequences = rnaFreq[type];
+                    if (Object.keys(sequences).length > 0) {
+                        const mostCommon = Object.keys(sequences).reduce((a, b) => 
+                            sequences[a] > sequences[b] ? a : b);
+                        this.dominantRNA[type] = mostCommon;
+                    }
+                });
+            }
+
+            animate() {
+                const currentTime = performance.now() / 1000;
+                const dt = Math.min(currentTime - this.time, 1/30);
+                this.time = currentTime;
+
+                this.updateBats(dt);
+                this.updateInsects(dt);
+                this.render();
+                this.updateUI();
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            new EnhancedCRRBatColony();
+        });
+    </script>
+</body>
+</html>
+                

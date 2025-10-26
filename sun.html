@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Solar Physics - Enhanced Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1a1a1a;
+            font-family: Georgia, 'Times New Roman', serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .main-container {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 0;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            color: #666666;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .explainer-section {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0284c7;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .explainer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .explainer-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0c4a6e;
+        }
+
+        .explainer-toggle {
+            font-size: 1.5rem;
+            color: #0284c7;
+            transition: transform 0.3s;
+        }
+
+        .explainer-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .explainer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+
+        .explainer-content.open {
+            max-height: 3500px;
+            margin-top: 20px;
+        }
+
+        .explainer-box {
+            background: white;
+            border: 1px solid #bae6fd;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explainer-box h4 {
+            color: #0c4a6e;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .explainer-box p {
+            color: #334155;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .explainer-box ul {
+            color: #334155;
+            font-size: 0.85rem;
+            margin-left: 20px;
+            line-height: 1.6;
+        }
+
+        .equation {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            color: #0f172a;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            border: 1px solid #cbd5e1;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            margin: 10px 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+        }
+
+        .code-comment {
+            color: #94a3b8;
+        }
+
+        .code-keyword {
+            color: #60a5fa;
+        }
+
+        .code-function {
+            color: #fbbf24;
+        }
+
+        .code-number {
+            color: #34d399;
+        }
+
+        .simulation-area {
+            position: relative;
+            width: 100%;
+            height: 750px;
+            background: linear-gradient(135deg, #000 0%, #001122 100%);
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        #solarCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .controls-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .solar-controls {
+            background: rgba(0,15,30,0.95);
+            color: rgba(200,220,255,0.95);
+            padding: 20px;
+            border-radius: 0;
+            border: 2px solid rgba(100,150,255,0.3);
+            font-size: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            font-family: 'Courier New', monospace;
+        }
+
+        .solar-controls .title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #88ddff;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .process-indicators {
+            background: rgba(0, 10, 20, 0.92);
+            padding: 20px;
+            border-radius: 0;
+            border: 2px solid rgba(100, 255, 150, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .process-indicators .title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4ade80;
+            font-size: 14px;
+            text-align: center;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .process-item {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .process-item.active {
+            background: rgba(74, 222, 128, 0.15);
+            border-left-color: #4ade80;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .process-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 0;
+            background: #333;
+            margin-right: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+        }
+
+        .process-item.active .process-indicator {
+            background: #4ade80;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.8), 0 0 20px rgba(74, 222, 128, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .process-label {
+            flex: 1;
+            color: #aaccff;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .process-item.active .process-label {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .crr-status {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 0;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 11px;
+        }
+
+        .status-label {
+            color: #aaccff;
+        }
+
+        .status-value {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .status-value.warning {
+            color: #f59e0b;
+        }
+
+        .status-value.critical {
+            color: #ef4444;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 15px;
+        }
+
+        .control-group label {
+            min-width: 120px;
+            color: #aaccff;
+            font-size: 11px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: rgba(100,150,255,0.2);
+            border-radius: 0;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #60a5fa;
+            border-radius: 0;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 50px;
+            text-align: right;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(100, 150, 255, 0.2);
+        }
+
+        .action-button {
+            padding: 10px;
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
+            color: white;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .action-button.danger {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .action-button.danger:hover {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .action-button.warning {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .action-button.warning:hover {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .rupture-counter {
+            text-align: center;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 0;
+            margin-top: 15px;
+        }
+
+        .rupture-counter .label {
+            color: #aaccff;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .rupture-counter .value {
+            color: #ef4444;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .equation-display {
+            background: rgba(30, 30, 40, 0.8);
+            padding: 10px;
+            border-radius: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: #88ddff;
+            margin-top: 10px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>CRR Solar Physics Simulation</h1>
+            <div class="subtitle">Coherence-Rupture-Regeneration Framework Applied to Stellar Dynamics</div>
+        </div>
+
+        <div class="explainer-section">
+            <div class="explainer-header" onclick="toggleExplainer()">
+                <h3>Mathematical Framework & Implementation</h3>
+                <span class="explainer-toggle" id="explainerToggle">▼</span>
+            </div>
+            <div class="explainer-content" id="explainerContent">
+                
+                <div class="explainer-box">
+                    <h4>Coherence Integration in Solar Physics</h4>
+                    <p>The CRR framework models stellar evolution through coherence accumulation over time. Nuclear fusion provides the primary coherence density function:</p>
+                    <div class="equation">
+                        C_nuclear(t) = ∫₀ᵗ L_fusion(τ) dτ = t / T_lifetime
+                    </div>
+                    <p>Where L_fusion represents the memory density of nuclear reactions and T_lifetime is the stellar lifetime (10 Gyr for Sun-like stars).</p>
+                    <div class="code-block">
+<span class="code-comment">// Nuclear coherence implementation</span>
+<span class="code-keyword">const</span> SOLAR_PHYSICS = {
+    solar_age: <span class="code-number">4.6e9</span>,        <span class="code-comment">// years</span>
+    solar_lifetime: <span class="code-number">10e9</span>,    <span class="code-comment">// years</span>
+};
+
+<span class="code-keyword">this</span>.crr.nuclear_C = SOLAR_PHYSICS.solar_age / SOLAR_PHYSICS.solar_lifetime;
+<span class="code-comment">// Result: 0.46 (46% through stellar lifecycle)</span>
+                    </div>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Magnetic Coherence Oscillation</h4>
+                    <p>The solar magnetic dynamo operates on an 11-year cycle, creating an oscillatory coherence signature distinct from the monotonic nuclear accumulation:</p>
+                    <div class="equation">
+                        C_magnetic(t) = A·sin(2πt/T_cycle) + φ₀
+                    </div>
+                    <p>This represents a resilient signature where coherence builds and ruptures rhythmically, preventing catastrophic accumulation.</p>
+                    <div class="code-block">
+<span class="code-comment">// Magnetic cycle coherence (oscillatory signature)</span>
+<span class="code-keyword">const</span> cycleProgress = (<span class="code-keyword">this</span>.time * <span class="code-keyword">this</span>.crr.time_speed / <span class="code-number">200</span>) % <span class="code-number">1</span>;
+<span class="code-keyword">this</span>.crr.magnetic_C = cycleProgress;
+
+<span class="code-comment">// Modulates chromosphere shader:</span>
+chromosphereMaterial.uniforms.u_magnetic.value = <span class="code-keyword">this</span>.crr.magnetic_C;
+                    </div>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Rupture Detection and Implementation</h4>
+                    <p>Ruptures are discrete events that reset or reorganize the coherence field. The Dirac delta function captures instantaneous state changes:</p>
+                    <div class="equation">
+                        δ(t - t₀) · ρ(x) = Impulse_amplitude × Dirac_delta(t - rupture_time)
+                    </div>
+                    <p>Three primary rupture mechanisms are implemented:</p>
+                    <ul>
+                        <li><strong>Solar Flares:</strong> Magnetic reconnection events with characteristic timescale τ = 5 seconds (simulation time)</li>
+                        <li><strong>Coronal Mass Ejections:</strong> Large-scale plasma expulsion with τ = 8 seconds expansion time</li>
+                        <li><strong>Magnetic Reversals:</strong> Complete field polarity inversion, coherence reset to zero</li>
+                    </ul>
+                    <div class="code-block">
+<span class="code-comment">// X-Class Solar Flare (Rupture Event)</span>
+<span class="code-function">function</span> <span class="code-function">triggerXFlare</span>() {
+    engine.crr.active_flare = <span class="code-keyword">true</span>;
+    engine.crr.flare_start_time = engine.time;
+    engine.crr.rupture_count++;
+    
+    <span class="code-comment">// Update shader uniforms for visual rupture</span>
+    photosphereMaterial.uniforms.u_flare_intensity.value = <span class="code-number">1.0</span>;
+    chromosphereMaterial.uniforms.u_flare_intensity.value = <span class="code-number">1.0</span>;
+}
+
+<span class="code-comment">// CME (Major Rupture with Mass Ejection)</span>
+<span class="code-function">function</span> <span class="code-function">triggerCME</span>() {
+    engine.crr.active_cme = <span class="code-keyword">true</span>;
+    engine.crr.cme_start_time = engine.time;
+    engine.crr.rupture_count++;
+    
+    <span class="code-comment">// Accelerate particle system (visible mass ejection)</span>
+    <span class="code-keyword">const</span> cmeBoost = <span class="code-number">3.0</span>;  <span class="code-comment">// 3x velocity increase</span>
+}
+
+<span class="code-comment">// Magnetic Field Reversal (Complete Coherence Reset)</span>
+<span class="code-function">function</span> <span class="code-function">magneticReversal</span>() {
+    engine.crr.magnetic_C = <span class="code-number">0.0</span>;  <span class="code-comment">// δ-function reset</span>
+    engine.crr.rupture_count++;
+}
+                    </div>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Regeneration Operator with Memory Kernel</h4>
+                    <p>After rupture, the system regenerates using an exponentially-weighted memory integral that preserves historical coherence structure:</p>
+                    <div class="equation">
+                        R[χ](x,t) = ∫₀ᵗ φ(x,τ)·exp(C(x)/Ω)·Θ(t-τ) dτ
+                    </div>
+                    <p>Where φ(x,τ) is the historical field signal, C(x)/Ω is the normalized coherence, and Θ ensures causality (only past influences present).</p>
+                    <div class="code-block">
+<span class="code-comment">// Rupture decay with exponential memory weighting</span>
+<span class="code-keyword">if</span> (<span class="code-keyword">this</span>.crr.active_flare) {
+    <span class="code-keyword">const</span> elapsed = <span class="code-keyword">this</span>.time - <span class="code-keyword">this</span>.crr.flare_start_time;
+    <span class="code-keyword">const</span> tau = <span class="code-number">5.0</span>;  <span class="code-comment">// regeneration timescale</span>
+    
+    <span class="code-comment">// Exponential decay: e^(-t/τ)</span>
+    <span class="code-keyword">const</span> intensity = Math.<span class="code-function">exp</span>(-elapsed / tau);
+    
+    <span class="code-keyword">if</span> (elapsed > tau) {
+        <span class="code-keyword">this</span>.crr.active_flare = <span class="code-keyword">false</span>;  <span class="code-comment">// Regeneration complete</span>
+    }
+}
+
+<span class="code-comment">// CME regeneration with linear decay (different kernel)</span>
+<span class="code-keyword">if</span> (<span class="code-keyword">this</span>.crr.active_cme) {
+    <span class="code-keyword">const</span> elapsed = <span class="code-keyword">this</span>.time - <span class="code-keyword">this</span>.crr.cme_start_time;
+    <span class="code-keyword">const</span> intensity = Math.<span class="code-function">max</span>(<span class="code-number">0</span>, <span class="code-number">1.0</span> - elapsed / <span class="code-number">8.0</span>);
+    
+    extendedCoronaMaterial.uniforms.u_cme_intensity.value = intensity;
+}
+                    </div>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Memory Signatures in Solar Dynamics</h4>
+                    <p>The simulation exhibits a hybrid CRR signature combining two distinct temporal regimes:</p>
+                    <ul>
+                        <li><strong>Oscillatory Component (Magnetic):</strong> 11-year cycle with regular rupture-regeneration maintains resilient signature</li>
+                        <li><strong>Fragile Component (Nuclear):</strong> Monotonic accumulation over 10 Gyr with no intermediate ruptures, leading to eventual catastrophic collapse (red giant phase)</li>
+                    </ul>
+                    <p>This demonstrates how resilient subsystems (magnetic cycles) can be nested within fragile supersystems (stellar evolution), creating multi-scale temporal structure.</p>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Shader Implementation of Coherence Fields</h4>
+                    <p>Coherence is visualized through procedural shaders that respond to CRR parameters in real-time:</p>
+                    <div class="code-block">
+<span class="code-comment">// Fragment shader for chromosphere (coherence-dependent)</span>
+<span class="code-keyword">uniform float</span> u_magnetic;  <span class="code-comment">// Magnetic coherence [0,1]</span>
+<span class="code-keyword">uniform float</span> u_flare_intensity;  <span class="code-comment">// Rupture amplitude</span>
+
+<span class="code-keyword">void</span> <span class="code-function">main</span>() {
+    <span class="code-comment">// Coherence modulates noise-based structure</span>
+    <span class="code-keyword">vec3</span> coord = vPosition * <span class="code-number">5.0</span> + <span class="code-keyword">vec3</span>(u_time * <span class="code-number">0.15</span>);
+    <span class="code-keyword">float</span> n = <span class="code-function">noise</span>(coord) * u_magnetic;
+    
+    <span class="code-comment">// Rupture enhances opacity and color temperature</span>
+    <span class="code-keyword">float</span> alpha = n * <span class="code-number">0.3</span> + u_flare_intensity * <span class="code-number">0.4</span>;
+    <span class="code-keyword">vec3</span> color = <span class="code-function">mix</span>(
+        <span class="code-keyword">vec3</span>(<span class="code-number">1.0</span>, <span class="code-number">0.3</span>, <span class="code-number">0.1</span>),  <span class="code-comment">// Base chromosphere</span>
+        <span class="code-keyword">vec3</span>(<span class="code-number">1.0</span>, <span class="code-number">0.9</span>, <span class="code-number">0.7</span>),  <span class="code-comment">// Flare brightening</span>
+        u_flare_intensity
+    );
+}
+                    </div>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Variational Structure and Punctuated Dynamics</h4>
+                    <p>The CRR framework extends the Euler-Lagrange variational principle to handle discontinuous evolution:</p>
+                    <div class="equation">
+                        d/dt(∂L/∂ẋ) - ∂L/∂x = ∫₀ᵗ K(t-τ)φ(x,τ)e^(C(x)/Ω) dτ + Σᵢ ρᵢ(x)δ(t-tᵢ)
+                    </div>
+                    <p>Between ruptures, evolution follows smooth variational paths. At rupture times tᵢ, the system undergoes instantaneous boundary condition resets, creating a concatenation of variational arcs stitched by impulses.</p>
+                    <p>This captures the fundamental insight that complex systems maintain identity-through-change by metabolizing rupture rather than eliminating it.</p>
+                </div>
+
+                <div class="explainer-box">
+                    <h4>Process Indicators: Observable CRR Operators</h4>
+                    <p>The right-hand panel displays six active processes, making the abstract mathematical operators tangible:</p>
+                    <ul>
+                        <li><strong>Nuclear Fusion:</strong> Continuous coherence accumulation (always active)</li>
+                        <li><strong>Magnetic Dynamo:</strong> Oscillatory coherence generation (active when magnetic activity > 0.5)</li>
+                        <li><strong>Solar Flare:</strong> Rupture event visualization (δ-function pulse)</li>
+                        <li><strong>CME:</strong> Major rupture with mass transport</li>
+                        <li><strong>Magnetic Reversal:</strong> Complete field reorganization</li>
+                        <li><strong>Field Regeneration:</strong> Active memory integral reconstruction</li>
+                    </ul>
+                    <p>Each indicator lights up when its corresponding operator is actively transforming the system state, providing real-time feedback on the CRR mathematical engine.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="simulation-area">
+            <canvas id="solarCanvas"></canvas>
+        </div>
+
+        <div class="controls-container">
+            <div class="solar-controls">
+                <div class="title">CRR PARAMETERS</div>
+                
+                <div class="crr-status">
+                    <div class="status-row">
+                        <span class="status-label">Nuclear Coherence:</span>
+                        <span class="status-value" id="coherenceValue">0.460</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Magnetic Cycle:</span>
+                        <span class="status-value" id="magneticValue">0.46</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Stellar Age:</span>
+                        <span class="status-value" id="yearsValue">4.6 Gyr</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Rupture State:</span>
+                        <span class="status-value" id="ruptureState">Stable</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Time Speed:</label>
+                    <input type="range" id="timespeed" min="1" max="50" value="10" step="1">
+                    <span class="value-display" id="timespeed-display">10x</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Flare Intensity:</label>
+                    <input type="range" id="flareintensity" min="0" max="5" value="2.2" step="0.1">
+                    <span class="value-display" id="flareintensity-display">C6.6</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Magnetic Activity:</label>
+                    <input type="range" id="magnetic" min="0" max="3" value="1.0" step="0.1">
+                    <span class="value-display" id="magnetic-display">1.0</span>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-button danger" onclick="triggerXFlare()">X-CLASS FLARE</button>
+                    <button class="action-button warning" onclick="triggerCME()">CORONAL MASS EJECTION</button>
+                    <button class="action-button warning" onclick="magneticReversal()">MAGNETIC REVERSAL</button>
+                    <button class="action-button" onclick="toggleRotation()">TOGGLE ROTATION</button>
+                    <button class="action-button" style="grid-column: 1 / -1;" onclick="resetSystem()">RESET SYSTEM</button>
+                </div>
+
+                <div class="rupture-counter">
+                    <div class="label">TOTAL RUPTURE EVENTS</div>
+                    <div class="value" id="totalRuptures">0</div>
+                </div>
+
+                <div class="equation-display">
+                    R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ
+                </div>
+            </div>
+
+            <div class="process-indicators">
+                <div class="title">ACTIVE PROCESSES</div>
+                
+                <div class="process-item" id="process-fusion">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Nuclear Fusion (Coherence Build)</div>
+                </div>
+
+                <div class="process-item" id="process-magnetic">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Magnetic Dynamo Cycle</div>
+                </div>
+
+                <div class="process-item" id="process-flare">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Solar Flare (Rupture Event)</div>
+                </div>
+
+                <div class="process-item" id="process-cme">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Coronal Mass Ejection</div>
+                </div>
+
+                <div class="process-item" id="process-reversal">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Magnetic Field Reversal</div>
+                </div>
+
+                <div class="process-item" id="process-regeneration">
+                    <div class="process-indicator"></div>
+                    <div class="process-label">Field Regeneration</div>
+                </div>
+
+                <div class="equation-display">
+                    δ(t-t₀) = Dirac rupture<br>
+                    C(x) = ∫ L(x,τ) dτ
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SOLAR_PHYSICS = {
+            solar_age: 4.6e9,
+            solar_lifetime: 10e9,
+            years_remaining: 5.4e9,
+            magnetic_cycle: 11
+        };
+
+        class CRRSolarEngine {
+            constructor() {
+                this.canvas = document.getElementById('solarCanvas');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(
+                    45,
+                    this.canvas.clientWidth / this.canvas.clientHeight,
+                    0.1,
+                    1000
+                );
+                this.camera.position.set(0, 0, 8);
+                
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: this.canvas, 
+                    antialias: true,
+                    alpha: true 
+                });
+                this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                
+                this.time = 0;
+                this.autoRotate = true;
+                this.rotation = { x: 0, y: 0 };
+                this.targetRotation = { x: 0, y: 0 };
+                
+                this.crr = {
+                    nuclear_C: SOLAR_PHYSICS.solar_age / SOLAR_PHYSICS.solar_lifetime,
+                    magnetic_C: 0.46,
+                    flare_intensity: 2.2,
+                    magnetic_activity: 1.0,
+                    rupture_count: 0,
+                    time_speed: 10,
+                    active_flare: false,
+                    active_cme: false,
+                    active_reversal: false,
+                    flare_start_time: 0,
+                    cme_start_time: 0,
+                    reversal_start_time: 0
+                };
+                
+                this.createSun();
+                this.createParticles();
+                this.setupLighting();
+                this.bindControls();
+                this.setupInteraction();
+                this.animate();
+                
+                window.addEventListener('resize', () => this.handleResize());
+                this.updateProcessIndicators();
+            }
+            
+            createSun() {
+                // Photosphere
+                const photosphereGeometry = new THREE.SphereGeometry(2.0, 128, 128);
+                this.photosphereMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        u_time: { value: 0 },
+                        u_flare_intensity: { value: 0 },
+                        u_flare_pos: { value: new THREE.Vector3(0.5, 0.5, 0) }
+                    },
+                    vertexShader: this.getVertexShader(),
+                    fragmentShader: `
+                        uniform float u_time;
+                        uniform float u_flare_intensity;
+                        uniform vec3 u_flare_pos;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        
+                        float hash(vec3 p) {
+                            p = fract(p * 0.3183099 + 0.1);
+                            p *= 17.0;
+                            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+                        }
+                        
+                        float noise(vec3 x) {
+                            vec3 p = floor(x);
+                            vec3 f = fract(x);
+                            f = f * f * (3.0 - 2.0 * f);
+                            
+                            return mix(
+                                mix(mix(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)), f.x),
+                                    mix(hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)), f.x), f.y),
+                                mix(mix(hash(p + vec3(0,0,1)), hash(p + vec3(1,0,1)), f.x),
+                                    mix(hash(p + vec3(0,1,1)), hash(p + vec3(1,1,1)), f.x), f.y),
+                                f.z);
+                        }
+                        
+                        void main() {
+                            vec3 coord = vPosition * 3.0 + vec3(u_time * 0.1);
+                            
+                            float n = 0.0;
+                            n += 0.5 * noise(coord);
+                            n += 0.25 * noise(coord * 2.0);
+                            n += 0.125 * noise(coord * 4.0);
+                            
+                            vec3 baseColor = mix(
+                                vec3(1.0, 0.6, 0.1),
+                                vec3(1.0, 0.8, 0.3),
+                                n
+                            );
+                            
+                            float distToFlare = length(normalize(vPosition) - u_flare_pos);
+                            float flareBrightness = exp(-distToFlare * 15.0) * u_flare_intensity;
+                            vec3 flareColor = vec3(1.0, 0.95, 0.8) * flareBrightness * 2.0;
+                            
+                            vec3 finalColor = baseColor + flareColor;
+                            
+                            float limb = dot(normalize(vNormal), vec3(0, 0, 1));
+                            limb = smoothstep(0.0, 1.0, limb);
+                            finalColor *= mix(0.7, 1.0, limb);
+                            
+                            gl_FragColor = vec4(finalColor, 1.0);
+                        }
+                    `,
+                    side: THREE.DoubleSide
+                });
+                
+                // Chromosphere
+                const chromosphereGeometry = new THREE.SphereGeometry(2.05, 128, 128);
+                this.chromosphereMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        u_time: { value: 0 },
+                        u_magnetic: { value: 1.0 },
+                        u_flare_intensity: { value: 0 }
+                    },
+                    vertexShader: this.getVertexShader(),
+                    fragmentShader: `
+                        uniform float u_time;
+                        uniform float u_magnetic;
+                        uniform float u_flare_intensity;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        
+                        float hash(vec3 p) {
+                            p = fract(p * 0.3183099 + 0.1);
+                            p *= 17.0;
+                            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+                        }
+                        
+                        float noise(vec3 x) {
+                            vec3 p = floor(x);
+                            vec3 f = fract(x);
+                            f = f * f * (3.0 - 2.0 * f);
+                            return mix(
+                                mix(mix(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)), f.x),
+                                    mix(hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)), f.x), f.y),
+                                mix(mix(hash(p + vec3(0,0,1)), hash(p + vec3(1,0,1)), f.x),
+                                    mix(hash(p + vec3(0,1,1)), hash(p + vec3(1,1,1)), f.x), f.y),
+                                f.z);
+                        }
+                        
+                        void main() {
+                            vec3 coord = vPosition * 5.0 + vec3(u_time * 0.15);
+                            float n = noise(coord) * u_magnetic;
+                            
+                            float alpha = n * 0.3 + u_flare_intensity * 0.4;
+                            vec3 color = mix(
+                                vec3(1.0, 0.3, 0.1),
+                                vec3(1.0, 0.9, 0.7),
+                                u_flare_intensity
+                            );
+                            
+                            float fresnel = 1.0 - abs(dot(normalize(vNormal), vec3(0, 0, 1)));
+                            alpha *= pow(fresnel, 2.0);
+                            
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                // Corona
+                const coronaGeometry = new THREE.SphereGeometry(2.3, 64, 64);
+                this.coronaMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        u_time: { value: 0 },
+                        u_flares: { value: 0.0 },
+                        u_cme_active: { value: 0.0 }
+                    },
+                    vertexShader: this.getVertexShader(),
+                    fragmentShader: `
+                        uniform float u_time;
+                        uniform float u_flares;
+                        uniform float u_cme_active;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        
+                        float hash(vec3 p) {
+                            p = fract(p * 0.3183099 + 0.1);
+                            p *= 17.0;
+                            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+                        }
+                        
+                        float noise(vec3 x) {
+                            vec3 p = floor(x);
+                            vec3 f = fract(x);
+                            f = f * f * (3.0 - 2.0 * f);
+                            return mix(
+                                mix(mix(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)), f.x),
+                                    mix(hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)), f.x), f.y),
+                                mix(mix(hash(p + vec3(0,0,1)), hash(p + vec3(1,0,1)), f.x),
+                                    mix(hash(p + vec3(0,1,1)), hash(p + vec3(1,1,1)), f.x), f.y),
+                                f.z);
+                        }
+                        
+                        void main() {
+                            vec3 coord = vPosition * 2.0 + vec3(u_time * 0.05);
+                            float n = noise(coord);
+                            
+                            float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0, 0, 1))), 3.0);
+                            
+                            float alpha = fresnel * n * 0.4;
+                            alpha += u_flares * 0.5;
+                            alpha += u_cme_active * 0.8 * fresnel;
+                            
+                            vec3 color = mix(
+                                vec3(0.3, 0.6, 1.0),
+                                vec3(1.0, 0.9, 0.7),
+                                u_flares + u_cme_active * 0.5
+                            );
+                            
+                            gl_FragColor = vec4(color, alpha * 0.6);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                // Extended Corona
+                const extendedCoronaGeometry = new THREE.SphereGeometry(3.5, 64, 64);
+                this.extendedCoronaMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        u_time: { value: 0 },
+                        u_cme_intensity: { value: 0.0 }
+                    },
+                    vertexShader: this.getVertexShader(),
+                    fragmentShader: `
+                        uniform float u_time;
+                        uniform float u_cme_intensity;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        
+                        float hash(vec3 p) {
+                            p = fract(p * 0.3183099 + 0.1);
+                            p *= 17.0;
+                            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+                        }
+                        
+                        float noise(vec3 x) {
+                            vec3 p = floor(x);
+                            vec3 f = fract(x);
+                            f = f * f * (3.0 - 2.0 * f);
+                            return mix(
+                                mix(mix(hash(p + vec3(0,0,0)), hash(p + vec3(1,0,0)), f.x),
+                                    mix(hash(p + vec3(0,1,0)), hash(p + vec3(1,1,0)), f.x), f.y),
+                                mix(mix(hash(p + vec3(0,0,1)), hash(p + vec3(1,0,1)), f.x),
+                                    mix(hash(p + vec3(0,1,1)), hash(p + vec3(1,1,1)), f.x), f.y),
+                                f.z);
+                        }
+                        
+                        void main() {
+                            vec3 coord = vPosition + vec3(u_time * 0.2);
+                            float n = noise(coord * 1.5);
+                            
+                            float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0, 0, 1))), 2.0);
+                            
+                            float alpha = fresnel * n * u_cme_intensity * 0.8;
+                            vec3 color = vec3(1.0, 0.7, 0.3);
+                            
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.photosphereMesh = new THREE.Mesh(photosphereGeometry, this.photosphereMaterial);
+                this.chromosphereMesh = new THREE.Mesh(chromosphereGeometry, this.chromosphereMaterial);
+                this.coronaMesh = new THREE.Mesh(coronaGeometry, this.coronaMaterial);
+                this.extendedCoronaMesh = new THREE.Mesh(extendedCoronaGeometry, this.extendedCoronaMaterial);
+                
+                this.scene.add(this.photosphereMesh);
+                this.scene.add(this.chromosphereMesh);
+                this.scene.add(this.coronaMesh);
+                this.scene.add(this.extendedCoronaMesh);
+            }
+            
+            createParticles() {
+                const particleCount = 1000;
+                const positions = new Float32Array(particleCount * 3);
+                const velocities = [];
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(Math.random() * 2 - 1);
+                    const radius = 2.5 + Math.random() * 1.5;
+                    
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = radius * Math.cos(phi);
+                    
+                    velocities.push({
+                        x: Math.sin(phi) * Math.cos(theta) * (0.005 + Math.random() * 0.01),
+                        y: Math.sin(phi) * Math.sin(theta) * (0.005 + Math.random() * 0.01),
+                        z: Math.cos(phi) * (0.005 + Math.random() * 0.01)
+                    });
+                }
+                
+                const particleGeometry = new THREE.BufferGeometry();
+                particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                
+                const particleMaterial = new THREE.PointsMaterial({
+                    color: 0xffaa44,
+                    size: 0.05,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                this.particles = new THREE.Points(particleGeometry, particleMaterial);
+                this.particleVelocities = velocities;
+                this.scene.add(this.particles);
+            }
+            
+            getVertexShader() {
+                return `
+                    varying vec3 vPosition;
+                    varying vec3 vNormal;
+                    
+                    void main() {
+                        vPosition = position;
+                        vNormal = normal;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `;
+            }
+            
+            setupLighting() {
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                this.scene.add(ambientLight);
+                
+                const light1 = new THREE.DirectionalLight(0xffffff, 0.6);
+                light1.position.set(5, 5, 5);
+                this.scene.add(light1);
+            }
+            
+            bindControls() {
+                const timeEl = document.getElementById('timespeed');
+                const timeDisp = document.getElementById('timespeed-display');
+                timeEl.addEventListener('input', (e) => {
+                    this.crr.time_speed = parseFloat(e.target.value);
+                    timeDisp.textContent = Math.round(this.crr.time_speed) + 'x';
+                });
+                
+                const flareEl = document.getElementById('flareintensity');
+                const flareDisp = document.getElementById('flareintensity-display');
+                flareEl.addEventListener('input', (e) => {
+                    this.crr.flare_intensity = parseFloat(e.target.value);
+                    const classValue = this.crr.flare_intensity * 3;
+                    flareDisp.textContent = 'C' + classValue.toFixed(1);
+                    this.updateUniforms();
+                });
+                
+                const magEl = document.getElementById('magnetic');
+                const magDisp = document.getElementById('magnetic-display');
+                magEl.addEventListener('input', (e) => {
+                    this.crr.magnetic_activity = parseFloat(e.target.value);
+                    magDisp.textContent = this.crr.magnetic_activity.toFixed(1);
+                    this.updateUniforms();
+                });
+            }
+            
+            setupInteraction() {
+                let isDragging = false;
+                let previousMouse = { x: 0, y: 0 };
+                
+                this.canvas.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    previousMouse = { x: e.clientX, y: e.clientY };
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const deltaX = e.clientX - previousMouse.x;
+                        const deltaY = e.clientY - previousMouse.y;
+                        this.targetRotation.y += deltaX * 0.01;
+                        this.targetRotation.x += deltaY * 0.01;
+                        previousMouse = { x: e.clientX, y: e.clientY };
+                    }
+                });
+                
+                this.canvas.addEventListener('mouseup', () => isDragging = false);
+                this.canvas.addEventListener('mouseleave', () => isDragging = false);
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const delta = e.deltaY > 0 ? 1.1 : 0.9;
+                    this.camera.position.z *= delta;
+                    this.camera.position.z = Math.max(4, Math.min(20, this.camera.position.z));
+                });
+            }
+            
+            updateUniforms() {
+                if (this.chromosphereMaterial?.uniforms) {
+                    this.chromosphereMaterial.uniforms.u_magnetic.value = this.crr.magnetic_activity;
+                }
+                
+                const flareValue = this.crr.active_flare ? 1.0 : 0.0;
+                if (this.photosphereMaterial?.uniforms) {
+                    this.photosphereMaterial.uniforms.u_flare_intensity.value = flareValue;
+                }
+                if (this.chromosphereMaterial?.uniforms) {
+                    this.chromosphereMaterial.uniforms.u_flare_intensity.value = flareValue;
+                }
+                if (this.coronaMaterial?.uniforms) {
+                    this.coronaMaterial.uniforms.u_flares.value = flareValue * this.crr.flare_intensity / 5.0;
+                }
+            }
+            
+            updateProcessIndicators() {
+                document.getElementById('process-fusion').classList.add('active');
+                
+                if (this.crr.magnetic_activity > 0.5) {
+                    document.getElementById('process-magnetic').classList.add('active');
+                } else {
+                    document.getElementById('process-magnetic').classList.remove('active');
+                }
+                
+                if (this.crr.active_flare) {
+                    document.getElementById('process-flare').classList.add('active');
+                } else {
+                    document.getElementById('process-flare').classList.remove('active');
+                }
+                
+                if (this.crr.active_cme) {
+                    document.getElementById('process-cme').classList.add('active');
+                } else {
+                    document.getElementById('process-cme').classList.remove('active');
+                }
+                
+                if (this.crr.active_reversal) {
+                    document.getElementById('process-reversal').classList.add('active');
+                } else {
+                    document.getElementById('process-reversal').classList.remove('active');
+                }
+                
+                if (this.crr.active_flare || this.crr.active_cme || this.crr.active_reversal) {
+                    document.getElementById('process-regeneration').classList.add('active');
+                } else {
+                    document.getElementById('process-regeneration').classList.remove('active');
+                }
+            }
+            
+            updateDisplays() {
+                document.getElementById('coherenceValue').textContent = this.crr.nuclear_C.toFixed(3);
+                document.getElementById('magneticValue').textContent = this.crr.magnetic_C.toFixed(2);
+                document.getElementById('yearsValue').textContent = (SOLAR_PHYSICS.solar_age / 1e9).toFixed(1) + ' Gyr';
+                
+                const ruptureEl = document.getElementById('ruptureState');
+                if (this.crr.active_flare || this.crr.active_cme || this.crr.active_reversal) {
+                    ruptureEl.textContent = 'RUPTURE';
+                    ruptureEl.classList.add('critical');
+                } else if (this.crr.rupture_count > 0) {
+                    ruptureEl.textContent = 'Recovering';
+                    ruptureEl.classList.remove('critical');
+                    ruptureEl.classList.add('warning');
+                } else {
+                    ruptureEl.textContent = 'Stable';
+                    ruptureEl.classList.remove('critical', 'warning');
+                }
+                
+                document.getElementById('totalRuptures').textContent = this.crr.rupture_count;
+                
+                const cycleProgress = (this.time * this.crr.time_speed / 200) % 1;
+                this.crr.magnetic_C = cycleProgress;
+                
+                this.updateProcessIndicators();
+            }
+            
+            updateParticles() {
+                const positions = this.particles.geometry.attributes.position.array;
+                const cmeBoost = this.crr.active_cme ? 3.0 : 1.0;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[i * 3] += this.particleVelocities[i].x * cmeBoost;
+                    positions[i * 3 + 1] += this.particleVelocities[i].y * cmeBoost;
+                    positions[i * 3 + 2] += this.particleVelocities[i].z * cmeBoost;
+                    
+                    const dist = Math.sqrt(
+                        positions[i * 3] ** 2 + 
+                        positions[i * 3 + 1] ** 2 + 
+                        positions[i * 3 + 2] ** 2
+                    );
+                    
+                    if (dist > 10) {
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.acos(Math.random() * 2 - 1);
+                        const radius = 2.5;
+                        
+                        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                        positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                        positions[i * 3 + 2] = radius * Math.cos(phi);
+                    }
+                }
+                
+                this.particles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            handleResize() {
+                this.camera.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+            }
+            
+            animate() {
+                this.time += 0.016;
+                
+                if (this.autoRotate) {
+                    this.rotation.y += 0.003;
+                } else {
+                    this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.1;
+                    this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.1;
+                }
+                
+                [this.photosphereMesh, this.chromosphereMesh, this.coronaMesh, this.extendedCoronaMesh]
+                    .forEach(mesh => {
+                        if (mesh) {
+                            mesh.rotation.x = this.rotation.x;
+                            mesh.rotation.y = this.rotation.y;
+                        }
+                    });
+                
+                const acceleratedTime = this.time * this.crr.time_speed;
+                [this.photosphereMaterial, this.chromosphereMaterial, this.coronaMaterial, this.extendedCoronaMaterial]
+                    .forEach(mat => {
+                        if (mat?.uniforms?.u_time) {
+                            mat.uniforms.u_time.value = acceleratedTime;
+                        }
+                    });
+                
+                if (this.crr.active_flare) {
+                    const elapsed = this.time - this.crr.flare_start_time;
+                    if (elapsed > 5.0) {
+                        this.crr.active_flare = false;
+                    }
+                }
+                
+                if (this.crr.active_cme) {
+                    const elapsed = this.time - this.crr.cme_start_time;
+                    const intensity = Math.max(0, 1.0 - elapsed / 8.0);
+                    if (this.extendedCoronaMaterial?.uniforms) {
+                        this.extendedCoronaMaterial.uniforms.u_cme_intensity.value = intensity;
+                    }
+                    if (elapsed > 8.0) {
+                        this.crr.active_cme = false;
+                    }
+                }
+                
+                if (this.crr.active_reversal) {
+                    const elapsed = this.time - this.crr.reversal_start_time;
+                    if (elapsed > 3.0) {
+                        this.crr.active_reversal = false;
+                    }
+                }
+                
+                this.updateParticles();
+                this.updateDisplays();
+                this.renderer.render(this.scene, this.camera);
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        let engine;
+        
+        function toggleExplainer() {
+            const content = document.getElementById('explainerContent');
+            const toggle = document.getElementById('explainerToggle');
+            content.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+        
+        function triggerXFlare() {
+            if (engine) {
+                engine.crr.active_flare = true;
+                engine.crr.flare_start_time = engine.time;
+                engine.crr.rupture_count++;
+                engine.updateUniforms();
+            }
+        }
+        
+        function triggerCME() {
+            if (engine) {
+                engine.crr.active_cme = true;
+                engine.crr.cme_start_time = engine.time;
+                engine.crr.rupture_count++;
+                
+                if (engine.coronaMaterial?.uniforms) {
+                    engine.coronaMaterial.uniforms.u_cme_active.value = 1.0;
+                }
+            }
+        }
+        
+        function magneticReversal() {
+            if (engine) {
+                engine.crr.active_reversal = true;
+                engine.crr.reversal_start_time = engine.time;
+                engine.crr.magnetic_C = 0.0;
+                engine.crr.rupture_count++;
+                
+                const oldActivity = engine.crr.magnetic_activity;
+                engine.crr.magnetic_activity = 3.0;
+                setTimeout(() => {
+                    if (engine) engine.crr.magnetic_activity = oldActivity;
+                }, 2000);
+            }
+        }
+        
+        function toggleRotation() {
+            if (engine) {
+                engine.autoRotate = !engine.autoRotate;
+            }
+        }
+        
+        function resetSystem() {
+            if (engine) {
+                engine.crr = {
+                    nuclear_C: 0.46,
+                    magnetic_C: 0.46,
+                    flare_intensity: 2.2,
+                    magnetic_activity: 1.0,
+                    rupture_count: 0,
+                    time_speed: 10,
+                    active_flare: false,
+                    active_cme: false,
+                    active_reversal: false,
+                    flare_start_time: 0,
+                    cme_start_time: 0,
+                    reversal_start_time: 0
+                };
+                engine.updateUniforms();
+                
+                document.getElementById('timespeed').value = 10;
+                document.getElementById('timespeed-display').textContent = '10x';
+                document.getElementById('flareintensity').value = 2.2;
+                document.getElementById('flareintensity-display').textContent = 'C6.6';
+                document.getElementById('magnetic').value = 1.0;
+                document.getElementById('magnetic-display').textContent = '1.0';
+            }
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            engine = new CRRSolarEngine();
+            console.log('CRR Solar Engine initialized with enhanced visualization');
+        });
+    </script>
+</body>
+</html>

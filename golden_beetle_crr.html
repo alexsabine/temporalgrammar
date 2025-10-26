@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Golden Beetle - Charidotella sexpunctata</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fafafa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+        
+        .demo-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .controls-area {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        
+        h1 {
+            margin-top: 0;
+            color: #B8860B;
+            font-size: 24px;
+        }
+        
+        h2 {
+            color: #DAA520;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .crr-explanation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+            border-left: 3px solid #DAA520;
+        }
+        
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            text-align: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #B8860B;
+            color: #333;
+        }
+        
+        .species-name {
+            font-style: italic;
+            color: #B8860B;
+            font-weight: bold;
+        }
+        
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 2px solid #DAA520;
+            border-radius: 8px;
+            cursor: crosshair;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .slider-group {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .slider {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .slider-value {
+            font-family: monospace;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #DAA520;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #B8860B;
+            transform: translateY(-1px);
+        }
+        
+        .status {
+            padding: 12px;
+            background: #e8f4f8;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #DAA520;
+        }
+        
+        .parameter-section {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .mouse-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #95a5a6;
+        }
+        
+        .memory-indicator {
+            color: #B8860B;
+            font-weight: bold;
+        }
+        
+        .scientific-info {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            border-left: 3px solid #DAA520;
+        }
+        
+        .beetle-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+            border-left: 4px solid #B8860B;
+        }
+        
+        .beetle-info h2 {
+            color: #B8860B;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .beetle-info h3 {
+            color: #DAA520;
+            font-size: 14px;
+            margin-bottom: 8px;
+            margin-top: 15px;
+        }
+        
+        .info-section {
+            margin-bottom: 15px;
+        }
+        
+        .info-section:first-child h3 {
+            margin-top: 0;
+        }
+        
+        .info-section p {
+            margin: 0;
+            line-height: 1.5;
+            color: #444;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="demo-area">
+            <h1>CRR Golden Beetle Carapace</h1>
+            
+            <div class="crr-explanation">
+                <strong>Golden Tortoise Beetle (<span class="species-name">Charidotella sexpunctata</span>)</strong><br>
+                Structural coloration through thin-film interference - no actual gold involved!
+                
+                <div class="equation">
+                    <strong>Coherence Integration:</strong> C(x) = ∫ L(x,τ) dτ
+                </div>
+                <div class="equation">
+                    <strong>Carapace Evolution:</strong> h(x,t) = h₀ + ∇·φ(x,t)
+                </div>
+                <div class="equation">
+                    <strong>Metallic Interference:</strong> I = |r₁ + r₂e^(iδ)|² · K_gold(θ)
+                </div>
+                
+                <span class="memory-indicator">Dynamic golden surface</span> with beetle-specific metallic interference patterns.
+            </div>
+            
+            <div class="scientific-info">
+                <strong>Biomimetic Note:</strong> Golden beetles achieve their metallic luster through microscopic multilayer structures in their cuticle. These create selective wavelength enhancement in the yellow-red spectrum, producing brilliant gold, copper, and bronze hues.
+            </div>
+            
+            <canvas id="canvas" width="512" height="512"></canvas>
+            
+            <div class="mouse-info">
+                Move mouse to observe golden color shifts with viewing angle changes.
+                Left-click for surface disturbance. Right-click for cuticle enhancement.
+            </div>
+            
+            <div class="beetle-info">
+                <h2>About <span class="species-name">Charidotella sexpunctata</span></h2>
+                
+                <div class="info-section">
+                    <h3>Common Names</h3>
+                    <p>Golden Tortoise Beetle, Gold Bug, Goldbug Beetle</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>Physical Characteristics</h3>
+                    <p>This remarkable beetle measures 5-7mm in length and belongs to the leaf beetle family (Chrysomelidae). Its most striking feature is the ability to change color from brilliant metallic gold to dull reddish-brown when disturbed or during mating.</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>The Science Behind the Gold</h3>
+                    <p>The golden coloration is achieved through <strong>structural coloration</strong> - microscopic multilayer structures in the beetle's transparent cuticle create thin-film interference. By controlling the spacing between these layers with liquid-filled chambers, the beetle can actively change its appearance.</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>Habitat & Behavior</h3>
+                    <p>Found throughout North America, these beetles feed on morning glory and sweet potato plants. The "golden" phase serves as camouflage among golden flowers, while the darker phase may help with thermoregulation or predator avoidance.</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>Biomimetic Applications</h3>
+                    <p>Scientists study these beetles to develop adaptive optical materials, color-changing coatings, and advanced camouflage systems. The CRR simulation above models the dynamic surface properties that enable this remarkable color transformation.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-area">
+            <h2>Golden Coloration</h2>
+            
+            <div class="status" id="status">
+                CRR Beetle: ACTIVE | Surface: METALLIC | Gold: BRILLIANT
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="reset()">Reset Carapace</button>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Memory Rate (λ)</label>
+                <input type="range" class="slider" id="lambda" min="0.01" max="0.1" step="0.01" value="0.04">
+                <div class="slider-value" id="lambda-value">0.04</div>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Cuticle Flow</label>
+                <input type="range" class="slider" id="flow" min="0.1" max="2.0" step="0.1" value="0.9">
+                <div class="slider-value" id="flow-value">0.9</div>
+            </div>
+            
+            <div class="slider-group">
+                <label class="slider-label">Surface Sensitivity</label>
+                <input type="range" class="slider" id="rupture" min="0.3" max="1.2" step="0.1" value="0.6">
+                <div class="slider-value" id="rupture-value">0.6</div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Metallic Colors</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Pure Gold</label>
+                    <input type="range" class="slider" id="gold" min="0.0" max="1.0" step="0.05" value="0.75">
+                    <div class="slider-value" id="gold-value">0.75</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Copper Tones</label>
+                    <input type="range" class="slider" id="copper" min="0.0" max="1.0" step="0.05" value="0.45">
+                    <div class="slider-value" id="copper-value">0.45</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Bronze Depth</label>
+                    <input type="range" class="slider" id="bronze" min="0.0" max="1.0" step="0.05" value="0.35">
+                    <div class="slider-value" id="bronze-value">0.35</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Brass Highlights</label>
+                    <input type="range" class="slider" id="brass" min="0.0" max="1.0" step="0.05" value="0.55">
+                    <div class="slider-value" id="brass-value">0.55</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Amber Glow</label>
+                    <input type="range" class="slider" id="amber" min="0.0" max="1.0" step="0.05" value="0.25">
+                    <div class="slider-value" id="amber-value">0.25</div>
+                </div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Carapace Properties</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Cuticle Thickness</label>
+                    <input type="range" class="slider" id="thickness" min="0.2" max="1.2" step="0.05" value="0.65">
+                    <div class="slider-value" id="thickness-value">0.65</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Surface Detail</label>
+                    <input type="range" class="slider" id="detail" min="3" max="20" step="1" value="12">
+                    <div class="slider-value" id="detail-value">12</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Metallic Intensity</label>
+                    <input type="range" class="slider" id="metallic" min="0.5" max="2.5" step="0.1" value="1.4">
+                    <div class="slider-value" id="metallic-value">1.4</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Beetle Patterns</label>
+                    <input type="range" class="slider" id="patterns" min="0.05" max="0.4" step="0.05" value="0.2">
+                    <div class="slider-value" id="patterns-value">0.2</div>
+                </div>
+            </div>
+            
+            <div class="parameter-section">
+                <h2>Animation Speed</h2>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Time Scale</label>
+                    <input type="range" class="slider" id="speed" min="0.01" max="0.15" step="0.01" value="0.05">
+                    <div class="slider-value" id="speed-value">0.05</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">Pattern Scale</label>
+                    <input type="range" class="slider" id="scale" min="0.3" max="2.5" step="0.1" value="0.7">
+                    <div class="slider-value" id="scale-value">0.7</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl2');
+        
+        if (!gl) {
+            alert('WebGL2 not supported');
+        }
+        
+        // Vertex shader
+        const vertexShaderSource = `#version 300 es
+            in vec2 a_position;
+            out vec2 v_texCoord;
+            
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+                v_texCoord = (a_position + 1.0) * 0.5;
+            }
+        `;
+        
+        // Golden beetle rendering shader
+        const fragmentShaderSource = `#version 300 es
+            precision highp float;
+            
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+            
+            uniform sampler2D u_texture;
+            uniform sampler2D u_memory;
+            uniform float u_time;
+            uniform vec2 u_mouse;
+            
+            // Golden beetle parameters
+            uniform float u_goldIntensity;
+            uniform float u_copperTones;
+            uniform float u_bronzeDepth;
+            uniform float u_brassHighlights;
+            uniform float u_amberGlow;
+            uniform float u_cutilceThickness;
+            uniform float u_surfaceDetail;
+            uniform float u_metallicIntensity;
+            uniform float u_beetlePatterns;
+            uniform float u_timeScale;
+            uniform float u_patternScale;
+            
+            // Enhanced hash for better golden patterns
+            float hash21(vec2 p) {
+                p = fract(p * vec2(289.34, 753.91));
+                p += dot(p, p + 31.45);
+                return fract(p.x * p.y);
+            }
+            
+            // Improved noise for beetle surface
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                
+                float a = hash21(i);
+                float b = hash21(i + vec2(1.0, 0.0));
+                float c = hash21(i + vec2(0.0, 1.0));
+                float d = hash21(i + vec2(1.0, 1.0));
+                
+                return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+            }
+            
+            // Multi-octave noise for carapace detail
+            float fbm(vec2 p) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                float frequency = 1.0;
+                
+                for(int i = 0; i < 7; i++) {
+                    value += amplitude * noise(p * frequency);
+                    frequency *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+            
+            // Specialized beetle surface height
+            float calculateBeetleHeight(vec2 coord) {
+                vec4 texData = texture(u_texture, coord);
+                vec4 memData = texture(u_memory, coord);
+                
+                float u = texData.x;
+                float v = texData.y;
+                float memory = memData.x;
+                
+                vec2 scaledCoord = coord * u_patternScale;
+                float time = u_time * u_timeScale;
+                
+                // Beetle-specific cuticle patterns
+                float hexPattern = 0.0;
+                for(int i = 0; i < 3; i++) {
+                    float scale = 8.0 + float(i) * 6.0;
+                    vec2 hexCoord = scaledCoord * scale + time * (0.3 + float(i) * 0.2);
+                    float hex = abs(sin(hexCoord.x) * sin(hexCoord.x + 2.094) * sin(hexCoord.x + 4.188));
+                    hex *= abs(sin(hexCoord.y) * sin(hexCoord.y + 2.094) * sin(hexCoord.y + 4.188));
+                    hexPattern += hex * (0.4 - float(i) * 0.1);
+                }
+                
+                // Dome-like beetle curvature
+                vec2 center = vec2(0.5);
+                float radial = length(coord - center);
+                float domeHeight = (1.0 - radial * 1.8) * 0.6;
+                domeHeight = max(0.0, domeHeight);
+                
+                // Micro-scale surface roughness
+                float microDetail = fbm(scaledCoord * u_surfaceDetail + time * 0.8) * u_beetlePatterns;
+                float fineDetail = fbm(scaledCoord * u_surfaceDetail * 2.5 + time * 0.4) * u_beetlePatterns * 0.4;
+                
+                // Memory-influenced surface
+                float memoryInfluence = memory * 0.5 * sin(scaledCoord.x * 18.0 + scaledCoord.y * 14.0 + time * 2.5);
+                
+                // Reaction-diffusion surface modulation
+                float rdHeight = (u - v) * 0.3 * sin(scaledCoord.x * 22.0 + time * 1.8);
+                
+                return domeHeight + hexPattern + microDetail + fineDetail + memoryInfluence + rdHeight;
+            }
+            
+            // Golden metallic color calculation
+            vec3 calculateGoldenColoration(vec2 coord, float surfaceHeight) {
+                // Enhanced viewing direction
+                vec2 mouseDir = normalize(u_mouse - coord);
+                float mouseDistance = length(u_mouse - coord);
+                
+                // Surface normal with beetle-specific features
+                float epsilon = 0.008;
+                float dx = calculateBeetleHeight(coord + vec2(epsilon, 0.0)) - calculateBeetleHeight(coord - vec2(epsilon, 0.0));
+                float dy = calculateBeetleHeight(coord + vec2(0.0, epsilon)) - calculateBeetleHeight(coord - vec2(0.0, epsilon));
+                vec3 normal = normalize(vec3(dx * 80.0, dy * 80.0, 1.0));
+                
+                // Viewing angle for metallic reflection
+                vec3 viewDir = normalize(vec3(mouseDir * (1.5 - mouseDistance * 0.9), 0.3 + 0.7 * (1.0 - mouseDistance)));
+                float viewAngle = acos(max(0.0, min(1.0, dot(normal, viewDir))));
+                
+                // Cuticle layer thickness with natural variation
+                float baseThickness = u_cutilceThickness * 0.7;
+                float thicknessVariation = fbm(coord * 25.0 + u_time * u_timeScale * 0.5) * 0.2;
+                float heightInfluence = abs(surfaceHeight) * 0.4;
+                float thickness = baseThickness + thicknessVariation + heightInfluence;
+                
+                // Optical path difference for thin-film interference
+                float pathDiff = 2.0 * thickness * cos(viewAngle);
+                float basePhase = 6.28318 * pathDiff;
+                
+                // Wavelength-specific interference (tuned for golden colors)
+                float redPhase = basePhase / 0.70 + u_time * u_timeScale * 1.2;   // Enhanced red
+                float yellowPhase = basePhase / 0.58 + u_time * u_timeScale * 1.0; // Primary yellow
+                float greenPhase = basePhase / 0.52 + u_time * u_timeScale * 0.6;  // Suppressed green
+                
+                // Interference calculations
+                float redInterference = 0.5 + 0.5 * cos(redPhase);
+                float yellowInterference = 0.5 + 0.5 * cos(yellowPhase);
+                float greenInterference = 0.5 + 0.5 * cos(greenPhase);
+                
+                // Base metallic substrate
+                vec3 metallicBase = vec3(0.85, 0.75, 0.35); // Warm metallic base
+                
+                // Golden color components
+                vec3 pureGold = vec3(1.0, 0.84, 0.0) * yellowInterference * redInterference * u_goldIntensity;
+                vec3 copperTones = vec3(0.95, 0.55, 0.25) * redInterference * u_copperTones;
+                vec3 bronzeDepth = vec3(0.8, 0.5, 0.2) * (redInterference * yellowInterference) * u_bronzeDepth;
+                vec3 brassHighlights = vec3(0.9, 0.8, 0.3) * yellowInterference * u_brassHighlights;
+                vec3 amberGlow = vec3(1.0, 0.75, 0.0) * (redInterference + yellowInterference) * 0.5 * u_amberGlow;
+                
+                // Combine all metallic components
+                vec3 goldenColor = metallicBase + 
+                                 (pureGold + copperTones + bronzeDepth + brassHighlights + amberGlow) * u_metallicIntensity;
+                
+                // Memory field enhancement
+                vec4 memData = texture(u_memory, coord);
+                if (memData.x > 0.15) {
+                    float memoryGlow = memData.x * 0.4;
+                    vec3 memoryGold = vec3(1.0, 0.9, 0.4) * memoryGlow;
+                    goldenColor += memoryGold;
+                }
+                
+                // Fresnel reflection for metallic luster
+                float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 1.2);
+                float brightness = 0.6 + 0.5 * fresnel;
+                
+                // Metallic specular highlights
+                vec3 reflectDir = reflect(-viewDir, normal);
+                float spec = pow(max(0.0, dot(reflectDir, vec3(0.0, 0.0, 1.0))), 32.0);
+                vec3 specular = vec3(1.0, 0.95, 0.7) * spec * 0.6;
+                
+                return (goldenColor * brightness + specular) * 1.1;
+            }
+            
+            void main() {
+                vec2 coord = v_texCoord;
+                
+                // Calculate beetle surface height
+                float surfaceHeight = calculateBeetleHeight(coord);
+                
+                // Calculate golden metallic colors
+                vec3 color = calculateGoldenColoration(coord, surfaceHeight);
+                
+                // Enhanced lighting for beetle carapace
+                float ambientGold = 0.15;
+                float directGold = 0.85;
+                vec3 goldenEnvironment = vec3(1.0, 0.9, 0.6);
+                color = color * directGold + goldenEnvironment * ambientGold;
+                
+                // Color post-processing for metallic appearance
+                color = pow(color, vec3(0.9)); // Enhance metallic gamma
+                color = clamp(color, 0.0, 1.0);
+                
+                fragColor = vec4(color, 1.0);
+            }
+        `;
+        
+        // Field update shader (adapted for beetle dynamics)
+        const updateShaderSource = `#version 300 es
+            precision highp float;
+            
+            in vec2 v_texCoord;
+            out vec4 fragColor;
+            
+            uniform sampler2D u_texture;
+            uniform sampler2D u_memory;
+            uniform float u_lambda;
+            uniform float u_flow;
+            uniform float u_ruptureThreshold;
+            uniform vec2 u_mouse;
+            uniform bool u_disturb;
+            uniform int u_interactionType;
+            
+            const float Du = 0.19;  // Adjusted for beetle cuticle dynamics
+            const float Dv = 0.09;
+            const float dt = 0.9;
+            const float feed = 0.038;  // Beetle-specific parameters
+            const float kill = 0.058;
+            const float texelSize = 1.0 / 512.0;
+            
+            vec4 laplacian(sampler2D tex, vec2 coord) {
+                vec4 sum = vec4(0.0);
+                sum += texture(tex, coord + vec2(-texelSize, 0.0));
+                sum += texture(tex, coord + vec2(texelSize, 0.0));
+                sum += texture(tex, coord + vec2(0.0, -texelSize));
+                sum += texture(tex, coord + vec2(0.0, texelSize));
+                sum -= 4.0 * texture(tex, coord);
+                return sum;
+            }
+            
+            void main() {
+                vec2 coord = v_texCoord;
+                vec4 current = texture(u_texture, coord);
+                vec4 memory = texture(u_memory, coord);
+                
+                float u = current.x;
+                float v = current.y;
+                float m = memory.x;
+                
+                // Mouse interactions
+                float distToMouse = length(u_mouse - coord);
+                if (u_disturb && distToMouse < 0.09) {
+                    float strength = exp(-distToMouse * distToMouse / 0.018);
+                    if (u_interactionType == 0) {
+                        // Surface disturbance
+                        v += 0.5 * strength;
+                        u *= 0.8;
+                        m *= 0.6;
+                    } else if (u_interactionType == 1) {
+                        // Cuticle enhancement
+                        u += 0.35 * strength;
+                        m += 0.4 * strength;
+                    }
+                }
+                
+                // Reaction-diffusion dynamics
+                vec4 lapU = laplacian(u_texture, coord);
+                float uvv = u * v * v;
+                
+                float dU = Du * lapU.x - uvv + feed * (1.0 - u);
+                float dV = Dv * lapU.y + uvv - (feed + kill) * v;
+                
+                // Memory evolution
+                float newMemory = m + u_lambda * (u - m);
+                
+                // Memory-driven feedback with beetle-specific modulation
+                dU += u_flow * 0.12 * (newMemory - u) * sin(coord.x * 25.0 + coord.y * 18.0);
+                
+                // Update
+                float newU = clamp(u + dU * dt, 0.0, 1.0);
+                float newV = clamp(v + dV * dt, 0.0, 1.0);
+                
+                // Memory decay
+                newMemory = clamp(newMemory * 0.997, 0.0, 1.0);
+                
+                fragColor = vec4(newU, newV, 0.0, newMemory);
+            }
+        `;
+        
+        function createShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            
+            return shader;
+        }
+        
+        function createProgram(vertexShader, fragmentShader) {
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program error:', gl.getProgramInfoLog(program));
+                gl.deleteProgram(program);
+                return null;
+            }
+            
+            return program;
+        }
+        
+        // Create programs
+        const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
+        const renderProgram = createProgram(vertexShader, createShader(gl.FRAGMENT_SHADER, fragmentShaderSource));
+        const updateProgram = createProgram(vertexShader, createShader(gl.FRAGMENT_SHADER, updateShaderSource));
+        
+        // Create geometry
+        const positions = new Float32Array([
+            -1, -1, 1, -1, -1, 1,
+            -1, 1, 1, -1, 1, 1,
+        ]);
+        
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+        
+        // Create textures
+        function createTexture() {
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            return texture;
+        }
+        
+        const texture1 = createTexture();
+        const texture2 = createTexture();
+        const memoryTexture1 = createTexture();
+        const memoryTexture2 = createTexture();
+        
+        function initializeTextures() {
+            const size = 512;
+            const data = new Float32Array(size * size * 4);
+            const memoryData = new Float32Array(size * size * 4);
+            
+            for (let i = 0; i < size * size * 4; i += 4) {
+                data[i] = 1.0;
+                data[i + 1] = Math.random() < 0.008 ? 1.0 : 0.0; // Beetle-specific seeding
+                data[i + 2] = 0.0;
+                data[i + 3] = 1.0;
+                
+                memoryData[i] = Math.random() * 0.15;
+                memoryData[i + 1] = 0.0;
+                memoryData[i + 2] = 0.0;
+                memoryData[i + 3] = 1.0;
+            }
+            
+            [texture1, texture2].forEach(tex => {
+                gl.bindTexture(gl.TEXTURE_2D, tex);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, size, size, 0, gl.RGBA, gl.FLOAT, data);
+            });
+            
+            [memoryTexture1, memoryTexture2].forEach(tex => {
+                gl.bindTexture(gl.TEXTURE_2D, tex);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, size, size, 0, gl.RGBA, gl.FLOAT, memoryData);
+            });
+        }
+        
+        // Framebuffers
+        const framebuffer1 = gl.createFramebuffer();
+        const framebuffer2 = gl.createFramebuffer();
+        
+        initializeTextures();
+        
+        // State
+        let currentTexture = texture1;
+        let nextTexture = texture2;
+        let currentMemory = memoryTexture1;
+        let nextMemory = memoryTexture2;
+        let currentFramebuffer = framebuffer1;
+        let nextFramebuffer = framebuffer2;
+        
+        let time = 0;
+        let mouseX = 0.5;
+        let mouseY = 0.5;
+        let mousePressed = false;
+        let interactionType = 0;
+        
+        // Golden beetle parameters
+        let lambda = 0.04;
+        let flow = 0.9;
+        let ruptureThreshold = 0.6;
+        let goldIntensity = 0.75;
+        let copperTones = 0.45;
+        let bronzeDepth = 0.35;
+        let brassHighlights = 0.55;
+        let amberGlow = 0.25;
+        let cutilceThickness = 0.65;
+        let surfaceDetail = 12;
+        let metallicIntensity = 1.4;
+        let beetlePatterns = 0.2;
+        let timeScale = 0.05;
+        let patternScale = 0.7;
+        
+        // Events
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) / rect.width;
+            mouseY = 1.0 - (e.clientY - rect.top) / rect.height;
+            updateStatus();
+        });
+        
+        canvas.addEventListener('mousedown', (e) => { 
+            mousePressed = true;
+            interactionType = e.button === 2 ? 1 : 0;
+        });
+        
+        canvas.addEventListener('mouseup', () => { mousePressed = false; });
+        canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+        
+        // Sliders
+        function setupSlider(id, callback) {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(id + '-value');
+            
+            slider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                valueDisplay.textContent = value.toString();
+                callback(value);
+            });
+        }
+        
+        setupSlider('lambda', (v) => { lambda = v; });
+        setupSlider('flow', (v) => { flow = v; });
+        setupSlider('rupture', (v) => { ruptureThreshold = v; });
+        setupSlider('gold', (v) => { goldIntensity = v; });
+        setupSlider('copper', (v) => { copperTones = v; });
+        setupSlider('bronze', (v) => { bronzeDepth = v; });
+        setupSlider('brass', (v) => { brassHighlights = v; });
+        setupSlider('amber', (v) => { amberGlow = v; });
+        setupSlider('thickness', (v) => { cutilceThickness = v; });
+        setupSlider('detail', (v) => { surfaceDetail = v; });
+        setupSlider('metallic', (v) => { metallicIntensity = v; });
+        setupSlider('patterns', (v) => { beetlePatterns = v; });
+        setupSlider('speed', (v) => { timeScale = v; });
+        setupSlider('scale', (v) => { patternScale = v; });
+        
+        function reset() {
+            initializeTextures();
+            time = 0;
+        }
+        
+        function updateStatus() {
+            const angle = Math.atan2(mouseY - 0.5, mouseX - 0.5) * 180 / Math.PI;
+            document.getElementById('status').textContent = 
+                `CRR Beetle: ACTIVE | View: ${angle.toFixed(0)}° | Gold: BRILLIANT`;
+        }
+        
+        function render() {
+            time += 0.016;
+            
+            // Update simulation
+            gl.bindFramebuffer(gl.FRAMEBUFFER, nextFramebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nextTexture, 0);
+            
+            gl.useProgram(updateProgram);
+            gl.viewport(0, 0, 512, 512);
+            
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_lambda'), lambda);
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_flow'), flow);
+            gl.uniform1f(gl.getUniformLocation(updateProgram, 'u_ruptureThreshold'), ruptureThreshold);
+            gl.uniform2f(gl.getUniformLocation(updateProgram, 'u_mouse'), mouseX, mouseY);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_disturb'), mousePressed);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_interactionType'), interactionType);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, currentTexture);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_texture'), 0);
+            
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, currentMemory);
+            gl.uniform1i(gl.getUniformLocation(updateProgram, 'u_memory'), 1);
+            
+            const posLoc = gl.getAttribLocation(updateProgram, 'a_position');
+            gl.enableVertexAttribArray(posLoc);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Update memory
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, nextMemory, 0);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Render to screen
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.useProgram(renderProgram);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_time'), time);
+            gl.uniform2f(gl.getUniformLocation(renderProgram, 'u_mouse'), mouseX, mouseY);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_goldIntensity'), goldIntensity);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_copperTones'), copperTones);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_bronzeDepth'), bronzeDepth);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_brassHighlights'), brassHighlights);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_amberGlow'), amberGlow);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_cutilceThickness'), cutilceThickness);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_surfaceDetail'), surfaceDetail);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_metallicIntensity'), metallicIntensity);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_beetlePatterns'), beetlePatterns);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_timeScale'), timeScale);
+            gl.uniform1f(gl.getUniformLocation(renderProgram, 'u_patternScale'), patternScale);
+            
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, nextTexture);
+            gl.uniform1i(gl.getUniformLocation(renderProgram, 'u_texture'), 0);
+            
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, nextMemory);
+            gl.uniform1i(gl.getUniformLocation(renderProgram, 'u_memory'), 1);
+            
+            const renderPosLoc = gl.getAttribLocation(renderProgram, 'a_position');
+            gl.enableVertexAttribArray(renderPosLoc);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(renderPosLoc, 2, gl.FLOAT, false, 0, 0);
+            
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            
+            // Swap buffers
+            [currentTexture, nextTexture] = [nextTexture, currentTexture];
+            [currentMemory, nextMemory] = [nextMemory, currentMemory];
+            [currentFramebuffer, nextFramebuffer] = [nextFramebuffer, currentFramebuffer];
+            
+            requestAnimationFrame(render);
+        }
+        
+        // Global functions
+        window.reset = reset;
+        
+        // Start
+        updateStatus();
+        render();
+    </script>
+</body>
+</html>

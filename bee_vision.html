@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Bee Vision Network - Real-time Photon Processing</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            color: #1a1a1a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .main-container {
+            background: #ffffff;
+            border: 2px solid #e5e5e5;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+            max-width: 1600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: #666666;
+            font-size: 1rem;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .equation-banner {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            font-family: 'Georgia', monospace;
+            font-size: 0.95rem;
+            color: #495057;
+            margin-bottom: 30px;
+        }
+
+        .system-description {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .system-description p {
+            font-size: 0.95rem;
+            color: #495057;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .vision-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 20px;
+            margin-bottom: 30px;
+            height: 700px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .vision-container {
+            position: relative;
+            background: #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #visionCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .analysis-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .control-section h3 {
+            color: #495057;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            font-weight: 500;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+
+        .vision-modes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .vision-mode-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .vision-mode-btn:hover {
+            background: #f9fafb;
+            border-color: #2563eb;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .vision-mode-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .ecosystem-controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .ecosystem-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .ecosystem-btn:hover {
+            background: #f9fafb;
+            border-color: #16a34a;
+            color: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        .status-line {
+            font-size: 0.85rem;
+            margin: 6px 0;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-value {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .coherence-bar {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+            border: 1px solid #dee2e6;
+        }
+
+        .coherence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+            transition: width 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .ucf-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .ucf-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .ucf-value {
+            font-size: 1rem;
+            color: #1a1a1a;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .overview-panel {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .overview-header {
+            background: #e8f5e8;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #16a34a;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        #overviewCanvas {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #2d4a1a;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.75rem;
+        }
+
+        .metric-value {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .crosshair::before {
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+        }
+
+        .crosshair::after {
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 2px;
+            width: 100%;
+        }
+
+        /* FIXED: Visual overlays contained within vision container */
+        .vision-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+            overflow: hidden;
+        }
+
+        .bee-indicator {
+            position: absolute;
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid;
+            border-radius: 50%;
+            animation: beePulse 1.5s infinite;
+            z-index: 5;
+        }
+
+        @keyframes beePulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .flower-indicator {
+            position: absolute;
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ec4899;
+            border-radius: 50%;
+            animation: flowerPulse 2s infinite;
+            z-index: 5;
+        }
+
+        @keyframes flowerPulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        .distance-label {
+            position: absolute;
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #f9fafb;
+            border-color: #2563eb;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .selected-bee {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+            border-width: 3px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>CRR Bee Vision Network</h1>
+            <div class="subtitle">Real-time Photon Processing • Coherence • Rupture • Regeneration</div>
+        </div>
+
+        <div class="equation-banner">
+            Visual Cortex Integration: C(x,t) = ∫ L(photon,τ) dτ • Rupture Detection: δ(vision-disruption) • Field Regeneration: R[χ](photon,t)
+        </div>
+
+        <div class="system-description">
+            <p>This CRR demonstration shows how computational frameworks can model real-time photon processing through biological synthetic cortex networks. Each bee processes environmental photons through multiple vision modes (UV, polarised light, motion detection), with coherence states tracked across the swarm. When visual processing is disrupted (rupture events), the system demonstrates how biological networks regenerate visual field integration through memory-weighted reconstruction. Applications include drone swarm coordination, autonomous vehicle vision systems, and bio-inspired sensor networks.</p>
+        </div>
+
+        <div class="vision-layout">
+            <aside class="control-panel">
+                <div class="control-section">
+                    <h3>Vision Processing Modes</h3>
+                    <div class="vision-modes">
+                        <button class="vision-mode-btn active" data-mode="0">Natural</button>
+                        <button class="vision-mode-btn" data-mode="1">UV Spectrum</button>
+                        <button class="vision-mode-btn" data-mode="2">Motion</button>
+                        <button class="vision-mode-btn" data-mode="3">Polarised</button>
+                        <button class="vision-mode-btn" data-mode="4">Compound</button>
+                        <button class="vision-mode-btn" data-mode="5">Coherence Field</button>
+                        <button class="vision-mode-btn" data-mode="6">Social</button>
+                        <button class="vision-mode-btn" data-mode="7">Thermal</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Selected Bee State</h3>
+                    <div class="status-line">
+                        <span>Bee ID:</span>
+                        <span class="status-value" id="selectedBeeId">#1</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Role:</span>
+                        <span class="status-value" id="beeRole">Forager</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Generation:</span>
+                        <span class="status-value" id="beeGeneration">1</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Age:</span>
+                        <span class="status-value" id="beeAge">12d</span>
+                    </div>
+                    <div style="margin: 10px 0;">
+                        <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 5px;">Visual Coherence</div>
+                        <div class="coherence-bar">
+                            <div class="coherence-fill" id="coherenceFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Visual Processing</h3>
+                    <div class="status-line">
+                        <span>Detected Objects:</span>
+                        <span class="status-value" id="detectedObjects">0</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Nearest Flower:</span>
+                        <span class="status-value" id="nearestFlower">45m</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Motion Tracking:</span>
+                        <span class="status-value" id="motionTracking">3 bees</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Visual Range:</span>
+                        <span class="status-value" id="visualRange">150m</span>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Behavior State</h3>
+                    <div class="status-line">
+                        <span>Current:</span>
+                        <span class="status-value" id="currentBehavior">FORAGING</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Energy Level:</span>
+                        <span class="status-value" id="energyLevel">85%</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Nectar Load:</span>
+                        <span class="status-value" id="nectarLoad">23%</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Hive Distance:</span>
+                        <span class="status-value" id="hiveDistance">127m</span>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Ecosystem Controls</h3>
+                    <div class="ecosystem-controls">
+                        <button class="ecosystem-btn" id="addBeesBtn">Add Bees</button>
+                        <button class="ecosystem-btn" id="weatherBtn">Change Weather</button>
+                        <button class="ecosystem-btn" id="predatorBtn">Add Predator</button>
+                        <button class="ecosystem-btn" id="bloomBtn">Flower Bloom</button>
+                        <button class="ecosystem-btn" id="ruptureBtn">Trigger Vision Rupture</button>
+                        <button class="ecosystem-btn" id="regenBtn">Force Regeneration</button>
+                    </div>
+                </div>
+            </aside>
+            
+            <main class="vision-container">
+                <canvas id="visionCanvas"></canvas>
+                <div class="crosshair"></div>
+                <!-- FIXED: Add overlay container for visual indicators -->
+                <div class="vision-overlay" id="visionOverlay"></div>
+            </main>
+            
+            <aside class="analysis-panel">
+                <div class="overview-panel">
+                    <div class="overview-header">ECOSYSTEM OVERVIEW - Click to Select Bee</div>
+                    <canvas id="overviewCanvas" width="280" height="150"></canvas>
+                </div>
+
+                <div class="control-section">
+                    <h3>CRR Visual Processing</h3>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Photon Coherence C(x,t)</div>
+                        <div class="ucf-value" id="photonCoherence">0.8750</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Visual Ruptures δ(t-t₀)</div>
+                        <div class="ucf-value" id="visualRuptures">0</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Field Regeneration R[χ]</div>
+                        <div class="ucf-value" id="fieldRegeneration">0.9250</div>
+                    </div>
+                    <div class="ucf-display">
+                        <div class="ucf-label">Swarm Coherence</div>
+                        <div class="ucf-value" id="swarmCoherence">0.7630</div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Network Statistics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Population</span>
+                            <span class="metric-value" id="population">8</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Active Flowers</span>
+                            <span class="metric-value" id="activeFlowers">15</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Photon Flux</span>
+                            <span class="metric-value" id="photonFlux">2.3K</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Processing Rate</span>
+                            <span class="metric-value" id="processingRate">60Hz</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Communication</span>
+                            <span class="metric-value" id="communication">Active</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Temperature</span>
+                            <span class="metric-value" id="temperature">22°C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Processing Efficiency</h3>
+                    <div class="status-line">
+                        <span>Photon Integration:</span>
+                        <span class="status-value" id="photonIntegration">95.2%</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Memory Buffer:</span>
+                        <span class="status-value" id="memoryBuffer">847/1000</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Error Correction:</span>
+                        <span class="status-value" id="errorCorrection">Active</span>
+                    </div>
+                    <div class="status-line">
+                        <span>Adaptation Rate:</span>
+                        <span class="status-value" id="adaptationRate">12.5%</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="resetSystem()">🔄 Reset System</button>
+            <button class="control-btn" onclick="exportData()">📊 Export Vision Data</button>
+            <button class="control-btn" onclick="calibrateSystem()">🎯 Calibrate Vision</button>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Bee Vision System Adapted for CRR Framework
+        
+        const vertexShaderSource = `#version 300 es
+            precision highp float;
+            
+            in vec2 a_position;
+            in vec2 a_texCoord;
+            
+            uniform mat4 u_viewMatrix;
+            uniform vec2 u_resolution;
+            
+            out vec2 v_texCoord;
+            out vec2 v_worldPos;
+            
+            void main() {
+                vec4 worldPos = vec4(a_position * 400.0, 0.0, 1.0);
+                gl_Position = u_viewMatrix * worldPos;
+                v_texCoord = a_texCoord;
+                v_worldPos = worldPos.xy;
+            }
+        `;
+        
+        const enhancedBeeVisionFragmentShader = `#version 300 es
+            precision highp float;
+            
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            uniform vec2 u_beePos;
+            uniform vec2 u_beeDir;
+            uniform float u_coherenceState;
+            uniform int u_visionMode;
+            uniform float u_ucfIntensity;
+            uniform float u_sunIntensity;
+            uniform vec2 u_sunPos;
+            uniform float u_beeEnergy;
+            uniform float u_beeNectar;
+            
+            uniform int u_flowerCount;
+            uniform vec2 u_flowerPos[20];
+            uniform float u_flowerNectar[20];
+            uniform float u_flowerUV[20];
+            uniform float u_flowerSize[20];
+            
+            uniform int u_beeCount;
+            uniform vec2 u_otherBeePos[12];
+            uniform float u_otherBeeCoherence[12];
+            uniform int u_otherBeeBehavior[12];
+            uniform float u_otherBeeDistance[12];
+            uniform float u_otherBeeEnergy[12];
+            
+            uniform vec2 u_hivePos;
+            uniform float u_hiveProgress;
+            uniform int u_predatorCount;
+            uniform vec2 u_predatorPos[5];
+            uniform float u_weather;
+            uniform float u_temperature;
+            
+            in vec2 v_texCoord;
+            in vec2 v_worldPos;
+            
+            out vec4 fragColor;
+            
+            float ucfCoherence(vec2 pos, float time) {
+                float baseField = 0.6 + 0.2 * sin(time * 0.008 + pos.x * 0.025 + pos.y * 0.018);
+                float spatialWave = 0.15 * sin(length(pos - u_hivePos) * 0.008 + time * 0.012);
+                
+                float beeInfluence = 0.0;
+                for(int i = 0; i < u_beeCount && i < 12; i++) {
+                    float beeDist = length(pos - u_otherBeePos[i]);
+                    if(beeDist < 120.0) {
+                        float behaviorMultiplier = u_otherBeeBehavior[i] == 2 ? 1.3 : 1.0;
+                        beeInfluence += u_otherBeeCoherence[i] * exp(-beeDist * 0.015) * 0.12 * behaviorMultiplier;
+                    }
+                }
+                
+                float coherenceInfluence = u_coherenceState * 0.35;
+                float energyInfluence = u_beeEnergy * 0.15;
+                
+                return (baseField + spatialWave + coherenceInfluence + beeInfluence + energyInfluence) * u_ucfIntensity;
+            }
+            
+            float ruptureField(vec2 pos, float time) {
+                float chaos = 0.08 * (sin(time * 0.12 + pos.x * 0.08) * cos(time * 0.09 + pos.y * 0.11));
+                float stressField = 0.05 * sin(time * 0.2) * (1.0 - u_beeEnergy);
+                return max(0.0, (chaos + stressField) * (1.0 - u_coherenceState));
+            }
+            
+            vec3 computePhotonField(vec2 pos, float time) {
+                vec2 toSun = u_sunPos - pos;
+                float sunDistance = length(toSun);
+                float sunAngle = atan(toSun.y, toSun.x);
+                
+                float photonDensity = u_sunIntensity / (1.0 + sunDistance * 0.0008);
+                float fieldStrength = ucfCoherence(pos, time);
+                
+                float weatherEffect = mix(1.0, 0.6, u_weather);
+                photonDensity *= weatherEffect;
+                
+                float red = photonDensity * (0.3 + 0.1 * sin(time * 0.025 + sunAngle));
+                float green = photonDensity * (0.7 + 0.15 * sin(time * 0.032 + sunAngle + 2.1));
+                float blue = photonDensity * (0.8 + 0.2 * sin(time * 0.028 + sunAngle + 4.2));
+                float uv = photonDensity * (1.2 + 0.35 * sin(time * 0.022 + sunAngle + 5.8));
+                
+                return vec3(red + uv * 0.25, green + uv * 0.2, blue + uv * 0.45) * fieldStrength;
+            }
+            
+            vec3 renderEnhancedFlower(vec2 pos, int flowerIndex) {
+                vec2 flowerPos = u_flowerPos[flowerIndex];
+                float distance = length(pos - flowerPos);
+                float nectar = u_flowerNectar[flowerIndex];
+                float uvPattern = u_flowerUV[flowerIndex];
+                float size = u_flowerSize[flowerIndex];
+                
+                float maxDistance = size * 30.0 + 25.0;
+                if (distance > maxDistance) return vec3(0.0);
+                
+                float intensity = 1.0 - smoothstep(0.0, maxDistance, distance);
+                intensity = pow(intensity, 1.5);
+                
+                vec3 flowerColor = vec3(0.9, 0.4, 0.8) * nectar * size * 0.2;
+                
+                float petalPattern = 0.0;
+                int petalCount = int(6.0 + size * 2.0);
+                for (int i = 0; i < 12; i++) {
+                    if (i >= petalCount) break;
+                    float angle = float(i) * 6.283 / float(petalCount);
+                    vec2 petalDir = vec2(cos(angle), sin(angle));
+                    vec2 toCenter = normalize(pos - flowerPos);
+                    float petalAlignment = max(0.0, dot(toCenter, petalDir));
+                    petalPattern += pow(petalAlignment, 3.0) * 0.35;
+                }
+                
+                flowerColor += vec3(1.0, 0.95, 0.4) * petalPattern * intensity;
+                
+                if (u_visionMode == 1 || u_visionMode == 6) {
+                    float uvRadius = sin(distance * 0.3 + uvPattern * 15.0 + u_time * 0.008) * 0.6 + 0.4;
+                    vec3 uvGuide = vec3(0.2, 0.1, 1.4) * uvRadius * intensity * nectar;
+                    flowerColor += uvGuide;
+                    
+                    if (nectar > 0.7) {
+                        float nectarGlow = sin(u_time * 0.1) * 0.3 + 0.7;
+                        flowerColor += vec3(0.8, 0.8, 0.2) * nectarGlow * intensity * 0.4;
+                    }
+                }
+                
+                return flowerColor * intensity * (0.8 + nectar * 0.4);
+            }
+            
+            vec3 renderEnhancedBee(vec2 pos, int beeIndex) {
+                vec2 beePos = u_otherBeePos[beeIndex];
+                float distance = length(pos - beePos);
+                float coherence = u_otherBeeCoherence[beeIndex];
+                int behavior = u_otherBeeBehavior[beeIndex];
+                float energy = u_otherBeeEnergy[beeIndex];
+                
+                if (distance > 30.0) return vec3(0.0);
+                
+                float intensity = 1.0 - smoothstep(0.0, 30.0, distance);
+                intensity = pow(intensity, 2.0);
+                
+                vec3 beeColor = vec3(0.8, 0.65, 0.25) * intensity;
+                beeColor += vec3(coherence * 0.5, coherence * 0.7, coherence * 0.3);
+                beeColor *= (0.6 + energy * 0.4);
+                
+                if (behavior == 1) {
+                    beeColor += vec3(0.2, 0.5, 0.9) * intensity * 0.6;
+                } else if (behavior == 2) {
+                    beeColor += vec3(0.3, 0.9, 0.3) * intensity * sin(u_time * 0.08) * 0.6;
+                } else if (behavior == 3) {
+                    beeColor += vec3(0.7, 0.5, 0.2) * intensity * 0.5;
+                } else if (behavior == 4) {
+                    beeColor += vec3(0.6, 0.3, 0.9) * intensity * 0.4;
+                }
+                
+                if (u_visionMode == 6) {
+                    float socialStrength = coherence * exp(-distance * 0.04);
+                    vec3 socialField = vec3(0.7, 0.4, 0.9) * socialStrength * intensity;
+                    beeColor += socialField;
+                    
+                    float commPulse = sin(u_time * 0.15 + distance * 0.1) * 0.5 + 0.5;
+                    beeColor += vec3(1.0, 1.0, 0.5) * commPulse * socialStrength * 0.4;
+                }
+                
+                float wingSpeed = 0.5 + energy * 0.5;
+                float wingBlur = sin(u_time * wingSpeed + float(beeIndex)) * 0.25 + 0.75;
+                beeColor *= wingBlur;
+                
+                if (energy < 0.3) {
+                    beeColor += vec3(1.0, 0.2, 0.2) * sin(u_time * 0.2) * 0.3;
+                }
+                
+                return beeColor;
+            }
+            
+            vec3 renderEnvironment(vec2 pos) {
+                float grassX = pos.x * 0.08;
+                float grassY = pos.y * 0.12;
+                float grassPattern = 0.18 + 0.08 * (sin(grassX) * cos(grassY) + 0.5 * sin(grassX * 2.1) * cos(grassY * 1.7));
+                
+                float tempEffect = (u_temperature - 20.0) / 20.0;
+                vec3 grassColor = mix(vec3(0.2, 0.4, 0.1), vec3(0.3, 0.5, 0.2), tempEffect);
+                vec3 groundColor = grassColor * grassPattern;
+                
+                if (u_weather > 0.3) {
+                    groundColor *= 0.8;
+                    groundColor += vec3(0.1, 0.1, 0.15) * u_weather;
+                }
+                
+                float skyFactor = smoothstep(-200.0, -120.0, pos.y);
+                vec3 baseSky = vec3(0.5, 0.7, 0.95);
+                vec3 weatherSky = mix(baseSky, vec3(0.6, 0.6, 0.7), u_weather);
+                vec3 skyColor = mix(weatherSky * 0.8, weatherSky, skyFactor);
+                
+                if (pos.y > -150.0) {
+                    float cloudNoise = sin(pos.x * 0.02 + u_time * 0.005) * cos(pos.y * 0.015 + u_time * 0.003);
+                    float cloudDensity = 0.2 + u_weather * 0.6;
+                    skyColor += vec3(cloudDensity) * max(0.0, cloudNoise) * skyFactor;
+                }
+                
+                return mix(groundColor, skyColor, skyFactor);
+            }
+            
+            vec3 renderEnhancedHive(vec2 pos) {
+                float distance = length(pos - u_hivePos);
+                if (distance > 60.0) return vec3(0.0);
+                
+                float intensity = 1.0 - smoothstep(0.0, 60.0, distance);
+                vec3 hiveColor = vec3(0.7, 0.5, 0.25) * intensity;
+                
+                float constructionLevel = u_hiveProgress;
+                hiveColor *= (0.5 + constructionLevel * 0.5);
+                
+                if (distance < 45.0) {
+                    float structurePattern = sin(distance * 0.2 + u_time * 0.02) * 0.15 + 0.85;
+                    hiveColor *= structurePattern;
+                }
+                
+                if (distance < 25.0) {
+                    float activityLevel = float(u_beeCount) / 12.0;
+                    float activityPulse = sin(u_time * 0.06 + activityLevel) * 0.1 + 0.9;
+                    hiveColor += vec3(0.3, 0.25, 0.1) * activityPulse * activityLevel;
+                }
+                
+                if (u_visionMode == 5) {
+                    float hiveField = exp(-distance * 0.02) * sin(u_time * 0.04) * u_coherenceState;
+                    hiveColor += vec3(0.5, 0.7, 0.9) * hiveField * 0.6;
+                }
+                
+                return hiveColor;
+            }
+            
+            vec3 compoundEyeEffect(vec2 coord, vec3 baseColor) {
+                vec2 center = coord - 0.5;
+                float ommatidiumSize = 0.01 + u_beeEnergy * 0.005;
+                
+                vec2 omm = center / ommatidiumSize;
+                vec2 hexCoord = omm - floor(omm);
+                
+                float hexDist = max(
+                    max(abs(hexCoord.x - 0.5), abs(hexCoord.y - 0.5)),
+                    abs((hexCoord.x - 0.5) + (hexCoord.y - 0.5))
+                );
+                
+                if (hexDist > 0.4) return vec3(0.0);
+                
+                float lensEffect = 1.0 - (hexDist * 2.2);
+                lensEffect = pow(lensEffect, 1.5 + u_coherenceState);
+                
+                vec3 aberration = vec3(
+                    baseColor.r * (1.0 + lensEffect * 0.12),
+                    baseColor.g * lensEffect,
+                    baseColor.b * (1.0 - lensEffect * 0.08)
+                );
+                
+                return aberration * lensEffect * (0.8 + u_coherenceState * 0.4);
+            }
+            
+            vec3 motionDetection(vec2 coord, vec3 baseColor) {
+                vec3 motionColor = baseColor * 0.5;
+                
+                for(int i = 0; i < u_beeCount && i < 12; i++) {
+                    float beeDist = length(v_worldPos - u_otherBeePos[i]);
+                    
+                    if(beeDist < 100.0) {
+                        float motionIntensity = (100.0 - beeDist) / 100.0;
+                        float energyBoost = u_otherBeeEnergy[i] * 0.5 + 0.5;
+                        motionColor.r += motionIntensity * energyBoost * 0.8;
+                        motionColor.g += motionIntensity * energyBoost * 0.4;
+                    }
+                }
+                
+                vec2 windVelocity = vec2(cos(u_time * 0.03), sin(u_time * 0.025)) * (1.0 + u_weather);
+                float windMotion = length(windVelocity) * 0.3;
+                motionColor += vec3(windMotion, windMotion * 0.8, 0.0);
+                
+                return motionColor;
+            }
+            
+            vec3 thermalVision(vec2 coord, vec3 baseColor) {
+                vec3 thermalColor = vec3(0.0);
+                
+                float ambientTemp = u_temperature / 40.0;
+                thermalColor += vec3(ambientTemp, 0.3, 1.0 - ambientTemp);
+                
+                for(int i = 0; i < u_beeCount && i < 12; i++) {
+                    float beeDist = length(v_worldPos - u_otherBeePos[i]);
+                    if(beeDist < 50.0) {
+                        float heatIntensity = (50.0 - beeDist) / 50.0;
+                        float metabolicHeat = (2.0 - u_otherBeeEnergy[i]) * 0.5;
+                        thermalColor += vec3(1.0, 0.5, 0.0) * heatIntensity * metabolicHeat;
+                    }
+                }
+                
+                float hiveDist = length(v_worldPos - u_hivePos);
+                if (hiveDist < 80.0) {
+                    float hiveHeat = (80.0 - hiveDist) / 80.0 * u_hiveProgress;
+                    thermalColor += vec3(0.8, 0.6, 0.2) * hiveHeat;
+                }
+                
+                return thermalColor;
+            }
+            
+            void main() {
+                vec2 worldPos = v_worldPos;
+                
+                vec3 color = renderEnvironment(worldPos);
+                
+                vec3 photonField = computePhotonField(worldPos, u_time);
+                color *= photonField;
+                
+                color += renderEnhancedHive(worldPos);
+                
+                for (int i = 0; i < u_flowerCount && i < 20; i++) {
+                    color += renderEnhancedFlower(worldPos, i);
+                }
+                
+                for (int i = 0; i < u_beeCount && i < 12; i++) {
+                    color += renderEnhancedBee(worldPos, i);
+                }
+                
+                if (u_visionMode == 1) {
+                    color = vec3(color.b * 1.4, color.g * 0.8, color.r * 0.5 + color.b * 0.5);
+                } else if (u_visionMode == 2) {
+                    color = motionDetection(v_texCoord, color);
+                } else if (u_visionMode == 3) {
+                    vec2 skyCoord = v_worldPos - u_sunPos;
+                    float skyDist = length(skyCoord);
+                    if (skyDist < 150.0 && v_worldPos.y > -100.0) {
+                        float polarAngle = atan(skyCoord.y, skyCoord.x);
+                        float polarization = sin(polarAngle * 4.0 + u_time * 0.01) * 0.4 + 0.6;
+                        color += vec3(0.3, 0.4, 0.8) * polarization * 0.3;
+                    }
+                } else if (u_visionMode == 4) {
+                    color = compoundEyeEffect(v_texCoord, color);
+                } else if (u_visionMode == 5) {
+                    float field = ucfCoherence(worldPos, u_time);
+                    float rupture = ruptureField(worldPos, u_time);
+                    color += vec3(field * 0.3, (field - rupture) * 0.2, field * 0.4);
+                } else if (u_visionMode == 7) {
+                    color = mix(color * 0.3, thermalVision(v_texCoord, color), 0.7);
+                }
+                
+                color *= (0.6 + 0.4 * u_coherenceState);
+                color *= (0.7 + 0.3 * u_beeEnergy);
+                
+                vec2 center = v_texCoord - 0.5;
+                float distFromCenter = length(center);
+                float visionRange = 0.35 + u_beeEnergy * 0.1;
+                float vignette = 1.0 - smoothstep(0.2, visionRange, distFromCenter);
+                
+                if (distFromCenter > 0.25) {
+                    float blur = (distFromCenter - 0.25) * (2.0 - u_beeEnergy);
+                    color *= (1.0 - blur * 0.4);
+                }
+                
+                color *= vignette;
+                
+                fragColor = vec4(color, 1.0);
+            }
+        `;
+
+        // Enhanced Bee class with UCF integration
+        class UCFBee {
+            constructor(x, y, id, generation = 1) {
+                this.id = id;
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.generation = generation;
+                
+                this.coherenceState = 0.6 + Math.random() * 0.4;
+                this.coherenceHistory = Array(50).fill(this.coherenceState);
+                this.ruptureState = false;
+                this.rebirthField = 0;
+                this.visualRuptures = 0;
+                
+                this.age = 0;
+                this.energy = 0.8 + Math.random() * 0.2;
+                this.nectar = 0;
+                this.size = 4 + Math.random() * 2;
+                this.speed = 1.5 + Math.random() * 1.0;
+                this.maxSpeed = 3.5;
+                
+                this.behavior = 'exploring';
+                this.behaviorState = 0;
+                this.targetFlower = null;
+                this.behaviorPriority = Math.random();
+                this.behaviorProgress = 0;
+                
+                this.genetics = {
+                    foraging: 0.3 + Math.random() * 0.7,
+                    construction: 0.2 + Math.random() * 0.8,
+                    social: 0.4 + Math.random() * 0.6,
+                    intelligence: 0.3 + Math.random() * 0.7,
+                    vision: 0.5 + Math.random() * 0.5
+                };
+                
+                this.role = this.assignRole();
+                this.visualField = new Map();
+                this.detectedObjects = [];
+                this.bodyTilt = Math.random() * Math.PI * 2;
+                this.wingBeat = 0;
+                this.isInside = false;
+                this.constructionMaterial = 0;
+            }
+            
+            assignRole() {
+                const roles = ['Forager', 'Scout', 'Builder', 'Guard', 'Nurse'];
+                if (this.genetics.foraging > 0.7) return 'Forager';
+                if (this.genetics.construction > 0.7) return 'Builder';
+                if (this.genetics.intelligence > 0.7) return 'Scout';
+                if (this.genetics.social > 0.6) return 'Nurse';
+                return 'Guard';
+            }
+            
+            update(otherBees, environment, time) {
+                this.age += 0.01;
+                this.wingBeat += 0.8;
+                
+                this.updateCoherence(otherBees, environment);
+                this.updateBehavior(otherBees, environment);
+                this.updateMovement();
+                this.updateVisualField(otherBees, environment);
+                this.updateEnergyMetabolism();
+                this.handleRuptureRebirth();
+            }
+            
+            updateCoherence(otherBees, environment) {
+                let newCoherence = this.coherenceState;
+                
+                const nearbyBees = otherBees.filter(bee => 
+                    bee !== this && this.distanceTo(bee) < 80
+                );
+                
+                if (nearbyBees.length > 0) {
+                    const avgCoherence = nearbyBees.reduce((sum, bee) => sum + bee.coherenceState, 0) / nearbyBees.length;
+                    newCoherence += (avgCoherence - this.coherenceState) * 0.08;
+                }
+                
+                newCoherence += environment.getCoherenceInfluence(this.x, this.y) * 0.05;
+                newCoherence += (this.energy - 0.5) * 0.1;
+                
+                if (this.behavior === 'foraging' && this.targetFlower) newCoherence += 0.02;
+                if (this.behavior === 'construction') newCoherence += 0.01;
+                
+                newCoherence -= 0.01;
+                
+                this.coherenceState = Math.max(0.1, Math.min(1.0, newCoherence));
+                
+                this.coherenceHistory.shift();
+                this.coherenceHistory.push(this.coherenceState);
+            }
+            
+            updateBehavior(otherBees, environment) {
+                if (this.energy < 0.3) {
+                    this.behavior = 'returning';
+                    this.behaviorState = 4;
+                    this.behaviorPriority = 1.0;
+                } else if (this.nectar > 0.8) {
+                    this.behavior = 'returning';
+                    this.behaviorState = 4;
+                    this.behaviorPriority = 0.9;
+                } else {
+                    const bestFlower = this.findBestFlower(environment.flowers);
+                    if (bestFlower && Math.random() < this.genetics.foraging) {
+                        this.behavior = 'foraging';
+                        this.behaviorState = 2;
+                        this.targetFlower = bestFlower;
+                        this.behaviorPriority = bestFlower.nectar * this.genetics.foraging;
+                    } else if (Math.random() < this.genetics.construction * 0.3) {
+                        this.behavior = 'construction';
+                        this.behaviorState = 3;
+                        this.behaviorPriority = this.genetics.construction * 0.5;
+                    } else {
+                        this.behavior = 'exploring';
+                        this.behaviorState = 0;
+                        this.behaviorPriority = 0.3;
+                    }
+                }
+                
+                switch (this.behavior) {
+                    case 'foraging':
+                        if (this.targetFlower) {
+                            const dist = this.distanceTo(this.targetFlower);
+                            this.behaviorProgress = Math.max(0, 1 - dist / 200);
+                        }
+                        break;
+                    case 'returning':
+                        const hiveDist = this.distanceTo(environment.hive);
+                        this.behaviorProgress = Math.max(0, 1 - hiveDist / 200);
+                        break;
+                    default:
+                        this.behaviorProgress = (this.age % 100) / 100;
+                }
+            }
+            
+            updateMovement() {
+                switch (this.behavior) {
+                    case 'foraging':
+                        if (this.targetFlower) {
+                            this.moveToward(this.targetFlower, 0.04);
+                        }
+                        break;
+                    case 'returning':
+                        this.moveToward({ x: 0, y: 0 }, 0.05);
+                        break;
+                    case 'exploring':
+                        this.vx += (Math.random() - 0.5) * 0.02;
+                        this.vy += (Math.random() - 0.5) * 0.02;
+                        break;
+                    case 'construction':
+                        this.moveToward({ x: 0, y: 0 }, 0.02);
+                        break;
+                }
+                
+                this.vx *= 0.97;
+                this.vy *= 0.97;
+                
+                const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                const energySpeedMultiplier = 0.5 + this.energy * 0.5;
+                const maxVel = this.maxSpeed * energySpeedMultiplier;
+                
+                if (currentSpeed > maxVel) {
+                    const scale = maxVel / currentSpeed;
+                    this.vx *= scale;
+                    this.vy *= scale;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.x = Math.max(-380, Math.min(380, this.x));
+                this.y = Math.max(-280, Math.min(280, this.y));
+                
+                if (Math.abs(this.vx) > 0.1 || Math.abs(this.vy) > 0.1) {
+                    const targetAngle = Math.atan2(this.vy, this.vx);
+                    const angleDiff = targetAngle - this.bodyTilt;
+                    this.bodyTilt += angleDiff * 0.1;
+                }
+            }
+            
+            updateVisualField(otherBees, environment) {
+                this.visualField.clear();
+                this.detectedObjects = [];
+                
+                const visionRange = 120 + this.genetics.vision * 60;
+                
+                environment.flowers.forEach((flower, index) => {
+                    const distance = this.distanceTo(flower);
+                    if (distance < visionRange && flower.nectar > 0.1) {
+                        this.visualField.set(`flower_${index}`, {
+                            type: 'flower',
+                            object: flower,
+                            distance: distance,
+                            priority: flower.nectar / distance
+                        });
+                        this.detectedObjects.push(`flower_${index}`);
+                    }
+                });
+                
+                otherBees.forEach(bee => {
+                    if (bee !== this && !bee.isInside) {
+                        const distance = this.distanceTo(bee);
+                        if (distance < visionRange) {
+                            this.visualField.set(`bee_${bee.id}`, {
+                                type: 'bee',
+                                object: bee,
+                                distance: distance,
+                                priority: bee.coherenceState / distance
+                            });
+                            this.detectedObjects.push(`bee_${bee.id}`);
+                        }
+                    }
+                });
+                
+                const hiveDistance = this.distanceTo(environment.hive);
+                if (hiveDistance < visionRange) {
+                    this.visualField.set('hive', {
+                        type: 'hive',
+                        object: environment.hive,
+                        distance: hiveDistance,
+                        priority: 1.0 / hiveDistance
+                    });
+                    this.detectedObjects.push('hive');
+                }
+                
+                environment.predators.forEach((predator, index) => {
+                    const distance = this.distanceTo(predator);
+                    if (distance < visionRange) {
+                        this.visualField.set(`predator_${index}`, {
+                            type: 'predator',
+                            object: predator,
+                            distance: distance,
+                            priority: 2.0 / distance
+                        });
+                        this.detectedObjects.push(`predator_${index}`);
+                    }
+                });
+            }
+            
+            updateEnergyMetabolism() {
+                const baseMetabolism = 0.0005;
+                const activityMultiplier = {
+                    'exploring': 1.0,
+                    'foraging': 1.3,
+                    'returning': 1.1,
+                    'construction': 1.2
+                }[this.behavior] || 1.0;
+                
+                this.energy -= baseMetabolism * activityMultiplier;
+                this.energy = Math.max(0.1, Math.min(1.0, this.energy));
+                
+                if (this.behavior === 'foraging' && this.targetFlower) {
+                    const distance = this.distanceTo(this.targetFlower);
+                    if (distance < 20) {
+                        const collected = Math.min(0.05, this.targetFlower.nectar, 1 - this.nectar);
+                        this.nectar += collected;
+                        this.targetFlower.nectar -= collected;
+                        this.energy += collected * 0.1;
+                    }
+                }
+                
+                if (this.behavior === 'returning') {
+                    const hiveDistance = this.distanceTo({ x: 0, y: 0 });
+                    if (hiveDistance < 30) {
+                        this.nectar = 0;
+                        this.energy += 0.1;
+                        this.behavior = 'exploring';
+                    }
+                }
+            }
+            
+            handleRuptureRebirth() {
+                if (this.coherenceState < 0.2 && !this.ruptureState) {
+                    this.ruptureState = true;
+                    this.rebirthField = 0;
+                    this.visualRuptures++;
+                }
+                
+                if (this.ruptureState) {
+                    this.rebirthField += 0.05;
+                    if (this.rebirthField > 1.0) {
+                        this.coherenceState = 0.7 + Math.random() * 0.3;
+                        this.ruptureState = false;
+                        this.rebirthField = 0;
+                        this.energy += 0.2;
+                    }
+                }
+            }
+            
+            moveToward(target, strength) {
+                const dx = target.x - this.x;
+                const dy = target.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > 0) {
+                    this.vx += (dx / distance) * strength;
+                    this.vy += (dy / distance) * strength;
+                }
+            }
+            
+            findBestFlower(flowers) {
+                let bestFlower = null;
+                let bestScore = 0;
+                
+                flowers.forEach(flower => {
+                    if (flower.nectar > 0.2) {
+                        const distance = this.distanceTo(flower);
+                        const score = flower.nectar / Math.max(1, distance / 50);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestFlower = flower;
+                        }
+                    }
+                });
+                
+                return bestFlower;
+            }
+            
+            distanceTo(target) {
+                return Math.sqrt((this.x - target.x) ** 2 + (this.y - target.y) ** 2);
+            }
+        }
+
+        // Environment class
+        class UCFEnvironment {
+            constructor() {
+                this.flowers = this.generateFlowers();
+                this.hive = { x: 0, y: 0, progress: 0.5 };
+                this.predators = [];
+                this.weather = 0.0;
+                this.temperature = 22;
+                this.season = 'spring';
+                this.dayTime = 10.5;
+                this.totalResources = 0;
+                this.honeyStores = 0;
+                this.interiorBees = 0;
+            }
+            
+            generateFlowers() {
+                const flowers = [];
+                for (let i = 0; i < 25; i++) {
+                    flowers.push({
+                        x: (Math.random() - 0.5) * 700,
+                        y: (Math.random() - 0.5) * 500,
+                        nectar: 0.4 + Math.random() * 0.6,
+                        uvPattern: Math.random(),
+                        size: 0.8 + Math.random() * 0.4,
+                        age: Math.random() * 100
+                    });
+                }
+                return flowers;
+            }
+            
+            update(time) {
+                this.flowers.forEach(flower => {
+                    flower.nectar = Math.min(1.0, flower.nectar + 0.001);
+                    flower.age += 0.1;
+                });
+                
+                if (Math.random() < 0.002) {
+                    this.weather = Math.random() * 0.8;
+                }
+                this.weather *= 0.995;
+                
+                this.temperature = 20 + Math.sin(time * 0.001) * 8 + Math.sin(this.dayTime * 0.5) * 4;
+                
+                this.dayTime += 0.002;
+                if (this.dayTime > 24) this.dayTime = 0;
+                
+                this.predators.forEach(predator => {
+                    predator.x += predator.vx;
+                    predator.y += predator.vy;
+                    
+                    if (predator.x < -350 || predator.x > 350) predator.vx *= -1;
+                    if (predator.y < -250 || predator.y > 250) predator.vy *= -1;
+                });
+                
+                this.predators = this.predators.filter(p => Date.now() - p.spawnTime < 30000);
+            }
+            
+            getCoherenceInfluence(x, y) {
+                const hiveDistance = Math.sqrt(x * x + y * y);
+                const hiveInfluence = Math.exp(-hiveDistance / 200) * 0.2;
+                const weatherInfluence = -this.weather * 0.1;
+                return hiveInfluence + weatherInfluence;
+            }
+            
+            addPredator() {
+                this.predators.push({
+                    x: (Math.random() - 0.5) * 600,
+                    y: (Math.random() - 0.5) * 400,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    spawnTime: Date.now()
+                });
+            }
+            
+            addFlowerBloom() {
+                for (let i = 0; i < 5; i++) {
+                    this.flowers.push({
+                        x: (Math.random() - 0.5) * 700,
+                        y: (Math.random() - 0.5) * 500,
+                        nectar: 0.8 + Math.random() * 0.2,
+                        uvPattern: Math.random(),
+                        size: 1.0 + Math.random() * 0.5,
+                        age: 0
+                    });
+                }
+            }
+            
+            changeWeather() {
+                this.weather = Math.random() * 0.9;
+                this.temperature += (Math.random() - 0.5) * 10;
+                this.temperature = Math.max(5, Math.min(40, this.temperature));
+            }
+        }
+
+        // Main UCF Bee Vision System
+        class UCFBeeVisionSystem {
+            constructor() {
+                this.visionCanvas = document.getElementById('visionCanvas');
+                this.overviewCanvas = document.getElementById('overviewCanvas');
+                this.visionOverlay = document.getElementById('visionOverlay');
+                
+                const contextAttributes = {
+                    antialias: true,
+                    alpha: false,
+                    depth: false,
+                    stencil: false,
+                    premultipliedAlpha: false,
+                    preserveDrawingBuffer: false,
+                    powerPreference: "default"
+                };
+                
+                this.gl = this.visionCanvas.getContext('webgl2', contextAttributes);
+                this.overviewCtx = this.overviewCanvas.getContext('2d');
+                
+                if (!this.gl) {
+                    console.error('WebGL2 not supported');
+                    return;
+                }
+                
+                this.time = 0;
+                this.visionMode = 0;
+                this.ucfIntensity = 1.5;
+                this.sunIntensity = 1.2;
+                this.selectedBeeIndex = 0;
+                
+                this.cameraZoom = 1.2;
+                this.cameraOffsetX = 0;
+                this.cameraOffsetY = 0;
+                
+                this.bees = [];
+                this.environment = new UCFEnvironment();
+                this.communicationBeams = [];
+                
+                this.vao = null;
+                this.program = null;
+                this.locations = null;
+                this.viewMatrix = new Float32Array(16);
+                
+                this.viewMatrix[0] = 1; this.viewMatrix[5] = 1; this.viewMatrix[10] = 1; this.viewMatrix[15] = 1;
+                
+                this.initializeWebGL();
+                this.createBeeSystem();
+                this.setupEventListeners();
+                this.resizeCanvas();
+                this.animate();
+            }
+            
+            resizeCanvas() {
+                const canvas = this.visionCanvas;
+                const container = canvas.parentElement;
+                
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                
+                if (this.gl) {
+                    this.gl.viewport(0, 0, canvas.width, canvas.height);
+                }
+            }
+            
+            initializeWebGL() {
+                const gl = this.gl;
+                
+                try {
+                    this.program = this.createProgram(vertexShaderSource, enhancedBeeVisionFragmentShader);
+                    
+                    if (!this.program) {
+                        throw new Error('Failed to create shader program');
+                    }
+                    
+                    this.locations = this.getUniformLocations();
+                    
+                    this.vao = gl.createVertexArray();
+                    gl.bindVertexArray(this.vao);
+                    
+                    this.createGeometry();
+                    
+                    gl.bindVertexArray(null);
+                    gl.useProgram(this.program);
+                    
+                    gl.disable(gl.DEPTH_TEST);
+                    gl.disable(gl.BLEND);
+                    gl.cullFace(gl.BACK);
+                    
+                    console.log('UCF WebGL2 vision system initialized');
+                    
+                } catch (error) {
+                    console.error('WebGL2 initialization failed:', error);
+                    throw error;
+                }
+            }
+            
+            createProgram(vertexSource, fragmentSource) {
+                const gl = this.gl;
+                
+                const vertexShader = this.createShader(gl.VERTEX_SHADER, vertexSource);
+                if (!vertexShader) return null;
+                
+                const fragmentShader = this.createShader(gl.FRAGMENT_SHADER, fragmentSource);
+                if (!fragmentShader) return null;
+                
+                const program = gl.createProgram();
+                gl.attachShader(program, vertexShader);
+                gl.attachShader(program, fragmentShader);
+                gl.linkProgram(program);
+                
+                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                    console.error('Program link error:', gl.getProgramInfoLog(program));
+                    gl.deleteProgram(program);
+                    return null;
+                }
+                
+                gl.deleteShader(vertexShader);
+                gl.deleteShader(fragmentShader);
+                
+                return program;
+            }
+            
+            createShader(type, source) {
+                const gl = this.gl;
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    const errorLog = gl.getShaderInfoLog(shader);
+                    const shaderType = type === gl.VERTEX_SHADER ? 'vertex' : 'fragment';
+                    console.error(`${shaderType} shader compile error:`, errorLog);
+                    gl.deleteShader(shader);
+                    return null;
+                }
+                
+                return shader;
+            }
+            
+            getUniformLocations() {
+                const gl = this.gl;
+                const program = this.program;
+                
+                return {
+                    viewMatrix: gl.getUniformLocation(program, 'u_viewMatrix'),
+                    resolution: gl.getUniformLocation(program, 'u_resolution'),
+                    time: gl.getUniformLocation(program, 'u_time'),
+                    beePos: gl.getUniformLocation(program, 'u_beePos'),
+                    beeDir: gl.getUniformLocation(program, 'u_beeDir'),
+                    coherenceState: gl.getUniformLocation(program, 'u_coherenceState'),
+                    visionMode: gl.getUniformLocation(program, 'u_visionMode'),
+                    ucfIntensity: gl.getUniformLocation(program, 'u_ucfIntensity'),
+                    sunIntensity: gl.getUniformLocation(program, 'u_sunIntensity'),
+                    sunPos: gl.getUniformLocation(program, 'u_sunPos'),
+                    beeEnergy: gl.getUniformLocation(program, 'u_beeEnergy'),
+                    beeNectar: gl.getUniformLocation(program, 'u_beeNectar'),
+                    flowerCount: gl.getUniformLocation(program, 'u_flowerCount'),
+                    flowerPos: gl.getUniformLocation(program, 'u_flowerPos'),
+                    flowerNectar: gl.getUniformLocation(program, 'u_flowerNectar'),
+                    flowerUV: gl.getUniformLocation(program, 'u_flowerUV'),
+                    flowerSize: gl.getUniformLocation(program, 'u_flowerSize'),
+                    hivePos: gl.getUniformLocation(program, 'u_hivePos'),
+                    hiveProgress: gl.getUniformLocation(program, 'u_hiveProgress'),
+                    beeCount: gl.getUniformLocation(program, 'u_beeCount'),
+                    otherBeePos: gl.getUniformLocation(program, 'u_otherBeePos'),
+                    otherBeeCoherence: gl.getUniformLocation(program, 'u_otherBeeCoherence'),
+                    otherBeeBehavior: gl.getUniformLocation(program, 'u_otherBeeBehavior'),
+                    otherBeeDistance: gl.getUniformLocation(program, 'u_otherBeeDistance'),
+                    otherBeeEnergy: gl.getUniformLocation(program, 'u_otherBeeEnergy'),
+                    predatorCount: gl.getUniformLocation(program, 'u_predatorCount'),
+                    predatorPos: gl.getUniformLocation(program, 'u_predatorPos'),
+                    weather: gl.getUniformLocation(program, 'u_weather'),
+                    temperature: gl.getUniformLocation(program, 'u_temperature')
+                };
+            }
+            
+            createGeometry() {
+                const gl = this.gl;
+                
+                const positions = new Float32Array([
+                    -1, -1,  1, -1,  -1, 1,
+                    -1,  1,  1, -1,   1, 1
+                ]);
+                
+                const texCoords = new Float32Array([
+                    0, 0,  1, 0,  0, 1,
+                    0, 1,  1, 0,  1, 1
+                ]);
+                
+                this.positionBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+                
+                this.positionLocation = gl.getAttribLocation(this.program, 'a_position');
+                gl.enableVertexAttribArray(this.positionLocation);
+                gl.vertexAttribPointer(this.positionLocation, 2, gl.FLOAT, false, 0, 0);
+                
+                this.texCoordBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+                
+                this.texCoordLocation = gl.getAttribLocation(this.program, 'a_texCoord');
+                gl.enableVertexAttribArray(this.texCoordLocation);
+                gl.vertexAttribPointer(this.texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+            }
+            
+            createBeeSystem() {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const radius = 80 + Math.random() * 120;
+                    
+                    const bee = new UCFBee(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * radius,
+                        i,
+                        1 + Math.floor(Math.random() * 3)
+                    );
+                    
+                    this.bees.push(bee);
+                }
+            }
+            
+            setupEventListeners() {
+                // Vision mode buttons
+                document.querySelectorAll('.vision-mode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const mode = parseInt(btn.dataset.mode);
+                        this.setVisionMode(mode);
+                        
+                        document.querySelectorAll('.vision-mode-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                });
+                
+                // Ecosystem controls
+                document.getElementById('addBeesBtn').onclick = () => this.addBees();
+                document.getElementById('weatherBtn').onclick = () => this.environment.changeWeather();
+                document.getElementById('predatorBtn').onclick = () => this.environment.addPredator();
+                document.getElementById('bloomBtn').onclick = () => this.environment.addFlowerBloom();
+                document.getElementById('ruptureBtn').onclick = () => this.triggerVisionRupture();
+                document.getElementById('regenBtn').onclick = () => this.forceRegeneration();
+                
+                // Overview canvas click
+                this.overviewCanvas.addEventListener('click', (event) => {
+                    this.handleOverviewClick(event);
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (e.key >= '1' && e.key <= '8') {
+                        const index = parseInt(e.key) - 1;
+                        this.setVisionMode(index);
+                        
+                        document.querySelectorAll('.vision-mode-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.vision-mode-btn')[index].classList.add('active');
+                    }
+                    if (e.key === 'ArrowLeft') this.selectedBeeIndex = Math.max(0, this.selectedBeeIndex - 1);
+                    if (e.key === 'ArrowRight') this.selectedBeeIndex = Math.min(this.bees.length - 1, this.selectedBeeIndex + 1);
+                });
+                
+                window.addEventListener('resize', () => {
+                    this.resizeCanvas();
+                    this.updateCamera();
+                });
+            }
+            
+            handleOverviewClick(event) {
+                const rect = this.overviewCanvas.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+                
+                const scale = 0.4;
+                const offsetX = this.overviewCanvas.width / 2;
+                const offsetY = this.overviewCanvas.height / 2;
+                
+                let closestBee = 0;
+                let closestDistance = Infinity;
+                
+                this.bees.forEach((bee, index) => {
+                    if (!bee.isInside) {
+                        const beeScreenX = offsetX + bee.x * scale;
+                        const beeScreenY = offsetY + bee.y * scale;
+                        const distance = Math.sqrt((clickX - beeScreenX) ** 2 + (clickY - beeScreenY) ** 2);
+                        
+                        if (distance < closestDistance && distance < 15) {
+                            closestDistance = distance;
+                            closestBee = index;
+                        }
+                    }
+                });
+                
+                this.selectedBeeIndex = closestBee;
+            }
+            
+            addBees() {
+                for (let i = 0; i < 3; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 80 + Math.random() * 100;
+                    
+                    const bee = new UCFBee(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * radius,
+                        this.bees.length,
+                        1 + Math.floor(Math.random() * 2)
+                    );
+                    
+                    this.bees.push(bee);
+                }
+            }
+            
+            triggerVisionRupture() {
+                if (this.bees.length > 0) {
+                    const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                    selectedBee.coherenceState = 0.1;
+                    selectedBee.ruptureState = true;
+                    selectedBee.visualRuptures++;
+                }
+            }
+            
+            forceRegeneration() {
+                if (this.bees.length > 0) {
+                    const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                    selectedBee.rebirthField = 1.0;
+                    selectedBee.coherenceState = 0.8 + Math.random() * 0.2;
+                    selectedBee.ruptureState = false;
+                }
+            }
+            
+            setVisionMode(mode) {
+                this.visionMode = mode;
+                console.log(`Vision mode changed to: ${mode}`);
+            }
+            
+            update() {
+                this.time++;
+                
+                this.environment.update(this.time);
+                
+                this.bees.forEach(bee => {
+                    bee.update(this.bees, this.environment, this.time);
+                });
+                
+                this.updateCommunicationBeams();
+                
+                this.bees = this.bees.filter(bee => bee.energy > 0.05);
+                
+                if (this.bees.length < 12 && Math.random() < 0.001) {
+                    this.addBees();
+                }
+                
+                this.updateStats();
+            }
+            
+            updateCommunicationBeams() {
+                this.communicationBeams = this.communicationBeams.filter(beam => 
+                    Date.now() - beam.startTime < 1000
+                );
+                
+                if (Math.random() < 0.02 && this.bees.length > 0) {
+                    const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                    const nearbyBees = this.bees.filter(bee => 
+                        bee !== selectedBee && selectedBee.distanceTo(bee) < 80
+                    );
+                    
+                    if (nearbyBees.length > 0) {
+                        const targetBee = nearbyBees[Math.floor(Math.random() * nearbyBees.length)];
+                        this.communicationBeams.push({
+                            from: selectedBee,
+                            to: targetBee,
+                            startTime: Date.now()
+                        });
+                    }
+                }
+            }
+            
+            updateStats() {
+                if (this.bees.length === 0) return;
+                
+                const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                const avgCoherence = this.bees.reduce((sum, bee) => sum + bee.coherenceState, 0) / this.bees.length;
+                const totalRuptures = this.bees.reduce((sum, bee) => sum + bee.visualRuptures, 0);
+                const avgRegeneration = this.bees.reduce((sum, bee) => sum + bee.rebirthField, 0) / this.bees.length;
+                
+                // Update selected bee display
+                document.getElementById('selectedBeeId').textContent = `#${selectedBee.id + 1}`;
+                document.getElementById('beeRole').textContent = selectedBee.role;
+                document.getElementById('beeGeneration').textContent = selectedBee.generation;
+                document.getElementById('beeAge').textContent = `${Math.floor(selectedBee.age)}d`;
+                document.getElementById('coherenceFill').style.width = `${selectedBee.coherenceState * 100}%`;
+                
+                // Update visual processing
+                document.getElementById('detectedObjects').textContent = selectedBee.detectedObjects.length;
+                
+                const nearestFlower = Array.from(selectedBee.visualField.values())
+                    .filter(obj => obj.type === 'flower')
+                    .sort((a, b) => a.distance - b.distance)[0];
+                document.getElementById('nearestFlower').textContent = nearestFlower ? 
+                    `${Math.round(nearestFlower.distance)}m` : 'None';
+                
+                const nearbyBees = Array.from(selectedBee.visualField.values())
+                    .filter(obj => obj.type === 'bee').length;
+                document.getElementById('motionTracking').textContent = `${nearbyBees} bees`;
+                
+                document.getElementById('visualRange').textContent = `${Math.floor(120 + selectedBee.genetics.vision * 60)}m`;
+                
+                // Update behavior
+                document.getElementById('currentBehavior').textContent = selectedBee.behavior.toUpperCase();
+                document.getElementById('energyLevel').textContent = `${Math.floor(selectedBee.energy * 100)}%`;
+                document.getElementById('nectarLoad').textContent = `${Math.floor(selectedBee.nectar * 100)}%`;
+                
+                const hiveDistance = selectedBee.distanceTo(this.environment.hive);
+                document.getElementById('hiveDistance').textContent = `${Math.round(hiveDistance)}m`;
+                
+                // Update UCF metrics
+                document.getElementById('photonCoherence').textContent = selectedBee.coherenceState.toFixed(4);
+                document.getElementById('visualRuptures').textContent = totalRuptures;
+                document.getElementById('fieldRegeneration').textContent = avgRegeneration.toFixed(4);
+                document.getElementById('swarmCoherence').textContent = avgCoherence.toFixed(4);
+                
+                // Update network stats
+                document.getElementById('population').textContent = this.bees.length;
+                document.getElementById('activeFlowers').textContent = this.environment.flowers.filter(f => f.nectar > 0.3).length;
+                document.getElementById('photonFlux').textContent = `${(2.1 + Math.random() * 0.4).toFixed(1)}K`;
+                document.getElementById('processingRate').textContent = '60Hz';
+                document.getElementById('communication').textContent = this.communicationBeams.length > 0 ? 'Active' : 'Idle';
+                document.getElementById('temperature').textContent = `${Math.round(this.environment.temperature)}°C`;
+                
+                // Update processing efficiency
+                document.getElementById('photonIntegration').textContent = `${(90 + selectedBee.coherenceState * 10).toFixed(1)}%`;
+                document.getElementById('memoryBuffer').textContent = `${Math.floor(selectedBee.coherenceHistory.length * 17)}/1000`;
+                document.getElementById('errorCorrection').textContent = selectedBee.ruptureState ? 'Regenerating' : 'Active';
+                document.getElementById('adaptationRate').textContent = `${(selectedBee.genetics.vision * 25).toFixed(1)}%`;
+            }
+            
+            updateCamera() {
+                if (this.bees.length === 0) return;
+                
+                const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                const canvas = this.visionCanvas;
+                
+                const zoom = this.cameraZoom;
+                const aspect = canvas.width / canvas.height;
+                
+                const left = -400 / zoom;
+                const right = 400 / zoom;
+                const bottom = -300 / zoom / aspect;
+                const top = 300 / zoom / aspect;
+                
+                this.viewMatrix[0] = 2 / (right - left);
+                this.viewMatrix[1] = 0;
+                this.viewMatrix[2] = 0;
+                this.viewMatrix[3] = 0;
+                
+                this.viewMatrix[4] = 0;
+                this.viewMatrix[5] = 2 / (top - bottom);
+                this.viewMatrix[6] = 0;
+                this.viewMatrix[7] = 0;
+                
+                this.viewMatrix[8] = 0;
+                this.viewMatrix[9] = 0;
+                this.viewMatrix[10] = -1;
+                this.viewMatrix[11] = 0;
+                
+                this.viewMatrix[12] = -(right + left) / (right - left) - 2 * selectedBee.x / (right - left);
+                this.viewMatrix[13] = -(top + bottom) / (top - bottom) - 2 * selectedBee.y / (top - bottom);
+                this.viewMatrix[14] = 0;
+                this.viewMatrix[15] = 1;
+            }
+            
+            renderOverview() {
+                const ctx = this.overviewCtx;
+                const canvas = this.overviewCanvas;
+                
+                ctx.fillStyle = '#2d4a1a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const scale = 0.4;
+                const offsetX = canvas.width / 2;
+                const offsetY = canvas.height / 2;
+                
+                // Draw flowers
+                this.environment.flowers.forEach(flower => {
+                    const x = offsetX + flower.x * scale;
+                    const y = offsetY + flower.y * scale;
+                    
+                    const nectarLevel = flower.nectar;
+                    ctx.fillStyle = `hsl(${300 + flower.uvPattern * 60}, 80%, ${40 + nectarLevel * 30}%)`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2 + flower.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw hive
+                const hiveX = offsetX;
+                const hiveY = offsetY;
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(hiveX, hiveY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // Draw predators
+                this.environment.predators.forEach(predator => {
+                    const x = offsetX + predator.x * scale;
+                    const y = offsetY + predator.y * scale;
+                    
+                    ctx.fillStyle = '#ff4444';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Draw bees
+                this.bees.forEach((bee, index) => {
+                    if (!bee.isInside) {
+                        const x = offsetX + bee.x * scale;
+                        const y = offsetY + bee.y * scale;
+                        
+                        if (index === this.selectedBeeIndex) {
+                            ctx.strokeStyle = '#ff6b6b';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 8, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                        
+                        const behaviorColors = {
+                            'exploring': '#FFD700',
+                            'foraging': '#32CD32',
+                            'returning': '#FF6347',
+                            'construction': '#DEB887'
+                        };
+                        
+                        ctx.fillStyle = behaviorColors[bee.behavior] || '#FFD700';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        const coherenceRadius = 4 + bee.coherenceState * 3;
+                        ctx.strokeStyle = `rgba(100, 255, 100, ${bee.coherenceState * 0.6})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(x, y, coherenceRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        ctx.fillStyle = 'white';
+                        ctx.font = '8px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText((index + 1).toString(), x, y - 12);
+                    }
+                });
+            }
+            
+            // FIXED: Updated visual indicators function to use overlay container
+            updateVisualIndicators() {
+                // Clear existing indicators from the overlay container
+                this.visionOverlay.innerHTML = '';
+                
+                if (this.bees.length === 0) return;
+                
+                const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                const canvas = this.visionCanvas;
+                
+                selectedBee.visualField.forEach((obj, key) => {
+                    const screenPos = this.worldToScreen(obj.object.x, obj.object.y);
+                    
+                    if (screenPos && screenPos.x >= 0 && screenPos.x <= canvas.clientWidth && 
+                        screenPos.y >= 0 && screenPos.y <= canvas.clientHeight) {
+                        
+                        let indicator, label;
+                        
+                        if (obj.type === 'flower') {
+                            indicator = document.createElement('div');
+                            indicator.className = 'flower-indicator';
+                            indicator.style.borderColor = obj.object.nectar > 0.7 ? '#ec4899' : '#f97316';
+                        } else if (obj.type === 'bee') {
+                            indicator = document.createElement('div');
+                            indicator.className = 'bee-indicator';
+                            const behaviorColors = {
+                                'exploring': '#fbbf24',
+                                'foraging': '#22c55e',
+                                'returning': '#ef4444',
+                                'construction': '#3b82f6'
+                            };
+                            indicator.style.borderColor = behaviorColors[obj.object.behavior] || '#fbbf24';
+                        }
+                        
+                        if (indicator) {
+                            indicator.style.left = `${screenPos.x - 8}px`;
+                            indicator.style.top = `${screenPos.y - 8}px`;
+                            this.visionOverlay.appendChild(indicator);
+                            
+                            label = document.createElement('div');
+                            label.className = 'distance-label';
+                            label.style.left = `${screenPos.x + 12}px`;
+                            label.style.top = `${screenPos.y - 6}px`;
+                            label.textContent = `${Math.round(obj.distance)}m`;
+                            this.visionOverlay.appendChild(label);
+                        }
+                    }
+                });
+            }
+            
+            worldToScreen(worldX, worldY) {
+                if (this.bees.length === 0) return null;
+                
+                const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                const canvas = this.visionCanvas;
+                
+                const relativeX = worldX - selectedBee.x;
+                const relativeY = worldY - selectedBee.y;
+                
+                const zoom = this.cameraZoom;
+                const aspect = canvas.width / canvas.height;
+                const worldWidth = 800 / zoom;
+                const worldHeight = worldWidth / aspect;
+                
+                const screenX = canvas.clientWidth * 0.5 + (relativeX / worldWidth) * canvas.clientWidth;
+                const screenY = canvas.clientHeight * 0.5 - (relativeY / worldHeight) * canvas.clientHeight;
+                
+                return { x: screenX, y: screenY };
+            }
+            
+            render() {
+                const gl = this.gl;
+                if (this.bees.length === 0) return;
+                
+                try {
+                    const selectedBee = this.bees[this.selectedBeeIndex % this.bees.length];
+                    
+                    gl.clearColor(0.02, 0.08, 0.12, 1.0);
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                    
+                    gl.useProgram(this.program);
+                    gl.bindVertexArray(this.vao);
+                    
+                    gl.uniformMatrix4fv(this.locations.viewMatrix, false, this.viewMatrix);
+                    gl.uniform2f(this.locations.resolution, this.visionCanvas.width, this.visionCanvas.height);
+                    gl.uniform1f(this.locations.time, this.time);
+                    gl.uniform2f(this.locations.beePos, selectedBee.x, selectedBee.y);
+                    gl.uniform2f(this.locations.beeDir, Math.cos(selectedBee.bodyTilt), Math.sin(selectedBee.bodyTilt));
+                    gl.uniform1f(this.locations.coherenceState, selectedBee.coherenceState);
+                    gl.uniform1i(this.locations.visionMode, this.visionMode);
+                    gl.uniform1f(this.locations.ucfIntensity, this.ucfIntensity);
+                    gl.uniform1f(this.locations.sunIntensity, this.sunIntensity);
+                    gl.uniform2f(this.locations.sunPos, 200 + Math.cos(this.time * 0.005) * 150, -100 + Math.sin(this.time * 0.003) * 80);
+                    gl.uniform1f(this.locations.beeEnergy, selectedBee.energy);
+                    gl.uniform1f(this.locations.beeNectar, selectedBee.nectar);
+                    
+                    const flowerCount = Math.min(this.environment.flowers.length, 20);
+                    gl.uniform1i(this.locations.flowerCount, flowerCount);
+                    
+                    if (flowerCount > 0) {
+                        const flowerPositions = new Float32Array(40);
+                        const flowerNectar = new Float32Array(20);
+                        const flowerUV = new Float32Array(20);
+                        const flowerSize = new Float32Array(20);
+                        
+                        for (let i = 0; i < flowerCount; i++) {
+                            flowerPositions[i * 2] = this.environment.flowers[i].x;
+                            flowerPositions[i * 2 + 1] = this.environment.flowers[i].y;
+                            flowerNectar[i] = this.environment.flowers[i].nectar;
+                            flowerUV[i] = this.environment.flowers[i].uvPattern;
+                            flowerSize[i] = this.environment.flowers[i].size;
+                        }
+                        
+                        gl.uniform2fv(this.locations.flowerPos, flowerPositions);
+                        gl.uniform1fv(this.locations.flowerNectar, flowerNectar);
+                        gl.uniform1fv(this.locations.flowerUV, flowerUV);
+                        gl.uniform1fv(this.locations.flowerSize, flowerSize);
+                    }
+                    
+                    gl.uniform2f(this.locations.hivePos, this.environment.hive.x, this.environment.hive.y);
+                    gl.uniform1f(this.locations.hiveProgress, this.environment.hive.progress);
+                    
+                    const otherBees = this.bees.filter((bee, index) => index !== this.selectedBeeIndex && !bee.isInside).slice(0, 12);
+                    const beeCount = otherBees.length;
+                    gl.uniform1i(this.locations.beeCount, beeCount);
+                    
+                    if (beeCount > 0) {
+                        const beePositions = new Float32Array(24);
+                        const beeCoherence = new Float32Array(12);
+                        const beeBehavior = new Int32Array(12);
+                        const beeDistance = new Float32Array(12);
+                        const beeEnergy = new Float32Array(12);
+                        
+                        otherBees.forEach((bee, i) => {
+                            beePositions[i * 2] = bee.x;
+                            beePositions[i * 2 + 1] = bee.y;
+                            beeCoherence[i] = bee.coherenceState;
+                            beeBehavior[i] = bee.behaviorState;
+                            beeDistance[i] = selectedBee.distanceTo(bee);
+                            beeEnergy[i] = bee.energy;
+                        });
+                        
+                        gl.uniform2fv(this.locations.otherBeePos, beePositions);
+                        gl.uniform1fv(this.locations.otherBeeCoherence, beeCoherence);
+                        gl.uniform1iv(this.locations.otherBeeBehavior, beeBehavior);
+                        gl.uniform1fv(this.locations.otherBeeDistance, beeDistance);
+                        gl.uniform1fv(this.locations.otherBeeEnergy, beeEnergy);
+                    }
+                    
+                    const predatorCount = Math.min(this.environment.predators.length, 5);
+                    gl.uniform1i(this.locations.predatorCount, predatorCount);
+                    
+                    if (predatorCount > 0) {
+                        const predatorPositions = new Float32Array(10);
+                        for (let i = 0; i < predatorCount; i++) {
+                            predatorPositions[i * 2] = this.environment.predators[i].x;
+                            predatorPositions[i * 2 + 1] = this.environment.predators[i].y;
+                        }
+                        gl.uniform2fv(this.locations.predatorPos, predatorPositions);
+                    }
+                    
+                    gl.uniform1f(this.locations.weather, this.environment.weather);
+                    gl.uniform1f(this.locations.temperature, this.environment.temperature);
+                    
+                    gl.drawArrays(gl.TRIANGLES, 0, 6);
+                    
+                    gl.bindVertexArray(null);
+                    
+                } catch (error) {
+                    console.error('Render error:', error);
+                }
+                
+                this.renderOverview();
+                this.updateVisualIndicators();
+            }
+            
+            animate() {
+                try {
+                    this.update();
+                    this.updateCamera();
+                    this.render();
+                } catch (error) {
+                    console.error('Animation frame error:', error);
+                }
+                
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // Global control functions
+        function resetSystem() {
+            if (window.ucfVisionSystem) {
+                window.ucfVisionSystem.bees.forEach(bee => {
+                    bee.coherenceState = 0.6 + Math.random() * 0.4;
+                    bee.energy = 0.8 + Math.random() * 0.2;
+                    bee.ruptureState = false;
+                    bee.visualRuptures = 0;
+                    bee.rebirthField = 0;
+                });
+                console.log('🔄 Vision system reset');
+            }
+        }
+        
+        function exportData() {
+            if (window.ucfVisionSystem) {
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    bees: window.ucfVisionSystem.bees.map(bee => ({
+                        id: bee.id,
+                        coherenceState: bee.coherenceState,
+                        visualRuptures: bee.visualRuptures,
+                        energy: bee.energy,
+                        behavior: bee.behavior
+                    })),
+                    environment: {
+                        weather: window.ucfVisionSystem.environment.weather,
+                        temperature: window.ucfVisionSystem.environment.temperature,
+                        flowerCount: window.ucfVisionSystem.environment.flowers.length
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ucf_vision_data.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                console.log('📊 Vision data exported');
+            }
+        }
+        
+        function calibrateSystem() {
+            if (window.ucfVisionSystem) {
+                window.ucfVisionSystem.ucfIntensity = 1.5;
+                window.ucfVisionSystem.sunIntensity = 1.2;
+                console.log('🎯 Vision system calibrated');
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                window.ucfVisionSystem = new UCFBeeVisionSystem();
+                console.log('🌟 UCF Bee Vision Network initialised');
+                console.log('   👁️ Real-time photon processing through biological visual cortex');
+                console.log('   🧠 8 vision modes: Natural, UV, Motion, Polarised, Compound, UCF Field, Social, Thermal');
+                console.log('   🔄 Coherence-Rupture-Regeneration dynamics in visual processing');
+                console.log('   📡 Swarm communication and coordination systems');
+                console.log('   ⚛️ CRR framework demonstration for autonomous vision networks');
+            } catch (error) {
+                console.error('Failed to initialize UCF Vision System:', error);
+                document.body.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Failed to initialize WebGL2. Please check browser compatibility.</div>';
+            }
+        });
+    </script>
+</body>
+</html>
