@@ -854,7 +854,7 @@ Independent Researcher
 
 ### Long-Term Vision (2026+)
 
-- **Universal Framework**: Establishing CRR as a language for history-bearing systems
+- **Universal Framework**: Establishing CRR as a common language for history-bearing systems
 - **AI Alignment**: Integrating CRR into safe, controllable AI architectures  
 - **Educational Tools**: Curriculum materials for teaching dynamical systems through CRR
 - **Interdisciplinary Synthesis**: Bridging physics, biology, psychology, and computer science
