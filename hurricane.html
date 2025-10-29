@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Hurricane - Weather Map (No Cropping)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        .sidebar {
+            width: 400px;
+            background: #ffffff;
+            border-right: 3px solid #333;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .section {
+            border-bottom: 2px solid #333;
+            padding: 20px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        button {
+            background: #000;
+            color: white;
+            border: 2px solid #000;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin: 5px 0;
+        }
+        button:hover {
+            background: #333;
+        }
+        button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .hurricane-preset {
+            background: #2196F3;
+            border-color: #2196F3;
+            margin: 8px 0;
+        }
+        .hurricane-preset:hover {
+            background: #1976D2;
+            border-color: #1976D2;
+        }
+        .hurricane-preset.selected {
+            background: #FF9800;
+            border-color: #FF9800;
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+        }
+        .preset-info {
+            font-size: 10px;
+            color: #666;
+            margin: -5px 0 8px 0;
+            text-align: center;
+            font-style: italic;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 12px;
+        }
+        .metric-label {
+            color: #666;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-family: 'Courier New', monospace;
+            color: #000;
+            font-weight: bold;
+        }
+        .slider-group {
+            margin: 15px 0;
+        }
+        .slider-label {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .slider-label span {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #ddd;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #000;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #000;
+            cursor: pointer;
+            border: none;
+        }
+        .status {
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #333;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .status.active {
+            background: #4CAF50;
+            color: white;
+        }
+        .status.inactive {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .info-box {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+        .crr-box {
+            background: #fff3cd;
+            border: 3px solid #856404;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 11px;
+            line-height: 1.8;
+        }
+        .crr-box .title {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #856404;
+        }
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 100;
+            border: 2px solid white;
+        }
+        .overlay-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #4CAF50;
+        }
+        .math-explainer {
+            position: absolute;
+            top: 140px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 100;
+            border: 3px solid #FFD700;
+            max-width: 380px;
+            line-height: 1.5;
+        }
+        .math-title {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 12px;
+            color: #FFD700;
+            text-align: center;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 8px;
+        }
+        .math-section {
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #4CAF50;
+        }
+        .math-section strong {
+            color: #4CAF50;
+            font-size: 11px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .math-formula {
+            color: #FFD700;
+            font-size: 10px;
+            margin: 4px 0;
+            font-style: italic;
+        }
+        .math-value {
+            color: #00FF00;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 4px 0;
+        }
+        .math-desc {
+            color: #AAA;
+            font-size: 9px;
+            font-style: italic;
+            margin-top: 4px;
+        }
+        .rupture-section {
+            border-left-color: #FF0000;
+        }
+        .rupture-section strong {
+            color: #FF0000;
+        }
+        .rupture-active {
+            color: #FF0000 !important;
+            font-weight: bold;
+            animation: pulse 0.5s ease-in-out;
+        }
+        .rupture-inactive {
+            color: #666;
+            font-size: 10px;
+        }
+        .enhancement-section {
+            border-left-color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        .enhancement-section strong {
+            color: #FFD700;
+        }
+        .enhancement-value {
+            font-size: 16px;
+            color: #FFD700;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            font-size: 11px;
+            z-index: 100;
+            border: 2px solid white;
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 12px;
+            border-bottom: 1px solid white;
+            padding-bottom: 5px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+        }
+        .legend-color {
+            width: 35px;
+            height: 16px;
+            margin-right: 10px;
+            border: 1px solid white;
+        }
+        .controls-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px;
+            z-index: 100;
+            border: 2px solid white;
+        }
+        .controls-overlay button {
+            margin: 4px;
+            padding: 8px 15px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <!-- Status -->
+            <div class="section">
+                <div class="section-title">Hurricane Status</div>
+                <div id="currentHurricaneName" style="font-size: 15px; font-weight: bold; color: #2196F3; margin-bottom: 10px; text-align: center; padding: 8px; background: #E3F2FD; border: 2px solid #2196F3;">
+                    Generic Hurricane
+                </div>
+                <div id="statusIndicator" class="status inactive">INITIALIZING</div>
+                <div class="metric-row">
+                    <span class="metric-label">Max Wind Speed:</span>
+                    <span class="metric-value" id="windSpeed">0 mph</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Category:</span>
+                    <span class="metric-value" id="category">-</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Eye Radius:</span>
+                    <span class="metric-value" id="eyeRadius">0 km</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Position:</span>
+                    <span class="metric-value" id="position">-</span>
+                </div>
+            </div>
+
+            <!-- CRR Physics -->
+            <div class="section">
+                <div class="section-title">CRR Framework</div>
+                
+                <div class="crr-box">
+                    <div class="title">ACTIVE CRR PHYSICS:</div>
+                    <strong>C(x) = ∫ L(x,τ) dτ</strong><br>
+                    Coherence integrates memory density over time<br><br>
+                    <strong>R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ</strong><br>
+                    Regeneration amplifies fields using historical patterns<br><br>
+                    <strong>δ(t-t₀) - Dirac Delta</strong><br>
+                    Rupture event when coherence crosses threshold
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-label">Coherence C(x):</span>
+                    <span class="metric-value" id="coherenceVal">0.000</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Regeneration R[χ]:</span>
+                    <span class="metric-value" id="regenerationVal">0.000</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Memory Density L(x,τ):</span>
+                    <span class="metric-value" id="memoryVal">0.000</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Rupture Status δ:</span>
+                    <span class="metric-value" id="ruptureStatus">None</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Field Enhancement:</span>
+                    <span class="metric-value" id="enhancementVal">0.0%</span>
+                </div>
+                
+                <div class="info-box">
+                    <strong>How CRR Works Here:</strong><br>
+                    • Memory stores past intensity at each location<br>
+                    • Coherence measures accumulated system memory<br>
+                    • Regeneration uses history to amplify current wind fields<br>
+                    • Heaviside Θ ensures causality (only past influences present)<br>
+                    • <strong>Dirac δ(t-t₀) marks rupture when C reaches threshold</strong><br>
+                    • Result: Hurricane intensity builds on its own history<br><br>
+                    <strong>Map Details:</strong><br>
+                    • Red markers are fixed Jamaican cities<br>
+                    • Hurricane moves OVER the stationary locations<br>
+                    • Wind speeds update as storm passes
+                </div>
+            </div>
+
+            <!-- Environmental Controls -->
+            <div class="section">
+                <div class="section-title">Environmental Parameters</div>
+                
+                <div class="slider-group">
+                    <label class="slider-label">
+                        <span>
+                            <strong>Sea Surface Temperature (SST)</strong>
+                            <span id="sstValue">32.0°C</span>
+                        </span>
+                        <input type="range" id="sstSlider" min="20" max="32" step="0.1" value="32">
+                        <small style="color: #666;">Threshold: 26.0°C for formation</small>
+                    </label>
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label">
+                        <span>
+                            <strong>Wind Shear</strong>
+                            <span id="shearValue">5 kt</span>
+                        </span>
+                        <input type="range" id="shearSlider" min="0" max="50" step="1" value="5">
+                        <small style="color: #666;">Lower = stronger hurricane</small>
+                    </label>
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label">
+                        <span>
+                            <strong>Relative Humidity</strong>
+                            <span id="moistureValue">100%</span>
+                        </span>
+                        <input type="range" id="moistureSlider" min="30" max="100" step="1" value="100">
+                        <small style="color: #666;">Moisture available for convection</small>
+                    </label>
+                </div>
+
+                <div class="slider-group">
+                    <label class="slider-label">
+                        <span>
+                            <strong>Omega (Ω) - CRR Temperature</strong>
+                            <span id="omegaValue">1.50</span>
+                        </span>
+                        <input type="range" id="omegaSlider" min="0.5" max="3" step="0.01" value="1.5">
+                        <small style="color: #666;">Controls regeneration strength in R[χ]</small>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Hurricane Presets -->
+            <div class="section">
+                <div class="section-title">Historical Hurricanes</div>
+                <button id="gilbertBtn" class="hurricane-preset">Hurricane Gilbert (1988)</button>
+                <div class="preset-info">Cat 5 • 185 mph • Jamaica Direct Hit</div>
+                
+                <button id="ivanBtn" class="hurricane-preset">Hurricane Ivan (2004)</button>
+                <div class="preset-info">Cat 5 • 165 mph • South of Jamaica</div>
+                
+                <button id="deanBtn" class="hurricane-preset">Hurricane Dean (2007)</button>
+                <div class="preset-info">Cat 5 • 175 mph • Near Jamaica Pass</div>
+                
+                <div id="hurricaneDescription" class="info-box" style="margin-top: 15px; display: none;">
+                    <strong id="hurricaneDescTitle">Hurricane Info</strong><br>
+                    <span id="hurricaneDescText"></span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="section">
+                <div class="section-title">Controls</div>
+                <button id="soundBtn">Enable Sound</button>
+                <button id="resetBtn">Reset Hurricane</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            
+            <div class="overlay">
+                <div class="overlay-title">HURRICANE TRACKING</div>
+                <div id="liveInfo">
+                    <div id="hurricaneNameDisplay" style="font-size: 14px; font-weight: bold; color: #FFD700; margin-bottom: 8px;">
+                        Generic Hurricane
+                    </div>
+                    Streamlines: <span id="streamCount">0</span><br>
+                    Peak Intensity: <span id="peakIntensity">0</span><br>
+                    Camera: <span id="tracking">Locked</span>
+                </div>
+            </div>
+            
+            <div class="math-explainer">
+                <div class="math-title">⚡ CRR CALCULATIONS (LIVE)</div>
+                
+                <div class="math-section">
+                    <strong>1. Memory Density L(x,τ)</strong>
+                    <div class="math-value">L = <span id="mathMemory">0.000</span></div>
+                    <div class="math-desc">Intensity stored at hurricane center</div>
+                </div>
+                
+                <div class="math-section">
+                    <strong>2. Coherence Integration</strong>
+                    <div class="math-formula">C(x) = ∫ L(x,τ)·e^(-Δτ/150) dτ</div>
+                    <div class="math-value">C = <span id="mathCoherence">0.000</span></div>
+                    <div class="math-desc">Accumulated memory over time</div>
+                </div>
+                
+                <div class="math-section">
+                    <strong>3. Regeneration Operator</strong>
+                    <div class="math-formula">R[χ] = ∫ φ(τ)·e^(C/Ω)·Θ(t-τ) dτ</div>
+                    <div class="math-value">e^(C/Ω) = <span id="mathExp">0.000</span></div>
+                    <div class="math-value">R = <span id="mathRegen">0.000</span></div>
+                    <div class="math-desc">History amplification factor</div>
+                </div>
+                
+                <div class="math-section rupture-section">
+                    <strong>4. Dirac Delta - Rupture Event</strong>
+                    <div class="math-formula">δ(t-t₀) at coherence threshold</div>
+                    <div class="math-value">δ = <span id="mathDelta">0</span> <span id="ruptureStatus" class="rupture-inactive">NO RUPTURE</span></div>
+                    <div class="math-value">t₀ = <span id="mathRuptureTime">-</span></div>
+                    <div class="math-desc">Phase transition marker</div>
+                </div>
+                
+                <div class="math-section enhancement-section">
+                    <strong>5. Total Wind Enhancement</strong>
+                    <div class="math-formula">I' = I × (1 + R×0.6 + δ×0.3)</div>
+                    <div class="math-value enhancement-value">+<span id="mathEnhancement">0.0</span>%</div>
+                </div>
+            </div>
+
+            <div class="controls-overlay">
+                <button id="toggleStreamlines" class="active">Streamlines</button>
+                <button id="toggleHeatmap" class="active">Heatmap</button>
+                <button id="toggleTrajectory" class="active">Track</button>
+                <button id="toggleMarkers" class="active">Markers</button>
+            </div>
+
+            <div class="legend">
+                <div class="legend-title">INTENSITY SCALE</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4B0000;"></div>
+                    <span>Cat 5 (157+ mph)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #8B0000;"></div>
+                    <span>Cat 4 (130-156 mph)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF4500;"></div>
+                    <span>Cat 3 (111-129 mph)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFA500;"></div>
+                    <span>Cat 2 (96-110 mph)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFD700;"></div>
+                    <span>Cat 1 (74-95 mph)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #90EE90;"></div>
+                    <span>Tropical Storm</span>
+                </div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid white; font-size: 10px; line-height: 1.4;">
+                    🔴 Red markers = Fixed Jamaica cities<br>
+                    🌀 Hurricane moves across map
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sound System
+        class SoundSystem {
+            constructor() {
+                this.ctx = null;
+                this.osc = null;
+                this.gain = null;
+                this.active = false;
+            }
+            
+            async init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.gain = this.ctx.createGain();
+                    this.gain.connect(this.ctx.destination);
+                    this.gain.gain.value = 0;
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            start() {
+                if (!this.ctx || this.active) return;
+                this.osc = this.ctx.createOscillator();
+                this.osc.type = 'sine';
+                this.osc.frequency.value = 60;
+                this.osc.connect(this.gain);
+                this.osc.start();
+                this.gain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.5);
+                this.active = true;
+            }
+            
+            stop() {
+                if (!this.osc || !this.active) return;
+                this.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.5);
+                setTimeout(() => {
+                    if (this.osc) {
+                        this.osc.stop();
+                        this.osc = null;
+                    }
+                    this.active = false;
+                }, 500);
+            }
+            
+            update(intensity) {
+                if (this.active && this.osc && this.ctx) {
+                    const freq = 50 + intensity * 120;
+                    const vol = 0.04 + intensity * 0.12;
+                    this.osc.frequency.setTargetAtTime(freq, this.ctx.currentTime, 0.1);
+                    this.gain.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
+                }
+            }
+        }
+
+        // CRR Memory Field Implementation
+        class CRRMemoryField {
+            constructor() {
+                this.memories = new Map();
+                this.cellSize = 15;  // Grid cell size for memory storage
+            }
+            
+            getKey(x, y) {
+                return `${Math.floor(x / this.cellSize)},${Math.floor(y / this.cellSize)}`;
+            }
+            
+            // Store memory density L(x,τ) at position and time
+            store(x, y, density, time) {
+                const key = this.getKey(x, y);
+                if (!this.memories.has(key)) {
+                    this.memories.set(key, []);
+                }
+                const list = this.memories.get(key);
+                list.push({ density, time });
+                
+                // Keep only recent memories (moving window)
+                if (list.length > 100) {
+                    list.shift();
+                }
+            }
+            
+            // Calculate Coherence: C(x) = ∫ L(x,τ) dτ
+            // Integrates memory density over time at this location
+            getCoherence(x, y, currentTime) {
+                const key = this.getKey(x, y);
+                if (!this.memories.has(key)) return 0;
+                
+                const memories = this.memories.get(key);
+                let integral = 0;
+                
+                // Integration with exponential decay (recent memories weighted more)
+                for (const mem of memories) {
+                    const age = currentTime - mem.time;
+                    const weight = Math.exp(-age / 150);  // Decay factor
+                    integral += mem.density * weight;
+                }
+                
+                return Math.min(1, integral / 10);  // Normalize
+            }
+            
+            // Calculate Regeneration: R[χ](x,t) = ∫ φ(x,τ)·e^(C(x)/Ω)·Θ(t-τ) dτ
+            // φ is historical field signal, Θ ensures causality
+            getRegeneration(x, y, currentTime, Omega) {
+                const coherence = this.getCoherence(x, y, currentTime);
+                const key = this.getKey(x, y);
+                
+                if (!this.memories.has(key)) return 0;
+                
+                const memories = this.memories.get(key);
+                let integral = 0;
+                
+                // Regeneration integral with exponential coherence weighting
+                const expFactor = Math.exp(coherence / Omega);
+                
+                for (const mem of memories) {
+                    // Heaviside function Θ(t-τ): only past contributes (mem.time < currentTime)
+                    if (mem.time < currentTime) {
+                        const age = currentTime - mem.time;
+                        const phi = mem.density;  // Historical field signal
+                        const weight = Math.exp(-age / 100);
+                        integral += phi * weight;
+                    }
+                }
+                
+                return integral * expFactor / 5;  // Scale result
+            }
+            
+            clear() {
+                this.memories.clear();
+            }
+        }
+
+        // Streamline Particle
+        class Streamline {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.prevX = x;
+                this.prevY = y;
+                this.age = 0;
+                this.maxAge = 60 + Math.random() * 100;
+                this.speed = 0;
+            }
+            
+            update(vx, vy) {
+                this.prevX = this.x;
+                this.prevY = this.y;
+                this.x += vx;
+                this.y += vy;
+                this.speed = Math.sqrt(vx * vx + vy * vy);
+                this.age++;
+            }
+            
+            isAlive() {
+                return this.age < this.maxAge;
+            }
+        }
+
+        // Main Hurricane Simulation with CRR Physics
+        class CRRHurricaneSimulation {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                
+                // Set canvas to window size
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                // Hurricane state
+                this.hurricaneX = -400;  // Start west of Jamaica
+                this.hurricaneY = -150;  // Positioned to approach from the east
+                this.vx = 1.5;
+                this.vy = 0.3;
+                this.eyeRadius = 30;
+                this.maxWindSpeed = 0;
+                this.isActive = false;
+                this.time = 0;
+                
+                // Environment
+                this.sst = 32.0;         // Maximum temperature
+                this.sstThreshold = 26.0;
+                this.windShear = 5;
+                this.humidity = 100;     // Maximum humidity
+                this.Omega = 1.5;
+                
+                // CRR System
+                this.memoryField = new CRRMemoryField();
+                this.coherence = 0;
+                this.regeneration = 0;
+                this.memoryDensity = 0;
+                this.enhancement = 0;
+                
+                // Dirac Delta - Rupture Event Tracking
+                this.ruptureTime = null;  // t₀
+                this.lastRuptureTime = null;
+                this.ruptureDetected = false;
+                this.coherenceThreshold = 0.5;  // Critical coherence for rupture
+                this.ruptureIntensity = 0;
+                
+                // Wind field (high resolution)
+                this.gridRes = 100;
+                this.gridSize = 1200;  // Large world to prevent cropping
+                this.windGrid = [];
+                this.initWindGrid();
+                
+                // Visualization
+                this.streamlines = [];
+                this.maxStreamlines = 4000;
+                this.trajectory = [];
+                
+                // Fixed geographic markers - ABSOLUTE positions in world space
+                this.markers = [
+                    { name: 'Montego Bay', x: -150, y: -180, windSpeed: 0 },
+                    { name: 'Ocho Rios', x: -50, y: -150, windSpeed: 0 },
+                    { name: 'Port Antonio', x: 80, y: -130, windSpeed: 0 },
+                    { name: 'Kingston', x: 20, y: -80, windSpeed: 0 }
+                ];
+                
+                // Toggles
+                this.showStreamlines = true;
+                this.showHeatmap = true;
+                this.showTrajectory = true;
+                this.showMarkers = true;
+                
+                // Camera system - ALWAYS centers on hurricane
+                this.camera = {
+                    x: this.hurricaneX,
+                    y: this.hurricaneY,
+                    scale: 1.0,
+                    targetScale: 1.0
+                };
+                
+                // Sound
+                this.sound = new SoundSystem();
+                this.soundEnabled = false;
+                
+                // Historical hurricane configurations
+                this.hurricanePresets = {
+                    gilbert: {
+                        name: "Hurricane Gilbert",
+                        year: 1988,
+                        category: 5,
+                        peakWinds: 185,
+                        sst: 30.5,
+                        windShear: 3,
+                        humidity: 95,
+                        vx: 1.2,
+                        vy: 0.2,
+                        description: "Category 5 - Direct hit on Jamaica, Sep 12, 1988. One of the most intense Atlantic hurricanes ever recorded.",
+                        impacts: {
+                            "Montego Bay": { reported: 170, damage: "Catastrophic" },
+                            "Ocho Rios": { reported: 175, damage: "Catastrophic" },
+                            "Port Antonio": { reported: 180, damage: "Catastrophic" },
+                            "Kingston": { reported: 165, damage: "Severe" }
+                        }
+                    },
+                    ivan: {
+                        name: "Hurricane Ivan",
+                        year: 2004,
+                        category: 5,
+                        peakWinds: 165,
+                        sst: 29.5,
+                        windShear: 5,
+                        humidity: 90,
+                        vx: 1.4,
+                        vy: 0.25,
+                        description: "Category 5 - Passed south of Jamaica, Sep 10-11, 2004. Extreme rainfall and flooding.",
+                        impacts: {
+                            "Montego Bay": { reported: 110, damage: "Severe" },
+                            "Ocho Rios": { reported: 95, damage: "Moderate" },
+                            "Port Antonio": { reported: 125, damage: "Severe" },
+                            "Kingston": { reported: 130, damage: "Severe" }
+                        }
+                    },
+                    dean: {
+                        name: "Hurricane Dean",
+                        year: 2007,
+                        category: 5,
+                        peakWinds: 175,
+                        sst: 30.0,
+                        windShear: 4,
+                        humidity: 92,
+                        vx: 1.6,
+                        vy: 0.15,
+                        description: "Category 5 - Passed south of Jamaica, Aug 19, 2007. Major damage to agriculture.",
+                        impacts: {
+                            "Montego Bay": { reported: 90, damage: "Moderate" },
+                            "Ocho Rios": { reported: 85, damage: "Moderate" },
+                            "Port Antonio": { reported: 105, damage: "Severe" },
+                            "Kingston": { reported: 100, damage: "Severe" }
+                        }
+                    }
+                };
+                
+                this.currentHurricane = null;
+                
+                // Start
+                this.activate();
+                this.animate();
+            }
+            
+            resize() {
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
+            }
+            
+            initWindGrid() {
+                this.windGrid = Array(this.gridRes).fill(0).map(() => 
+                    Array(this.gridRes).fill(0).map(() => ({ vx: 0, vy: 0, intensity: 0 }))
+                );
+            }
+            
+            // World to screen with camera following hurricane
+            worldToScreen(wx, wy) {
+                const relX = wx - this.camera.x;
+                const relY = wy - this.camera.y;
+                return {
+                    x: this.width / 2 + relX * this.camera.scale,
+                    y: this.height / 2 + relY * this.camera.scale
+                };
+            }
+            
+            screenToWorld(sx, sy) {
+                const relX = (sx - this.width / 2) / this.camera.scale;
+                const relY = (sy - this.height / 2) / this.camera.scale;
+                return {
+                    x: this.camera.x + relX,
+                    y: this.camera.y + relY
+                };
+            }
+            
+            activate() {
+                this.isActive = true;
+                this.maxWindSpeed = 100;
+                if (this.soundEnabled) this.sound.start();
+            }
+            
+            deactivate() {
+                this.isActive = false;
+                this.maxWindSpeed = 0;
+                this.streamlines = [];
+                if (this.soundEnabled) this.sound.stop();
+            }
+            
+            update() {
+                if (!this.isActive) return;
+                
+                this.time += 0.15;
+                
+                // Move hurricane
+                this.hurricaneX += this.vx;
+                this.hurricaneY += this.vy;
+                
+                // Boundary wrapping
+                const bound = this.gridSize / 2 - 200;
+                if (this.hurricaneX > bound) {
+                    this.hurricaneX = -bound;
+                    this.trajectory = [];
+                }
+                if (this.hurricaneX < -bound) this.hurricaneX = -bound;
+                if (Math.abs(this.hurricaneY) > bound) this.vy *= -1;
+                
+                // Camera tracks hurricane smoothly (NO CROPPING)
+                this.camera.x += (this.hurricaneX - this.camera.x) * 0.08;
+                this.camera.y += (this.hurricaneY - this.camera.y) * 0.08;
+                
+                // Calculate intensity from environment
+                const sstFactor = Math.max(0, (this.sst - this.sstThreshold) / 6);
+                const shearFactor = Math.max(0, 1 - this.windShear / 50);
+                const moistureFactor = this.humidity / 100;
+                
+                // Base wind calculation
+                const baseWind = 74 + sstFactor * 160;
+                this.maxWindSpeed = baseWind * shearFactor * moistureFactor;
+                this.eyeRadius = 20 + (1 - this.maxWindSpeed / 220) * 30;
+                
+                // CRR Physics: Store memory and calculate enhancement
+                this.memoryDensity = 0.2 + 0.8 * (this.maxWindSpeed / 220);
+                this.memoryField.store(this.hurricaneX, this.hurricaneY, this.memoryDensity, this.time);
+                
+                // Calculate CRR values at hurricane center
+                this.coherence = this.memoryField.getCoherence(this.hurricaneX, this.hurricaneY, this.time);
+                this.regeneration = this.memoryField.getRegeneration(this.hurricaneX, this.hurricaneY, this.time, this.Omega);
+                
+                // Dirac Delta δ(t-t₀): Detect rupture events
+                // Rupture occurs when coherence crosses critical threshold
+                const prevRupture = this.ruptureDetected;
+                this.ruptureDetected = (this.coherence >= this.coherenceThreshold);
+                
+                // δ(t-t₀) = 1 at moment of rupture, 0 otherwise
+                let diracDelta = 0;
+                if (this.ruptureDetected && !prevRupture) {
+                    // RUPTURE EVENT: System phase transition
+                    diracDelta = 1;
+                    this.ruptureTime = this.time;  // Record t₀
+                    this.lastRuptureTime = this.time;
+                    
+                    // Rupture amplifies the system
+                    this.ruptureIntensity = 1.0;
+                }
+                
+                // Decay rupture intensity after event
+                if (this.ruptureIntensity > 0) {
+                    this.ruptureIntensity *= 0.95;
+                }
+                
+                // CRR Enhancement: Regeneration amplifies wind field
+                // Enhanced by rupture events via δ(t-t₀)
+                this.enhancement = this.regeneration * 0.5 + this.ruptureIntensity * 0.3;
+                
+                // Update wind grid with CRR enhancement
+                this.updateWindGrid();
+                
+                // Update streamlines
+                this.updateStreamlines();
+                
+                // Track trajectory
+                if (this.time % 8 < 0.15) {
+                    this.trajectory.push({ x: this.hurricaneX, y: this.hurricaneY });
+                    if (this.trajectory.length > 40) this.trajectory.shift();
+                }
+                
+                // Update markers
+                this.updateMarkers();
+                
+                // Sound
+                if (this.soundEnabled) {
+                    this.sound.update(this.maxWindSpeed / 220);
+                }
+                
+                this.updateUI();
+            }
+            
+            updateWindGrid() {
+                const cellSize = this.gridSize / this.gridRes;
+                const halfGrid = this.gridSize / 2;
+                
+                for (let i = 0; i < this.gridRes; i++) {
+                    for (let j = 0; j < this.gridRes; j++) {
+                        const wx = -halfGrid + i * cellSize;
+                        const wy = -halfGrid + j * cellSize;
+                        
+                        const dx = wx - this.hurricaneX;
+                        const dy = wy - this.hurricaneY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 500) {
+                            // Calculate spiral wind pattern
+                            const angle = Math.atan2(dy, dx);
+                            const spiral = angle + Math.PI / 2 + (1 / (dist + 5)) * 3;
+                            
+                            // Intensity profile
+                            let intensity = 0;
+                            if (dist < this.eyeRadius) {
+                                intensity = 0.08;  // Calm eye
+                            } else {
+                                const peakRadius = this.eyeRadius + 90;
+                                if (dist < peakRadius) {
+                                    // Rising intensity to peak
+                                    intensity = (dist - this.eyeRadius) / (peakRadius - this.eyeRadius);
+                                } else {
+                                    // Decay beyond peak
+                                    intensity = Math.exp(-(dist - peakRadius) / 180);
+                                }
+                            }
+                            
+                            // Scale by hurricane strength
+                            intensity *= this.maxWindSpeed / 220;
+                            
+                            // *** CRR ENHANCEMENT: Apply regeneration + rupture ***
+                            // Get local regeneration value
+                            const localRegen = this.memoryField.getRegeneration(wx, wy, this.time, this.Omega);
+                            
+                            // Apply both regeneration and rupture enhancement
+                            // δ(t-t₀) adds extra boost during rupture events
+                            intensity *= (1 + localRegen * 0.6 + this.ruptureIntensity * 0.3);  // History + rupture amplifies
+                            
+                            // Calculate velocity
+                            const speed = intensity * 12;
+                            this.windGrid[i][j] = {
+                                vx: Math.cos(spiral) * speed,
+                                vy: Math.sin(spiral) * speed,
+                                intensity: intensity
+                            };
+                        } else {
+                            this.windGrid[i][j] = { vx: 0, vy: 0, intensity: 0 };
+                        }
+                    }
+                }
+            }
+            
+            getWindAt(wx, wy) {
+                const cellSize = this.gridSize / this.gridRes;
+                const halfGrid = this.gridSize / 2;
+                const i = Math.floor((wx + halfGrid) / cellSize);
+                const j = Math.floor((wy + halfGrid) / cellSize);
+                
+                if (i >= 0 && i < this.gridRes && j >= 0 && j < this.gridRes) {
+                    return this.windGrid[i][j];
+                }
+                return { vx: 0, vy: 0, intensity: 0 };
+            }
+            
+            updateStreamlines() {
+                // Remove dead
+                this.streamlines = this.streamlines.filter(s => s.isAlive());
+                
+                // Update existing
+                for (const s of this.streamlines) {
+                    const wind = this.getWindAt(s.x, s.y);
+                    s.update(wind.vx, wind.vy);
+                }
+                
+                // Spawn new around hurricane
+                const toSpawn = Math.min(30, this.maxStreamlines - this.streamlines.length);
+                for (let i = 0; i < toSpawn; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = this.eyeRadius + Math.random() * 450;
+                    const x = this.hurricaneX + Math.cos(angle) * radius;
+                    const y = this.hurricaneY + Math.sin(angle) * radius;
+                    this.streamlines.push(new Streamline(x, y));
+                }
+            }
+            
+            updateMarkers() {
+                for (const m of this.markers) {
+                    // Markers are now FIXED in world space
+                    // Calculate wind at the marker's position as hurricane moves past
+                    const wind = this.getWindAt(m.x, m.y);
+                    m.windSpeed = Math.round(wind.intensity * this.maxWindSpeed);
+                }
+            }
+            
+            getIntensityColor(intensity) {
+                if (intensity > 0.85) return this.lerpColor('#4B0000', '#2B0000', (intensity - 0.85) / 0.15);
+                if (intensity > 0.7) return this.lerpColor('#8B0000', '#4B0000', (intensity - 0.7) / 0.15);
+                if (intensity > 0.55) return this.lerpColor('#FF4500', '#8B0000', (intensity - 0.55) / 0.15);
+                if (intensity > 0.4) return this.lerpColor('#FFA500', '#FF4500', (intensity - 0.4) / 0.15);
+                if (intensity > 0.25) return this.lerpColor('#FFD700', '#FFA500', (intensity - 0.25) / 0.15);
+                if (intensity > 0.1) return this.lerpColor('#90EE90', '#FFD700', (intensity - 0.1) / 0.15);
+                return this.lerpColor('#87CEEB', '#90EE90', intensity / 0.1);
+            }
+            
+            lerpColor(c1, c2, t) {
+                const r1 = parseInt(c1.slice(1,3), 16);
+                const g1 = parseInt(c1.slice(3,5), 16);
+                const b1 = parseInt(c1.slice(5,7), 16);
+                const r2 = parseInt(c2.slice(1,3), 16);
+                const g2 = parseInt(c2.slice(3,5), 16);
+                const b2 = parseInt(c2.slice(5,7), 16);
+                const r = Math.round(r1 + (r2 - r1) * t);
+                const g = Math.round(g1 + (g2 - g1) * t);
+                const b = Math.round(b1 + (b2 - b1) * t);
+                return `rgb(${r},${g},${b})`;
+            }
+            
+            draw() {
+                // Clear
+                const grad = this.ctx.createLinearGradient(0, 0, this.width, this.height);
+                grad.addColorStop(0, '#e3f2fd');
+                grad.addColorStop(1, '#bbdefb');
+                this.ctx.fillStyle = grad;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                if (!this.isActive) {
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                    this.ctx.font = '28px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('System Inactive', this.width/2, this.height/2);
+                    return;
+                }
+                
+                // Draw heatmap
+                if (this.showHeatmap) this.drawHeatmap();
+                
+                // Draw streamlines
+                if (this.showStreamlines) this.drawStreamlines();
+                
+                // Draw trajectory
+                if (this.showTrajectory) this.drawTrajectory();
+                
+                // Draw hurricane center
+                this.drawCenter();
+                
+                // Draw markers
+                if (this.showMarkers) this.drawMarkers();
+            }
+            
+            drawHeatmap() {
+                const cellSize = this.gridSize / this.gridRes;
+                const halfGrid = this.gridSize / 2;
+                
+                for (let i = 0; i < this.gridRes; i++) {
+                    for (let j = 0; j < this.gridRes; j++) {
+                        const cell = this.windGrid[i][j];
+                        if (cell.intensity > 0.05) {
+                            const wx = -halfGrid + i * cellSize;
+                            const wy = -halfGrid + j * cellSize;
+                            const screen = this.worldToScreen(wx, wy);
+                            
+                            const color = this.getIntensityColor(cell.intensity);
+                            this.ctx.fillStyle = color;
+                            this.ctx.globalAlpha = 0.3 + cell.intensity * 0.4;
+                            this.ctx.fillRect(screen.x, screen.y, cellSize * this.camera.scale + 1, cellSize * this.camera.scale + 1);
+                        }
+                    }
+                }
+                this.ctx.globalAlpha = 1;
+            }
+            
+            drawStreamlines() {
+                for (const s of this.streamlines) {
+                    const curr = this.worldToScreen(s.x, s.y);
+                    const prev = this.worldToScreen(s.prevX, s.prevY);
+                    
+                    const ageAlpha = 1 - s.age / s.maxAge;
+                    const speedAlpha = Math.min(1, s.speed / 10);
+                    const alpha = ageAlpha * speedAlpha * 0.85;
+                    
+                    if (alpha > 0.08) {
+                        const wind = this.getWindAt(s.x, s.y);
+                        let color;
+                        if (wind.intensity > 0.7) color = `rgba(255,255,255,${alpha})`;
+                        else if (wind.intensity > 0.4) color = `rgba(255,255,210,${alpha})`;
+                        else color = `rgba(210,230,255,${alpha})`;
+                        
+                        this.ctx.strokeStyle = color;
+                        this.ctx.lineWidth = 1.5 + wind.intensity * 2;
+                        this.ctx.lineCap = 'round';
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(prev.x, prev.y);
+                        this.ctx.lineTo(curr.x, curr.y);
+                        this.ctx.stroke();
+                    }
+                }
+            }
+            
+            drawTrajectory() {
+                if (this.trajectory.length < 2) return;
+                
+                this.ctx.strokeStyle = '#FF00FF';
+                this.ctx.lineWidth = 4;
+                this.ctx.shadowColor = 'rgba(255,0,255,0.6)';
+                this.ctx.shadowBlur = 10;
+                this.ctx.setLineDash([6, 6]);
+                this.ctx.beginPath();
+                
+                const first = this.worldToScreen(this.trajectory[0].x, this.trajectory[0].y);
+                this.ctx.moveTo(first.x, first.y);
+                
+                for (let i = 1; i < this.trajectory.length; i++) {
+                    const pt = this.worldToScreen(this.trajectory[i].x, this.trajectory[i].y);
+                    this.ctx.lineTo(pt.x, pt.y);
+                }
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+                this.ctx.shadowBlur = 0;
+                
+                // Points
+                for (const pt of this.trajectory) {
+                    const screen = this.worldToScreen(pt.x, pt.y);
+                    this.ctx.fillStyle = '#FF00FF';
+                    this.ctx.beginPath();
+                    this.ctx.arc(screen.x, screen.y, 5, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.strokeStyle = '#FFF';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                }
+            }
+            
+            drawCenter() {
+                const center = this.worldToScreen(this.hurricaneX, this.hurricaneY);
+                
+                // Glow
+                this.ctx.shadowColor = 'rgba(255,0,255,0.9)';
+                this.ctx.shadowBlur = 25;
+                this.ctx.fillStyle = '#FF00FF';
+                this.ctx.beginPath();
+                this.ctx.arc(center.x, center.y, 12, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#FFF';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+                
+                // Eye
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([10, 10]);
+                this.ctx.beginPath();
+                this.ctx.arc(center.x, center.y, this.eyeRadius * this.camera.scale, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
+            
+            drawMarkers() {
+                // Draw "JAMAICA" label first (behind markers)
+                const centerX = (-150 + -50 + 80 + 20) / 4;  // Average x of all markers
+                const centerY = (-180 + -150 + -130 + -80) / 4;  // Average y of all markers
+                const labelScreen = this.worldToScreen(centerX, centerY + 50);
+                
+                if (labelScreen.x > 0 && labelScreen.x < this.width && 
+                    labelScreen.y > 0 && labelScreen.y < this.height) {
+                    this.ctx.font = 'bold 20px Arial';
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('JAMAICA', labelScreen.x, labelScreen.y);
+                }
+                
+                for (const m of this.markers) {
+                    // Markers are at fixed world positions
+                    const screen = this.worldToScreen(m.x, m.y);
+                    
+                    // Check if marker is visible on screen
+                    if (screen.x < -100 || screen.x > this.width + 100 || 
+                        screen.y < -100 || screen.y > this.height + 100) {
+                        continue; // Skip off-screen markers
+                    }
+                    
+                    // Dot - larger and more visible
+                    this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    this.ctx.shadowBlur = 8;
+                    this.ctx.fillStyle = '#D32F2F';  // Red for geographic locations
+                    this.ctx.beginPath();
+                    this.ctx.arc(screen.x, screen.y, 7, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // White outline
+                    this.ctx.strokeStyle = '#FFF';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                    this.ctx.shadowBlur = 0;
+                    
+                    // Label
+                    this.ctx.font = 'bold 13px Arial';
+                    const nameWidth = this.ctx.measureText(m.name).width;
+                    
+                    let windText = m.windSpeed > 0 ? `${m.windSpeed} mph` : 'No Impact';
+                    let historicalText = '';
+                    
+                    // Show historical data if hurricane preset is loaded
+                    if (this.currentHurricane && this.currentHurricane.impacts[m.name]) {
+                        const impact = this.currentHurricane.impacts[m.name];
+                        historicalText = `Actual: ${impact.reported} mph (${impact.damage})`;
+                    }
+                    
+                    const windWidth = this.ctx.measureText(windText).width;
+                    const histWidth = historicalText ? this.ctx.measureText(historicalText).width : 0;
+                    const maxWidth = Math.max(nameWidth, windWidth, histWidth);
+                    
+                    const boxHeight = historicalText ? 56 : 38;
+                    
+                    // Semi-transparent white background
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.97)';
+                    this.ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                    this.ctx.shadowBlur = 12;
+                    this.ctx.fillRect(screen.x + 12, screen.y - 22, maxWidth + 16, boxHeight);
+                    this.ctx.shadowBlur = 0;
+                    
+                    // Border
+                    this.ctx.strokeStyle = '#D32F2F';  // Red border to match marker
+                    this.ctx.lineWidth = 2;
+                    this.ctx.strokeRect(screen.x + 12, screen.y - 22, maxWidth + 16, boxHeight);
+                    
+                    // City Name
+                    this.ctx.fillStyle = '#D32F2F';
+                    this.ctx.font = 'bold 12px Arial';
+                    this.ctx.textAlign = 'left';
+                    this.ctx.fillText(m.name, screen.x + 20, screen.y - 7);
+                    
+                    // Current wind speed (simulated)
+                    if (m.windSpeed > 0) {
+                        this.ctx.font = 'bold 11px Arial';
+                        const windColor = m.windSpeed >= 157 ? '#4B0000' : 
+                                         m.windSpeed >= 130 ? '#8B0000' :
+                                         m.windSpeed >= 111 ? '#FF4500' :
+                                         m.windSpeed >= 96 ? '#FFA500' :
+                                         m.windSpeed >= 74 ? '#FFD700' : '#4CAF50';
+                        this.ctx.fillStyle = windColor;
+                        this.ctx.fillText('Sim: ' + windText, screen.x + 20, screen.y + 9);
+                    } else {
+                        this.ctx.font = '11px Arial';
+                        this.ctx.fillStyle = '#999';
+                        this.ctx.fillText(windText, screen.x + 20, screen.y + 9);
+                    }
+                    
+                    // Historical data - now with damage level
+                    if (historicalText) {
+                        this.ctx.font = '10px Arial';
+                        this.ctx.fillStyle = '#1976D2';
+                        this.ctx.fillText(historicalText, screen.x + 20, screen.y + 24);
+                    }
+                }
+            }
+            
+            updateUI() {
+                // Update hurricane name in status section
+                const nameDisplay = document.getElementById('currentHurricaneName');
+                if (this.currentHurricane) {
+                    nameDisplay.textContent = `${this.currentHurricane.name} (${this.currentHurricane.year})`;
+                    nameDisplay.style.color = '#FF9800';
+                    nameDisplay.style.borderColor = '#FF9800';
+                    nameDisplay.style.background = '#FFF3E0';
+                } else {
+                    nameDisplay.textContent = 'Generic Hurricane';
+                    nameDisplay.style.color = '#2196F3';
+                    nameDisplay.style.borderColor = '#2196F3';
+                    nameDisplay.style.background = '#E3F2FD';
+                }
+                
+                document.getElementById('windSpeed').textContent = Math.round(this.maxWindSpeed) + ' mph';
+                document.getElementById('eyeRadius').textContent = Math.round(this.eyeRadius) + ' km';
+                document.getElementById('position').textContent = 
+                    `(${Math.round(this.hurricaneX)}, ${Math.round(this.hurricaneY)})`;
+                
+                let cat = '-';
+                if (this.isActive) {
+                    if (this.maxWindSpeed >= 157) cat = 'Cat 5';
+                    else if (this.maxWindSpeed >= 130) cat = 'Cat 4';
+                    else if (this.maxWindSpeed >= 111) cat = 'Cat 3';
+                    else if (this.maxWindSpeed >= 96) cat = 'Cat 2';
+                    else if (this.maxWindSpeed >= 74) cat = 'Cat 1';
+                    else cat = 'Tropical Storm';
+                }
+                document.getElementById('category').textContent = cat;
+                
+                const status = document.getElementById('statusIndicator');
+                if (this.isActive) {
+                    status.textContent = 'ACTIVE - HURRICANE DETECTED';
+                    status.className = 'status active';
+                } else {
+                    status.textContent = 'INACTIVE';
+                    status.className = 'status inactive';
+                }
+                
+                document.getElementById('coherenceVal').textContent = this.coherence.toFixed(3);
+                document.getElementById('regenerationVal').textContent = this.regeneration.toFixed(3);
+                document.getElementById('memoryVal').textContent = this.memoryDensity.toFixed(3);
+                
+                // Rupture status in sidebar
+                const sidebarRupture = document.getElementById('ruptureStatus');
+                if (this.ruptureDetected) {
+                    sidebarRupture.textContent = '⚠️ ACTIVE';
+                    sidebarRupture.style.color = '#FF0000';
+                } else {
+                    sidebarRupture.textContent = 'Inactive';
+                    sidebarRupture.style.color = '#666';
+                }
+                
+                document.getElementById('enhancementVal').textContent = (this.enhancement * 100).toFixed(1) + '%';
+                
+                document.getElementById('streamCount').textContent = this.streamlines.length;
+                document.getElementById('peakIntensity').textContent = Math.round(this.maxWindSpeed) + ' mph';
+                document.getElementById('tracking').textContent = 'Locked';
+                
+                // Update hurricane name display
+                if (this.currentHurricane) {
+                    document.getElementById('hurricaneNameDisplay').textContent = 
+                        `${this.currentHurricane.name} (${this.currentHurricane.year})`;
+                } else {
+                    document.getElementById('hurricaneNameDisplay').textContent = 'Generic Hurricane';
+                }
+                
+                // Mathematical Explainer Updates
+                document.getElementById('mathMemory').textContent = this.memoryDensity.toFixed(3);
+                document.getElementById('mathCoherence').textContent = this.coherence.toFixed(3);
+                
+                // Show exponential factor e^(C/Ω)
+                const expFactor = Math.exp(this.coherence / this.Omega);
+                document.getElementById('mathExp').textContent = expFactor.toFixed(3);
+                
+                document.getElementById('mathRegen').textContent = this.regeneration.toFixed(3);
+                
+                // Dirac Delta display
+                const diracValue = (this.ruptureDetected && this.ruptureIntensity > 0.9) ? 1 : 0;
+                document.getElementById('mathDelta').textContent = diracValue;
+                
+                const ruptureStatus = document.getElementById('ruptureStatus');
+                if (this.ruptureDetected) {
+                    ruptureStatus.textContent = '⚠️ RUPTURE ACTIVE';
+                    ruptureStatus.className = 'rupture-active';
+                } else {
+                    ruptureStatus.textContent = 'No Rupture';
+                    ruptureStatus.className = 'rupture-inactive';
+                }
+                
+                if (this.ruptureTime !== null) {
+                    document.getElementById('mathRuptureTime').textContent = this.ruptureTime.toFixed(1);
+                } else {
+                    document.getElementById('mathRuptureTime').textContent = 'Not Yet';
+                }
+                
+                // Total enhancement calculation
+                document.getElementById('mathEnhancement').textContent = (this.enhancement * 100).toFixed(1);
+            }
+            
+            animate() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.animate());
+            }
+            
+            reset() {
+                if (this.isActive) this.deactivate();
+                this.hurricaneX = -400;  // Start west of Jamaica
+                this.hurricaneY = -150;
+                this.time = 0;
+                this.trajectory = [];
+                this.streamlines = [];
+                this.memoryField.clear();
+                this.camera.x = 0;
+                this.camera.y = 0;
+                setTimeout(() => {
+                    if (this.sst >= this.sstThreshold) this.activate();
+                }, 500);
+            }
+            
+            setEnv(param, value) {
+                if (param === 'sst') {
+                    this.sst = value;
+                    if (!this.isActive && this.sst >= this.sstThreshold) this.activate();
+                    else if (this.isActive && this.sst < this.sstThreshold - 1) this.deactivate();
+                } else if (param === 'shear') {
+                    this.windShear = value;
+                } else if (param === 'humidity') {
+                    this.humidity = value;
+                } else if (param === 'omega') {
+                    this.Omega = value;
+                }
+            }
+            
+            async toggleSound() {
+                if (!this.soundEnabled) {
+                    const ok = await this.sound.init();
+                    if (ok) {
+                        this.soundEnabled = true;
+                        document.getElementById('soundBtn').textContent = 'Disable Sound';
+                        document.getElementById('soundBtn').classList.add('active');
+                        if (this.isActive) this.sound.start();
+                    }
+                } else {
+                    this.soundEnabled = false;
+                    this.sound.stop();
+                    document.getElementById('soundBtn').textContent = 'Enable Sound';
+                    document.getElementById('soundBtn').classList.remove('active');
+                }
+            }
+            
+            loadHurricanePreset(presetName) {
+                const preset = this.hurricanePresets[presetName];
+                if (!preset) return;
+                
+                this.currentHurricane = preset;
+                
+                // Apply hurricane parameters
+                this.sst = preset.sst;
+                this.windShear = preset.windShear;
+                this.humidity = preset.humidity;
+                this.vx = preset.vx;
+                this.vy = preset.vy;
+                
+                // Update UI sliders
+                document.getElementById('sstSlider').value = preset.sst;
+                document.getElementById('sstValue').textContent = preset.sst.toFixed(1) + '°C';
+                
+                document.getElementById('shearSlider').value = preset.windShear;
+                document.getElementById('shearValue').textContent = preset.windShear + ' kt';
+                
+                document.getElementById('moistureSlider').value = preset.humidity;
+                document.getElementById('moistureValue').textContent = preset.humidity + '%';
+                
+                // Show description
+                const descBox = document.getElementById('hurricaneDescription');
+                const descTitle = document.getElementById('hurricaneDescTitle');
+                const descText = document.getElementById('hurricaneDescText');
+                
+                descBox.style.display = 'block';
+                descTitle.textContent = `${preset.name} (${preset.year})`;
+                descText.textContent = preset.description;
+                
+                // Reset and restart
+                this.reset();
+                
+                // Update button states
+                document.querySelectorAll('.hurricane-preset').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                // Highlight selected
+                const btnId = presetName + 'Btn';
+                document.getElementById(btnId).classList.add('selected');
+            }
+        }
+        
+        // Initialize
+        const canvas = document.getElementById('canvas');
+        const sim = new CRRHurricaneSimulation(canvas);
+        
+        // Controls
+        document.getElementById('soundBtn').addEventListener('click', () => sim.toggleSound());
+        document.getElementById('resetBtn').addEventListener('click', () => sim.reset());
+        
+        // Hurricane presets
+        document.getElementById('gilbertBtn').addEventListener('click', () => sim.loadHurricanePreset('gilbert'));
+        document.getElementById('ivanBtn').addEventListener('click', () => sim.loadHurricanePreset('ivan'));
+        document.getElementById('deanBtn').addEventListener('click', () => sim.loadHurricanePreset('dean'));
+        
+        document.getElementById('toggleStreamlines').addEventListener('click', (e) => {
+            sim.showStreamlines = !sim.showStreamlines;
+            e.target.classList.toggle('active');
+        });
+        
+        document.getElementById('toggleHeatmap').addEventListener('click', (e) => {
+            sim.showHeatmap = !sim.showHeatmap;
+            e.target.classList.toggle('active');
+        });
+        
+        document.getElementById('toggleTrajectory').addEventListener('click', (e) => {
+            sim.showTrajectory = !sim.showTrajectory;
+            e.target.classList.toggle('active');
+        });
+        
+        document.getElementById('toggleMarkers').addEventListener('click', (e) => {
+            sim.showMarkers = !sim.showMarkers;
+            e.target.classList.toggle('active');
+        });
+        
+        // Sliders
+        document.getElementById('sstSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('sstValue').textContent = val.toFixed(1) + '°C';
+            sim.setEnv('sst', val);
+        });
+        
+        document.getElementById('shearSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('shearValue').textContent = val + ' kt';
+            sim.setEnv('shear', val);
+        });
+        
+        document.getElementById('moistureSlider').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            document.getElementById('moistureValue').textContent = val + '%';
+            sim.setEnv('humidity', val);
+        });
+        
+        document.getElementById('omegaSlider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('omegaValue').textContent = val.toFixed(2);
+            sim.setEnv('omega', val);
+        });
+    </script>
+</body>
+</html>
