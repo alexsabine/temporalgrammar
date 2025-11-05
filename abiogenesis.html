@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Abiogenesis: Photorealistic Evolution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            height: 100vh;
+            gap: 0;
+        }
+
+        .sidebar {
+            background: #1a1a1a;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+
+        .sidebar-right {
+            border-left: 1px solid #333;
+            border-right: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: linear-gradient(135deg, #0a192f 0%, #1a1a2e 50%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            background: transparent;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h3 {
+            font-size: 14px;
+            margin: 15px 0 10px 0;
+            color: #64B5F6;
+        }
+
+        .metric {
+            background: #2a2a2a;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            margin: 5px 0;
+            color: #4CAF50;
+        }
+
+        .metric-bar {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #81C784);
+            transition: width 0.3s;
+        }
+
+        .control-group {
+            margin: 15px 0;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #3a3a3a;
+            border-color: #4CAF50;
+        }
+
+        button.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .stage-indicator {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 2px solid #333;
+        }
+
+        .stage-indicator.active {
+            border-color: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { border-color: #4CAF50; }
+            50% { border-color: #81C784; }
+        }
+
+        .stage-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .stage-desc {
+            font-size: 11px;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        .timeline {
+            margin: 20px 0;
+        }
+
+        .timeline-bar {
+            height: 40px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .timeline-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            border-right: 1px solid #000;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .timeline-stage.completed {
+            background: #4CAF50;
+        }
+
+        .timeline-stage.active {
+            background: #FFC107;
+        }
+
+        .equation {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #64B5F6;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .legend {
+            margin: 15px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 11px;
+        }
+
+        .legend-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            border-radius: 3px;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-text {
+            font-size: 11px;
+            line-height: 1.6;
+            color: #aaa;
+            margin: 10px 0;
+        }
+
+        .rupture-log {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .rupture-event {
+            padding: 5px;
+            margin: 3px 0;
+            background: #2a2a2a;
+            border-left: 3px solid #FF5722;
+            border-radius: 2px;
+        }
+
+        .rupture-event.major {
+            border-left-color: #F44336;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-box {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .view-controls {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <h2>⚗️ Primordial Ocean</h2>
+            
+            <div class="control-group">
+                <button id="pauseBtn">⏸ Pause</button>
+                <button id="resetBtn">🔄 Reset</button>
+                <button id="speedUpBtn">⏩ Speed Up</button>
+            </div>
+
+            <h3>Environmental Parameters</h3>
+            
+            <div class="control-group">
+                <label class="control-label">
+                    Temperature Ω: <span id="omegaDisplay">2.0</span>
+                </label>
+                <input type="range" id="omegaSlider" min="0.5" max="5.0" step="0.1" value="2.0">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    Energy Flux: <span id="energyDisplay">0.5</span>
+                </label>
+                <input type="range" id="energySlider" min="0.1" max="1.0" step="0.05" value="0.5">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    Mutation Rate: <span id="mutationDisplay">0.1</span>
+                </label>
+                <input type="range" id="mutationSlider" min="0.01" max="0.3" step="0.01" value="0.1">
+            </div>
+
+            <h3>View Options</h3>
+            <div class="view-controls">
+                <div class="checkbox-row">
+                    <input type="checkbox" id="showCoherenceField" checked>
+                    <label for="showCoherenceField">Coherence Field</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="showGlow" checked>
+                    <label for="showGlow">Molecular Glow</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="showDetail" checked>
+                    <label for="showDetail">High Detail</label>
+                </div>
+            </div>
+
+            <h3>CRR Dynamics</h3>
+            
+            <div class="metric">
+                <div class="metric-label">Global Coherence C(t)</div>
+                <div class="metric-value" id="coherenceValue">0.00</div>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="coherenceBar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">Memory Density L(t)</div>
+                <div class="metric-value" id="memoryValue">0.00</div>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="memoryBar" style="width: 0%"></div>
+                </div>
+                <div class="info-text">
+                    <span id="memoryExplanation"></span>
+                </div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">Regeneration R(t)</div>
+                <div class="metric-value" id="regenValue">0.00</div>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="regenBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Canvas -->
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="sidebar sidebar-right">
+            <h2>🧬 Evolution Timeline</h2>
+
+            <div class="timeline" id="timeline">
+                <div class="timeline-bar">
+                    <div class="timeline-stage" data-stage="0">0</div>
+                    <div class="timeline-stage" data-stage="1">1</div>
+                    <div class="timeline-stage" data-stage="2">2</div>
+                    <div class="timeline-stage" data-stage="3">3</div>
+                    <div class="timeline-stage" data-stage="4">4</div>
+                </div>
+            </div>
+
+            <div class="stage-indicator" id="stage0">
+                <div class="stage-name">Stage 0: Molecular Chaos</div>
+                <div class="stage-desc">Amino acids, nucleotides floating randomly</div>
+            </div>
+
+            <div class="stage-indicator" id="stage1">
+                <div class="stage-name">Stage 1: Catalytic Networks</div>
+                <div class="stage-desc">RNA-like ribozymes emerge, autocatalytic cycles form</div>
+            </div>
+
+            <div class="stage-indicator" id="stage2">
+                <div class="stage-name">Stage 2: Membrane Enclosure</div>
+                <div class="stage-desc">Lipid vesicles create boundaries, protocells form</div>
+            </div>
+
+            <div class="stage-indicator" id="stage3">
+                <div class="stage-name">Stage 3: Genetic Replication</div>
+                <div class="stage-desc">RNA strands copy themselves, heredity begins</div>
+            </div>
+
+            <div class="stage-indicator" id="stage4">
+                <div class="stage-name">Stage 4: Living Cells</div>
+                <div class="stage-desc">Bacteria-like organisms with full metabolism</div>
+            </div>
+
+            <h3>System Statistics</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="moleculeCount">0</div>
+                    <div class="stat-label">Molecules</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="cellCount">0</div>
+                    <div class="stat-label">Protocells</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="readyCells">0</div>
+                    <div class="stat-label">Ready for Life</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="ruptureCount">0</div>
+                    <div class="stat-label">Ruptures</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="fpsValue">60</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="progressValue">0%</div>
+                    <div class="stat-label">Progress to Life</div>
+                </div>
+            </div>
+
+            <h3>What You're Seeing</h3>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-icon">
+                        <canvas id="iconMonomer" width="30" height="30"></canvas>
+                    </div>
+                    <div>Amino acids & nucleotides</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">
+                        <canvas id="iconCatalyst" width="30" height="30"></canvas>
+                    </div>
+                    <div>RNA ribozymes (catalysts)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">
+                        <canvas id="iconAmphiphile" width="30" height="30"></canvas>
+                    </div>
+                    <div>Lipid molecules (membranes)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">
+                        <canvas id="iconReplicator" width="30" height="30"></canvas>
+                    </div>
+                    <div>RNA replicators (genes)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-icon">
+                        <canvas id="iconCell" width="30" height="30"></canvas>
+                    </div>
+                    <div>Living cells (bacteria)</div>
+                </div>
+            </div>
+
+            <h3>Rupture Events</h3>
+            <div class="rupture-log" id="ruptureLog">
+                <div style="color: #666; font-style: italic;">Awaiting first rupture...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // PHOTOREALISTIC MOLECULAR RENDERER
+        // ==========================================
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // View options
+        let showCoherenceField = true;
+        let showGlow = true;
+        let showDetail = true;
+
+        // Simulation parameters
+        let Omega = 2.0;
+        let energyFlux = 0.5;
+        let mutationRate = 0.1;
+        let time = 0;
+        let isPaused = false;
+        let speedMultiplier = 1;
+        let currentStage = 0;
+        let ruptureCounter = 0;
+
+        // CRR state
+        let globalCoherence = 0;
+        let globalMemoryDensity = 0;
+        let globalRegeneration = 0;
+        let coherenceHistory = [];
+        const historyLength = 100;
+
+        // Performance
+        let lastFrameTime = performance.now();
+        let fps = 60;
+        let frameCount = 0;
+
+        // Critical thresholds for transitions
+        const THRESHOLDS = {
+            autocatalysis: 5,      // Stage 0 → 1
+            membrane: 15,          // Stage 1 → 2
+            replication: 30,       // Stage 2 → 3
+            life: 40               // Stage 3 → 4 (reduced from 50)
+        };
+
+        const gridSize = 60;
+        const spatialGridSize = 20;
+        let coherenceField = [];
+        let spatialGrid = [];
+        let molecules = [];
+        let protocells = [];
+
+        const MoleculeType = {
+            MONOMER: 'monomer',
+            CATALYST: 'catalyst',
+            AMPHIPHILE: 'amphiphile',
+            REPLICATOR: 'replicator',
+            LIVING_CELL: 'living'
+        };
+
+        // ==========================================
+        // PHOTOREALISTIC DRAWING FUNCTIONS
+        // ==========================================
+
+        function drawMonomer(x, y, size, energy, coherence) {
+            // Amino acid / nucleotide - organic blob with atomic structure
+            ctx.save();
+            ctx.translate(x, y);
+            
+            if (showGlow && energy > 0.6) {
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 3);
+                gradient.addColorStop(0, 'rgba(100, 150, 255, 0.2)');
+                gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-size * 3, -size * 3, size * 6, size * 6);
+            }
+            
+            // Main molecular body
+            const gradient = ctx.createRadialGradient(-size * 0.3, -size * 0.3, 0, 0, 0, size);
+            gradient.addColorStop(0, 'rgba(120, 180, 255, 0.9)');
+            gradient.addColorStop(0.7, 'rgba(80, 130, 200, 0.8)');
+            gradient.addColorStop(1, 'rgba(60, 100, 160, 0.6)');
+            ctx.fillStyle = gradient;
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Highlight
+            ctx.fillStyle = 'rgba(200, 220, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(-size * 0.4, -size * 0.4, size * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (showDetail && size > 3) {
+                // Atomic structure hint
+                ctx.strokeStyle = 'rgba(150, 180, 220, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(0, 0, size * 0.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawCatalyst(x, y, size, energy, coherence, angle) {
+            // RNA ribozyme - twisted ribbon structure
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            if (showGlow) {
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 4);
+                gradient.addColorStop(0, 'rgba(100, 200, 100, 0.3)');
+                gradient.addColorStop(1, 'rgba(100, 200, 100, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-size * 4, -size * 4, size * 8, size * 8);
+            }
+            
+            // Ribbon body - elongated RNA-like structure
+            const length = size * 2.5;
+            const width = size * 0.6;
+            
+            // Main ribbon
+            const gradient = ctx.createLinearGradient(0, -length/2, 0, length/2);
+            gradient.addColorStop(0, 'rgba(100, 220, 120, 0.9)');
+            gradient.addColorStop(0.5, 'rgba(80, 180, 100, 0.9)');
+            gradient.addColorStop(1, 'rgba(60, 140, 80, 0.8)');
+            ctx.fillStyle = gradient;
+            
+            ctx.beginPath();
+            ctx.moveTo(-width, -length/2);
+            ctx.quadraticCurveTo(-width * 1.5, -length/4, -width, 0);
+            ctx.quadraticCurveTo(-width * 0.5, length/4, -width, length/2);
+            ctx.lineTo(width, length/2);
+            ctx.quadraticCurveTo(width * 0.5, length/4, width, 0);
+            ctx.quadraticCurveTo(width * 1.5, -length/4, width, -length/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Twist detail
+            if (showDetail) {
+                ctx.strokeStyle = 'rgba(150, 255, 170, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                    const y = -length/2 + (i * length/3);
+                    ctx.moveTo(-width, y);
+                    ctx.lineTo(width, y);
+                }
+                ctx.stroke();
+            }
+            
+            // Phosphate groups (nodes)
+            ctx.fillStyle = 'rgba(150, 255, 150, 0.8)';
+            for (let i = 0; i < 3; i++) {
+                const y = -length/2 + (i * length/3);
+                ctx.beginPath();
+                ctx.arc(width * 1.2, y, size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawAmphiphile(x, y, size, energy, coherence, angle) {
+            // Lipid molecule - hydrophilic head + hydrophobic tails
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            if (showGlow && energy > 0.5) {
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 3);
+                gradient.addColorStop(0, 'rgba(255, 220, 100, 0.2)');
+                gradient.addColorStop(1, 'rgba(255, 220, 100, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-size * 3, -size * 3, size * 6, size * 6);
+            }
+            
+            const headRadius = size * 0.8;
+            const tailLength = size * 1.5;
+            const tailWidth = size * 0.25;
+            
+            // Hydrophobic tails
+            ctx.strokeStyle = 'rgba(255, 200, 80, 0.7)';
+            ctx.lineWidth = tailWidth;
+            ctx.lineCap = 'round';
+            
+            // Left tail
+            ctx.beginPath();
+            ctx.moveTo(-headRadius * 0.3, 0);
+            ctx.quadraticCurveTo(-headRadius * 0.5, tailLength * 0.5, -headRadius * 0.7, tailLength);
+            ctx.stroke();
+            
+            // Right tail
+            ctx.beginPath();
+            ctx.moveTo(headRadius * 0.3, 0);
+            ctx.quadraticCurveTo(headRadius * 0.5, tailLength * 0.5, headRadius * 0.7, tailLength);
+            ctx.stroke();
+            
+            // Hydrophilic head
+            const headGradient = ctx.createRadialGradient(-headRadius * 0.3, -headRadius * 0.3, 0, 0, 0, headRadius);
+            headGradient.addColorStop(0, 'rgba(255, 230, 120, 0.9)');
+            headGradient.addColorStop(0.7, 'rgba(230, 180, 60, 0.8)');
+            headGradient.addColorStop(1, 'rgba(200, 150, 40, 0.7)');
+            ctx.fillStyle = headGradient;
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, headRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Highlight on head
+            ctx.fillStyle = 'rgba(255, 250, 200, 0.5)';
+            ctx.beginPath();
+            ctx.arc(-headRadius * 0.4, -headRadius * 0.4, headRadius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawReplicator(x, y, size, energy, coherence, angle) {
+            // RNA replicator - double helix structure
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            if (showGlow) {
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 4);
+                gradient.addColorStop(0, 'rgba(255, 100, 100, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 100, 100, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-size * 4, -size * 4, size * 8, size * 8);
+            }
+            
+            const length = size * 3;
+            const helixWidth = size * 0.8;
+            const segments = 8;
+            
+            // Draw helix strands
+            for (let strand = 0; strand < 2; strand++) {
+                ctx.strokeStyle = strand === 0 ? 
+                    'rgba(255, 120, 120, 0.8)' : 
+                    'rgba(220, 80, 80, 0.8)';
+                ctx.lineWidth = size * 0.2;
+                ctx.lineCap = 'round';
+                
+                ctx.beginPath();
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const y = -length/2 + t * length;
+                    const phase = strand * Math.PI + time * 0.05 + angle;
+                    const x = Math.sin(t * Math.PI * 2 + phase) * helixWidth;
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            
+            // Base pairs (rungs)
+            if (showDetail) {
+                ctx.strokeStyle = 'rgba(255, 150, 150, 0.4)';
+                ctx.lineWidth = size * 0.15;
+                
+                for (let i = 0; i < segments; i++) {
+                    const t = i / segments;
+                    const y = -length/2 + t * length;
+                    const phase = time * 0.05 + angle;
+                    const x1 = Math.sin(t * Math.PI * 2 + phase) * helixWidth;
+                    const x2 = Math.sin(t * Math.PI * 2 + Math.PI + phase) * helixWidth;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y);
+                    ctx.lineTo(x2, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Nucleotide bases
+            ctx.fillStyle = 'rgba(255, 180, 180, 0.9)';
+            for (let i = 0; i < segments; i++) {
+                const t = i / segments;
+                const y = -length/2 + t * length;
+                const phase = time * 0.05 + angle;
+                const x = Math.sin(t * Math.PI * 2 + phase) * helixWidth;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawProtocell(cell) {
+            // Lipid vesicle with internal molecules
+            ctx.save();
+            ctx.translate(cell.x, cell.y);
+            
+            // Special glow for protocells with both catalyst and replicator (ready for life!)
+            if (cell.hasCatalyst && cell.hasReplicator && showGlow) {
+                const readyGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, cell.radius * 2);
+                readyGlow.addColorStop(0, 'rgba(150, 255, 150, 0.3)');
+                readyGlow.addColorStop(0.5, 'rgba(100, 200, 100, 0.15)');
+                readyGlow.addColorStop(1, 'rgba(100, 200, 100, 0)');
+                ctx.fillStyle = readyGlow;
+                ctx.beginPath();
+                ctx.arc(0, 0, cell.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Outer glow
+            if (showGlow) {
+                const outerGlow = ctx.createRadialGradient(0, 0, cell.radius * 0.5, 0, 0, cell.radius * 1.5);
+                outerGlow.addColorStop(0, 'rgba(255, 220, 150, 0.1)');
+                outerGlow.addColorStop(1, 'rgba(255, 220, 150, 0)');
+                ctx.fillStyle = outerGlow;
+                ctx.beginPath();
+                ctx.arc(0, 0, cell.radius * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Membrane (lipid bilayer) - slightly brighter if ready for life
+            const membraneWidth = 3;
+            const brightness = (cell.hasCatalyst && cell.hasReplicator) ? 1.2 : 1.0;
+            
+            // Outer membrane layer
+            ctx.strokeStyle = `rgba(${255 * brightness}, ${220 * brightness}, ${120 * brightness}, 0.7)`;
+            ctx.lineWidth = membraneWidth;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner membrane layer
+            ctx.strokeStyle = 'rgba(220, 180, 80, 0.6)';
+            ctx.lineWidth = membraneWidth * 0.6;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius - membraneWidth, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            if (showDetail) {
+                // Lipid molecules in membrane (sampling)
+                const numLipids = Math.floor(cell.radius / 3);
+                for (let i = 0; i < numLipids; i++) {
+                    const angle = (i / numLipids) * Math.PI * 2 + time * 0.01;
+                    const x = Math.cos(angle) * cell.radius;
+                    const y = Math.sin(angle) * cell.radius;
+                    
+                    // Small lipid head
+                    ctx.fillStyle = 'rgba(255, 240, 150, 0.6)';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Interior aqueous environment
+            const interior = ctx.createRadialGradient(-cell.radius * 0.3, -cell.radius * 0.3, 0, 0, 0, cell.radius * 0.8);
+            interior.addColorStop(0, 'rgba(150, 200, 220, 0.15)');
+            interior.addColorStop(1, 'rgba(100, 150, 180, 0.1)');
+            ctx.fillStyle = interior;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius - membraneWidth * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Coherence indicator (internal glow)
+            const coherenceGlow = cell.coherence / 5;
+            if (coherenceGlow > 0.1) {
+                const glowGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, cell.radius * 0.6);
+                glowGradient.addColorStop(0, `rgba(150, 255, 150, ${coherenceGlow * 0.3})`);
+                glowGradient.addColorStop(1, 'rgba(150, 255, 150, 0)');
+                ctx.fillStyle = glowGradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, cell.radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawLivingCell(cell) {
+            // Bacterial cell with internal structure
+            ctx.save();
+            ctx.translate(cell.x, cell.y);
+            
+            // Pulsing glow (alive!)
+            const pulse = 0.5 + 0.5 * Math.sin(time * 0.1);
+            const glowRadius = cell.radius * (1.3 + pulse * 0.2);
+            
+            if (showGlow) {
+                const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+                glow.addColorStop(0, 'rgba(200, 150, 255, 0.3)');
+                glow.addColorStop(0.5, 'rgba(150, 100, 200, 0.2)');
+                glow.addColorStop(1, 'rgba(150, 100, 200, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Cell wall (thick, rigid)
+            ctx.strokeStyle = 'rgba(180, 120, 200, 0.9)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Cell membrane (inner)
+            ctx.strokeStyle = 'rgba(150, 100, 180, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius - 4, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Cytoplasm
+            const cytoplasm = ctx.createRadialGradient(-cell.radius * 0.3, -cell.radius * 0.3, 0, 0, 0, cell.radius);
+            cytoplasm.addColorStop(0, 'rgba(180, 150, 220, 0.3)');
+            cytoplasm.addColorStop(1, 'rgba(120, 90, 160, 0.2)');
+            ctx.fillStyle = cytoplasm;
+            ctx.beginPath();
+            ctx.arc(0, 0, cell.radius - 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (showDetail) {
+                // Nucleoid (DNA region)
+                ctx.fillStyle = 'rgba(255, 180, 200, 0.4)';
+                ctx.beginPath();
+                ctx.arc(0, -cell.radius * 0.2, cell.radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Ribosomes (protein synthesis)
+                ctx.fillStyle = 'rgba(200, 180, 255, 0.6)';
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2 + time * 0.02;
+                    const r = cell.radius * 0.4;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Metabolic activity (energy particles)
+                ctx.fillStyle = 'rgba(150, 255, 150, 0.5)';
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i / 5) * Math.PI * 2 + time * 0.05;
+                    const r = cell.radius * 0.6;
+                    const x = Math.cos(angle) * r;
+                    const y = Math.sin(angle) * r;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+
+        // Draw legend icons
+        function drawLegendIcons() {
+            // Store original context
+            const mainCtx = ctx;
+            
+            // Helper to draw on a specific canvas
+            function drawOnCanvas(canvasId, drawFn) {
+                const iconCanvas = document.getElementById(canvasId);
+                const iconCtx = iconCanvas.getContext('2d');
+                iconCtx.fillStyle = '#2a2a2a';
+                iconCtx.fillRect(0, 0, 30, 30);
+                drawFn(iconCtx);
+            }
+            
+            // Monomer icon
+            drawOnCanvas('iconMonomer', (iconCtx) => {
+                // Temporarily redirect drawing functions to icon context
+                const tempCtx = ctx;
+                window.tempIconCtx = iconCtx;
+                
+                iconCtx.save();
+                iconCtx.translate(15, 15);
+                
+                const gradient = iconCtx.createRadialGradient(-1.5, -1.5, 0, 0, 0, 5);
+                gradient.addColorStop(0, 'rgba(120, 180, 255, 0.9)');
+                gradient.addColorStop(0.7, 'rgba(80, 130, 200, 0.8)');
+                gradient.addColorStop(1, 'rgba(60, 100, 160, 0.6)');
+                iconCtx.fillStyle = gradient;
+                
+                iconCtx.beginPath();
+                iconCtx.arc(0, 0, 5, 0, Math.PI * 2);
+                iconCtx.fill();
+                
+                iconCtx.fillStyle = 'rgba(200, 220, 255, 0.4)';
+                iconCtx.beginPath();
+                iconCtx.arc(-2, -2, 1.5, 0, Math.PI * 2);
+                iconCtx.fill();
+                
+                iconCtx.restore();
+            });
+            
+            // Catalyst icon
+            drawOnCanvas('iconCatalyst', (iconCtx) => {
+                iconCtx.save();
+                iconCtx.translate(15, 15);
+                
+                const length = 10;
+                const width = 2.4;
+                
+                const gradient = iconCtx.createLinearGradient(0, -length/2, 0, length/2);
+                gradient.addColorStop(0, 'rgba(100, 220, 120, 0.9)');
+                gradient.addColorStop(0.5, 'rgba(80, 180, 100, 0.9)');
+                gradient.addColorStop(1, 'rgba(60, 140, 80, 0.8)');
+                iconCtx.fillStyle = gradient;
+                
+                iconCtx.beginPath();
+                iconCtx.moveTo(-width, -length/2);
+                iconCtx.lineTo(-width, length/2);
+                iconCtx.lineTo(width, length/2);
+                iconCtx.lineTo(width, -length/2);
+                iconCtx.closePath();
+                iconCtx.fill();
+                
+                iconCtx.restore();
+            });
+            
+            // Amphiphile icon
+            drawOnCanvas('iconAmphiphile', (iconCtx) => {
+                iconCtx.save();
+                iconCtx.translate(15, 10);
+                
+                const headRadius = 2.4;
+                const tailLength = 8;
+                const tailWidth = 0.75;
+                
+                iconCtx.strokeStyle = 'rgba(255, 200, 80, 0.7)';
+                iconCtx.lineWidth = tailWidth;
+                iconCtx.lineCap = 'round';
+                
+                iconCtx.beginPath();
+                iconCtx.moveTo(-headRadius * 0.3, 0);
+                iconCtx.lineTo(-headRadius * 0.7, tailLength);
+                iconCtx.stroke();
+                
+                iconCtx.beginPath();
+                iconCtx.moveTo(headRadius * 0.3, 0);
+                iconCtx.lineTo(headRadius * 0.7, tailLength);
+                iconCtx.stroke();
+                
+                const headGradient = iconCtx.createRadialGradient(-1, -1, 0, 0, 0, headRadius);
+                headGradient.addColorStop(0, 'rgba(255, 230, 120, 0.9)');
+                headGradient.addColorStop(0.7, 'rgba(230, 180, 60, 0.8)');
+                headGradient.addColorStop(1, 'rgba(200, 150, 40, 0.7)');
+                iconCtx.fillStyle = headGradient;
+                
+                iconCtx.beginPath();
+                iconCtx.arc(0, 0, headRadius, 0, Math.PI * 2);
+                iconCtx.fill();
+                
+                iconCtx.restore();
+            });
+            
+            // Replicator icon
+            drawOnCanvas('iconReplicator', (iconCtx) => {
+                iconCtx.save();
+                iconCtx.translate(15, 15);
+                
+                const length = 12;
+                const helixWidth = 3;
+                const segments = 5;
+                
+                iconCtx.strokeStyle = 'rgba(255, 120, 120, 0.8)';
+                iconCtx.lineWidth = 1;
+                iconCtx.lineCap = 'round';
+                
+                iconCtx.beginPath();
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const y = -length/2 + t * length;
+                    const x = Math.sin(t * Math.PI * 2) * helixWidth;
+                    
+                    if (i === 0) iconCtx.moveTo(x, y);
+                    else iconCtx.lineTo(x, y);
+                }
+                iconCtx.stroke();
+                
+                iconCtx.restore();
+            });
+            
+            // Living cell icon
+            drawOnCanvas('iconCell', (iconCtx) => {
+                iconCtx.save();
+                iconCtx.translate(15, 15);
+                
+                iconCtx.strokeStyle = 'rgba(180, 120, 200, 0.9)';
+                iconCtx.lineWidth = 2;
+                iconCtx.beginPath();
+                iconCtx.arc(0, 0, 8, 0, Math.PI * 2);
+                iconCtx.stroke();
+                
+                const cytoplasm = iconCtx.createRadialGradient(-3, -3, 0, 0, 0, 8);
+                cytoplasm.addColorStop(0, 'rgba(180, 150, 220, 0.5)');
+                cytoplasm.addColorStop(1, 'rgba(120, 90, 160, 0.3)');
+                iconCtx.fillStyle = cytoplasm;
+                iconCtx.beginPath();
+                iconCtx.arc(0, 0, 6, 0, Math.PI * 2);
+                iconCtx.fill();
+                
+                iconCtx.restore();
+            });
+        }
+
+        // ==========================================
+        // SIMULATION CORE (Same as before)
+        // ==========================================
+
+        function init() {
+            resizeCanvas();
+            initCoherenceField();
+            initMolecules();
+            drawLegendIcons();
+            window.addEventListener('resize', resizeCanvas);
+            setupControls();
+            animate();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function initCoherenceField() {
+            coherenceField = [];
+            for (let i = 0; i < gridSize; i++) {
+                coherenceField[i] = [];
+                for (let j = 0; j < gridSize; j++) {
+                    coherenceField[i][j] = {
+                        C: 0,
+                        L: 0,
+                        history: []
+                    };
+                }
+            }
+            
+            spatialGrid = [];
+            for (let i = 0; i < spatialGridSize; i++) {
+                spatialGrid[i] = [];
+                for (let j = 0; j < spatialGridSize; j++) {
+                    spatialGrid[i][j] = [];
+                }
+            }
+        }
+
+        function initMolecules() {
+            molecules = [];
+            protocells = [];
+            
+            const numMolecules = 200;
+            for (let i = 0; i < numMolecules; i++) {
+                molecules.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    type: MoleculeType.MONOMER,
+                    age: 0,
+                    energy: Math.random(),
+                    coherence: 0,
+                    angle: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function setupControls() {
+            document.getElementById('pauseBtn').onclick = () => {
+                isPaused = !isPaused;
+                document.getElementById('pauseBtn').textContent = isPaused ? '▶️ Play' : '⏸ Pause';
+            };
+
+            document.getElementById('resetBtn').onclick = () => {
+                time = 0;
+                currentStage = 0;
+                ruptureCounter = 0;
+                globalCoherence = 0;
+                coherenceHistory = [];
+                initCoherenceField();
+                initMolecules();
+                document.getElementById('ruptureLog').innerHTML = '<div style="color: #666; font-style: italic;">Awaiting first rupture...</div>';
+                updateUI();
+            };
+
+            document.getElementById('speedUpBtn').onclick = () => {
+                speedMultiplier = speedMultiplier === 1 ? 3 : 1;
+                document.getElementById('speedUpBtn').textContent = speedMultiplier === 1 ? '⏩ Speed Up' : '▶️ Normal';
+            };
+
+            document.getElementById('omegaSlider').oninput = (e) => {
+                Omega = parseFloat(e.target.value);
+                document.getElementById('omegaDisplay').textContent = Omega.toFixed(1);
+            };
+
+            document.getElementById('energySlider').oninput = (e) => {
+                energyFlux = parseFloat(e.target.value);
+                document.getElementById('energyDisplay').textContent = energyFlux.toFixed(2);
+            };
+
+            document.getElementById('mutationSlider').oninput = (e) => {
+                mutationRate = parseFloat(e.target.value);
+                document.getElementById('mutationDisplay').textContent = mutationRate.toFixed(2);
+            };
+
+            document.getElementById('showCoherenceField').onchange = (e) => {
+                showCoherenceField = e.target.checked;
+            };
+
+            document.getElementById('showGlow').onchange = (e) => {
+                showGlow = e.target.checked;
+            };
+
+            document.getElementById('showDetail').onchange = (e) => {
+                showDetail = e.target.checked;
+            };
+        }
+
+        // CRR Dynamics (simplified - same logic as before)
+        function updateCRRDynamics() {
+            let catalysisRate = 0;
+            let degradationRate = 0;
+            let organizationCount = 0;
+
+            molecules.forEach(m => {
+                if (m.type === MoleculeType.CATALYST) {
+                    catalysisRate += m.energy * 0.1;
+                    organizationCount++;
+                }
+                if (m.type === MoleculeType.REPLICATOR) {
+                    catalysisRate += m.energy * 0.15; // Replicators contribute more
+                    organizationCount++;
+                }
+                if (m.type === MoleculeType.LIVING_CELL) {
+                    catalysisRate += m.energy * 0.2;
+                    organizationCount++;
+                }
+                degradationRate += 0.01;
+            });
+
+            // Protocells with both catalysts and replicators boost organization
+            let protocellBonus = 0;
+            protocells.forEach(cell => {
+                if (cell.hasCatalyst && cell.hasReplicator) {
+                    protocellBonus += 0.3; // Strong boost for protocells ready to become alive
+                } else if (cell.hasCatalyst || cell.hasReplicator) {
+                    protocellBonus += 0.1;
+                }
+            });
+
+            const energyContribution = energyFlux * 0.3;
+            const fluctuationBoost = globalCoherence < 1 ? 0.1 : 0;
+
+            globalMemoryDensity = (catalysisRate + energyContribution + fluctuationBoost + protocellBonus - degradationRate) * energyFlux;
+            globalCoherence += globalMemoryDensity * 0.1;
+            globalCoherence = Math.max(0, globalCoherence);
+
+            coherenceHistory.push({
+                t: time,
+                C: globalCoherence,
+                state: getCurrentSystemState()
+            });
+
+            if (coherenceHistory.length > historyLength) {
+                coherenceHistory.shift();
+            }
+
+            globalRegeneration = 0;
+            for (let i = 0; i < coherenceHistory.length; i++) {
+                const h = coherenceHistory[i];
+                const dt = time - h.t;
+                const phi = h.state;
+                const weight = Math.exp(h.C / Omega);
+                const kernel = Math.exp(-dt / 10);
+                
+                globalRegeneration += phi * weight * kernel;
+            }
+            globalRegeneration = Math.max(0, globalRegeneration / historyLength);
+
+            updateCoherenceField();
+            checkForRuptures();
+        }
+
+        function getCurrentSystemState() {
+            let state = 0;
+            molecules.forEach(m => {
+                if (m.type === MoleculeType.CATALYST) state += 0.2;
+                if (m.type === MoleculeType.AMPHIPHILE) state += 0.3;
+                if (m.type === MoleculeType.REPLICATOR) state += 0.5;
+                if (m.type === MoleculeType.LIVING_CELL) state += 1.0;
+            });
+            return state / molecules.length;
+        }
+
+        function updateCoherenceField() {
+            const cellWidth = canvas.width / gridSize;
+            const cellHeight = canvas.height / gridSize;
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = coherenceField[i][j];
+                    const x = i * cellWidth + cellWidth / 2;
+                    const y = j * cellHeight + cellHeight / 2;
+
+                    const nearbyMolecules = getNearbyMolecules(x, y, cellWidth * 2);
+                    
+                    let localOrganization = 0;
+                    nearbyMolecules.forEach(m => {
+                        const dx = m.x - x;
+                        const dy = m.y - y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < cellWidth * 2) {
+                            if (m.type === MoleculeType.CATALYST) localOrganization += 0.5;
+                            if (m.type === MoleculeType.AMPHIPHILE) localOrganization += 0.7;
+                            if (m.type === MoleculeType.REPLICATOR) localOrganization += 1.0;
+                            if (m.type === MoleculeType.LIVING_CELL) localOrganization += 2.0;
+                        }
+                    });
+
+                    cell.L = localOrganization * 0.1 - 0.02;
+                    cell.C += cell.L * 0.1;
+                    cell.C = Math.max(0, Math.min(10, cell.C));
+
+                    cell.history.push(cell.C);
+                    if (cell.history.length > 20) cell.history.shift();
+                }
+            }
+        }
+
+        function checkForRuptures() {
+            const prevStage = currentStage;
+
+            if (currentStage === 0 && globalCoherence >= THRESHOLDS.autocatalysis) {
+                currentStage = 1;
+                triggerRupture('Catalytic Networks Form', 'RNA-like molecules begin autocatalysis!');
+                
+                for (let i = 0; i < 10; i++) {
+                    const m = molecules[Math.floor(Math.random() * molecules.length)];
+                    if (m.type === MoleculeType.MONOMER) {
+                        m.type = MoleculeType.CATALYST;
+                        m.energy = 1.0;
+                    }
+                }
+            }
+
+            if (currentStage === 1 && globalCoherence >= THRESHOLDS.membrane) {
+                currentStage = 2;
+                triggerRupture('Membranes Emerge', 'Lipid vesicles create cellular boundaries!');
+                
+                for (let i = 0; i < 15; i++) {
+                    const m = molecules[Math.floor(Math.random() * molecules.length)];
+                    if (m.type === MoleculeType.MONOMER) {
+                        m.type = MoleculeType.AMPHIPHILE;
+                    }
+                }
+                
+                createProtocell();
+            }
+
+            if (currentStage === 2 && globalCoherence >= THRESHOLDS.replication) {
+                currentStage = 3;
+                triggerRupture('Replication Begins', 'RNA molecules copy themselves - heredity is born!');
+                
+                for (let i = 0; i < 8; i++) {
+                    const m = molecules[Math.floor(Math.random() * molecules.length)];
+                    if (m.type === MoleculeType.CATALYST) {
+                        m.type = MoleculeType.REPLICATOR;
+                    }
+                }
+            }
+
+            if (currentStage === 3 && globalCoherence >= THRESHOLDS.life) {
+                currentStage = 4;
+                triggerRupture('LIFE EMERGES', 'Living cells with metabolism and replication!', true);
+                
+                protocells.forEach(p => {
+                    if (p.hasReplicator && p.hasCatalyst) {
+                        p.isAlive = true;
+                    }
+                });
+            }
+
+            if (prevStage !== currentStage) {
+                updateStageIndicators();
+            }
+        }
+
+        function triggerRupture(name, description, major = false) {
+            ruptureCounter++;
+            
+            const log = document.getElementById('ruptureLog');
+            const event = document.createElement('div');
+            event.className = 'rupture-event' + (major ? ' major' : '');
+            event.innerHTML = `
+                <strong>${name}</strong><br>
+                <span style="color: #999;">t=${time.toFixed(1)}, C=${globalCoherence.toFixed(2)}</span><br>
+                ${description}
+            `;
+            log.insertBefore(event, log.firstChild);
+
+            // Preservation factor increases with stage (more sophisticated systems preserve more)
+            const alpha = 0.65 + currentStage * 0.1; // 0.65, 0.75, 0.85, 0.95
+            globalCoherence *= alpha;
+            globalRegeneration += 0.5;
+        }
+
+        function createProtocell() {
+            const cell = {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 35, // Slightly larger to capture more molecules
+                molecules: [],
+                hasCatalyst: false,
+                hasReplicator: false,
+                isAlive: false,
+                age: 0,
+                coherence: globalCoherence * 0.15 // Start with more coherence
+            };
+
+            molecules.forEach(m => {
+                const dx = m.x - cell.x;
+                const dy = m.y - cell.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < cell.radius && Math.random() < 0.4) { // 40% capture rate
+                    cell.molecules.push(m);
+                    if (m.type === MoleculeType.CATALYST) cell.hasCatalyst = true;
+                    if (m.type === MoleculeType.REPLICATOR) cell.hasReplicator = true;
+                }
+            });
+
+            protocells.push(cell);
+        }
+
+        function updateMolecules() {
+            updateSpatialGrid();
+            
+            molecules.forEach((m, idx) => {
+                m.age++;
+                m.angle += 0.02;
+
+                const agitation = Omega * 0.3;
+                m.vx += (Math.random() - 0.5) * agitation;
+                m.vy += (Math.random() - 0.5) * agitation;
+
+                m.vx *= 0.95;
+                m.vy *= 0.95;
+
+                m.x += m.vx;
+                m.y += m.vy;
+
+                if (m.x < 0) m.x = canvas.width;
+                if (m.x > canvas.width) m.x = 0;
+                if (m.y < 0) m.y = canvas.height;
+                if (m.y > canvas.height) m.y = 0;
+
+                m.energy += energyFlux * 0.01;
+                m.energy = Math.min(1, m.energy);
+
+                if (m.type === MoleculeType.MONOMER && m.energy > 0.8 && 
+                    Math.random() < energyFlux * 0.001) {
+                    if (currentStage === 0) {
+                        m.type = MoleculeType.CATALYST;
+                        m.energy = 1.0;
+                    }
+                }
+
+                const gridX = Math.floor(m.x / canvas.width * gridSize);
+                const gridY = Math.floor(m.y / canvas.height * gridSize);
+                if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
+                    m.coherence = coherenceField[gridX][gridY].C;
+                }
+
+                if (Math.random() < (0.001 / (1 + m.coherence * 0.1))) {
+                    m.type = MoleculeType.MONOMER;
+                    m.energy *= 0.5;
+                }
+            });
+
+            performReactions();
+            updateProtocells();
+
+            if (globalRegeneration > 0.5 && Math.random() < globalRegeneration * 0.01) {
+                regenerateMolecules();
+            }
+
+            if (Math.random() < mutationRate * 0.01) {
+                mutateMolecule();
+            }
+        }
+
+        function updateSpatialGrid() {
+            for (let i = 0; i < spatialGridSize; i++) {
+                for (let j = 0; j < spatialGridSize; j++) {
+                    spatialGrid[i][j] = [];
+                }
+            }
+            
+            const cellWidth = canvas.width / spatialGridSize;
+            const cellHeight = canvas.height / spatialGridSize;
+            
+            molecules.forEach(m => {
+                const gridX = Math.floor(m.x / cellWidth);
+                const gridY = Math.floor(m.y / cellHeight);
+                
+                if (gridX >= 0 && gridX < spatialGridSize && 
+                    gridY >= 0 && gridY < spatialGridSize) {
+                    spatialGrid[gridX][gridY].push(m);
+                }
+            });
+        }
+
+        function getNearbyMolecules(x, y, radius) {
+            const cellWidth = canvas.width / spatialGridSize;
+            const cellHeight = canvas.height / spatialGridSize;
+            
+            const centerGridX = Math.floor(x / cellWidth);
+            const centerGridY = Math.floor(y / cellHeight);
+            
+            const cellRadius = Math.ceil(radius / Math.min(cellWidth, cellHeight));
+            const nearby = [];
+            
+            for (let i = centerGridX - cellRadius; i <= centerGridX + cellRadius; i++) {
+                for (let j = centerGridY - cellRadius; j <= centerGridY + cellRadius; j++) {
+                    if (i >= 0 && i < spatialGridSize && j >= 0 && j < spatialGridSize) {
+                        nearby.push(...spatialGrid[i][j]);
+                    }
+                }
+            }
+            
+            return nearby;
+        }
+
+        function performReactions() {
+            if (currentStage >= 1) {
+                molecules.forEach((m1, i) => {
+                    if (m1.type !== MoleculeType.CATALYST) return;
+
+                    const nearbyMolecules = getNearbyMolecules(m1.x, m1.y, 40);
+                    
+                    nearbyMolecules.forEach(m2 => {
+                        if (m1 === m2 || m2.type !== MoleculeType.MONOMER) return;
+                        
+                        const dx = m2.x - m1.x;
+                        const dy = m2.y - m1.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 20 && m1.energy > 0.5 && Math.random() < 0.05) {
+                            m2.type = MoleculeType.CATALYST;
+                            m2.energy = 1.0;
+                            m1.energy -= 0.3;
+                        }
+                    });
+                });
+            }
+
+            if (currentStage >= 3 && molecules.length < 1000) {
+                molecules.forEach((m1, i) => {
+                    if (m1.type !== MoleculeType.REPLICATOR) return;
+
+                    if (m1.energy > 0.7 && Math.random() < 0.02) {
+                        molecules.push({
+                            x: m1.x + (Math.random() - 0.5) * 20,
+                            y: m1.y + (Math.random() - 0.5) * 20,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            type: MoleculeType.REPLICATOR,
+                            age: 0,
+                            energy: 0.5,
+                            coherence: m1.coherence,
+                            angle: Math.random() * Math.PI * 2
+                        });
+                        m1.energy -= 0.5;
+                    }
+                });
+            }
+        }
+
+        function updateProtocells() {
+            // Try to create more protocells at Stage 2+
+            if (currentStage >= 2 && protocells.length < 5 && Math.random() < 0.01) {
+                createProtocell();
+            }
+
+            protocells.forEach((cell, idx) => {
+                cell.age++;
+
+                // Actively capture nearby molecules (especially replicators)
+                if (!cell.hasReplicator && currentStage >= 3) {
+                    molecules.forEach(m => {
+                        if (m.type === MoleculeType.REPLICATOR) {
+                            const dx = m.x - cell.x;
+                            const dy = m.y - cell.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < cell.radius * 1.5 && Math.random() < 0.05) {
+                                // Pull in replicator
+                                m.x += (cell.x - m.x) * 0.1;
+                                m.y += (cell.y - m.y) * 0.1;
+                                
+                                if (dist < cell.radius) {
+                                    cell.molecules.push(m);
+                                    cell.hasReplicator = true;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (cell.isAlive && cell.coherence > 3 && Math.random() < 0.005) {
+                    const newCell = {
+                        x: cell.x + (Math.random() - 0.5) * 50,
+                        y: cell.y + (Math.random() - 0.5) * 50,
+                        radius: 30,
+                        molecules: cell.molecules.slice(0, Math.floor(cell.molecules.length / 2)),
+                        hasCatalyst: cell.hasCatalyst,
+                        hasReplicator: cell.hasReplicator,
+                        isAlive: true,
+                        age: 0,
+                        coherence: cell.coherence * 0.6
+                    };
+                    cell.molecules = cell.molecules.slice(Math.floor(cell.molecules.length / 2));
+                    protocells.push(newCell);
+                    cell.coherence *= 0.7;
+                }
+
+                // Coherence accumulation - faster when ready for life
+                if (cell.hasCatalyst) cell.coherence += 0.01;
+                if (cell.hasReplicator) cell.coherence += 0.02;
+                if (cell.hasCatalyst && cell.hasReplicator) {
+                    cell.coherence += 0.03; // Bonus for having both components
+                }
+
+                if (cell.coherence < 0.1 && Math.random() < 0.01) {
+                    protocells.splice(idx, 1);
+                }
+            });
+        }
+
+        function regenerateMolecules() {
+            if (coherenceHistory.length < 10) return;
+
+            let totalWeight = 0;
+            const weights = coherenceHistory.map(h => {
+                const w = Math.exp(h.C / Omega);
+                totalWeight += w;
+                return w;
+            });
+
+            let r = Math.random() * totalWeight;
+            let selectedIdx = 0;
+            for (let i = 0; i < weights.length; i++) {
+                r -= weights[i];
+                if (r <= 0) {
+                    selectedIdx = i;
+                    break;
+                }
+            }
+
+            const template = coherenceHistory[selectedIdx];
+            
+            let type = MoleculeType.MONOMER;
+            if (template.C > 10 && currentStage >= 2) type = MoleculeType.CATALYST;
+            if (template.C > 20 && currentStage >= 3) type = MoleculeType.REPLICATOR;
+
+            molecules.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                type: type,
+                age: 0,
+                energy: 0.5,
+                coherence: template.C * 0.1,
+                angle: Math.random() * Math.PI * 2
+            });
+        }
+
+        function mutateMolecule() {
+            if (molecules.length === 0) return;
+            const m = molecules[Math.floor(Math.random() * molecules.length)];
+            
+            const types = [
+                MoleculeType.MONOMER,
+                MoleculeType.CATALYST,
+                MoleculeType.AMPHIPHILE,
+                MoleculeType.REPLICATOR
+            ];
+            m.type = types[Math.floor(Math.random() * Math.min(types.length, currentStage + 1))];
+        }
+
+        // ==========================================
+        // RENDERING
+        // ==========================================
+
+        function render() {
+            // Clear with ocean background
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGradient.addColorStop(0, '#0a192f');
+            bgGradient.addColorStop(0.5, '#1a1a2e');
+            bgGradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw coherence field
+            if (showCoherenceField) {
+                drawCoherenceField();
+            }
+
+            // Draw protocells first (behind molecules)
+            protocells.forEach(cell => {
+                if (cell.isAlive) {
+                    drawLivingCell(cell);
+                } else {
+                    drawProtocell(cell);
+                }
+            });
+
+            // Draw molecules
+            molecules.forEach(m => {
+                const size = 4;
+                
+                switch (m.type) {
+                    case MoleculeType.MONOMER:
+                        drawMonomer(m.x, m.y, size, m.energy, m.coherence);
+                        break;
+                    case MoleculeType.CATALYST:
+                        drawCatalyst(m.x, m.y, size, m.energy, m.coherence, m.angle);
+                        break;
+                    case MoleculeType.AMPHIPHILE:
+                        drawAmphiphile(m.x, m.y, size, m.energy, m.coherence, m.angle);
+                        break;
+                    case MoleculeType.REPLICATOR:
+                        drawReplicator(m.x, m.y, size, m.energy, m.coherence, m.angle);
+                        break;
+                }
+            });
+        }
+
+        function drawCoherenceField() {
+            const cellWidth = canvas.width / gridSize;
+            const cellHeight = canvas.height / gridSize;
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = coherenceField[i][j];
+                    const intensity = Math.min(cell.C / 5, 1);
+                    
+                    if (intensity > 0.05) {
+                        ctx.fillStyle = `rgba(100, 255, 150, ${intensity * 0.15})`;
+                        ctx.fillRect(
+                            i * cellWidth,
+                            j * cellHeight,
+                            cellWidth,
+                            cellHeight
+                        );
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('coherenceValue').textContent = globalCoherence.toFixed(2);
+            document.getElementById('memoryValue').textContent = globalMemoryDensity.toFixed(2);
+            document.getElementById('regenValue').textContent = globalRegeneration.toFixed(2);
+
+            const maxC = THRESHOLDS.life;
+            document.getElementById('coherenceBar').style.width = `${Math.min(globalCoherence / maxC * 100, 100)}%`;
+            
+            const memoryBar = document.getElementById('memoryBar');
+            if (globalMemoryDensity < 0) {
+                memoryBar.style.background = 'linear-gradient(90deg, #e53935, #ef5350)';
+                memoryBar.style.width = `${Math.min(Math.abs(globalMemoryDensity) * 10, 100)}%`;
+            } else {
+                memoryBar.style.background = 'linear-gradient(90deg, #4CAF50, #81C784)';
+                memoryBar.style.width = `${Math.min(globalMemoryDensity * 20, 100)}%`;
+            }
+            
+            document.getElementById('regenBar').style.width = `${Math.min(globalRegeneration * 50, 100)}%`;
+
+            const memExplanation = document.getElementById('memoryExplanation');
+            if (globalMemoryDensity < -0.5) {
+                memExplanation.innerHTML = '❌ Entropy dominates';
+                memExplanation.style.color = '#e53935';
+            } else if (globalMemoryDensity < 0) {
+                memExplanation.innerHTML = '⚠️ Near equilibrium';
+                memExplanation.style.color = '#ff9800';
+            } else if (globalMemoryDensity < 0.5) {
+                memExplanation.innerHTML = '✓ Structure forming';
+                memExplanation.style.color = '#fdd835';
+            } else {
+                memExplanation.innerHTML = '✓✓ Life emerging!';
+                memExplanation.style.color = '#4CAF50';
+            }
+
+            document.getElementById('cellCount').textContent = protocells.length;
+            document.getElementById('ruptureCount').textContent = ruptureCounter;
+            document.getElementById('moleculeCount').textContent = molecules.length;
+            document.getElementById('fpsValue').textContent = Math.round(fps);
+            
+            // Count ready cells (have both catalyst and replicator)
+            const readyCells = protocells.filter(c => c.hasCatalyst && c.hasReplicator).length;
+            document.getElementById('readyCells').textContent = readyCells;
+            
+            // Progress to life (based on current stage threshold)
+            let progress = 0;
+            if (currentStage === 0) {
+                progress = (globalCoherence / THRESHOLDS.autocatalysis) * 100;
+            } else if (currentStage === 1) {
+                progress = (globalCoherence / THRESHOLDS.membrane) * 100;
+            } else if (currentStage === 2) {
+                progress = (globalCoherence / THRESHOLDS.replication) * 100;
+            } else if (currentStage === 3) {
+                progress = (globalCoherence / THRESHOLDS.life) * 100;
+            } else {
+                progress = 100;
+            }
+            document.getElementById('progressValue').textContent = Math.min(progress, 100).toFixed(0) + '%';
+        }
+
+        function updateStageIndicators() {
+            for (let i = 0; i <= 4; i++) {
+                const elem = document.getElementById(`stage${i}`);
+                const timelineStage = document.querySelector(`.timeline-stage[data-stage="${i}"]`);
+                
+                if (i < currentStage) {
+                    elem.classList.remove('active');
+                    timelineStage.classList.add('completed');
+                    timelineStage.classList.remove('active');
+                } else if (i === currentStage) {
+                    elem.classList.add('active');
+                    timelineStage.classList.add('active');
+                    timelineStage.classList.remove('completed');
+                } else {
+                    elem.classList.remove('active');
+                    timelineStage.classList.remove('completed', 'active');
+                }
+            }
+        }
+
+        function animate() {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+            
+            frameCount++;
+            if (frameCount % 30 === 0) {
+                fps = 1000 / deltaTime;
+            }
+            
+            if (!isPaused) {
+                for (let i = 0; i < speedMultiplier; i++) {
+                    time += 0.1;
+                    updateCRRDynamics();
+                    updateMolecules();
+                }
+            }
+
+            render();
+            updateUI();
+            requestAnimationFrame(animate);
+        }
+
+        init();
+    </script>
+</body>
+</html>
