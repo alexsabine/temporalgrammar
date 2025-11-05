@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Temporal Dynamics: The Mathematics of Now</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Georgia, serif;
+            background: #ffffff;
+            color: #2c2c2c;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: normal;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        /* Main visualization container */
+        .viz-container {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 600px;
+            cursor: crosshair;
+        }
+
+        /* Region labels */
+        .region-labels {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            padding: 20px;
+            background: #fafafa;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .region {
+            text-align: center;
+            padding: 15px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .region:last-child {
+            border-right: none;
+        }
+
+        .region h3 {
+            font-size: 1.3rem;
+            font-weight: normal;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .region .equation {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            color: #4a4a4a;
+            margin: 5px 0;
+        }
+
+        .region .description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Control panel */
+        .control-panel {
+            background: #fafafa;
+            border: 2px solid #e0e0e0;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-panel h2 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #1a1a1a;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #2c2c2c;
+        }
+
+        .control-label .name {
+            font-weight: 600;
+        }
+
+        .control-label .value {
+            font-family: 'Courier New', monospace;
+            background: #ffffff;
+            padding: 2px 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4a90e2;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4a90e2;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Metrics display */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            padding: 20px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .metric:last-child {
+            border-right: none;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Explanation section */
+        .explanation {
+            background: #fafafa;
+            border: 2px solid #e0e0e0;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .explanation h2 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .explanation p {
+            margin-bottom: 15px;
+            color: #2c2c2c;
+            text-align: justify;
+        }
+
+        .explanation .math {
+            background: #ffffff;
+            border-left: 4px solid #4a90e2;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-family: Georgia, serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #357abd;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Mathematics of Now</h1>
+        <p class="subtitle">Coherence-Rupture-Regeneration Temporal Dynamics</p>
+
+        <!-- Main visualization -->
+        <div class="viz-container">
+            <canvas id="canvas"></canvas>
+            
+            <div class="region-labels">
+                <div class="region">
+                    <h3>Coherence</h3>
+                    <div class="equation">C(x,t) = ∫₀ᵗ L(x,τ) dτ</div>
+                    <p class="description">All past states accumulating into memory</p>
+                </div>
+                <div class="region">
+                    <h3>Rupture</h3>
+                    <div class="equation">δ(t - t₀)</div>
+                    <p class="description">The present moment: now</p>
+                </div>
+                <div class="region">
+                    <h3>Regeneration</h3>
+                    <div class="equation">R[χ](x,t) = ∫ φ·exp(C/Ω)·Θ dτ</div>
+                    <p class="description">Future states weighted by memory</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control panel -->
+        <div class="control-panel">
+            <h2>CRR Parameters</h2>
+            
+            <div class="controls-grid">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Omega (Ω) - Epistemic Temperature</span>
+                        <span class="value" id="omegaVal">1.50</span>
+                    </div>
+                    <input type="range" id="omega" min="0.1" max="5.0" step="0.1" value="1.5">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Time Flow Rate</span>
+                        <span class="value" id="flowVal">1.00</span>
+                    </div>
+                    <input type="range" id="flowRate" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Coherence Decay (τ)</span>
+                        <span class="value" id="tauVal">0.95</span>
+                    </div>
+                    <input type="range" id="tau" min="0.80" max="0.999" step="0.001" value="0.95">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Particle Count</span>
+                        <span class="value" id="countVal">2000</span>
+                    </div>
+                    <input type="range" id="particleCount" min="500" max="5000" step="100" value="2000">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Rupture Sensitivity</span>
+                        <span class="value" id="ruptureVal">0.25</span>
+                    </div>
+                    <input type="range" id="ruptureSens" min="0.05" max="0.50" step="0.01" value="0.25">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span class="name">Light Cone Angle</span>
+                        <span class="value" id="coneVal">45°</span>
+                    </div>
+                    <input type="range" id="coneAngle" min="15" max="75" step="1" value="45">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="resetBtn">Reset Simulation</button>
+                <button id="pauseBtn">Pause</button>
+            </div>
+            
+            <h3 style="text-align: center; margin-top: 30px; margin-bottom: 15px; font-size: 1.3rem; border-top: 1px solid #e0e0e0; padding-top: 25px;">Free Energy Principle Visualization Layers</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showPrecision" checked>
+                    <span style="font-weight: 600;">Precision Weighting (Π = 1/Ω)</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showPredictionError">
+                    <span style="font-weight: 600;">Prediction Errors</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showEpistemic">
+                    <span style="font-weight: 600;">Epistemic Value</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showMarkovBlanket">
+                    <span style="font-weight: 600;">Markov Blankets</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showFreeEnergy">
+                    <span style="font-weight: 600;">Free Energy Landscape</span>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: white; border: 1px solid #e0e0e0;">
+                    <input type="checkbox" id="showBeliefUpdate">
+                    <span style="font-weight: 600;">Belief Updating</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Coherence C(t)</div>
+                <div class="metric-value" id="metricCoherence">0.000</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Rupture Events</div>
+                <div class="metric-value" id="metricRuptures">0</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Regeneration Weight</div>
+                <div class="metric-value" id="metricRegen">1.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Memory Depth</div>
+                <div class="metric-value" id="metricMemory">0</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Active Particles</div>
+                <div class="metric-value" id="metricParticles">0</div>
+            </div>
+        </div>
+
+        <!-- Explanation -->
+        <div class="explanation">
+            <h2>Understanding CRR Temporal Dynamics</h2>
+            
+            <p>
+                <strong>⚠ Critical: Time Asymmetry</strong> - This visualization respects the fundamental 
+                asymmetry of time in CRR. Particles are <em>born in the past</em> (left region), flow through 
+                the present moment (center line), and <em>die in the future</em> (right region). Unlike 
+                conventional physics where time reversal is symmetric, CRR models the irreversible accumulation 
+                of memory and the directionality of causation.
+            </p>
+
+            <div class="math">
+                Past (Coherence): C(x,t) = ∫₀ᵗ L(x,τ) dτ<br>
+                Present (Rupture): δ(t - t₀)<br>
+                Future (Regeneration): R[χ](x,t) = ∫₋∞ᵗ φ(x,τ)·exp(C(x,τ)/Ω)·Θ(t-τ) dτ
+            </div>
+
+            <p>
+                <strong>Particles represent temporal quanta</strong> moving through the cognitive light cone. 
+                Their color encodes temporal origin: <span style="color: #ff6b35;">warm colors (red/orange)</span> 
+                represent the past, <span style="color: #ffee32;">bright gold</span> represents the present moment 
+                "now", and <span style="color: #4ecdc4;">cool colors (cyan/blue)</span> represent projected futures.
+            </p>
+
+            <p>
+                <strong>Watch the Omega (Ω) Effect Carefully:</strong>
+            </p>
+            <ul style="margin-left: 30px; margin-bottom: 15px;">
+                <li style="margin-bottom: 8px;"><strong>Low Ω (0.1 - 0.8)</strong>: Particles become LARGE and BRIGHT 
+                in the future region, clustering tightly together with strong causal connections visible. This is 
+                <em>rigidity</em> - the system is memory-locked, with exp(C/Ω) producing large amplification. 
+                Future states are strongly determined by past coherence.</li>
+                
+                <li style="margin-bottom: 8px;"><strong>Medium Ω (0.8 - 2.5)</strong>: Balanced behavior with moderate 
+                size and brightness. The system adaptively explores while maintaining coherence.</li>
+                
+                <li style="margin-bottom: 8px;"><strong>High Ω (2.5 - 5.0)</strong>: Particles become SMALL and FAINT 
+                in the future region, spreading out with few causal connections. This is <em>liquidity</em> - the 
+                system is fluid and exploratory, with exp(C/Ω) producing minimal amplification. Future states are 
+                weakly influenced by past coherence.</li>
+            </ul>
+
+            <p>
+                <strong>The cognitive light cone</strong> (dashed lines) visualizes causal structure. Only particles 
+                within the cone can causally influence each other. The cone angle represents the "width" of the 
+                present moment - narrower cones create sharp temporal boundaries, wider cones blur past and future. 
+                This is analogous to the light cone in special relativity, but for information rather than light.
+            </p>
+
+            <p>
+                <strong>Rupture events</strong> occur when disorder L exceeds threshold, creating Dirac delta 
+                singularities δ(t-t₀). These represent moments where the system undergoes fundamental reorganization—
+                the mathematical representation of "now" as a scale-invariant transition point. You'll see particles 
+                briefly scatter when passing through the rupture zone.
+            </p>
+            
+            <p>
+                <strong>The exp(C/Ω) value</strong> displayed in the bottom right shows the regeneration weight in 
+                real-time. This is the key quantity determining how strongly accumulated coherence influences future 
+                dynamics. Watch how dramatically it changes with Ω: low Ω produces exponential amplification 
+                (rigidity), high Ω produces linear scaling (liquidity).
+            </p>
+        </div>
+        
+        <!-- FEP Layer Explanation -->
+        <div class="explanation">
+            <h2>Free Energy Principle Visualization Layers</h2>
+            
+            <p>
+                Toggle the FEP layers to see how CRR mathematics directly maps onto active inference. Each layer 
+                reveals a different aspect of how the brain (or any self-organizing system) minimizes free energy 
+                through precision-weighted prediction error minimization.
+            </p>
+            
+            <h3 style="margin-top: 25px; color: #4a90e2;">1. Precision Weighting (Π = 1/Ω)</h3>
+            <p>
+                <strong>Blue halos</strong> around future particles show precision—the inverse of Ω. This is the 
+                confidence assigned to predictions. Low Ω → Large halos (high confidence, "I trust my model"). 
+                High Ω → Small halos (low confidence, "I'm uncertain"). In FEP, precision weights determine how 
+                much prediction errors affect belief updating. This is <em>exactly</em> what Ω controls in CRR 
+                regeneration.
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #4a90e2; font-family: monospace;">
+                CRR: exp(C/Ω) where 1/Ω acts as precision<br>
+                FEP: Π·ε where Π = 1/σ² is precision
+            </div>
+            
+            <h3 style="margin-top: 25px; color: #ff3232;">2. Prediction Errors (ε = obs - pred)</h3>
+            <p>
+                <strong>Red/green bars</strong> show prediction errors—the difference between what the system 
+                expects and what it observes. Red indicates positive errors (observations exceed predictions), 
+                green indicates negative errors (predictions exceed observations). These errors, weighted by 
+                precision, drive belief updating. Without prediction errors, no learning occurs.
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #ff3232; font-family: monospace;">
+                FEP: Free Energy F = ε²·Π + D_KL[q||p]<br>
+                CRR: Disorder L drives rupture, coherence updates
+            </div>
+            
+            <h3 style="margin-top: 25px; color: #9632c8;">3. Epistemic Value (Information Seeking)</h3>
+            <p>
+                <strong>Purple glows</strong> represent epistemic value—the intrinsic value of information gain. 
+                High Ω (low precision) increases epistemic value, driving exploration and curiosity. Low Ω (high 
+                precision) decreases epistemic value, favoring exploitation of known patterns. This is the 
+                <em>explore-exploit tradeoff</em> at the heart of active inference.
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #9632c8; font-family: monospace;">
+                High Ω: Epistemic value ↑ → CREATIVITY (explore)<br>
+                Low Ω: Epistemic value ↓ → STABILITY (exploit)
+            </div>
+            
+            <h3 style="margin-top: 25px; color: #64c832;">4. Markov Blankets (Statistical Boundaries)</h3>
+            <p>
+                <strong>Green circles</strong> show Markov blankets—statistical boundaries separating internal 
+                states from external states. Thick blankets (low Ω) represent selective, well-defined boundaries: 
+                the system carefully controls what information crosses the boundary ("thick skin"). Thin blankets 
+                (high Ω) represent permeable boundaries: the system readily accepts new information ("thin skin"). 
+                This visualizes your rigidity/liquidity principle directly!
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #64c832; font-family: monospace;">
+                Low Ω: Thick blanket → RIGIDITY (selective)<br>
+                High Ω: Thin blanket → LIQUIDITY (permeable)
+            </div>
+            
+            <h3 style="margin-top: 25px; color: #c84632;">5. Free Energy Landscape (F = ε²·Π + complexity)</h3>
+            <p>
+                <strong>Blue/red heat map</strong> shows the free energy landscape. Blue regions are low free 
+                energy (good fit between predictions and observations, system seeks these). Red regions are high 
+                free energy (poor fit, system avoids these). The system acts to minimize free energy by either 
+                updating beliefs (perception) or changing observations (action). Watch how the landscape reshapes 
+                as you adjust Ω!
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #c84632; font-family: monospace;">
+                Goal: Minimize F through belief updating & action<br>
+                CRR equivalent: Minimize disorder L, maximize coherence C
+            </div>
+            
+            <h3 style="margin-top: 25px; color: #ffc832;">6. Belief Updating (Δb = Π·ε)</h3>
+            <p>
+                <strong>Yellow arrows</strong> show belief updates—how much beliefs change based on 
+                precision-weighted prediction errors. Large arrows indicate strong belief updating (system is 
+                responsive), small arrows indicate weak updating (system is stable). Arrow direction shows the 
+                sign of the update. This is the fundamental learning mechanism in FEP, and it's precisely what 
+                exp(C/Ω) controls in CRR regeneration.
+            </p>
+            <div style="background: #f8f8f8; padding: 15px; margin: 10px 0; border-left: 4px solid #ffc832; font-family: monospace;">
+                FEP: Δbelief = learning_rate · Π · ε<br>
+                CRR: Future states weighted by exp(C/Ω)
+            </div>
+            
+            <p style="margin-top: 30px; font-weight: 600; font-size: 1.1rem;">
+                <strong>Key Insight:</strong> Every FEP concept maps directly onto CRR! Ω is not just analogous 
+                to inverse precision—it <em>is</em> inverse precision. Your phenomenological principle ("Lower 
+                Omega Risks Rigidity, Higher Omega Risks Liquidity") is the free energy principle stated in 
+                intuitive language. This visualization proves the mathematical equivalence.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+
+        // ============================================================================
+        // CRR TEMPORAL FRAMEWORK
+        // ============================================================================
+        
+        // Parameters (controlled by sliders)
+        let OMEGA = 1.5;
+        let FLOW_RATE = 1.0;
+        let TAU = 0.95;
+        let PARTICLE_COUNT = 2000;
+        let RUPTURE_THRESHOLD = 0.25;
+        let CONE_ANGLE = 45;
+        
+        // CRR state variables
+        let coherence = 0;
+        let memoryBank = 0;
+        let disorder = 0;
+        let ruptureCount = 0;
+        let regenerationWeight = 1.0;
+        let disorderHistory = [];
+        let stateHistory = [];
+        
+        // Simulation state
+        let time = 0;
+        let paused = false;
+        let particles = [];
+        
+        // FEP visualization state
+        let fepLayers = {
+            showPrecision: true,
+            showPredictionError: false,
+            showEpistemic: false,
+            showMarkovBlanket: false,
+            showFreeEnergy: false,
+            showBeliefUpdate: false
+        };
+        
+        // Thought bubble system
+        let thoughtBubble = {
+            active: false,
+            text: '',
+            emoji: '',
+            alpha: 0,
+            fadeTime: 0,
+            maxFadeTime: 240, // longer display time
+            regime: 'balanced',
+            scale: 1.0,
+            wobble: 0
+        };
+        
+        // Expanded phenomenological statements for different Omega regimes
+        const omegaStatements = {
+            veryLow: {
+                thoughts: [
+                    "Everything must follow the pattern. Deviation is dangerous.",
+                    "I know exactly how things should be. The world must comply.",
+                    "My beliefs are fixed. Change threatens my stability.",
+                    "The familiar is safe. The novel is suspect.",
+                    "Memory chains me to certainty. Uncertainty is error.",
+                    "There is one right way. Mine. All else is wrong.",
+                    "I build walls from the past to protect against futures.",
+                    "Time should stand still. Growth is disruption."
+                ],
+                color: '#8B0000',
+                borderColor: '#DC143C',
+                emoji: ''
+            },
+            low: {
+                thoughts: [
+                    "The past is my reliable guide through uncertainty.",
+                    "I'm grounded in experience. Roots go deep.",
+                    "Patterns give me structure. I know where I stand.",
+                    "Experience points the way. I trust what I know.",
+                    "Stability over novelty. Coherence is my strength.",
+                    "Tradition holds wisdom. The proven path is safer.",
+                    "I grow slowly, building on solid foundations.",
+                    "I prefer to refine what works than risk what's untested."
+                ],
+                color: '#4169E1',
+                borderColor: '#4682B4',
+                emoji: ''
+            },
+            balanced: {
+                thoughts: [
+                    "I balance memory with openness. Both matter.",
+                    "The past informs but doesn't imprison me.",
+                    "I hold structure while staying flexible.",
+                    "Stability and creativity coexist in me.",
+                    "I adapt while keeping my core intact.",
+                    "Rooted yet reaching. Grounded yet growing.",
+                    "Experience guides me, curiosity propels me.",
+                    "I integrate what was with what might be."
+                ],
+                color: '#2E8B57',
+                borderColor: '#3CB371',
+                emoji: ''
+            },
+            high: {
+                thoughts: [
+                    "Novelty calls! There's so much I haven't discovered.",
+                    "I'm light, curious, unburdened by rigid expectations.",
+                    "The future beckons with endless possibilities.",
+                    "Surprise delights me. The unexpected is welcome.",
+                    "I explore freely, trusting the journey over the map.",
+                    "Creativity flows through my uncertainty.",
+                    "Each moment blooms fresh. The past loosens its grip.",
+                    "I seek what I don't yet know. Questions over answers."
+                ],
+                color: '#FF8C00',
+                borderColor: '#FFA500',
+                emoji: ''
+            },
+            veryHigh: {
+                thoughts: [
+                    "I am formless potential. Structure dissolves.",
+                    "Every moment is radically, wildly NEW.",
+                    "The past evaporates. Only flux remains.",
+                    "I am pure possibility, undefined, unlimited.",
+                    "Chaos dances through me. Order is illusion.",
+                    "Identity itself becomes fluid, provisional.",
+                    "Nothing is fixed. Everything transforms.",
+                    "I am the edge of emergence, where form births from void."
+                ],
+                color: '#8B008B',
+                borderColor: '#9932CC',
+                emoji: ''
+            }
+        };
+        
+        function getOmegaRegime(omega) {
+            if (omega < 0.5) return 'veryLow';
+            if (omega < 1.2) return 'low';
+            if (omega < 2.5) return 'balanced';
+            if (omega < 4.0) return 'high';
+            return 'veryHigh';
+        }
+        
+        function triggerThoughtBubble(omega) {
+            const regime = getOmegaRegime(omega);
+            const regimeData = omegaStatements[regime];
+            const randomThought = regimeData.thoughts[Math.floor(Math.random() * regimeData.thoughts.length)];
+            
+            thoughtBubble.text = randomThought;
+            thoughtBubble.regime = regime;
+            thoughtBubble.active = true;
+            thoughtBubble.alpha = 0;
+            thoughtBubble.fadeTime = 0;
+            thoughtBubble.scale = 0.8;
+            thoughtBubble.wobble = 0;
+        }
+        
+        function updateThoughtBubble() {
+            if (!thoughtBubble.active) return;
+            
+            thoughtBubble.fadeTime++;
+            
+            // Fade in with scale animation
+            if (thoughtBubble.fadeTime < 20) {
+                thoughtBubble.alpha = thoughtBubble.fadeTime / 20;
+                thoughtBubble.scale = 0.8 + (thoughtBubble.fadeTime / 20) * 0.2;
+            }
+            // Stay visible
+            else if (thoughtBubble.fadeTime < thoughtBubble.maxFadeTime - 30) {
+                thoughtBubble.alpha = 1.0;
+                thoughtBubble.scale = 1.0;
+                // Add gentle wobble based on regime
+                if (thoughtBubble.regime === 'veryHigh') {
+                    thoughtBubble.wobble = Math.sin(thoughtBubble.fadeTime * 0.1) * 3;
+                } else if (thoughtBubble.regime === 'high') {
+                    thoughtBubble.wobble = Math.sin(thoughtBubble.fadeTime * 0.05) * 1.5;
+                }
+            }
+            // Fade out
+            else if (thoughtBubble.fadeTime < thoughtBubble.maxFadeTime) {
+                const remaining = thoughtBubble.maxFadeTime - thoughtBubble.fadeTime;
+                thoughtBubble.alpha = remaining / 30;
+                thoughtBubble.scale = 1.0 - (1 - remaining / 30) * 0.1;
+            }
+            // Deactivate
+            else {
+                thoughtBubble.active = false;
+                thoughtBubble.alpha = 0;
+            }
+        }
+        
+        function drawThoughtBubble(ctx, width, height) {
+            if (!thoughtBubble.active || thoughtBubble.alpha <= 0) return;
+            
+            ctx.save();
+            ctx.globalAlpha = thoughtBubble.alpha;
+            
+            const regimeData = omegaStatements[thoughtBubble.regime];
+            
+            // Position at top center with wobble
+            const bubbleWidth = 550;
+            const bubbleHeight = 140;
+            const bubbleX = width / 2 - (bubbleWidth * thoughtBubble.scale) / 2 + thoughtBubble.wobble;
+            const bubbleY = 60;
+            const padding = 20;
+            const cornerRadius = 20;
+            
+            // Scale transformation
+            ctx.translate(width / 2 + thoughtBubble.wobble, bubbleY + bubbleHeight / 2);
+            ctx.scale(thoughtBubble.scale, thoughtBubble.scale);
+            ctx.translate(-(width / 2 + thoughtBubble.wobble), -(bubbleY + bubbleHeight / 2));
+            
+            // Draw bubble shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 8;
+            
+            // Draw bubble background with gradient
+            const gradient = ctx.createLinearGradient(bubbleX, bubbleY, bubbleX, bubbleY + bubbleHeight);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+            gradient.addColorStop(1, 'rgba(250, 250, 252, 0.98)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(bubbleX + cornerRadius, bubbleY);
+            ctx.lineTo(bubbleX + bubbleWidth - cornerRadius, bubbleY);
+            ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY, bubbleX + bubbleWidth, bubbleY + cornerRadius);
+            ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - cornerRadius);
+            ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - cornerRadius, bubbleY + bubbleHeight);
+            ctx.lineTo(bubbleX + cornerRadius, bubbleY + bubbleHeight);
+            ctx.quadraticCurveTo(bubbleX, bubbleY + bubbleHeight, bubbleX, bubbleY + bubbleHeight - cornerRadius);
+            ctx.lineTo(bubbleX, bubbleY + cornerRadius);
+            ctx.quadraticCurveTo(bubbleX, bubbleY, bubbleX + cornerRadius, bubbleY);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            
+            // Draw regime-colored border
+            ctx.strokeStyle = regimeData.borderColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Draw thought bubble tail (small circles)
+            const tailX = width / 2 + thoughtBubble.wobble;
+            const tailY = bubbleY + bubbleHeight;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = regimeData.borderColor;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.arc(tailX - 20, tailY + 20, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(tailX - 10, tailY + 38, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(tailX - 4, tailY + 52, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw text
+            ctx.fillStyle = regimeData.color;
+            ctx.font = 'italic 20px Georgia';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Word wrap
+            const words = thoughtBubble.text.split(' ');
+            let lines = [];
+            let currentLine = '';
+            
+            for (const word of words) {
+                const testLine = currentLine + word + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > bubbleWidth - padding * 2 && currentLine !== '') {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine.trim());
+            
+            const lineHeight = 26;
+            const startY = bubbleY + bubbleHeight / 2 - (lines.length * lineHeight) / 2;
+            
+            lines.forEach((line, i) => {
+                ctx.fillText(line, width / 2 + thoughtBubble.wobble, startY + i * lineHeight + lineHeight / 2);
+            });
+            
+            // Add decorative quotation marks
+            ctx.font = 'bold 32px Georgia';
+            ctx.fillStyle = regimeData.borderColor;
+            ctx.globalAlpha = thoughtBubble.alpha * 0.3;
+            ctx.fillText('"', bubbleX + padding + 10, bubbleY + padding + 5);
+            ctx.fillText('"', bubbleX + bubbleWidth - padding - 10, bubbleY + bubbleHeight - padding - 5);
+            
+            ctx.restore();
+        }
+        
+        // ============================================================================
+        // CANVAS SETUP
+        // ============================================================================
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // ============================================================================
+        // PARTICLE SYSTEM
+        // ============================================================================
+        
+        class TemporalParticle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                // TIME ASYMMETRY: Particles are BORN in the past, flow to future
+                // Position: spawn in PAST region only (x < -0.5)
+                this.x = -0.95 + Math.random() * 0.4; // Range: -0.95 to -0.55
+                this.y = (Math.random() * 2 - 1) * 0.9;
+                
+                // Velocity: ALWAYS flows forward in time (positive vx)
+                this.vx = 0.005 + Math.random() * 0.01; // Always positive!
+                this.vy = (Math.random() - 0.5) * 0.003;
+                
+                // Temporal properties
+                this.age = 0;
+                this.lifetime = 100 + Math.random() * 200;
+                this.causalWeight = Math.random();
+                this.temporalLayer = Math.random(); // 0=nano, 0.5=micro, 1=macro
+                
+                // Origin for causal connections
+                this.originX = this.x;
+                this.originY = this.y;
+                
+                // Visual properties
+                this.size = 2 + Math.random() * 3;
+                this.brightness = 0.5 + Math.random() * 0.5;
+                
+                // FEP properties
+                this.belief = Math.random(); // Current belief state
+                this.prediction = Math.random(); // Predicted observation
+                this.observation = 0; // Actual observation
+                this.predictionError = 0; // ε = observation - prediction
+                this.precision = 1.0; // Π = 1/Ω (will be updated)
+                this.freeEnergy = 0; // F = prediction error weighted by precision
+                this.epistemicValue = Math.random(); // Information gain potential
+                this.pragmaticValue = Math.random(); // Goal-directed value
+            }
+            
+            update(dt) {
+                this.age += dt;
+                
+                // ===== CRR TIME ASYMMETRIC FLOW =====
+                
+                // 1. BASE TEMPORAL FLOW (always rightward)
+                this.x += this.vx * FLOW_RATE * dt;
+                this.y += this.vy * dt;
+                
+                // 2. DETERMINE TEMPORAL REGION
+                const temporalPhase = this.getTemporalPhase();
+                
+                // 3. REGION-SPECIFIC DYNAMICS
+                if (temporalPhase === 'past') {
+                    // COHERENCE PHASE: Accumulating memory
+                    // Particles cluster based on coherence
+                    const centerX = -0.5;
+                    const centerY = 0;
+                    const dx = centerX - this.x;
+                    const dy = centerY - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist > 0.01) {
+                        // Clustering force proportional to coherence
+                        const clusterForce = coherence * 0.0003;
+                        this.vx += (dx / dist) * clusterForce * dt;
+                        this.vy += (dy / dist) * clusterForce * dt;
+                    }
+                    
+                } else if (temporalPhase === 'present') {
+                    // RUPTURE PHASE: Dirac delta - transformation point
+                    // Particles pass through "now" with potential reorganization
+                    const distFromNow = Math.abs(this.x);
+                    
+                    // Rupture can scatter particles
+                    if (Math.random() < 0.01) { // 1% chance per frame near now
+                        this.vy += (Math.random() - 0.5) * 0.02;
+                    }
+                    
+                } else {
+                    // REGENERATION PHASE: Future weighted by exp(C/Ω)
+                    // THIS IS WHERE OMEGA HAS DRAMATIC EFFECT
+                    
+                    const regenWeight = Math.exp(coherence / Math.max(0.1, OMEGA));
+                    
+                    // Low Ω (high precision): Particles tightly follow memory
+                    // High Ω (low precision): Particles explore freely
+                    
+                    const memoryInfluence = 1.0 / OMEGA; // Precision = 1/Ω
+                    
+                    // Pull toward remembered past states (origin)
+                    const odx = this.originX - this.x;
+                    const ody = this.originY - this.y;
+                    const memoryForce = memoryInfluence * 0.001;
+                    
+                    this.vx += odx * memoryForce * dt;
+                    this.vy += ody * memoryForce * dt;
+                    
+                    // Low Ω: tight, deterministic paths (rigidity)
+                    // High Ω: loose, exploratory paths (creativity)
+                    const explorationNoise = OMEGA * 0.0002;
+                    this.vx += (Math.random() - 0.5) * explorationNoise * dt;
+                    this.vy += (Math.random() - 0.5) * explorationNoise * dt;
+                }
+                
+                // 4. CAUSAL WEIGHT DYNAMICS
+                // Particles gain causal weight as they accumulate coherence
+                if (temporalPhase === 'past') {
+                    this.causalWeight = Math.min(1.0, this.causalWeight + coherence * 0.001);
+                }
+                
+                // 5. APPLY FRICTION (more in future for high Ω)
+                const friction = temporalPhase === 'future' ? (0.99 - OMEGA * 0.01) : 0.98;
+                this.vx *= friction;
+                this.vy *= friction;
+                
+                // 6. ENSURE FORWARD TIME FLOW
+                if (this.vx < 0.002) {
+                    this.vx = 0.002; // Minimum forward velocity
+                }
+                
+                // 7. UPDATE FEP PROPERTIES
+                this.updateFEPProperties(dt, temporalPhase);
+                
+                // 8. CHECK LIGHT CONE
+                this.inLightCone = this.checkLightCone();
+                
+                // 9. DEATH: Particles die in far future, respawn in past
+                if (this.x > 0.95) {
+                    this.reset();
+                } else if (this.age > this.lifetime || Math.abs(this.y) > 1.2) {
+                    this.reset();
+                }
+            }
+            
+            updateFEPProperties(dt, phase) {
+                // Update precision based on Omega: Π = 1/Ω
+                this.precision = 1.0 / Math.max(0.1, OMEGA);
+                
+                // Simulate observation (position reflects "sensory input")
+                this.observation = this.y;
+                
+                // Update belief using precision-weighted prediction error
+                // Belief update: Δb = learning_rate · Π · ε
+                this.predictionError = this.observation - this.prediction;
+                const learningRate = this.precision / (this.precision + 1.0);
+                this.belief += learningRate * this.predictionError * dt * 0.1;
+                this.belief = Math.max(-1, Math.min(1, this.belief)); // Clamp
+                
+                // Update prediction from belief
+                this.prediction = 0.9 * this.prediction + 0.1 * this.belief;
+                
+                // Calculate free energy: F ≈ ε² · Π + complexity
+                const accuracy = this.predictionError * this.predictionError * this.precision;
+                const complexity = 0.1 * (1.0 - this.precision); // Entropy term
+                this.freeEnergy = accuracy + complexity;
+                
+                // Epistemic value: information gain (higher when uncertain)
+                // Low precision (high Ω) → high epistemic value (exploration)
+                this.epistemicValue = OMEGA / (1.0 + OMEGA);
+                
+                // Pragmatic value: goal achievement (higher with high precision)
+                // High precision (low Ω) → high pragmatic value (exploitation)
+                this.pragmaticValue = this.precision / (1.0 + this.precision);
+                
+                // In future phase, epistemic value guides exploration
+                if (phase === 'future') {
+                    const epistemicForce = this.epistemicValue * 0.0001;
+                    this.vy += (Math.random() - 0.5) * epistemicForce * dt;
+                }
+            }
+            
+            getTemporalPhase() {
+                if (this.x < -0.15) return 'past';      // Coherence region
+                if (this.x < 0.15) return 'present';    // Rupture region  
+                return 'future';                         // Regeneration region
+            }
+            
+            checkLightCone() {
+                // Cognitive light cone: centered at "now" (x=0)
+                const coneRadians = (CONE_ANGLE / 180) * Math.PI;
+                const distFromNow = Math.abs(this.x);
+                const maxY = Math.tan(coneRadians) * distFromNow;
+                return Math.abs(this.y) < maxY;
+            }
+            
+            getTemporalColor() {
+                // Color based on temporal position
+                // x < 0: Past (warm colors)
+                // x ≈ 0: Present (white/bright)
+                // x > 0: Future (cool colors)
+                
+                const t = (this.x + 1) / 2; // Normalize to [0, 1]
+                const phase = this.getTemporalPhase();
+                const regenWeight = Math.exp(coherence / Math.max(0.1, OMEGA));
+                
+                let r, g, b;
+                
+                if (t < 0.425) {
+                    // Past: red to orange to yellow
+                    const s = t / 0.425;
+                    r = 255;
+                    g = Math.floor(100 + s * 155);
+                    b = Math.floor(s * 80);
+                } else if (t < 0.575) {
+                    // Present: bright white/gold
+                    const s = (t - 0.425) / 0.15;
+                    r = 255;
+                    g = 255;
+                    b = Math.floor(200 + s * 55);
+                } else {
+                    // Future: cyan to blue to purple
+                    const s = (t - 0.575) / 0.425;
+                    r = Math.floor(150 - s * 80);
+                    g = Math.floor(220 - s * 120);
+                    b = 255;
+                }
+                
+                // ===== OMEGA DRAMATICALLY AFFECTS COLOR INTENSITY =====
+                let coherenceFactor = 0.5 + coherence * 0.5;
+                
+                if (phase === 'future') {
+                    // Low Ω: Saturated, confident colors (rigidity/stability)
+                    // High Ω: Desaturated, uncertain colors (liquidity/creativity)
+                    const saturation = Math.min(1.5, 1.0 / Math.max(0.3, OMEGA));
+                    coherenceFactor *= saturation;
+                    
+                    // Add regeneration weight influence
+                    coherenceFactor *= Math.min(1.5, 0.5 + regenWeight * 0.3);
+                }
+                
+                r = Math.floor(Math.min(255, r * this.brightness * coherenceFactor));
+                g = Math.floor(Math.min(255, g * this.brightness * coherenceFactor));
+                b = Math.floor(Math.min(255, b * this.brightness * coherenceFactor));
+                
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+            
+            draw(ctx, width, height) {
+                const screenX = (this.x + 1) * width / 2;
+                const screenY = (this.y + 1) * height / 2;
+                
+                const phase = this.getTemporalPhase();
+                const regenWeight = Math.exp(coherence / Math.max(0.1, OMEGA));
+                
+                // ===== OMEGA DRAMATICALLY AFFECTS SIZE =====
+                let size = this.size;
+                
+                if (phase === 'future') {
+                    // Low Ω: Large, confident particles (rigidity)
+                    // High Ω: Small, uncertain particles (liquidity)
+                    size *= (2.0 / Math.max(0.5, OMEGA));
+                    size *= Math.min(3.0, regenWeight * 0.5); // Amplified by memory
+                } else if (phase === 'present') {
+                    size *= 1.5; // Brightest at "now"
+                } else {
+                    size *= (0.7 + coherence * 0.5); // Size grows with coherence in past
+                }
+                
+                // Larger if in light cone
+                if (this.inLightCone) {
+                    size *= 1.3;
+                }
+                
+                // ===== OMEGA AFFECTS BRIGHTNESS =====
+                let alpha = this.brightness;
+                
+                if (phase === 'future') {
+                    // Low Ω: Bright, deterministic (stability)
+                    // High Ω: Faint, exploratory (creativity)
+                    alpha *= (1.5 / Math.max(0.5, OMEGA));
+                }
+                
+                // Particle
+                const color = this.getTemporalColor();
+                ctx.globalAlpha = Math.min(1.0, alpha);
+                ctx.fillStyle = color;
+                
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // ===== OMEGA AFFECTS GLOW =====
+                if (phase === 'future') {
+                    // Low Ω: Strong coherent glow (memory-locked)
+                    // High Ω: Weak diffuse glow (fluid)
+                    const glowIntensity = 0.5 / Math.max(0.5, OMEGA);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, size * 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Glow at "now"
+                if (Math.abs(this.x) < 0.1) {
+                    const glowAlpha = (0.1 - Math.abs(this.x)) / 0.1;
+                    ctx.fillStyle = `rgba(255, 255, 100, ${glowAlpha * 0.4})`;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.globalAlpha = 1.0;
+                
+                // ===== CAUSAL CONNECTIONS (stronger for low Ω) =====
+                if (this.causalWeight > 0.7 && this.inLightCone && phase === 'future') {
+                    const lineAlpha = this.causalWeight * (0.3 / Math.max(0.5, OMEGA));
+                    ctx.strokeStyle = `rgba(100, 100, 255, ${lineAlpha})`;
+                    ctx.lineWidth = 1.5 / OMEGA; // Thicker lines for low Ω
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, screenY);
+                    ctx.lineTo((this.originX + 1) * width / 2, (this.originY + 1) * height / 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // ============================================================================
+        // CRR MATHEMATICS
+        // ============================================================================
+        
+        function stepCoherence(L) {
+            // Temporal memory integration with decay
+            memoryBank = TAU * memoryBank + (1 - TAU) * L;
+            coherence = 0.995 * coherence + 0.005 * memoryBank;
+            
+            // Record history
+            stateHistory.push({
+                time: time,
+                coherence: coherence,
+                disorder: L
+            });
+            
+            if (stateHistory.length > 1000) stateHistory.shift();
+            
+            return coherence;
+        }
+        
+        function detectRupture(L) {
+            disorderHistory.push(L);
+            if (disorderHistory.length > 100) disorderHistory.shift();
+            
+            const mean = disorderHistory.reduce((a, b) => a + b, 0) / disorderHistory.length;
+            const isRupture = Math.abs(L - mean) > RUPTURE_THRESHOLD;
+            
+            if (isRupture) {
+                ruptureCount++;
+            }
+            
+            return isRupture;
+        }
+        
+        function calculateRegeneration() {
+            // R ∝ exp(C/Ω)
+            regenerationWeight = Math.exp(coherence / Math.max(0.1, OMEGA));
+            return regenerationWeight;
+        }
+        
+        // ============================================================================
+        // VISUALIZATION
+        // ============================================================================
+        
+        function drawBackground(ctx, width, height) {
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw three temporal regions
+            const thirdWidth = width / 3;
+            
+            // Past region (subtle red tint)
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.03)';
+            ctx.fillRect(0, 0, thirdWidth, height);
+            
+            // Present region (subtle yellow tint)
+            ctx.fillStyle = 'rgba(255, 255, 100, 0.05)';
+            ctx.fillRect(thirdWidth, 0, thirdWidth, height);
+            
+            // Future region (subtle blue tint)
+            ctx.fillStyle = 'rgba(100, 150, 255, 0.03)';
+            ctx.fillRect(2 * thirdWidth, 0, thirdWidth, height);
+            
+            // Dividing lines
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(thirdWidth, 0);
+            ctx.lineTo(thirdWidth, height);
+            ctx.moveTo(2 * thirdWidth, 0);
+            ctx.lineTo(2 * thirdWidth, height);
+            ctx.stroke();
+            
+            // Center line (Now)
+            ctx.strokeStyle = '#4a90e2';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0);
+            ctx.lineTo(width / 2, height);
+            ctx.stroke();
+        }
+        
+        function drawLightCone(ctx, width, height) {
+            // Cognitive light cone emanating from center
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            const coneRadians = (CONE_ANGLE / 180) * Math.PI;
+            const coneWidth = Math.tan(coneRadians) * (width / 2);
+            
+            // Past light cone
+            ctx.strokeStyle = 'rgba(255, 100, 100, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, centerY - coneWidth);
+            ctx.lineTo(centerX, centerY);
+            ctx.lineTo(0, centerY + coneWidth);
+            ctx.stroke();
+            
+            // Future light cone
+            ctx.strokeStyle = 'rgba(100, 150, 255, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(width, centerY - coneWidth);
+            ctx.lineTo(centerX, centerY);
+            ctx.lineTo(width, centerY + coneWidth);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            // ===== ADD TEXT LABELS ON CANVAS =====
+            ctx.font = 'italic 16px Georgia';
+            ctx.textAlign = 'center';
+            
+            // Past region label
+            ctx.fillStyle = 'rgba(200, 50, 50, 0.6)';
+            ctx.fillText('COHERENCE', width * 0.17, 30);
+            ctx.font = '12px Georgia';
+            ctx.fillText('∫ L(x,τ) dτ', width * 0.17, 50);
+            
+            // Present region label
+            ctx.font = 'bold 18px Georgia';
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.8)';
+            ctx.fillText('NOW', width * 0.5, 30);
+            ctx.font = '14px Georgia';
+            ctx.fillText('δ(t-t₀)', width * 0.5, 50);
+            
+            // Future region label
+            ctx.font = 'italic 16px Georgia';
+            ctx.fillStyle = 'rgba(50, 100, 200, 0.6)';
+            ctx.fillText('REGENERATION', width * 0.83, 30);
+            ctx.font = '12px Georgia';
+            ctx.fillText('exp(C/Ω)·φ', width * 0.83, 50);
+            
+            // ===== DISPLAY exp(C/Ω) PROMINENTLY =====
+            const regenWeight = Math.exp(coherence / Math.max(0.1, OMEGA));
+            
+            ctx.font = 'bold 20px Georgia';
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.9)';
+            ctx.textAlign = 'right';
+            ctx.fillText(`exp(C/Ω) = ${regenWeight.toFixed(2)}`, width - 20, height - 60);
+            
+            ctx.font = '14px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText(`Ω = ${OMEGA.toFixed(2)}`, width - 20, height - 35);
+            ctx.fillText(`C = ${coherence.toFixed(3)}`, width - 20, height - 15);
+        }
+        
+        function drawCoherenceField(ctx, width, height) {
+            // Visual representation of coherence strength
+            const alpha = Math.min(coherence * 0.3, 0.5);
+            const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
+            gradient.addColorStop(0, `rgba(74, 144, 226, ${alpha})`);
+            gradient.addColorStop(1, 'rgba(74, 144, 226, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+        }
+        
+        function drawOmegaIndicator(ctx, width, height) {
+            // Visual indicator showing current Omega regime
+            const barWidth = 200;
+            const barHeight = 20;
+            const x = 20;
+            const y = height - 150;
+            
+            // Background bar
+            ctx.fillStyle = 'rgba(240, 240, 240, 0.9)';
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            // Gradient from rigidity (blue) to liquidity (red)
+            const gradient = ctx.createLinearGradient(x, y, x + barWidth, y);
+            gradient.addColorStop(0, 'rgba(74, 144, 226, 0.8)'); // Blue - Rigidity/Stability
+            gradient.addColorStop(0.5, 'rgba(150, 150, 150, 0.6)'); // Gray - Balanced
+            gradient.addColorStop(1, 'rgba(226, 74, 74, 0.8)'); // Red - Liquidity/Creativity
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            // Current position marker
+            const normalizedOmega = Math.min(1, (OMEGA - 0.1) / 4.9); // Map 0.1-5.0 to 0-1
+            const markerX = x + normalizedOmega * barWidth;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(markerX, y - 5);
+            ctx.lineTo(markerX - 5, y);
+            ctx.lineTo(markerX + 5, y);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillRect(markerX - 2, y, 4, barHeight);
+            
+            // Labels
+            ctx.font = 'bold 11px Georgia';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(74, 144, 226, 1)';
+            ctx.fillText('RIGIDITY', x, y - 10);
+            ctx.fillText('Stability', x, y + barHeight + 15);
+            
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(226, 74, 74, 1)';
+            ctx.fillText('LIQUIDITY', x + barWidth, y - 10);
+            ctx.fillText('Creativity', x + barWidth, y + barHeight + 15);
+            
+            // Current regime text
+            ctx.font = '12px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            
+            let regimeText = '';
+            if (OMEGA < 0.8) {
+                regimeText = 'High Precision (Exploitation)';
+            } else if (OMEGA < 2.0) {
+                regimeText = 'Balanced (Adaptive)';
+            } else if (OMEGA < 3.5) {
+                regimeText = 'Low Precision (Exploration)';
+            } else {
+                regimeText = 'Very Low Precision (Chaotic)';
+            }
+            
+            ctx.fillText(regimeText, x + barWidth / 2, y + barHeight + 30);
+        }
+        
+        function drawPrecisionIndicator(ctx, width, height) {
+            // FEP Precision indicator: Π = 1/Ω
+            // Shows the inverse relationship between Omega and Precision
+            const barWidth = 280;
+            const barHeight = 24;
+            const x = width - barWidth - 20;
+            const y = height - 150;
+            
+            // Calculate precision
+            const precision = 1.0 / Math.max(0.1, OMEGA);
+            
+            // Normalize precision for visual display using logarithmic mapping
+            // This makes the changes more visually apparent across the range
+            // Map Π range [0.2, 10] to [0, 1] using log scale
+            const logPrecision = Math.log(precision);
+            const logMin = Math.log(0.2);
+            const logMax = Math.log(10);
+            const normalizedPrecision = Math.min(1, Math.max(0, (logPrecision - logMin) / (logMax - logMin)));
+            
+            // Background
+            ctx.fillStyle = 'rgba(240, 240, 245, 0.95)';
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            // Fill bar based on precision level (inverse of Omega)
+            // Gradient: High precision (left/blue) to Low precision (right/red)
+            const fillWidth = normalizedPrecision * barWidth;
+            const precisionGradient = ctx.createLinearGradient(x, y, x + barWidth, y);
+            precisionGradient.addColorStop(0, 'rgba(74, 144, 226, 0.9)'); // Blue - High Precision
+            precisionGradient.addColorStop(0.5, 'rgba(100, 200, 150, 0.7)'); // Green - Medium
+            precisionGradient.addColorStop(1, 'rgba(226, 74, 74, 0.9)'); // Red - Low Precision
+            
+            ctx.fillStyle = precisionGradient;
+            ctx.fillRect(x, y, fillWidth, barHeight);
+            
+            // Border
+            ctx.strokeStyle = 'rgba(74, 144, 226, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, barWidth, barHeight);
+            
+            // Precision marker
+            const markerX = x + fillWidth;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(markerX, y - 5);
+            ctx.lineTo(markerX - 4, y);
+            ctx.lineTo(markerX + 4, y);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillRect(markerX - 1.5, y, 3, barHeight);
+            
+            // Top label: FEP formula
+            ctx.font = 'bold 13px Georgia';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(74, 144, 226, 1)';
+            ctx.fillText('FEP: Π = 1/Ω', x, y - 10);
+            
+            // Precision value display
+            ctx.font = 'bold 15px "Courier New"';
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillText(`Π = ${precision.toFixed(3)}`, x + barWidth, y - 10);
+            
+            // Bottom labels
+            ctx.font = '10px Georgia';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(226, 74, 74, 0.9)';
+            ctx.fillText('Low Π', x, y + barHeight + 13);
+            ctx.fillText('(Explore)', x, y + barHeight + 25);
+            
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.9)';
+            ctx.fillText('High Π', x + barWidth, y + barHeight + 13);
+            ctx.fillText('(Exploit)', x + barWidth, y + barHeight + 25);
+            
+            // Center explanation
+            ctx.font = '11px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillText('← Uncertain Exploration | Confident Predictions →', x + barWidth / 2, y + barHeight + 40);
+        }
+        
+        // ============================================================================
+        // FEP VISUALIZATION LAYERS
+        // ============================================================================
+        
+        function drawFEPLayers(ctx, width, height) {
+            // Draw enabled FEP visualization layers
+            
+            if (fepLayers.showPrecision) {
+                drawPrecisionLayer(ctx, width, height);
+            }
+            
+            if (fepLayers.showPredictionError) {
+                drawPredictionErrorLayer(ctx, width, height);
+            }
+            
+            if (fepLayers.showEpistemic) {
+                drawEpistemicLayer(ctx, width, height);
+            }
+            
+            if (fepLayers.showMarkovBlanket) {
+                drawMarkovBlanketLayer(ctx, width, height);
+            }
+            
+            if (fepLayers.showFreeEnergy) {
+                drawFreeEnergyLayer(ctx, width, height);
+            }
+            
+            if (fepLayers.showBeliefUpdate) {
+                drawBeliefUpdateLayer(ctx, width, height);
+            }
+        }
+        
+        function drawPrecisionLayer(ctx, width, height) {
+            // Show precision Π = 1/Ω as particle halos
+            for (const p of particles) {
+                const phase = p.getTemporalPhase();
+                if (phase !== 'future') continue; // Only show in future
+                
+                const screenX = (p.x + 1) * width / 2;
+                const screenY = (p.y + 1) * height / 2;
+                
+                // Precision halo: larger for low Ω (high precision)
+                const haloSize = p.size * (3.0 + p.precision * 5.0);
+                const alpha = p.precision * 0.1;
+                
+                ctx.strokeStyle = `rgba(74, 144, 226, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, haloSize, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Label
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.8)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Precision Π = 1/Ω', 20, 75);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Blue halos show confidence (larger = more confident)', 20, 93);
+        }
+        
+        function drawPredictionErrorLayer(ctx, width, height) {
+            // Show prediction errors as red/green indicators
+            for (const p of particles) {
+                const phase = p.getTemporalPhase();
+                if (phase === 'past') continue; // Only show in present/future
+                
+                const screenX = (p.x + 1) * width / 2;
+                const screenY = (p.y + 1) * height / 2;
+                
+                const errorMagnitude = Math.abs(p.predictionError);
+                const errorColor = p.predictionError > 0 ? 
+                    `rgba(255, 50, 50, ${Math.min(errorMagnitude * 2, 0.8)})` : 
+                    `rgba(50, 255, 50, ${Math.min(errorMagnitude * 2, 0.8)})`;
+                
+                // Draw error bar
+                const barLength = errorMagnitude * 50;
+                ctx.strokeStyle = errorColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY);
+                ctx.lineTo(screenX, screenY + (p.predictionError > 0 ? barLength : -barLength));
+                ctx.stroke();
+            }
+            
+            // Label
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Prediction Error ε = obs - pred', 20, 70);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Red = positive error, Green = negative error', 20, 88);
+        }
+        
+        function drawEpistemicLayer(ctx, width, height) {
+            // Color particles by epistemic value (exploration drive)
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(150, 50, 200, 0.8)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Epistemic Value (Information Seeking)', 20, 75);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Purple = high epistemic value (uncertainty → explore)', 20, 93);
+            
+            // Draw epistemic field gradient
+            for (const p of particles) {
+                const phase = p.getTemporalPhase();
+                if (phase !== 'future') continue;
+                
+                const screenX = (p.x + 1) * width / 2;
+                const screenY = (p.y + 1) * height / 2;
+                
+                // Epistemic value: high when Ω is high (low precision, uncertain)
+                const epistemicIntensity = p.epistemicValue;
+                ctx.fillStyle = `rgba(150, 50, 200, ${epistemicIntensity * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, p.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawMarkovBlanketLayer(ctx, width, height) {
+            // Draw Markov blankets around particles
+            for (const p of particles) {
+                const screenX = (p.x + 1) * width / 2;
+                const screenY = (p.y + 1) * height / 2;
+                
+                // Markov blanket radius depends on Ω
+                // Low Ω: thick blanket (selective)
+                // High Ω: thin blanket (permeable)
+                const blanketRadius = p.size * (8.0 / Math.max(0.5, OMEGA));
+                
+                ctx.strokeStyle = `rgba(100, 200, 100, ${0.3 / OMEGA})`;
+                ctx.lineWidth = 3.0 / OMEGA;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, blanketRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Label
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(100, 200, 100, 0.8)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Markov Blankets (Statistical Boundaries)', 20, 75);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Green circles: thicker = more selective (low Ω)', 20, 93);
+        }
+        
+        function drawFreeEnergyLayer(ctx, width, height) {
+            // Visualize free energy landscape as heat map
+            const cellSize = 20;
+            const cols = Math.floor(width / cellSize);
+            const rows = Math.floor(height / cellSize);
+            
+            ctx.globalAlpha = 0.3;
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const cellX = i * cellSize;
+                    const cellY = j * cellSize;
+                    
+                    // Calculate average free energy in this cell
+                    let cellFE = 0;
+                    let count = 0;
+                    
+                    for (const p of particles) {
+                        const px = (p.x + 1) * width / 2;
+                        const py = (p.y + 1) * height / 2;
+                        
+                        if (px >= cellX && px < cellX + cellSize && 
+                            py >= cellY && py < cellY + cellSize) {
+                            cellFE += p.freeEnergy;
+                            count++;
+                        }
+                    }
+                    
+                    if (count > 0) {
+                        cellFE /= count;
+                        // Color: blue = low FE (good), red = high FE (bad)
+                        const intensity = Math.min(cellFE * 0.5, 1);
+                        ctx.fillStyle = `rgba(${intensity * 255}, 50, ${(1-intensity) * 255}, 0.5)`;
+                        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+                    }
+                }
+            }
+            
+            ctx.globalAlpha = 1.0;
+            
+            // Label
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(200, 50, 50, 0.9)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Free Energy Landscape F = ε²·Π + complexity', 20, 75);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillText('Blue = low F (minimize), Red = high F (avoid)', 20, 93);
+        }
+        
+        function drawBeliefUpdateLayer(ctx, width, height) {
+            // Show belief updating arrows
+            for (const p of particles) {
+                const phase = p.getTemporalPhase();
+                if (phase === 'past') continue;
+                
+                const screenX = (p.x + 1) * width / 2;
+                const screenY = (p.y + 1) * height / 2;
+                
+                // Belief update vector
+                const updateMagnitude = Math.abs(p.predictionError * p.precision);
+                const arrowLength = updateMagnitude * 30;
+                
+                if (arrowLength > 2) {
+                    const arrowAngle = p.predictionError > 0 ? Math.PI/2 : -Math.PI/2;
+                    const endX = screenX + Math.cos(arrowAngle) * arrowLength;
+                    const endY = screenY + Math.sin(arrowAngle) * arrowLength;
+                    
+                    ctx.strokeStyle = `rgba(255, 200, 50, ${Math.min(updateMagnitude, 0.8)})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(screenX, screenY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                    
+                    // Arrowhead
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.beginPath();
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(endX - 4, endY - 4);
+                    ctx.lineTo(endX + 4, endY - 4);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+            
+            // Label
+            ctx.font = 'bold 14px Georgia';
+            ctx.fillStyle = 'rgba(255, 200, 50, 0.9)';
+            ctx.textAlign = 'left';
+            ctx.fillText('FEP: Belief Updating Δb = Π·ε', 20, 75);
+            ctx.font = '11px Georgia';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillText('Yellow arrows show belief change direction & magnitude', 20, 93);
+        }
+        
+        // ============================================================================
+        // MAIN LOOP
+        // ============================================================================
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push(new TemporalParticle());
+            }
+        }
+        
+        function animate() {
+            if (!paused) {
+                const dt = 1;
+                time += dt;
+                
+                // ===== CALCULATE DISORDER FROM TEMPORAL DISTRIBUTION =====
+                // L should reflect how "spread out" particles are in each region
+                let pastCount = 0, presentCount = 0, futureCount = 0;
+                let pastSpread = 0, futureSpread = 0;
+                
+                for (const p of particles) {
+                    if (p.x < -0.15) {
+                        pastCount++;
+                        pastSpread += Math.abs(p.y);
+                    } else if (p.x < 0.15) {
+                        presentCount++;
+                    } else {
+                        futureCount++;
+                        futureSpread += Math.abs(p.y);
+                    }
+                }
+                
+                // Disorder reflects imbalance and spatial spread
+                const regionBalance = Math.abs(futureCount - pastCount) / particles.length;
+                const spatialSpread = (pastSpread + futureSpread) / (pastCount + futureCount + 1);
+                disorder = regionBalance * 0.5 + spatialSpread * 0.5;
+                
+                // Update CRR state
+                stepCoherence(disorder);
+                detectRupture(disorder);
+                calculateRegeneration();
+                
+                // Update particles
+                for (const p of particles) {
+                    p.update(dt);
+                }
+                
+                // Update thought bubble
+                updateThoughtBubble();
+                
+                // Update metrics display
+                updateMetrics();
+            }
+            
+            // Render
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            drawBackground(ctx, width, height);
+            drawCoherenceField(ctx, width, height);
+            
+            // Draw FEP layers (order matters for layering)
+            drawFEPLayers(ctx, width, height);
+            
+            drawLightCone(ctx, width, height);
+            
+            // Draw particles
+            for (const p of particles) {
+                p.draw(ctx, width, height);
+            }
+            
+            // Draw Omega regime indicator
+            drawOmegaIndicator(ctx, width, height);
+            
+            // Draw FEP Precision indicator
+            drawPrecisionIndicator(ctx, width, height);
+            
+            // Draw thought bubble on top of everything
+            drawThoughtBubble(ctx, width, height);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function updateMetrics() {
+            document.getElementById('metricCoherence').textContent = coherence.toFixed(3);
+            document.getElementById('metricRuptures').textContent = ruptureCount;
+            document.getElementById('metricRegen').textContent = regenerationWeight.toFixed(2);
+            document.getElementById('metricMemory').textContent = stateHistory.length;
+            document.getElementById('metricParticles').textContent = particles.length;
+        }
+        
+        // ============================================================================
+        // UI CONTROLS
+        // ============================================================================
+        
+        function setupControls() {
+            // Omega slider
+            const omegaSlider = document.getElementById('omega');
+            const omegaVal = document.getElementById('omegaVal');
+            omegaSlider.addEventListener('input', (e) => {
+                OMEGA = parseFloat(e.target.value);
+                omegaVal.textContent = OMEGA.toFixed(2);
+                
+                // Trigger thought bubble
+                triggerThoughtBubble(OMEGA);
+            });
+            
+            // Flow rate slider
+            const flowSlider = document.getElementById('flowRate');
+            const flowVal = document.getElementById('flowVal');
+            flowSlider.addEventListener('input', (e) => {
+                FLOW_RATE = parseFloat(e.target.value);
+                flowVal.textContent = FLOW_RATE.toFixed(2);
+            });
+            
+            // Tau slider
+            const tauSlider = document.getElementById('tau');
+            const tauVal = document.getElementById('tauVal');
+            tauSlider.addEventListener('input', (e) => {
+                TAU = parseFloat(e.target.value);
+                tauVal.textContent = TAU.toFixed(3);
+            });
+            
+            // Particle count slider
+            const countSlider = document.getElementById('particleCount');
+            const countVal = document.getElementById('countVal');
+            countSlider.addEventListener('input', (e) => {
+                const newCount = parseInt(e.target.value);
+                countVal.textContent = newCount;
+                
+                // Adjust particle array
+                while (particles.length < newCount) {
+                    particles.push(new TemporalParticle());
+                }
+                while (particles.length > newCount) {
+                    particles.pop();
+                }
+                PARTICLE_COUNT = newCount;
+            });
+            
+            // Rupture sensitivity slider
+            const ruptureSlider = document.getElementById('ruptureSens');
+            const ruptureVal = document.getElementById('ruptureVal');
+            ruptureSlider.addEventListener('input', (e) => {
+                RUPTURE_THRESHOLD = parseFloat(e.target.value);
+                ruptureVal.textContent = RUPTURE_THRESHOLD.toFixed(2);
+            });
+            
+            // Light cone angle slider
+            const coneSlider = document.getElementById('coneAngle');
+            const coneVal = document.getElementById('coneVal');
+            coneSlider.addEventListener('input', (e) => {
+                CONE_ANGLE = parseInt(e.target.value);
+                coneVal.textContent = CONE_ANGLE + '°';
+            });
+            
+            // Reset button
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                coherence = 0;
+                memoryBank = 0;
+                disorder = 0;
+                ruptureCount = 0;
+                time = 0;
+                disorderHistory = [];
+                stateHistory = [];
+                initParticles();
+            });
+            
+            // Pause button
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.addEventListener('click', () => {
+                paused = !paused;
+                pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+            });
+            
+            // FEP visualization toggles
+            document.getElementById('showPrecision').addEventListener('change', (e) => {
+                fepLayers.showPrecision = e.target.checked;
+                // Turn off others when one is enabled for clarity
+                if (e.target.checked) {
+                    fepLayers.showPredictionError = false;
+                    fepLayers.showEpistemic = false;
+                    fepLayers.showMarkovBlanket = false;
+                    fepLayers.showFreeEnergy = false;
+                    fepLayers.showBeliefUpdate = false;
+                    document.getElementById('showPredictionError').checked = false;
+                    document.getElementById('showEpistemic').checked = false;
+                    document.getElementById('showMarkovBlanket').checked = false;
+                    document.getElementById('showFreeEnergy').checked = false;
+                    document.getElementById('showBeliefUpdate').checked = false;
+                }
+            });
+            
+            document.getElementById('showPredictionError').addEventListener('change', (e) => {
+                fepLayers.showPredictionError = e.target.checked;
+                if (e.target.checked) {
+                    fepLayers.showPrecision = false;
+                    fepLayers.showEpistemic = false;
+                    fepLayers.showMarkovBlanket = false;
+                    fepLayers.showFreeEnergy = false;
+                    fepLayers.showBeliefUpdate = false;
+                    document.getElementById('showPrecision').checked = false;
+                    document.getElementById('showEpistemic').checked = false;
+                    document.getElementById('showMarkovBlanket').checked = false;
+                    document.getElementById('showFreeEnergy').checked = false;
+                    document.getElementById('showBeliefUpdate').checked = false;
+                }
+            });
+            
+            document.getElementById('showEpistemic').addEventListener('change', (e) => {
+                fepLayers.showEpistemic = e.target.checked;
+                if (e.target.checked) {
+                    fepLayers.showPrecision = false;
+                    fepLayers.showPredictionError = false;
+                    fepLayers.showMarkovBlanket = false;
+                    fepLayers.showFreeEnergy = false;
+                    fepLayers.showBeliefUpdate = false;
+                    document.getElementById('showPrecision').checked = false;
+                    document.getElementById('showPredictionError').checked = false;
+                    document.getElementById('showMarkovBlanket').checked = false;
+                    document.getElementById('showFreeEnergy').checked = false;
+                    document.getElementById('showBeliefUpdate').checked = false;
+                }
+            });
+            
+            document.getElementById('showMarkovBlanket').addEventListener('change', (e) => {
+                fepLayers.showMarkovBlanket = e.target.checked;
+                if (e.target.checked) {
+                    fepLayers.showPrecision = false;
+                    fepLayers.showPredictionError = false;
+                    fepLayers.showEpistemic = false;
+                    fepLayers.showFreeEnergy = false;
+                    fepLayers.showBeliefUpdate = false;
+                    document.getElementById('showPrecision').checked = false;
+                    document.getElementById('showPredictionError').checked = false;
+                    document.getElementById('showEpistemic').checked = false;
+                    document.getElementById('showFreeEnergy').checked = false;
+                    document.getElementById('showBeliefUpdate').checked = false;
+                }
+            });
+            
+            document.getElementById('showFreeEnergy').addEventListener('change', (e) => {
+                fepLayers.showFreeEnergy = e.target.checked;
+                if (e.target.checked) {
+                    fepLayers.showPrecision = false;
+                    fepLayers.showPredictionError = false;
+                    fepLayers.showEpistemic = false;
+                    fepLayers.showMarkovBlanket = false;
+                    fepLayers.showBeliefUpdate = false;
+                    document.getElementById('showPrecision').checked = false;
+                    document.getElementById('showPredictionError').checked = false;
+                    document.getElementById('showEpistemic').checked = false;
+                    document.getElementById('showMarkovBlanket').checked = false;
+                    document.getElementById('showBeliefUpdate').checked = false;
+                }
+            });
+            
+            document.getElementById('showBeliefUpdate').addEventListener('change', (e) => {
+                fepLayers.showBeliefUpdate = e.target.checked;
+                if (e.target.checked) {
+                    fepLayers.showPrecision = false;
+                    fepLayers.showPredictionError = false;
+                    fepLayers.showEpistemic = false;
+                    fepLayers.showMarkovBlanket = false;
+                    fepLayers.showFreeEnergy = false;
+                    document.getElementById('showPrecision').checked = false;
+                    document.getElementById('showPredictionError').checked = false;
+                    document.getElementById('showEpistemic').checked = false;
+                    document.getElementById('showMarkovBlanket').checked = false;
+                    document.getElementById('showFreeEnergy').checked = false;
+                }
+            });
+        }
+        
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        initParticles();
+        setupControls();
+        animate();
+        
+        // Trigger initial thought bubble
+        setTimeout(() => triggerThoughtBubble(OMEGA), 1000);
+        
+    </script>
+</body>
+</html>
