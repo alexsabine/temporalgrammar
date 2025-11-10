@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Framework: Interactive Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 30px;
+            color: #1a1a1a;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #333;
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-style: italic;
+            font-size: 1.1em;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+        }
+        
+        .controls {
+            background: #f5f5f5;
+            padding: 25px;
+            border: 2px solid #333;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .control-group:last-of-type {
+            border-bottom: none;
+        }
+        
+        .control-group label {
+            display: block;
+            font-weight: normal;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            font-size: 0.95em;
+            letter-spacing: 0.5px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .control-value {
+            text-align: center;
+            font-weight: bold;
+            color: #1a1a1a;
+            font-size: 1.2em;
+            padding: 8px;
+            background: white;
+            border: 1px solid #333;
+        }
+        
+        .equations-display {
+            background: white;
+        }
+        
+        .equation-block {
+            background: #fafafa;
+            border: 2px solid #333;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .equation-title {
+            font-size: 1.4em;
+            font-weight: normal;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            letter-spacing: 0.5px;
+        }
+        
+        .equation {
+            font-size: 1.8em;
+            text-align: center;
+            padding: 25px;
+            background: white;
+            border: 2px solid #333;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+        
+        .metrics {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px 25px;
+            border: 2px solid #333;
+            text-align: center;
+            min-width: 120px;
+            transition: all 0.2s;
+        }
+        
+        .metric-card:hover {
+            background: #f5f5f5;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        
+        .thought-bubble {
+            background: #fff9e6;
+            border: 2px solid #333;
+            padding: 20px;
+            margin-top: 20px;
+            position: relative;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+        
+        .thought-bubble::before {
+            content: "→";
+            position: absolute;
+            top: 15px;
+            left: -25px;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .thought-bubble strong {
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        
+        .component-highlight {
+            padding: 3px 8px;
+            font-weight: bold;
+            border: 1px solid #333;
+        }
+        
+        .coherence-highlight {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+        
+        .rupture-highlight {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+        
+        .regeneration-highlight {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        
+        .visualization-area {
+            margin-top: 30px;
+            padding: 30px;
+            background: #fafafa;
+            border: 2px solid #333;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 300px;
+            background: white;
+            border: 2px solid #333;
+        }
+        
+        .phase-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            font-weight: bold;
+            margin: 10px 0;
+            border: 2px solid #333;
+            animation: pulse 2s infinite;
+        }
+        
+        .phase-coherence {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+        
+        .phase-rupture {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+        
+        .phase-regeneration {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .reset-button {
+            width: 100%;
+            padding: 14px;
+            background: #1a1a1a;
+            color: white;
+            border: 2px solid #333;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            font-family: Georgia, serif;
+            letter-spacing: 1px;
+        }
+        
+        .reset-button:hover {
+            background: #333;
+        }
+        
+        .info-box {
+            background: #f5f5f5;
+            border: 2px solid #333;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+        
+        .spacebar-hint {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1a1a1a;
+            color: white;
+            padding: 15px 25px;
+            border: 2px solid #333;
+            font-weight: bold;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CRR Framework</h1>
+        <p class="subtitle">Coherence-Rupture-Regeneration: Interactive Visualization</p>
+        
+        <div class="main-layout">
+            <!-- Controls Sidebar -->
+            <div class="controls">
+                <h3 style="margin-bottom: 20px; color: #1a1a1a; font-weight: normal; letter-spacing: 1px;">Parameters</h3>
+                
+                <div class="control-group">
+                    <label>Time (t)</label>
+                    <input type="range" id="time-slider" min="0" max="100" value="0" step="0.1">
+                    <div class="control-value" id="time-value">0.0</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Cognitive Temp (Ω)</label>
+                    <input type="range" id="omega-slider" min="0.1" max="10" value="2" step="0.1">
+                    <div class="control-value" id="omega-value">2.0</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Memory Density (L)</label>
+                    <input type="range" id="memory-slider" min="0" max="2" value="0.5" step="0.01">
+                    <div class="control-value" id="memory-value">0.50</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Historical Signal (φ)</label>
+                    <input type="range" id="phi-slider" min="0" max="2" value="1" step="0.01">
+                    <div class="control-value" id="phi-value">1.00</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Rupture Threshold</label>
+                    <input type="range" id="threshold-slider" min="5" max="50" value="20" step="1">
+                    <div class="control-value" id="threshold-value">20</div>
+                </div>
+                
+                <button class="reset-button" onclick="resetSimulation()">⟲ Reset Simulation</button>
+                
+                <div class="info-box">
+                    <strong>💡 Tip:</strong> Adjust time to see how coherence accumulates. When C exceeds threshold, rupture occurs!
+                </div>
+            </div>
+            
+            <!-- Equations Display -->
+            <div class="equations-display">
+                <!-- Coherence Block -->
+                <div class="equation-block">
+                    <div class="equation-title">
+                        <span class="coherence-highlight">1. Coherence Integration</span>
+                        <span class="phase-indicator phase-coherence" id="coherence-phase">ACCUMULATING</span>
+                    </div>
+                    
+                    <div class="equation">
+                        C(x,t) = ∫₀ᵗ L(x,τ) dτ
+                    </div>
+                    
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">Current C(t)</div>
+                            <div class="metric-value" id="coherence-value">0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Memory Rate L</div>
+                            <div class="metric-value" id="memory-rate-value">0.50</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">dC/dt</div>
+                            <div class="metric-value" id="coherence-rate">0.50</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">% to Rupture</div>
+                            <div class="metric-value" id="rupture-percent">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="thought-bubble">
+                        <strong>What's happening:</strong> <span id="coherence-thought">The system is integrating all past states. Every moment of experience accumulates into coherence. This is non-Markovian memory - the entire history matters, not just the recent past.</span>
+                    </div>
+                </div>
+                
+                <!-- Rupture Block -->
+                <div class="equation-block">
+                    <div class="equation-title">
+                        <span class="rupture-highlight">2. Rupture Event</span>
+                        <span class="phase-indicator phase-rupture" id="rupture-phase" style="display:none;">RUPTURING</span>
+                    </div>
+                    
+                    <div class="equation">
+                        δ(t - t₀)
+                    </div>
+                    
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">Rupture Time</div>
+                            <div class="metric-value" id="rupture-time">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Ruptures Count</div>
+                            <div class="metric-value" id="rupture-count">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Time Since Rupture</div>
+                            <div class="metric-value" id="time-since-rupture">--</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Rupture Active</div>
+                            <div class="metric-value" id="rupture-active">NO</div>
+                        </div>
+                    </div>
+                    
+                    <div class="thought-bubble">
+                        <strong>What's happening:</strong> <span id="rupture-thought">When coherence exceeds the threshold, a discrete rupture event occurs. This is a metabolic transformation - the system cannot absorb new information due to rigidity, so it must transform. C → 0, allowing plasticity to return.</span>
+                    </div>
+                </div>
+                
+                <!-- Regeneration Block -->
+                <div class="equation-block">
+                    <div class="equation-title">
+                        <span class="regeneration-highlight">3. Regeneration Operator</span>
+                        <span class="phase-indicator phase-regeneration" id="regen-phase">RECONSTRUCTING</span>
+                    </div>
+                    
+                    <div class="equation">
+                        R[χ](x,t) = ∫₀ᵗ φ(x,τ) · e^(C(x)/Ω) · Θ(t-τ) dτ
+                    </div>
+                    
+                    <div class="metrics">
+                        <div class="metric-card">
+                            <div class="metric-label">Historical φ</div>
+                            <div class="metric-value" id="phi-value-display">1.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Amplification e^(C/Ω)</div>
+                            <div class="metric-value" id="amplification-value">1.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Regeneration R</div>
+                            <div class="metric-value" id="regeneration-value">0.00</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Entropy Reduction</div>
+                            <div class="metric-value" id="entropy-reduction">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="thought-bubble">
+                        <strong>What's happening:</strong> <span id="regen-thought">Historical patterns φ are being reconstructed into future states, weighted exponentially by accumulated coherence. As C grows, exp(C/Ω) makes old patterns dominate more strongly. This is the exploitation-rigidity trap: success → rigidity → brittleness.</span>
+                    </div>
+                </div>
+                
+                <!-- Visualization -->
+                <div class="visualization-area">
+                    <h3 style="margin-bottom: 15px; color: #2d3748;">Time Evolution</h3>
+                    <canvas id="evolution-canvas"></canvas>
+                    
+                    <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 10px;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">Key Insights:</h4>
+                        <ul style="line-height: 2; color: #4a5568;">
+                            <li><strong>Green:</strong> Coherence accumulation (memory growing)</li>
+                            <li><strong>Red vertical lines:</strong> Rupture events (metabolic transformation)</li>
+                            <li><strong>Blue:</strong> Amplification factor (how much history dominates)</li>
+                            <li><strong>Watch:</strong> As C grows, amplification explodes exponentially</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State variables
+        let state = {
+            time: 0,
+            omega: 2.0,
+            memoryDensity: 0.5,
+            phi: 1.0,
+            threshold: 20,
+            coherence: 0,
+            lastRuptureTime: null,
+            ruptureCount: 0,
+            lastCalculatedTime: 0,
+            history: {
+                time: [],
+                coherence: [],
+                amplification: [],
+                ruptures: []
+            }
+        };
+        
+        // Canvas setup
+        const canvas = document.getElementById('evolution-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Update functions
+        function updateSliderValues() {
+            document.getElementById('time-value').textContent = state.time.toFixed(1);
+            document.getElementById('omega-value').textContent = state.omega.toFixed(1);
+            document.getElementById('memory-value').textContent = state.memoryDensity.toFixed(2);
+            document.getElementById('phi-value').textContent = state.phi.toFixed(2);
+            document.getElementById('threshold-value').textContent = state.threshold.toString();
+        }
+        
+        function calculateMetrics() {
+            // Only calculate if time has actually moved forward
+            if (state.time <= state.lastCalculatedTime) {
+                // Just return current state
+                const amplification = Math.exp(Math.min(state.coherence / state.omega, 50)); // Cap to prevent overflow
+                return {
+                    coherence: state.coherence,
+                    amplification: amplification,
+                    regeneration: state.phi * amplification * state.time,
+                    entropyReduction: Math.min((1 - 1/amplification) * 100, 99.9)
+                };
+            }
+            
+            // Calculate coherence increment
+            const dt = state.time - state.lastCalculatedTime;
+            const dC = state.memoryDensity * dt;
+            state.coherence += dC;
+            
+            // Check for rupture
+            let ruptured = false;
+            if (state.coherence >= state.threshold) {
+                state.coherence = 0;
+                state.lastRuptureTime = state.time;
+                state.ruptureCount++;
+                state.history.ruptures.push(state.time);
+                ruptured = true;
+            }
+            
+            // Update last calculated time
+            state.lastCalculatedTime = state.time;
+            
+            // Store history (limit size to prevent memory issues)
+            if (state.history.time.length > 2000) {
+                // Keep only recent history
+                state.history.time = state.history.time.slice(-1000);
+                state.history.coherence = state.history.coherence.slice(-1000);
+                state.history.amplification = state.history.amplification.slice(-1000);
+            }
+            
+            state.history.time.push(state.time);
+            state.history.coherence.push(state.coherence);
+            
+            // Calculate amplification with safety cap
+            const amplification = Math.exp(Math.min(state.coherence / state.omega, 50)); // Cap at e^50 to prevent overflow
+            state.history.amplification.push(amplification);
+            
+            return {
+                coherence: state.coherence,
+                amplification: amplification,
+                regeneration: state.phi * amplification * state.time,
+                entropyReduction: Math.min((1 - 1/amplification) * 100, 99.9),
+                ruptured: ruptured
+            };
+        }
+        
+        function updateDisplay() {
+            const metrics = calculateMetrics();
+            
+            // Update slider display values
+            updateSliderValues();
+            
+            // Coherence metrics
+            document.getElementById('coherence-value').textContent = metrics.coherence.toFixed(2);
+            document.getElementById('memory-rate-value').textContent = state.memoryDensity.toFixed(2);
+            document.getElementById('coherence-rate').textContent = state.memoryDensity.toFixed(2);
+            document.getElementById('rupture-percent').textContent = 
+                ((metrics.coherence / state.threshold) * 100).toFixed(0) + '%';
+            
+            // Rupture metrics
+            document.getElementById('rupture-time').textContent = 
+                state.lastRuptureTime !== null ? state.lastRuptureTime.toFixed(1) : '—';
+            document.getElementById('rupture-count').textContent = state.ruptureCount.toString();
+            document.getElementById('time-since-rupture').textContent = 
+                state.lastRuptureTime !== null ? (state.time - state.lastRuptureTime).toFixed(1) : '—';
+            
+            // Check if rupture just happened
+            const justRuptured = state.lastRuptureTime !== null && 
+                                 Math.abs(state.time - state.lastRuptureTime) < 0.5;
+            document.getElementById('rupture-active').textContent = justRuptured ? 'YES' : 'NO';
+            document.getElementById('rupture-phase').style.display = justRuptured ? 'inline-block' : 'none';
+            
+            // Regeneration metrics
+            document.getElementById('phi-value-display').textContent = state.phi.toFixed(2);
+            document.getElementById('amplification-value').textContent = 
+                metrics.amplification >= 1000 ? metrics.amplification.toExponential(2) : metrics.amplification.toFixed(2);
+            document.getElementById('regeneration-value').textContent = 
+                metrics.regeneration >= 1000 ? metrics.regeneration.toExponential(2) : metrics.regeneration.toFixed(2);
+            document.getElementById('entropy-reduction').textContent = metrics.entropyReduction.toFixed(1) + '%';
+            
+            // Update thought bubbles based on state
+            updateThoughtBubbles(metrics);
+            
+            // Draw visualization
+            drawVisualization();
+        }
+        
+        function updateThoughtBubbles(metrics) {
+            // Coherence thought
+            let coherenceThought = '';
+            const percentToRupture = (metrics.coherence / state.threshold) * 100;
+            
+            if (percentToRupture < 25) {
+                coherenceThought = 'The system is integrating all past states. Every moment of experience accumulates into coherence. This is non-Markovian memory — the entire history matters, not just the recent past. Currently in early accumulation phase.';
+            } else if (percentToRupture < 75) {
+                coherenceThought = `Coherence is building up (${percentToRupture.toFixed(0)}% to threshold). The system is becoming more certain about its patterns. Memory density L=${state.memoryDensity.toFixed(2)} is adding to C at every timestep.`;
+            } else {
+                coherenceThought = `DANGER ZONE: Coherence at ${percentToRupture.toFixed(0)}% of rupture threshold. The system is becoming rigid. Soon it will not be able to absorb new information. Rupture is imminent.`;
+            }
+            document.getElementById('coherence-thought').textContent = coherenceThought;
+            
+            // Rupture thought
+            let ruptureThought = '';
+            if (state.ruptureCount === 0) {
+                ruptureThought = 'No ruptures yet. When coherence exceeds the threshold, a discrete rupture event occurs. This is a metabolic transformation — the system cannot absorb new information due to rigidity, so it must transform. C → 0, allowing plasticity to return.';
+            } else {
+                const timeSince = state.time - state.lastRuptureTime;
+                ruptureThought = `${state.ruptureCount} rupture event${state.ruptureCount > 1 ? 's' : ''} so far. Last rupture occurred ${timeSince.toFixed(1)} time units ago at t=${state.lastRuptureTime.toFixed(1)}. Each rupture resets C→0, metabolizing the accumulated coherence and allowing the system to explore new patterns. This is the exploitation-rigidity trap in action.`;
+            }
+            document.getElementById('rupture-thought').textContent = ruptureThought;
+            
+            // Regeneration thought
+            let regenThought = '';
+            if (metrics.amplification < 2) {
+                regenThought = `Historical patterns φ=${state.phi.toFixed(2)} are being reconstructed with low amplification (${metrics.amplification.toFixed(2)}×). The system is exploring freely with high plasticity.`;
+            } else if (metrics.amplification < 10) {
+                regenThought = `Amplification is ${metrics.amplification.toFixed(2)}×. Historical patterns are starting to dominate. exp(C/Ω) = exp(${metrics.coherence.toFixed(2)}/${state.omega.toFixed(1)}) creates exponential weighting. The exploitation-rigidity trap is forming.`;
+            } else {
+                const ampDisplay = metrics.amplification >= 1000 ? metrics.amplification.toExponential(1) : metrics.amplification.toFixed(1);
+                regenThought = `HIGH AMPLIFICATION: ${ampDisplay}×. Historical patterns are DOMINATING regeneration. Entropy reduced by ${metrics.entropyReduction.toFixed(0)}%. System is rigid and exploitative — rupture needed to restore plasticity.`;
+            }
+            document.getElementById('regen-thought').textContent = regenThought;
+        }
+        
+        function drawVisualization() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (state.history.time.length < 2) return;
+            
+            const padding = 50;
+            const width = canvas.width - 2 * padding;
+            const height = canvas.height - 2 * padding;
+            
+            // Find max values for scaling
+            const maxTime = Math.max(state.time, 1);
+            const maxCoherence = Math.max(...state.history.coherence, state.threshold);
+            const maxAmp = Math.max(...state.history.amplification.map(a => Math.min(a, 1000)), 10);
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+            
+            // Draw threshold line
+            ctx.strokeStyle = '#b71c1c';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const thresholdY = canvas.height - padding - (state.threshold / maxCoherence) * height;
+            ctx.moveTo(padding, thresholdY);
+            ctx.lineTo(canvas.width - padding, thresholdY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw threshold label
+            ctx.fillStyle = '#b71c1c';
+            ctx.font = 'bold 11px Georgia';
+            ctx.fillText('RUPTURE THRESHOLD', padding + 5, thresholdY - 5);
+            
+            // Draw rupture events
+            ctx.fillStyle = 'rgba(183, 28, 28, 0.2)';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#b71c1c';
+            for (let ruptureTime of state.history.ruptures) {
+                if (ruptureTime <= maxTime) {
+                    const xPos = padding + (ruptureTime / maxTime) * width;
+                    ctx.fillRect(xPos - 2, padding, 4, height);
+                }
+            }
+            
+            // Draw coherence line
+            ctx.strokeStyle = '#2e7d32';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let firstPoint = true;
+            for (let i = 0; i < state.history.time.length; i++) {
+                if (state.history.time[i] > maxTime) break;
+                const x = padding + (state.history.time[i] / maxTime) * width;
+                const y = canvas.height - padding - (state.history.coherence[i] / maxCoherence) * height;
+                if (firstPoint) {
+                    ctx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Draw amplification line
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            firstPoint = true;
+            for (let i = 0; i < state.history.time.length; i++) {
+                if (state.history.time[i] > maxTime) break;
+                const x = padding + (state.history.time[i] / maxTime) * width;
+                const ampCapped = Math.min(state.history.amplification[i], maxAmp);
+                const y = canvas.height - padding - (ampCapped / maxAmp) * height;
+                if (firstPoint) {
+                    ctx.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = 'bold 13px Georgia';
+            ctx.fillText('Coherence C(t)', padding, padding - 20);
+            
+            ctx.fillStyle = '#1565c0';
+            ctx.fillText('Amplification exp(C/Ω)', canvas.width - 200, padding - 20);
+            
+            // Time axis labels
+            ctx.fillStyle = '#333';
+            ctx.font = '11px Georgia';
+            ctx.fillText('0', padding - 5, canvas.height - padding + 20);
+            ctx.fillText(maxTime.toFixed(0), canvas.width - padding - 10, canvas.height - padding + 20);
+            ctx.fillText('Time', canvas.width / 2 - 20, canvas.height - padding + 35);
+        }
+        
+        function resetSimulation() {
+            state = {
+                time: 0,
+                omega: 2.0,
+                memoryDensity: 0.5,
+                phi: 1.0,
+                threshold: 20,
+                coherence: 0,
+                lastRuptureTime: null,
+                ruptureCount: 0,
+                lastCalculatedTime: 0,
+                history: {
+                    time: [],
+                    coherence: [],
+                    amplification: [],
+                    ruptures: []
+                }
+            };
+            document.getElementById('time-slider').value = 0;
+            document.getElementById('omega-slider').value = 2.0;
+            document.getElementById('memory-slider').value = 0.5;
+            document.getElementById('phi-slider').value = 1.0;
+            document.getElementById('threshold-slider').value = 20;
+            updateDisplay();
+        }
+        
+        // Event listeners
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            const newTime = parseFloat(e.target.value);
+            // Only update if moving forward
+            if (newTime >= state.time) {
+                state.time = newTime;
+                updateDisplay();
+            } else {
+                // Reset simulation if dragging backwards
+                e.target.value = state.time;
+            }
+        });
+        
+        document.getElementById('omega-slider').addEventListener('input', (e) => {
+            state.omega = parseFloat(e.target.value);
+            updateDisplay();
+        });
+        
+        document.getElementById('memory-slider').addEventListener('input', (e) => {
+            state.memoryDensity = parseFloat(e.target.value);
+            updateDisplay();
+        });
+        
+        document.getElementById('phi-slider').addEventListener('input', (e) => {
+            state.phi = parseFloat(e.target.value);
+            updateDisplay();
+        });
+        
+        document.getElementById('threshold-slider').addEventListener('input', (e) => {
+            state.threshold = parseFloat(e.target.value);
+            updateDisplay();
+        });
+        
+        // Initial display
+        updateDisplay();
+        
+        // Animation loop for smooth time progression
+        let animating = false;
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                animating = !animating;
+                if (animating) animate();
+            }
+        });
+        
+        function animate() {
+            if (!animating) return;
+            
+            state.time += 0.1;
+            document.getElementById('time-slider').value = state.time;
+            
+            if (state.time >= 100) {
+                state.time = 100;
+                animating = false;
+            }
+            
+            updateDisplay();
+            
+            if (animating) {
+                setTimeout(animate, 50);
+            }
+        }
+    </script>
+    
+    <div class="spacebar-hint">⌨ PRESS SPACEBAR TO ANIMATE</div>
+</body>
+</html>
