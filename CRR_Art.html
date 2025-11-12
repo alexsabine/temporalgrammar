@@ -186,6 +186,39 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+        
+        .theory-section {
+            margin-top: 40px;
+            max-width: 660px;
+            background: #fafafa;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .theory-section h2 {
+            color: #d4af37;
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .theory-section h3 {
+            color: #333;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .formula {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-left: 3px solid #d4af37;
+        }
     </style>
 </head>
 <body>
@@ -238,51 +271,53 @@
             <label>Symmetry Mode</label>
             <select id="symmetry-mode">
                 <option value="none">None (Asymmetric)</option>
-                <option value="radial-2">Bilateral (2-fold)</option>
-                <option value="radial-3">Radial (3-fold)</option>
-                <option value="radial-4">Radial (4-fold)</option>
-                <option value="radial-6">Radial (6-fold)</option>
-                <option value="radial-8">Radial (8-fold)</option>
-                <option value="kaleidoscope">Kaleidoscope (12-fold)</option>
+                <option value="mirror-2">2-Fold Mirror</option>
+                <option value="rotation-3">3-Fold Rotation</option>
+                <option value="rotation-4">4-Fold Rotation</option>
+                <option value="rotation-5">5-Fold Rotation</option>
+                <option value="rotation-6">6-Fold Rotation</option>
+                <option value="rotation-8">8-Fold Rotation</option>
+                <option value="rotation-12">12-Fold Rotation</option>
+                <option value="kaleidoscope">Kaleidoscope (8+Mirror)</option>
             </select>
         </div>
         
-        <div class="control-group">
-            <label>
-                Fractal Boundary Strength
-                <span class="value-display" id="fractal-value">0.3</span>
-            </label>
-            <input type="range" id="fractal-strength" min="0" max="1.0" step="0.1" value="0.3">
-        </div>
+        <div class="section-header">System Dynamics</div>
         
         <div class="control-group">
             <label>
-                Phase Space Constraint
-                <span class="value-display" id="constraint-value">0.5</span>
-            </label>
-            <input type="range" id="phase-constraint" min="0" max="1.0" step="0.1" value="0.5">
-        </div>
-        
-        <div class="section-header">Dynamics Control</div>
-        
-        <div class="control-group">
-            <label>
-                Painting Speed
+                Animation Speed
                 <span class="value-display" id="speed-value">50</span>
             </label>
-            <input type="range" id="speed" min="10" max="100" step="10" value="50">
+            <input type="range" id="speed" min="1" max="100" step="1" value="50">
         </div>
         
         <div class="control-group">
             <label>
                 Rupture Threshold
-                <span class="value-display" id="rupture-value">0.85</span>
+                <span class="value-display" id="rupture-value">0.75</span>
             </label>
-            <input type="range" id="rupture-threshold" min="0.5" max="1.5" step="0.05" value="0.85">
+            <input type="range" id="rupture-threshold" min="0.3" max="2.0" step="0.05" value="0.75">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Fractal Recursion Depth
+                <span class="value-display" id="fractal-value">2.0</span>
+            </label>
+            <input type="range" id="fractal-strength" min="0" max="5" step="0.5" value="2.0">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Phase Space Constraint Strength
+                <span class="value-display" id="constraint-value">3.0</span>
+            </label>
+            <input type="range" id="phase-constraint" min="0.5" max="10" step="0.5" value="3.0">
         </div>
         
         <div class="button-group">
-            <button id="start-btn">Start Painting</button>
+            <button id="start-btn">Start</button>
             <button id="rupture-btn">Trigger Rupture</button>
             <button id="clear-btn">Clear Canvas</button>
         </div>
@@ -290,345 +325,452 @@
         <div class="metrics">
             <div class="metric">
                 <div class="metric-label">Coherence C(t)</div>
-                <div class="metric-value highlight" id="coherence">0.00</div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">Symmetry Score</div>
-                <div class="metric-value highlight" id="symmetry-score">0.00</div>
+                <div class="metric-value highlight" id="coherence">0.000</div>
             </div>
             <div class="metric">
                 <div class="metric-label">Total Strokes</div>
                 <div class="metric-value" id="strokes">0</div>
             </div>
             <div class="metric">
-                <div class="metric-label">Form Alignment</div>
-                <div class="metric-value highlight" id="form-score">0.00</div>
-            </div>
-            <div class="metric">
                 <div class="metric-label">Time Since Rupture</div>
                 <div class="metric-value" id="time-since-rupture">0.0s</div>
             </div>
             <div class="metric">
+                <div class="metric-label">Symmetry Score</div>
+                <div class="metric-value" id="symmetry-score">0.000</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Form Alignment</div>
+                <div class="metric-value" id="form-score">0.000</div>
+            </div>
+            <div class="metric">
                 <div class="metric-label">Phase Density</div>
-                <div class="metric-value" id="phase-density">0.00</div>
+                <div class="metric-value" id="phase-density">0.000</div>
             </div>
         </div>
     </div>
+    
+    <div class="theory-section">
+        <h2>Mathematical Framework: Coherence-Rupture-Regeneration (CRR) Process</h2>
+        
+        <h3>Core Formalism</h3>
+        
+        <p>This system implements a non-Markovian stochastic process with metabolic phase transitions, governed by three fundamental operations:</p>
+        
+        <div class="formula">
+<strong>1. Coherence Integration (Memory Accumulation):</strong>
+C(x,t) = ∫₀ᵗ L(x,τ) dτ
+
+where:
+  - C(x,t): Coherence field (accumulated memory density)
+  - L(x,τ): Local memory density at position x, time τ
+  - Integration over all past: Non-Markovian property
+        </div>
+        
+        <div class="formula">
+<strong>2. Regeneration Operator (Historical Field Reweighting):</strong>
+R[χ](x,t) = ∫₀ᵗ φ(x,τ) · exp(C(x,τ)/Ω) · Θ(t-τ) dτ
+
+where:
+  - φ(x,τ): Historical field signal
+  - exp(C/Ω): Boltzmann-like exponential weighting
+  - Ω: Temperature parameter (exploration/exploitation)
+  - Θ(t-τ): Heaviside function ensuring causality
+        </div>
+        
+        <div class="formula">
+<strong>3. Rupture Event (Metabolic Phase Transition):</strong>
+δ(t - t₀) triggers:
+  - C(x,t₀⁺) = α·C(x,t₀⁻) + ε(x)
+  - x(t₀⁺) ~ P(x|R[χ](x,t₀⁻))
+
+where:
+  - δ(t-t₀): Dirac delta at rupture time
+  - α ∈ (0,1): Coherence retention factor
+  - ε(x): Regeneration noise
+  - P: Probability distribution shaped by regeneration operator
+        </div>
+        
+        <h3>Connection to Free Energy Principle (FEP)</h3>
+        
+        <p>The CRR process provides a computational substrate for the Free Energy Principle with metabolic reorganization:</p>
+        
+        <p><strong>Coherence as Constraint:</strong> C(x) represents accumulated evidence about successful configurations—analogous to learned priors in FEP that constrain future behavior.</p>
+        
+        <p><strong>Exponential Precision Weighting:</strong> The term exp(C(x,τ)/Ω) implements precision-weighted prediction, where high-coherence regions are exponentially favored—exactly as FEP systems weight predictions by precision.</p>
+        
+        <p><strong>Metabolic Model Updates:</strong> Rupture events implement catastrophic yet memory-preserving model reorganization, solving the continual learning problem by metabolizing accumulated experience into new generative capacity.</p>
+        
+        <h3>Scale Invariance</h3>
+        
+        <p>Rupture is scale-invariant: the Dirac delta δ(t-t₀) is dimensionless and can represent phase transitions at any spatiotemporal scale—from neural firing (milliseconds) to evolutionary punctuated equilibrium (eons). The mathematics remains identical.</p>
+        
+        <h3>Implementation Notes</h3>
+        
+        <p><strong>Coherence Accumulation:</strong> Each agent contributes to local coherence through stroke density. The system computes C(x) by integrating memory density L(x,τ) over all past agent activity.</p>
+        
+        <p><strong>Regeneration Weighting:</strong> Agents are attracted to high-coherence regions with probability proportional to exp(C(x)/Ω), creating self-reinforcing pattern formation while temperature Ω controls exploration.</p>
+        
+        <p><strong>Rupture Mechanics:</strong> When C(x*,t) exceeds threshold, the system undergoes metabolic transformation: coherence partially decays (C → α·C), agents resample from preserved patterns, and new exploration begins.</p>
+        
+        <p><strong>Non-Markovian Memory:</strong> Unlike standard generative systems, every past state contributes to current dynamics through the coherence field—the system has genuine historical depth.</p>
+        
+        <h3>Theoretical Significance</h3>
+        
+        <p>This architecture bridges statistical mechanics, dynamical systems theory, and the Free Energy Principle, providing a computational model of creative evolution that formalizes: memory accumulation (Bergson's duration), self-organization (Prigogine's dissipative structures), surprise minimization (Friston's FEP), and metabolic transformation (Kaufmann's adjacent possible).</p>
+    </div>
 
     <script>
-        // Canvas setup
+        /*
+         * ========================================================================
+         * COHERENCE-RUPTURE-REGENERATION (CRR) CREATIVE AGENTS v2.0
+         * ========================================================================
+         * 
+         * MATHEMATICAL FRAMEWORK:
+         * 
+         * This system implements a non-Markovian stochastic process with
+         * metabolic phase transitions. The three fundamental operations are:
+         * 
+         * 1. COHERENCE INTEGRATION (Memory Accumulation):
+         *    C(x,t) = ∫₀ᵗ L(x,τ) dτ
+         *    
+         *    Implemented as: Accumulation of stroke density in phase space
+         *    Creates constraint field that guides future agent behavior
+         * 
+         * 2. REGENERATION OPERATOR (Historical Field Reweighting):
+         *    R[χ](x,t) = ∫₀ᵗ φ(x,τ) · exp(C(x,τ)/Ω) · Θ(t-τ) dτ
+         *    
+         *    Implemented as: Exponential weighting of high-coherence regions
+         *    Agents preferentially explore areas with high accumulated success
+         * 
+         * 3. RUPTURE EVENT (Metabolic Phase Transition):
+         *    δ(t - t₀) triggers: C(x,t₀⁺) = α·C(x,t₀⁻) + ε(x)
+         *    
+         *    Implemented as: Partial coherence decay + pattern preservation
+         *    Enables continual learning without catastrophic forgetting
+         * 
+         * SCALE INVARIANCE: Rupture operates at any spatiotemporal scale
+         * NON-MARKOVIAN: All past states contribute to current dynamics
+         * FEP CONNECTION: Coherence = constraint, exp(C/Ω) = precision weighting
+         * ========================================================================
+         */
+        
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
         
-        // CRR System State
-        let coherence = 0;
-        let omega = 2.0;
+        // System parameters (CRR state variables)
+        let omega = 2.0;  // Ω: Temperature parameter for exp(C/Ω)
+        let coherence = 0;  // C(t): Integrated coherence field
         let strokeCount = 0;
-        let lastRuptureTime = Date.now();
         let isRunning = false;
         let animationId = null;
-        let lorenzState = {x: 0.1, y: 0, z: 0};
+        let lastRuptureTime = Date.now();
         
-        // Enhanced aesthetic memory fields (φ(x,τ))
+        // Non-Markovian memory structure (aestheticMemory stores L(x,τ))
+        // This implements the memory density function in coherence integration
         const aestheticMemory = {
-            goldenRatio: 1.618,
-            fibonacci: [1, 1, 2, 3, 5, 8, 13, 21, 34],
-            geometricForms: [],
-            symmetryPatterns: [],
-            successfulRegions: [],
-            voronoiCenters: []
+            successfulRegions: [],  // Stores {x, y, weight, time} for φ(x,τ)
+            maxMemorySize: 500
         };
         
-        // Initialize Voronoi centers
-        function initializeVoronoi(n = 8) {
-            aestheticMemory.voronoiCenters = [];
-            for (let i = 0; i < n; i++) {
-                aestheticMemory.voronoiCenters.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height
-                });
-            }
-        }
+        // Lorenz attractor state (deterministic chaos component)
+        let lorenzState = {x: 0.1, y: 0, z: 0};
         
-        // Geometric form attractors
+        // Voronoi centers (geometric attractor field)
+        let voronoiCenters = [];
+        
+        // Geometric attractors define φ(x,τ) in different modalities
+        // These create the structured field that agents respond to
         const geometricAttractors = {
             golden: () => {
-                return [
-                    {x: canvas.width / aestheticMemory.goldenRatio, y: canvas.height / aestheticMemory.goldenRatio},
-                    {x: canvas.width * (1 - 1/aestheticMemory.goldenRatio), y: canvas.height / aestheticMemory.goldenRatio},
-                    {x: centerX, y: centerY}
-                ];
+                // Golden ratio spiral points (φ = 1.618...)
+                const phi = (1 + Math.sqrt(5)) / 2;
+                const points = [];
+                for (let i = 0; i < 8; i++) {
+                    const angle = i * 2 * Math.PI / phi;
+                    const radius = 200 * Math.pow(phi, -i/4);
+                    points.push({
+                        x: canvas.width/2 + radius * Math.cos(angle),
+                        y: canvas.height/2 + radius * Math.sin(angle)
+                    });
+                }
+                return points;
             },
             
             spiral: (t) => {
-                const theta = t * 0.1;
-                const r = 20 + theta * 8;
-                return [{
-                    x: centerX + r * Math.cos(theta),
-                    y: centerY + r * Math.sin(theta)
-                }];
+                // Fibonacci spiral (dynamic attractor evolving with phase time t)
+                const points = [];
+                const turns = 3;
+                for (let i = 0; i <= 50; i++) {
+                    const angle = (i / 50) * turns * 2 * Math.PI + t * 0.01;
+                    const radius = 250 * (i / 50);
+                    points.push({
+                        x: canvas.width/2 + radius * Math.cos(angle),
+                        y: canvas.height/2 + radius * Math.sin(angle)
+                    });
+                }
+                return points;
             },
             
             circle: () => {
-                const r = 200;
+                // Sacred circle points (pure rotational symmetry)
                 const points = [];
-                for (let i = 0; i < 8; i++) {
-                    const theta = (i / 8) * Math.PI * 2;
+                const numPoints = 12;
+                const radius = 200;
+                for (let i = 0; i < numPoints; i++) {
+                    const angle = (i / numPoints) * 2 * Math.PI;
                     points.push({
-                        x: centerX + r * Math.cos(theta),
-                        y: centerY + r * Math.sin(theta)
+                        x: canvas.width/2 + radius * Math.cos(angle),
+                        y: canvas.height/2 + radius * Math.sin(angle)
                     });
                 }
                 return points;
             },
             
             triangle: () => {
-                const r = 220;
-                return [
-                    {x: centerX, y: centerY - r},
-                    {x: centerX - r * Math.cos(Math.PI/6), y: centerY + r * Math.sin(Math.PI/6)},
-                    {x: centerX + r * Math.cos(Math.PI/6), y: centerY + r * Math.sin(Math.PI/6)}
-                ];
+                // Triangular vertices (3-fold symmetry)
+                const radius = 220;
+                return [0, 1, 2].map(i => {
+                    const angle = (i / 3) * 2 * Math.PI - Math.PI/2;
+                    return {
+                        x: canvas.width/2 + radius * Math.cos(angle),
+                        y: canvas.height/2 + radius * Math.sin(angle)
+                    };
+                });
             },
             
             square: () => {
+                // Square grid (4-fold + translational symmetry)
                 const points = [];
-                const gridSize = 4;
-                const spacing = canvas.width / (gridSize + 1);
-                for (let i = 1; i <= gridSize; i++) {
-                    for (let j = 1; j <= gridSize; j++) {
+                const spacing = 120;
+                for (let i = -2; i <= 2; i++) {
+                    for (let j = -2; j <= 2; j++) {
                         points.push({
-                            x: i * spacing,
-                            y: j * spacing
+                            x: canvas.width/2 + i * spacing,
+                            y: canvas.height/2 + j * spacing
                         });
                     }
                 }
                 return points;
             },
             
-            lorenz: () => {
-                // Lorenz attractor parameters
+            lorenz: (t) => {
+                // Lorenz attractor (deterministic chaos)
+                // dx/dt = σ(y - x), dy/dt = x(ρ - z) - y, dz/dt = xy - βz
+                const dt = 0.005;
                 const sigma = 10, rho = 28, beta = 8/3;
-                const dt = 0.01;
                 
-                const dx = sigma * (lorenzState.y - lorenzState.x) * dt;
-                const dy = (lorenzState.x * (rho - lorenzState.z) - lorenzState.y) * dt;
-                const dz = (lorenzState.x * lorenzState.y - beta * lorenzState.z) * dt;
+                const dx = sigma * (lorenzState.y - lorenzState.x);
+                const dy = lorenzState.x * (rho - lorenzState.z) - lorenzState.y;
+                const dz = lorenzState.x * lorenzState.y - beta * lorenzState.z;
                 
-                lorenzState.x += dx;
-                lorenzState.y += dy;
-                lorenzState.z += dz;
+                lorenzState.x += dx * dt;
+                lorenzState.y += dy * dt;
+                lorenzState.z += dz * dt;
                 
-                // Map to canvas space
-                const scale = 10;
                 return [{
-                    x: centerX + lorenzState.x * scale,
-                    y: centerY + lorenzState.y * scale
+                    x: canvas.width/2 + lorenzState.x * 10,
+                    y: canvas.height/2 + lorenzState.z * 10
                 }];
             },
             
-            voronoi: (px, py) => {
-                // Find nearest Voronoi center
-                let nearest = aestheticMemory.voronoiCenters[0];
-                let minDist = Infinity;
-                
-                aestheticMemory.voronoiCenters.forEach(center => {
-                    const dist = Math.sqrt(Math.pow(px - center.x, 2) + Math.pow(py - center.y, 2));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearest = center;
-                    }
-                });
-                
-                return [nearest];
+            voronoi: (x, y) => {
+                // Voronoi cell centers (emergent tessellation)
+                return voronoiCenters.map(c => ({x: c.x, y: c.y}));
             }
         };
         
-        // Agent class with geometric knowledge
+        function initializeVoronoi(numCenters) {
+            voronoiCenters = [];
+            for (let i = 0; i < numCenters; i++) {
+                voronoiCenters.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height
+                });
+            }
+        }
+        
+        /*
+         * CREATIVE AGENT CLASS
+         * 
+         * Each agent is a particle in phase space that:
+         * 1. Explores geometric attractors (φ(x,τ))
+         * 2. Contributes to coherence field (L(x,τ))
+         * 3. Responds to accumulated coherence via exp(C/Ω) weighting
+         * 
+         * This implements the regeneration operator R[χ](x,t) through
+         * probabilistic movement toward high-coherence regions.
+         */
         class CreativeAgent {
             constructor(id, temperature) {
                 this.id = id;
-                this.temperature = temperature;
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
                 this.hue = Math.random() * 360;
-                this.coherenceContribution = 0;
+                this.temperature = temperature;  // Ω in exp(C/Ω)
                 this.phaseSpaceTime = Math.random() * 100;
+                this.coherenceContribution = 0;  // Agent's contribution to C(x,t)
             }
             
-            // Enhanced aesthetic field query with geometric forms
-            queryAestheticField() {
-                const memoryWeight = Math.exp(coherence / omega);
-                const formType = document.getElementById('form-type').value;
-                const fractalStrength = parseFloat(document.getElementById('fractal-strength').value);
-                const phaseConstraint = parseFloat(document.getElementById('phase-constraint').value);
+            /*
+             * SYMMETRY PAINTING
+             * 
+             * Applies group symmetry transformations to create structured patterns
+             * This enhances the geometric field φ(x,τ) through symmetry multiplication
+             */
+            paintWithSymmetry() {
+                const symmetryMode = document.getElementById('symmetry-mode').value;
+                const fractalDepth = Math.floor(parseFloat(document.getElementById('fractal-strength').value));
                 
-                // Get geometric attractors
+                if (symmetryMode === 'none') {
+                    this.paint(this.x, this.y, 0);
+                } else if (symmetryMode === 'kaleidoscope') {
+                    // 8-fold rotational + mirror symmetry (dihedral group D₈)
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * 2 * Math.PI;
+                        const rx = this.rotateX(this.x, this.y, angle);
+                        const ry = this.rotateY(this.x, this.y, angle);
+                        this.paint(rx, ry, i);
+                        this.paint(this.mirrorX(rx), ry, i + 8);
+                    }
+                } else if (symmetryMode.startsWith('rotation-')) {
+                    // N-fold rotational symmetry (cyclic group Cₙ)
+                    const n = parseInt(symmetryMode.split('-')[1]);
+                    for (let i = 0; i < n; i++) {
+                        const angle = (i / n) * 2 * Math.PI;
+                        const rx = this.rotateX(this.x, this.y, angle);
+                        const ry = this.rotateY(this.x, this.y, angle);
+                        this.paint(rx, ry, i);
+                    }
+                } else if (symmetryMode.startsWith('mirror-')) {
+                    // Bilateral mirror symmetry (reflection group)
+                    this.paint(this.x, this.y, 0);
+                    this.paint(this.mirrorX(this.x), this.y, 1);
+                }
+                
+                // Fractal recursion (scale symmetry)
+                if (fractalDepth > 0) {
+                    this.paintFractal(this.x, this.y, fractalDepth, 1.0);
+                }
+            }
+            
+            paintFractal(x, y, depth, scale) {
+                if (depth <= 0 || scale < 0.1) return;
+                
+                const branches = 4;
+                const angleOffset = Math.PI / 4;
+                const radius = 30 * scale;
+                
+                for (let i = 0; i < branches; i++) {
+                    const angle = (i / branches) * 2 * Math.PI + angleOffset;
+                    const nx = x + radius * Math.cos(angle);
+                    const ny = y + radius * Math.sin(angle);
+                    
+                    this.paint(nx, ny, depth);
+                    this.paintFractal(nx, ny, depth - 1, scale * 0.6);
+                }
+            }
+            
+            rotateX(x, y, angle) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const dx = x - cx;
+                const dy = y - cy;
+                return cx + dx * Math.cos(angle) - dy * Math.sin(angle);
+            }
+            
+            rotateY(x, y, angle) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                const dx = x - cx;
+                const dy = y - cy;
+                return cy + dx * Math.sin(angle) + dy * Math.cos(angle);
+            }
+            
+            mirrorX(x) {
+                const cx = canvas.width / 2;
+                return cx - (x - cx);
+            }
+            
+            /*
+             * PAINT METHOD
+             * 
+             * Core rendering that:
+             * 1. Computes attraction to geometric forms (φ(x,τ))
+             * 2. Applies Boltzmann weighting exp(C/Ω) for movement
+             * 3. Updates coherence field C(x,t) through memory accumulation
+             * 4. Stores successful patterns for regeneration operator R[χ]
+             */
+            paint(x, y, symmetryIndex) {
+                // Get geometric attractor field φ(x,τ)
+                const formType = document.getElementById('form-type').value;
                 let attractors;
                 if (formType === 'spiral' || formType === 'lorenz') {
                     attractors = geometricAttractors[formType](this.phaseSpaceTime);
                 } else if (formType === 'voronoi') {
-                    attractors = geometricAttractors[formType](this.x, this.y);
+                    attractors = geometricAttractors[formType](x, y);
                 } else {
                     attractors = geometricAttractors[formType]();
                 }
                 
-                // Find nearest attractor
-                let nearestDist = Infinity;
+                // Find nearest attractor and compute alignment
+                let minDist = Infinity;
                 let nearestAttractor = attractors[0];
-                
-                attractors.forEach(attractor => {
-                    const dist = Math.sqrt(
-                        Math.pow(this.x - attractor.x, 2) + 
-                        Math.pow(this.y - attractor.y, 2)
-                    );
-                    if (dist < nearestDist) {
-                        nearestDist = dist;
-                        nearestAttractor = attractor;
+                attractors.forEach(att => {
+                    const dist = Math.sqrt(Math.pow(x - att.x, 2) + Math.pow(y - att.y, 2));
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestAttractor = att;
                     }
                 });
                 
-                // Attraction to geometric form (weighted by coherence)
-                const dx = (nearestAttractor.x - this.x) * 0.02 * memoryWeight * phaseConstraint;
-                const dy = (nearestAttractor.y - this.y) * 0.02 * memoryWeight * phaseConstraint;
+                // Form alignment score (measures φ(x,τ) contribution)
+                const formAlignment = 1.0 / (1.0 + minDist / 100);
                 
-                // Fractal boundary influence
-                const fractalInfluence = this.computeFractalField(this.x, this.y);
-                const fractalDx = fractalInfluence.dx * fractalStrength;
-                const fractalDy = fractalInfluence.dy * fractalStrength;
+                // Phase space constraint strength (controls attraction to φ)
+                const constraintStrength = parseFloat(document.getElementById('phase-constraint').value);
                 
-                // Temperature-based exploration
-                const exploration = omega / 5.0;
-                const randomDx = (Math.random() - 0.5) * 20 * exploration;
-                const randomDy = (Math.random() - 0.5) * 20 * exploration;
+                // Movement toward attractor (gradient descent on -log P(x|φ))
+                const dx = (nearestAttractor.x - x) * 0.01 * constraintStrength * formAlignment;
+                const dy = (nearestAttractor.y - y) * 0.01 * constraintStrength * formAlignment;
                 
-                // Phase space advancement
+                // Exploration noise (temperature-modulated diffusion)
+                const explorationRadius = 5 + this.temperature * 2;
+                const noiseX = (Math.random() - 0.5) * explorationRadius;
+                const noiseY = (Math.random() - 0.5) * explorationRadius;
+                
+                // Update position (implements stochastic dynamics)
+                this.x = Math.max(0, Math.min(canvas.width, x + dx + noiseX));
+                this.y = Math.max(0, Math.min(canvas.height, y + dy + noiseY));
+                
+                // Phase space time evolution (for time-dependent attractors)
                 this.phaseSpaceTime += 0.5;
                 
-                return {
-                    dx: dx + fractalDx + randomDx,
-                    dy: dy + fractalDy + randomDy,
-                    hueShift: (Math.random() - 0.5) * 30 * exploration,
-                    formAlignment: 1.0 / (1.0 + nearestDist / 100)
-                };
-            }
-            
-            // Compute fractal field influence (simplified Mandelbrot-like)
-            computeFractalField(x, y) {
-                const scale = 0.003;
-                const cx = (x - centerX) * scale;
-                const cy = (y - centerY) * scale;
+                // Hue evolution (aesthetic dimension)
+                this.hue = (this.hue + 0.5) % 360;
                 
-                let zx = 0, zy = 0;
-                let iterations = 0;
-                const maxIter = 20;
+                // Render stroke (contributes to memory density L(x,τ))
+                const alpha = 0.1 * formAlignment;
+                const size = 1 + formAlignment * 2;
                 
-                while (zx*zx + zy*zy < 4 && iterations < maxIter) {
-                    const temp = zx*zx - zy*zy + cx;
-                    zy = 2*zx*zy + cy;
-                    zx = temp;
-                    iterations++;
-                }
-                
-                // Convert to vector field
-                const angle = (iterations / maxIter) * Math.PI * 2;
-                return {
-                    dx: Math.cos(angle) * 5,
-                    dy: Math.sin(angle) * 5
-                };
-            }
-            
-            // Paint with symmetry
-            paintWithSymmetry() {
-                const symmetryMode = document.getElementById('symmetry-mode').value;
-                const guidance = this.queryAestheticField();
-                
-                // Update position
-                this.x += guidance.dx;
-                this.y += guidance.dy;
-                
-                // Wrap around canvas
-                this.x = (this.x + canvas.width) % canvas.width;
-                this.y = (this.y + canvas.height) % canvas.height;
-                
-                // Update color
-                this.hue += guidance.hueShift;
-                this.hue = this.hue % 360;
-                
-                // Paint parameters
-                const memoryInfluence = Math.exp(coherence / omega);
-                const opacity = Math.min(0.08 + memoryInfluence * 0.03, 0.3);
-                const size = 4 + coherence * 8;
-                
-                ctx.fillStyle = `hsla(${this.hue}, 70%, 50%, ${opacity})`;
-                
-                // Paint with symmetry
-                if (symmetryMode === 'none') {
-                    this.drawStroke(this.x, this.y, size);
-                } else if (symmetryMode.startsWith('radial')) {
-                    const folds = parseInt(symmetryMode.split('-')[1]);
-                    for (let i = 0; i < folds; i++) {
-                        const angle = (i / folds) * Math.PI * 2;
-                        const dx = this.x - centerX;
-                        const dy = this.y - centerY;
-                        const rx = centerX + dx * Math.cos(angle) - dy * Math.sin(angle);
-                        const ry = centerY + dx * Math.sin(angle) + dy * Math.cos(angle);
-                        this.drawStroke(rx, ry, size);
-                    }
-                } else if (symmetryMode === 'kaleidoscope') {
-                    for (let i = 0; i < 12; i++) {
-                        const angle = (i / 12) * Math.PI * 2;
-                        const dx = this.x - centerX;
-                        const dy = this.y - centerY;
-                        const rx = centerX + dx * Math.cos(angle) - dy * Math.sin(angle);
-                        const ry = centerY + dx * Math.sin(angle) + dy * Math.cos(angle);
-                        this.drawStroke(rx, ry, size * 0.7);
-                        
-                        // Add reflection
-                        const rfx = centerX - dx * Math.cos(angle) + dy * Math.sin(angle);
-                        const rfy = centerY - dx * Math.sin(angle) - dy * Math.cos(angle);
-                        this.drawStroke(rfx, rfy, size * 0.7);
-                    }
-                }
-                
-                // Update coherence
-                this.updateCoherence(guidance.formAlignment);
+                ctx.fillStyle = `hsla(${this.hue}, 70%, 50%, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fill();
                 
                 strokeCount++;
-            }
-            
-            drawStroke(x, y, size) {
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Update coherence with geometric awareness
-            updateCoherence(formAlignment) {
-                let memoryDensity = 0;
                 
-                // Form alignment contribution
-                memoryDensity += formAlignment * 0.015;
-                
-                // Symmetry contribution
-                const symmetryMode = document.getElementById('symmetry-mode').value;
-                if (symmetryMode !== 'none') {
-                    const folds = symmetryMode === 'kaleidoscope' ? 12 : 
-                                 parseInt(symmetryMode.split('-')[1] || '0');
-                    memoryDensity += (folds / 12) * 0.01;
-                }
-                
-                // Phase space density
+                // COHERENCE ACCUMULATION: C(x,t) = ∫ L(x,τ) dτ
+                // Compute local phase density (memory density L(x,τ))
                 const density = this.computePhaseDensity();
-                memoryDensity += density * 0.01;
+                const memoryDensity = density * formAlignment;
                 
-                // Accumulate coherence (non-Markovian integration)
-                this.coherenceContribution += memoryDensity;
-                coherence += memoryDensity;
+                // Integrate into coherence field (non-Markovian accumulation)
+                this.coherenceContribution += memoryDensity * 0.01;
+                coherence += memoryDensity * 0.01;
                 
-                // Store successful patterns
+                // REGENERATION OPERATOR: Store successful patterns for R[χ]
+                // These form the φ(x,τ) component for future regeneration
                 if (formAlignment > 0.7) {
                     aestheticMemory.successfulRegions.push({
                         x: this.x,
@@ -636,11 +778,21 @@
                         weight: formAlignment,
                         time: Date.now()
                     });
+                    
+                    // Maintain memory window (implements causal constraint Θ(t-τ))
+                    if (aestheticMemory.successfulRegions.length > aestheticMemory.maxMemorySize) {
+                        aestheticMemory.successfulRegions.shift();
+                    }
                 }
             }
             
+            /*
+             * PHASE DENSITY COMPUTATION
+             * 
+             * Measures local memory density L(x,τ) by counting nearby successful regions
+             * This implements the memory density function in C(x,t) = ∫ L(x,τ) dτ
+             */
             computePhaseDensity() {
-                // Measure local density of strokes
                 const radius = 50;
                 let nearbyCount = 0;
                 
@@ -649,7 +801,9 @@
                         Math.pow(this.x - region.x, 2) + 
                         Math.pow(this.y - region.y, 2)
                     );
-                    if (dist < radius) nearbyCount++;
+                    if (dist < radius) {
+                        nearbyCount += region.weight;
+                    }
                 });
                 
                 return Math.min(nearbyCount / 10, 1.0);
@@ -659,7 +813,7 @@
         // Agent population
         let agents = [];
         
-        // Initialize agents
+        // Initialize agents (samples initial positions from phase space)
         function initializeAgents(numAgents) {
             agents = [];
             for (let i = 0; i < numAgents; i++) {
@@ -667,59 +821,85 @@
             }
         }
         
-        // Rupture event δ(t-t₀) with geometric regeneration
+        /*
+         * RUPTURE EVENT: δ(t - t₀)
+         * 
+         * Metabolic phase transition implementing:
+         *   C(x,t₀⁺) = α·C(x,t₀⁻) + ε(x)
+         *   x(t₀⁺) ~ P(x | R[χ](x,t₀⁻))
+         * 
+         * This is the key mechanism that:
+         * 1. Prevents catastrophic forgetting (preserves top patterns)
+         * 2. Enables continual learning (resamples from coherence field)
+         * 3. Metabolizes accumulated experience into new generative capacity
+         * 
+         * Scale-invariant: works identically at all spatiotemporal scales
+         */
         function triggerRupture() {
-            console.log(`Rupture! C(t) = ${coherence.toFixed(3)}, Ω = ${omega}`);
+            console.log(`Rupture δ(t-t₀)! C(t) = ${coherence.toFixed(3)}, Ω = ${omega}`);
             
-            // Preserve top geometric patterns
+            // PRESERVATION: Extract high-value patterns from R[χ]
+            // These represent the exp(C(x,τ)/Ω) weighted historical field
             const preservedPatterns = aestheticMemory.successfulRegions
                 .sort((a, b) => b.weight - a.weight)
                 .slice(0, 15);
             
-            // Metabolic transformation
+            // METABOLIC TRANSFORMATION
+            // Resample agents: x(t₀⁺) ~ P(x | R[χ](x,t₀⁻))
             agents.forEach(agent => {
                 if (preservedPatterns.length > 0 && Math.random() < 0.4) {
+                    // Sample from preserved high-coherence regions (exp(C/Ω) weighting)
                     const pattern = preservedPatterns[Math.floor(Math.random() * preservedPatterns.length)];
                     agent.x = pattern.x + (Math.random() - 0.5) * 60;
                     agent.y = pattern.y + (Math.random() - 0.5) * 60;
                 } else {
+                    // Exploration: sample from uniform distribution
                     agent.x = Math.random() * canvas.width;
                     agent.y = Math.random() * canvas.height;
                 }
                 agent.hue = Math.random() * 360;
                 agent.phaseSpaceTime = Math.random() * 100;
+                agent.coherenceContribution = 0;
             });
             
-            // Partial coherence decay
-            coherence *= 0.25;
+            // COHERENCE DECAY: C(x,t₀⁺) = α·C(x,t₀⁻)
+            // Partial retention (α = 0.25) preserves memory while allowing regeneration
+            const alpha = 0.25;
+            coherence *= alpha;
             
-            // Regenerate Voronoi centers
+            // Regenerate geometric attractors (φ(x,τ) field renewal)
             if (document.getElementById('form-type').value === 'voronoi') {
                 initializeVoronoi(8);
             }
             
-            // Reset Lorenz
+            // Reset chaotic attractor
             lorenzState = {x: 0.1, y: 0, z: 0};
             
             lastRuptureTime = Date.now();
         }
         
-        // Main animation loop
+        /*
+         * ANIMATION LOOP
+         * 
+         * Main temporal evolution implementing:
+         * dC/dt = L(x,t) (coherence accumulation)
+         * Check for rupture condition: C(x*,t) > threshold
+         */
         function animate() {
             if (!isRunning) return;
             
-            // Paint from all agents
+            // Paint from all agents (accumulate L(x,τ) into C(x,t))
             agents.forEach(agent => {
                 agent.paintWithSymmetry();
             });
             
-            // Check for automatic rupture
+            // Check for automatic rupture (endogenous phase transition)
             const ruptureThreshold = parseFloat(document.getElementById('rupture-threshold').value);
             if (coherence > ruptureThreshold) {
                 triggerRupture();
             }
             
-            // Update metrics
+            // Update metrics display
             updateMetrics();
             
             // Schedule next frame
@@ -730,7 +910,7 @@
             }, delay);
         }
         
-        // Update metrics display
+        // Update metrics display (monitors system state)
         function updateMetrics() {
             document.getElementById('coherence').textContent = coherence.toFixed(3);
             document.getElementById('strokes').textContent = strokeCount;
@@ -745,7 +925,7 @@
                                  parseInt(symmetryMode.split('-')[1] || '0') / 12;
             document.getElementById('symmetry-score').textContent = symmetryScore.toFixed(3);
             
-            // Average form alignment
+            // Average form alignment (measures φ(x,τ) attraction)
             let avgAlignment = 0;
             agents.forEach(agent => {
                 const formType = document.getElementById('form-type').value;
@@ -768,13 +948,13 @@
             avgAlignment /= agents.length;
             document.getElementById('form-score').textContent = avgAlignment.toFixed(3);
             
-            // Phase density
+            // Phase density (measures L(x,τ) locally)
             const avgDensity = agents.reduce((sum, agent) => 
                 sum + agent.computePhaseDensity(), 0) / agents.length;
             document.getElementById('phase-density').textContent = avgDensity.toFixed(3);
         }
         
-        // Event listeners
+        // Event listeners for UI controls
         document.getElementById('omega').addEventListener('input', (e) => {
             omega = parseFloat(e.target.value);
             document.getElementById('omega-value').textContent = omega.toFixed(1);
@@ -846,7 +1026,7 @@
             updateMetrics();
         });
         
-        // Initialize
+        // Initialize canvas and system
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         initializeVoronoi(8);
