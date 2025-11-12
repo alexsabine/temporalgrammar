@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Creative Agents v2.0: Geometric Phase Space</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #f5f5f0;
+            font-family: Georgia, serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .museum-display {
+            background: #f5f5f0;
+            padding: 60px;
+        }
+        
+        .frame {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e4a6 25%, #d4af37 50%, #c9a728 75%, #d4af37 100%);
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .canvas-container {
+            background: white;
+            width: 600px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            margin-top: 40px;
+            max-width: 660px;
+            background: white;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+            font-weight: normal;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #d4af37;
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #d4af37;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .control-group select {
+            width: 100%;
+            padding: 8px;
+            font-family: Georgia, serif;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            background: white;
+        }
+        
+        .value-display {
+            display: inline-block;
+            float: right;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            background: #d4af37;
+            color: white;
+            border: none;
+            font-family: Georgia, serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #c9a728;
+        }
+        
+        button:active {
+            background: #b8961f;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 20px;
+            color: #333;
+            font-weight: normal;
+        }
+        
+        .metric-value.highlight {
+            color: #d4af37;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            font-weight: normal;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        
+        .section-header {
+            font-size: 16px;
+            color: #d4af37;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRR Creative Agents v2.0</h1>
+    <div class="subtitle">Geometric Forms & Symmetries in Non-Markovian Phase Space</div>
+    
+    <div class="museum-display">
+        <div class="frame">
+            <div class="canvas-container">
+                <canvas id="canvas" width="600" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div class="section-header">Fundamental Parameters</div>
+        
+        <div class="control-group">
+            <label>
+                Temperature Ω (Exploration vs Exploitation)
+                <span class="value-display" id="omega-value">2.0</span>
+            </label>
+            <input type="range" id="omega" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Number of Agents
+                <span class="value-display" id="agents-value">5</span>
+            </label>
+            <input type="range" id="num-agents" min="1" max="15" step="1" value="5">
+        </div>
+        
+        <div class="section-header">Geometric Aesthetic Field</div>
+        
+        <div class="control-group">
+            <label>Geometric Form Attractor</label>
+            <select id="form-type">
+                <option value="golden">Golden Ratio Points</option>
+                <option value="spiral">Fibonacci Spiral</option>
+                <option value="circle">Sacred Circle</option>
+                <option value="triangle">Triangle Vertices</option>
+                <option value="square">Square Grid</option>
+                <option value="lorenz">Lorenz Attractor</option>
+                <option value="voronoi">Voronoi Cells</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Symmetry Mode</label>
+            <select id="symmetry-mode">
+                <option value="none">None (Asymmetric)</option>
+                <option value="radial-2">Bilateral (2-fold)</option>
+                <option value="radial-3">Radial (3-fold)</option>
+                <option value="radial-4">Radial (4-fold)</option>
+                <option value="radial-6">Radial (6-fold)</option>
+                <option value="radial-8">Radial (8-fold)</option>
+                <option value="kaleidoscope">Kaleidoscope (12-fold)</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Fractal Boundary Strength
+                <span class="value-display" id="fractal-value">0.3</span>
+            </label>
+            <input type="range" id="fractal-strength" min="0" max="1.0" step="0.1" value="0.3">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Phase Space Constraint
+                <span class="value-display" id="constraint-value">0.5</span>
+            </label>
+            <input type="range" id="phase-constraint" min="0" max="1.0" step="0.1" value="0.5">
+        </div>
+        
+        <div class="section-header">Dynamics Control</div>
+        
+        <div class="control-group">
+            <label>
+                Painting Speed
+                <span class="value-display" id="speed-value">50</span>
+            </label>
+            <input type="range" id="speed" min="10" max="100" step="10" value="50">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                Rupture Threshold
+                <span class="value-display" id="rupture-value">0.85</span>
+            </label>
+            <input type="range" id="rupture-threshold" min="0.5" max="1.5" step="0.05" value="0.85">
+        </div>
+        
+        <div class="button-group">
+            <button id="start-btn">Start Painting</button>
+            <button id="rupture-btn">Trigger Rupture</button>
+            <button id="clear-btn">Clear Canvas</button>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Coherence C(t)</div>
+                <div class="metric-value highlight" id="coherence">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Symmetry Score</div>
+                <div class="metric-value highlight" id="symmetry-score">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Total Strokes</div>
+                <div class="metric-value" id="strokes">0</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Form Alignment</div>
+                <div class="metric-value highlight" id="form-score">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Time Since Rupture</div>
+                <div class="metric-value" id="time-since-rupture">0.0s</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Phase Density</div>
+                <div class="metric-value" id="phase-density">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // CRR System State
+        let coherence = 0;
+        let omega = 2.0;
+        let strokeCount = 0;
+        let lastRuptureTime = Date.now();
+        let isRunning = false;
+        let animationId = null;
+        let lorenzState = {x: 0.1, y: 0, z: 0};
+        
+        // Enhanced aesthetic memory fields (φ(x,τ))
+        const aestheticMemory = {
+            goldenRatio: 1.618,
+            fibonacci: [1, 1, 2, 3, 5, 8, 13, 21, 34],
+            geometricForms: [],
+            symmetryPatterns: [],
+            successfulRegions: [],
+            voronoiCenters: []
+        };
+        
+        // Initialize Voronoi centers
+        function initializeVoronoi(n = 8) {
+            aestheticMemory.voronoiCenters = [];
+            for (let i = 0; i < n; i++) {
+                aestheticMemory.voronoiCenters.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height
+                });
+            }
+        }
+        
+        // Geometric form attractors
+        const geometricAttractors = {
+            golden: () => {
+                return [
+                    {x: canvas.width / aestheticMemory.goldenRatio, y: canvas.height / aestheticMemory.goldenRatio},
+                    {x: canvas.width * (1 - 1/aestheticMemory.goldenRatio), y: canvas.height / aestheticMemory.goldenRatio},
+                    {x: centerX, y: centerY}
+                ];
+            },
+            
+            spiral: (t) => {
+                const theta = t * 0.1;
+                const r = 20 + theta * 8;
+                return [{
+                    x: centerX + r * Math.cos(theta),
+                    y: centerY + r * Math.sin(theta)
+                }];
+            },
+            
+            circle: () => {
+                const r = 200;
+                const points = [];
+                for (let i = 0; i < 8; i++) {
+                    const theta = (i / 8) * Math.PI * 2;
+                    points.push({
+                        x: centerX + r * Math.cos(theta),
+                        y: centerY + r * Math.sin(theta)
+                    });
+                }
+                return points;
+            },
+            
+            triangle: () => {
+                const r = 220;
+                return [
+                    {x: centerX, y: centerY - r},
+                    {x: centerX - r * Math.cos(Math.PI/6), y: centerY + r * Math.sin(Math.PI/6)},
+                    {x: centerX + r * Math.cos(Math.PI/6), y: centerY + r * Math.sin(Math.PI/6)}
+                ];
+            },
+            
+            square: () => {
+                const points = [];
+                const gridSize = 4;
+                const spacing = canvas.width / (gridSize + 1);
+                for (let i = 1; i <= gridSize; i++) {
+                    for (let j = 1; j <= gridSize; j++) {
+                        points.push({
+                            x: i * spacing,
+                            y: j * spacing
+                        });
+                    }
+                }
+                return points;
+            },
+            
+            lorenz: () => {
+                // Lorenz attractor parameters
+                const sigma = 10, rho = 28, beta = 8/3;
+                const dt = 0.01;
+                
+                const dx = sigma * (lorenzState.y - lorenzState.x) * dt;
+                const dy = (lorenzState.x * (rho - lorenzState.z) - lorenzState.y) * dt;
+                const dz = (lorenzState.x * lorenzState.y - beta * lorenzState.z) * dt;
+                
+                lorenzState.x += dx;
+                lorenzState.y += dy;
+                lorenzState.z += dz;
+                
+                // Map to canvas space
+                const scale = 10;
+                return [{
+                    x: centerX + lorenzState.x * scale,
+                    y: centerY + lorenzState.y * scale
+                }];
+            },
+            
+            voronoi: (px, py) => {
+                // Find nearest Voronoi center
+                let nearest = aestheticMemory.voronoiCenters[0];
+                let minDist = Infinity;
+                
+                aestheticMemory.voronoiCenters.forEach(center => {
+                    const dist = Math.sqrt(Math.pow(px - center.x, 2) + Math.pow(py - center.y, 2));
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = center;
+                    }
+                });
+                
+                return [nearest];
+            }
+        };
+        
+        // Agent class with geometric knowledge
+        class CreativeAgent {
+            constructor(id, temperature) {
+                this.id = id;
+                this.temperature = temperature;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.hue = Math.random() * 360;
+                this.coherenceContribution = 0;
+                this.phaseSpaceTime = Math.random() * 100;
+            }
+            
+            // Enhanced aesthetic field query with geometric forms
+            queryAestheticField() {
+                const memoryWeight = Math.exp(coherence / omega);
+                const formType = document.getElementById('form-type').value;
+                const fractalStrength = parseFloat(document.getElementById('fractal-strength').value);
+                const phaseConstraint = parseFloat(document.getElementById('phase-constraint').value);
+                
+                // Get geometric attractors
+                let attractors;
+                if (formType === 'spiral' || formType === 'lorenz') {
+                    attractors = geometricAttractors[formType](this.phaseSpaceTime);
+                } else if (formType === 'voronoi') {
+                    attractors = geometricAttractors[formType](this.x, this.y);
+                } else {
+                    attractors = geometricAttractors[formType]();
+                }
+                
+                // Find nearest attractor
+                let nearestDist = Infinity;
+                let nearestAttractor = attractors[0];
+                
+                attractors.forEach(attractor => {
+                    const dist = Math.sqrt(
+                        Math.pow(this.x - attractor.x, 2) + 
+                        Math.pow(this.y - attractor.y, 2)
+                    );
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestAttractor = attractor;
+                    }
+                });
+                
+                // Attraction to geometric form (weighted by coherence)
+                const dx = (nearestAttractor.x - this.x) * 0.02 * memoryWeight * phaseConstraint;
+                const dy = (nearestAttractor.y - this.y) * 0.02 * memoryWeight * phaseConstraint;
+                
+                // Fractal boundary influence
+                const fractalInfluence = this.computeFractalField(this.x, this.y);
+                const fractalDx = fractalInfluence.dx * fractalStrength;
+                const fractalDy = fractalInfluence.dy * fractalStrength;
+                
+                // Temperature-based exploration
+                const exploration = omega / 5.0;
+                const randomDx = (Math.random() - 0.5) * 20 * exploration;
+                const randomDy = (Math.random() - 0.5) * 20 * exploration;
+                
+                // Phase space advancement
+                this.phaseSpaceTime += 0.5;
+                
+                return {
+                    dx: dx + fractalDx + randomDx,
+                    dy: dy + fractalDy + randomDy,
+                    hueShift: (Math.random() - 0.5) * 30 * exploration,
+                    formAlignment: 1.0 / (1.0 + nearestDist / 100)
+                };
+            }
+            
+            // Compute fractal field influence (simplified Mandelbrot-like)
+            computeFractalField(x, y) {
+                const scale = 0.003;
+                const cx = (x - centerX) * scale;
+                const cy = (y - centerY) * scale;
+                
+                let zx = 0, zy = 0;
+                let iterations = 0;
+                const maxIter = 20;
+                
+                while (zx*zx + zy*zy < 4 && iterations < maxIter) {
+                    const temp = zx*zx - zy*zy + cx;
+                    zy = 2*zx*zy + cy;
+                    zx = temp;
+                    iterations++;
+                }
+                
+                // Convert to vector field
+                const angle = (iterations / maxIter) * Math.PI * 2;
+                return {
+                    dx: Math.cos(angle) * 5,
+                    dy: Math.sin(angle) * 5
+                };
+            }
+            
+            // Paint with symmetry
+            paintWithSymmetry() {
+                const symmetryMode = document.getElementById('symmetry-mode').value;
+                const guidance = this.queryAestheticField();
+                
+                // Update position
+                this.x += guidance.dx;
+                this.y += guidance.dy;
+                
+                // Wrap around canvas
+                this.x = (this.x + canvas.width) % canvas.width;
+                this.y = (this.y + canvas.height) % canvas.height;
+                
+                // Update color
+                this.hue += guidance.hueShift;
+                this.hue = this.hue % 360;
+                
+                // Paint parameters
+                const memoryInfluence = Math.exp(coherence / omega);
+                const opacity = Math.min(0.08 + memoryInfluence * 0.03, 0.3);
+                const size = 4 + coherence * 8;
+                
+                ctx.fillStyle = `hsla(${this.hue}, 70%, 50%, ${opacity})`;
+                
+                // Paint with symmetry
+                if (symmetryMode === 'none') {
+                    this.drawStroke(this.x, this.y, size);
+                } else if (symmetryMode.startsWith('radial')) {
+                    const folds = parseInt(symmetryMode.split('-')[1]);
+                    for (let i = 0; i < folds; i++) {
+                        const angle = (i / folds) * Math.PI * 2;
+                        const dx = this.x - centerX;
+                        const dy = this.y - centerY;
+                        const rx = centerX + dx * Math.cos(angle) - dy * Math.sin(angle);
+                        const ry = centerY + dx * Math.sin(angle) + dy * Math.cos(angle);
+                        this.drawStroke(rx, ry, size);
+                    }
+                } else if (symmetryMode === 'kaleidoscope') {
+                    for (let i = 0; i < 12; i++) {
+                        const angle = (i / 12) * Math.PI * 2;
+                        const dx = this.x - centerX;
+                        const dy = this.y - centerY;
+                        const rx = centerX + dx * Math.cos(angle) - dy * Math.sin(angle);
+                        const ry = centerY + dx * Math.sin(angle) + dy * Math.cos(angle);
+                        this.drawStroke(rx, ry, size * 0.7);
+                        
+                        // Add reflection
+                        const rfx = centerX - dx * Math.cos(angle) + dy * Math.sin(angle);
+                        const rfy = centerY - dx * Math.sin(angle) - dy * Math.cos(angle);
+                        this.drawStroke(rfx, rfy, size * 0.7);
+                    }
+                }
+                
+                // Update coherence
+                this.updateCoherence(guidance.formAlignment);
+                
+                strokeCount++;
+            }
+            
+            drawStroke(x, y, size) {
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Update coherence with geometric awareness
+            updateCoherence(formAlignment) {
+                let memoryDensity = 0;
+                
+                // Form alignment contribution
+                memoryDensity += formAlignment * 0.015;
+                
+                // Symmetry contribution
+                const symmetryMode = document.getElementById('symmetry-mode').value;
+                if (symmetryMode !== 'none') {
+                    const folds = symmetryMode === 'kaleidoscope' ? 12 : 
+                                 parseInt(symmetryMode.split('-')[1] || '0');
+                    memoryDensity += (folds / 12) * 0.01;
+                }
+                
+                // Phase space density
+                const density = this.computePhaseDensity();
+                memoryDensity += density * 0.01;
+                
+                // Accumulate coherence (non-Markovian integration)
+                this.coherenceContribution += memoryDensity;
+                coherence += memoryDensity;
+                
+                // Store successful patterns
+                if (formAlignment > 0.7) {
+                    aestheticMemory.successfulRegions.push({
+                        x: this.x,
+                        y: this.y,
+                        weight: formAlignment,
+                        time: Date.now()
+                    });
+                }
+            }
+            
+            computePhaseDensity() {
+                // Measure local density of strokes
+                const radius = 50;
+                let nearbyCount = 0;
+                
+                aestheticMemory.successfulRegions.forEach(region => {
+                    const dist = Math.sqrt(
+                        Math.pow(this.x - region.x, 2) + 
+                        Math.pow(this.y - region.y, 2)
+                    );
+                    if (dist < radius) nearbyCount++;
+                });
+                
+                return Math.min(nearbyCount / 10, 1.0);
+            }
+        }
+        
+        // Agent population
+        let agents = [];
+        
+        // Initialize agents
+        function initializeAgents(numAgents) {
+            agents = [];
+            for (let i = 0; i < numAgents; i++) {
+                agents.push(new CreativeAgent(i, omega));
+            }
+        }
+        
+        // Rupture event δ(t-t₀) with geometric regeneration
+        function triggerRupture() {
+            console.log(`Rupture! C(t) = ${coherence.toFixed(3)}, Ω = ${omega}`);
+            
+            // Preserve top geometric patterns
+            const preservedPatterns = aestheticMemory.successfulRegions
+                .sort((a, b) => b.weight - a.weight)
+                .slice(0, 15);
+            
+            // Metabolic transformation
+            agents.forEach(agent => {
+                if (preservedPatterns.length > 0 && Math.random() < 0.4) {
+                    const pattern = preservedPatterns[Math.floor(Math.random() * preservedPatterns.length)];
+                    agent.x = pattern.x + (Math.random() - 0.5) * 60;
+                    agent.y = pattern.y + (Math.random() - 0.5) * 60;
+                } else {
+                    agent.x = Math.random() * canvas.width;
+                    agent.y = Math.random() * canvas.height;
+                }
+                agent.hue = Math.random() * 360;
+                agent.phaseSpaceTime = Math.random() * 100;
+            });
+            
+            // Partial coherence decay
+            coherence *= 0.25;
+            
+            // Regenerate Voronoi centers
+            if (document.getElementById('form-type').value === 'voronoi') {
+                initializeVoronoi(8);
+            }
+            
+            // Reset Lorenz
+            lorenzState = {x: 0.1, y: 0, z: 0};
+            
+            lastRuptureTime = Date.now();
+        }
+        
+        // Main animation loop
+        function animate() {
+            if (!isRunning) return;
+            
+            // Paint from all agents
+            agents.forEach(agent => {
+                agent.paintWithSymmetry();
+            });
+            
+            // Check for automatic rupture
+            const ruptureThreshold = parseFloat(document.getElementById('rupture-threshold').value);
+            if (coherence > ruptureThreshold) {
+                triggerRupture();
+            }
+            
+            // Update metrics
+            updateMetrics();
+            
+            // Schedule next frame
+            const speed = parseInt(document.getElementById('speed').value);
+            const delay = 110 - speed;
+            setTimeout(() => {
+                animationId = requestAnimationFrame(animate);
+            }, delay);
+        }
+        
+        // Update metrics display
+        function updateMetrics() {
+            document.getElementById('coherence').textContent = coherence.toFixed(3);
+            document.getElementById('strokes').textContent = strokeCount;
+            
+            const timeSinceRupture = (Date.now() - lastRuptureTime) / 1000;
+            document.getElementById('time-since-rupture').textContent = timeSinceRupture.toFixed(1) + 's';
+            
+            // Symmetry score
+            const symmetryMode = document.getElementById('symmetry-mode').value;
+            const symmetryScore = symmetryMode === 'none' ? 0 : 
+                                 symmetryMode === 'kaleidoscope' ? 1.0 :
+                                 parseInt(symmetryMode.split('-')[1] || '0') / 12;
+            document.getElementById('symmetry-score').textContent = symmetryScore.toFixed(3);
+            
+            // Average form alignment
+            let avgAlignment = 0;
+            agents.forEach(agent => {
+                const formType = document.getElementById('form-type').value;
+                let attractors;
+                if (formType === 'spiral' || formType === 'lorenz') {
+                    attractors = geometricAttractors[formType](agent.phaseSpaceTime);
+                } else if (formType === 'voronoi') {
+                    attractors = geometricAttractors[formType](agent.x, agent.y);
+                } else {
+                    attractors = geometricAttractors[formType]();
+                }
+                
+                let minDist = Infinity;
+                attractors.forEach(att => {
+                    const dist = Math.sqrt(Math.pow(agent.x - att.x, 2) + Math.pow(agent.y - att.y, 2));
+                    minDist = Math.min(minDist, dist);
+                });
+                avgAlignment += 1.0 / (1.0 + minDist / 100);
+            });
+            avgAlignment /= agents.length;
+            document.getElementById('form-score').textContent = avgAlignment.toFixed(3);
+            
+            // Phase density
+            const avgDensity = agents.reduce((sum, agent) => 
+                sum + agent.computePhaseDensity(), 0) / agents.length;
+            document.getElementById('phase-density').textContent = avgDensity.toFixed(3);
+        }
+        
+        // Event listeners
+        document.getElementById('omega').addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+            document.getElementById('omega-value').textContent = omega.toFixed(1);
+            agents.forEach(agent => agent.temperature = omega);
+        });
+        
+        document.getElementById('num-agents').addEventListener('input', (e) => {
+            const numAgents = parseInt(e.target.value);
+            document.getElementById('agents-value').textContent = numAgents;
+            if (isRunning) {
+                initializeAgents(numAgents);
+            }
+        });
+        
+        document.getElementById('speed').addEventListener('input', (e) => {
+            document.getElementById('speed-value').textContent = e.target.value;
+        });
+        
+        document.getElementById('rupture-threshold').addEventListener('input', (e) => {
+            document.getElementById('rupture-value').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+        
+        document.getElementById('fractal-strength').addEventListener('input', (e) => {
+            document.getElementById('fractal-value').textContent = parseFloat(e.target.value).toFixed(1);
+        });
+        
+        document.getElementById('phase-constraint').addEventListener('input', (e) => {
+            document.getElementById('constraint-value').textContent = parseFloat(e.target.value).toFixed(1);
+        });
+        
+        document.getElementById('form-type').addEventListener('change', () => {
+            if (document.getElementById('form-type').value === 'voronoi') {
+                initializeVoronoi(8);
+            }
+        });
+        
+        document.getElementById('start-btn').addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                const numAgents = parseInt(document.getElementById('num-agents').value);
+                initializeAgents(numAgents);
+                initializeVoronoi(8);
+                document.getElementById('start-btn').textContent = 'Pause';
+                animate();
+            } else {
+                isRunning = false;
+                document.getElementById('start-btn').textContent = 'Resume';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        });
+        
+        document.getElementById('rupture-btn').addEventListener('click', () => {
+            if (isRunning) {
+                triggerRupture();
+            }
+        });
+        
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            coherence = 0;
+            strokeCount = 0;
+            aestheticMemory.successfulRegions = [];
+            lorenzState = {x: 0.1, y: 0, z: 0};
+            lastRuptureTime = Date.now();
+            initializeVoronoi(8);
+            updateMetrics();
+        });
+        
+        // Initialize
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        initializeVoronoi(8);
+        updateMetrics();
+    </script>
+</body>
+</html>
