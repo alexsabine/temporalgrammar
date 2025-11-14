@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR-FEP Inner Screen Simulator</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: normal;
+        }
+        
+        h3 {
+            margin-bottom: 20px;
+        }
+        
+        h4 {
+            margin-bottom: 10px;
+        }
+        
+        .mode-selection {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .mode-button {
+            padding: 12px 30px;
+            border: 1px solid #bdc3c7;
+            background-color: white;
+            font-family: Georgia, serif;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .mode-button.active {
+            border: 3px solid #2c3e50;
+            background-color: #ecf0f1;
+        }
+        
+        .canvas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .canvas-wrapper {
+            text-align: center;
+        }
+        
+        .canvas-wrapper h3 {
+            margin-bottom: 10px;
+        }
+        
+        canvas {
+            border: 2px solid #2c3e50;
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        #phantasmCanvas {
+            background-color: #f8f9fa;
+        }
+        
+        .control-panel {
+            border: 2px solid #2c3e50;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .control-slider {
+            width: 100%;
+        }
+        
+        .control-hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .derived-panel {
+            border: 2px solid #2c3e50;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .derived-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .derived-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .derived-formula {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .math-panel {
+            border: 2px solid #2c3e50;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .math-section {
+            margin-bottom: 15px;
+        }
+        
+        .math-formula {
+            font-family: monospace;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            overflow-x: auto;
+        }
+        
+        .phenomenology-notes {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            font-size: 14px;
+        }
+        
+        .phenomenology-notes ul {
+            margin-left: 20px;
+        }
+        
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRR-FEP Inner Screen Simulator</h1>
+    
+    <!-- Mode Selection -->
+    <div class="mode-selection">
+        <button class="mode-button active" id="dailyMode">
+            Daily Experience (Low Ω)
+        </button>
+        <button class="mode-button" id="dreamMode">
+            Dream Mode (High Ω)
+        </button>
+    </div>
+    
+    <!-- Canvases -->
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <h3>Training Set (External Boundary)</h3>
+            <canvas id="trainingCanvas" width="400" height="400"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+            <h3>Inner Screen (Phantasm Representation)</h3>
+            <canvas id="phantasmCanvas" width="400" height="400"></canvas>
+        </div>
+    </div>
+    
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h3>Control Parameters</h3>
+        
+        <div class="control-group">
+            <label class="control-label">
+                Ω (Omega) - Rigidity-Liquidity Parameter: <span id="omegaValue">2.0</span>
+                <span id="omegaWarning" class="warning" style="display:none;"> [Approaching critical limit!]</span>
+            </label>
+            <input type="range" class="control-slider" id="omegaSlider" 
+                   min="0.3" max="10" step="0.1" value="2.0">
+            <div class="control-hint">
+                Low Ω: Rigid, peaked at high-coherence | High Ω: Liquid, uniform history access
+                <br><strong>Note:</strong> Ω &lt; 0.3 approaches computational instability
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">
+                C (Coherence) - Accumulated Success: <span id="coherenceValue">5.0</span>
+            </label>
+            <input type="range" class="control-slider" id="coherenceSlider" 
+                   min="0" max="15" step="0.1" value="5.0">
+            <div class="control-hint">
+                C(t) = ∫₀ᵗ L(τ)dτ where L = -F (negative variational free energy)
+                <br><strong>Effect:</strong> Higher coherence = stronger memory amplification via exp(C/Ω)
+                <br>Accumulated coherence amplifies ALL template accessibility exponentially
+            </div>
+        </div>
+    </div>
+    
+    <!-- Derived Quantities -->
+    <div class="derived-panel">
+        <h3>Derived FEP Quantities</h3>
+        
+        <div class="derived-grid">
+            <div>
+                <h4>Markov Blanket Thickness</h4>
+                <div class="derived-value" id="blanketValue">55.0</div>
+                <div class="derived-formula">A<sub>B</sub> = κ/Ω + A<sub>min</sub></div>
+                <div class="control-hint">Thickness inversely proportional to Ω</div>
+            </div>
+            
+            <div>
+                <h4>Precision (π)</h4>
+                <div class="derived-value" id="precisionValue">1.741</div>
+                <div class="derived-formula">π(Ω) = αΩ<sup>-β</sup></div>
+                <div class="control-hint">High Ω → Low precision (loose constraints)</div>
+            </div>
+            
+            <div>
+                <h4>Coherence Amplification</h4>
+                <div class="derived-value" id="amplificationValue">148.41</div>
+                <div class="derived-formula">exp(C/Ω)</div>
+                <div class="control-hint">Memory weighting multiplier from accumulated coherence</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mathematical Framework -->
+    <div class="math-panel">
+        <h3>Mathematical Framework</h3>
+        
+        <div class="math-section">
+            <h4>Regeneration Operator (Full Implementation)</h4>
+            <div class="math-formula">
+                R[χ](x,t) = ∫₀ᵗ φ(x,τ)·exp(C(τ)/Ω)·Θ(t-τ) dτ
+            </div>
+            <div class="control-hint">
+                Templates φ weighted by exp(C/Ω) - exponential amplification controlled by Ω
+                <br><strong>Implementation:</strong> weight(shape) = exp(C_global/Ω) × exp(C_shape/Ω)
+            </div>
+        </div>
+        
+        <div class="math-section">
+            <h4>Memory Weight Function (As Implemented)</h4>
+            <div class="math-formula">
+                w(τ) = exp(C_accumulated/Ω) × exp(C_shape/Ω)
+            </div>
+            <div class="control-hint">
+                Low Ω: Exponentially peaked at recent high-C | High Ω: Approximately uniform across history
+                <br>Global coherence C amplifies all template accessibility multiplicatively
+            </div>
+        </div>
+        
+        <div class="math-section">
+            <h4>Effective Memory Depth</h4>
+            <div class="math-formula">
+                τ<sub>eff</sub> = ∫₀ᵗ exp(C(τ)/Ω) dτ ≈ exp(C/Ω) for constant C
+            </div>
+            <div class="control-hint">
+                Grows exponentially with accumulated coherence at high Ω
+                <br>Higher coherence = deeper temporal integration
+            </div>
+        </div>
+        
+        <div class="math-section">
+            <h4>Coherence Accumulation Dynamics</h4>
+            <div class="math-formula">
+                dC/dt = -F = -(D<sub>KL</sub>[q(η|μ)||p(η|b)] - log p(b))
+            </div>
+            <div class="control-hint">
+                Successful prediction (low VFE) increases coherence
+                <br>Coherence measures cumulative inferential success over system lifetime
+            </div>
+        </div>
+        
+        <div class="math-section">
+            <h4>Boundary Dissolution Limit</h4>
+            <div class="math-formula">
+                Ω → Ω<sub>crit</sub> ⟹ A<sub>B</sub> → A<sub>min</sub> ⟹ |U⟩ ≠ |S⟩|E⟩
+            </div>
+            <div class="control-hint">
+                At critical Ω, separability breaks down and FEP formalism becomes ill-defined
+                <br><strong>Safeguard:</strong> Ω<sub>min</sub> = 0.3 prevents numerical instability
+            </div>
+        </div>
+    </div>
+    
+    <!-- Phenomenological Notes -->
+    <div class="phenomenology-notes">
+        <h4>Phenomenological Interpretation</h4>
+        <ul>
+            <li><strong>Daily Experience (Low Ω, Medium C):</strong> Clear, stable representations. Recent high-coherence patterns dominate. Thick Markov blanket maintains separation. Templates sharply peaked in time.</li>
+            <li><strong>Dream State (High Ω, Variable C):</strong> Fluid, permeable representations. Deep-time patterns accessible. Thin blanket allows novel combinations. Uniform temporal weighting creates non-linear associations.</li>
+            <li><strong>High Coherence Training Effect:</strong> Accumulated successful prediction (high C) amplifies memory accessibility exponentially. System has "learned" patterns deeply. All templates become more accessible - represents stable, well-trained cognitive state.</li>
+            <li><strong>Low Coherence:</strong> Little accumulated success. Templates weakly accessible. Represents naive/untrained system or high-uncertainty state. Regeneration draws from limited memory.</li>
+            <li><strong>Boundary Dissolution (Ω→Ω<sub>crit</sub>):</strong> Direct experience of constraint structure itself. Timeless, ineffable, unitary. Extreme coherence at high Ω creates explosive memory amplification.</li>
+        </ul>
+    </div>
+    
+    <script>
+        // State variables
+        let omega = 2.0;
+        let omegaSmoothed = 2.0; // Smoothed value to prevent jitter
+        let coherence = 5.0;
+        let time = 0;
+        let precision = 1.741;
+        let blanketThickness = 55.0;
+        let coherenceAmplification = 1.0;
+        let mode = 'daily';
+        
+        // Safeguards
+        const OMEGA_MIN = 0.3;
+        const OMEGA_MAX = 10.0;
+        const OMEGA_CRITICAL_WARNING = 9.0;
+        const OMEGA_SMOOTHING = 0.1; // Exponential smoothing factor
+        
+        // Base shapes (Zener cards style) - each has local coherence from training
+        const baseShapes = [
+            { type: 'circle', x: 0.2, y: 0.3, coherence: 8 },
+            { type: 'square', x: 0.5, y: 0.3, coherence: 6 },
+            { type: 'star', x: 0.8, y: 0.3, coherence: 4 },
+            { type: 'waves', x: 0.35, y: 0.7, coherence: 5 },
+            { type: 'cross', x: 0.65, y: 0.7, coherence: 7 }
+        ];
+        
+        // Get DOM elements
+        const trainingCanvas = document.getElementById('trainingCanvas');
+        const phantasmCanvas = document.getElementById('phantasmCanvas');
+        const trainingCtx = trainingCanvas.getContext('2d');
+        const phantasmCtx = phantasmCanvas.getContext('2d');
+        
+        const omegaSlider = document.getElementById('omegaSlider');
+        const coherenceSlider = document.getElementById('coherenceSlider');
+        const omegaValue = document.getElementById('omegaValue');
+        const coherenceValue = document.getElementById('coherenceValue');
+        const blanketValue = document.getElementById('blanketValue');
+        const precisionValue = document.getElementById('precisionValue');
+        const amplificationValue = document.getElementById('amplificationValue');
+        const omegaWarning = document.getElementById('omegaWarning');
+        
+        const dailyButton = document.getElementById('dailyMode');
+        const dreamButton = document.getElementById('dreamMode');
+        
+        // Calculate derived values
+        function calculateMemoryWeight(shapeCoherence) {
+            // Full CRR implementation: exp(C_global/Ω) × exp(C_shape/Ω)
+            // This is the memory weighting from the regeneration operator
+            const globalWeight = Math.exp(coherence / omegaSmoothed);
+            const shapeWeight = Math.exp(shapeCoherence / omegaSmoothed);
+            return globalWeight * shapeWeight;
+        }
+        
+        function calculateBlanketThickness() {
+            const kappa = 50;
+            const Amin = 5;
+            return kappa / omegaSmoothed + Amin;
+        }
+        
+        function calculatePrecision() {
+            const alpha = 2.0;
+            const beta = 0.8;
+            return alpha * Math.pow(omegaSmoothed, -beta);
+        }
+        
+        function calculateCoherenceAmplification() {
+            // exp(C/Ω) - the exponential memory amplification factor
+            return Math.exp(coherence / omegaSmoothed);
+        }
+        
+        function updateDerivedValues() {
+            blanketThickness = calculateBlanketThickness();
+            precision = calculatePrecision();
+            coherenceAmplification = calculateCoherenceAmplification();
+            
+            blanketValue.textContent = blanketThickness.toFixed(2);
+            precisionValue.textContent = precision.toFixed(3);
+            amplificationValue.textContent = coherenceAmplification.toFixed(2);
+            
+            // Warning for critical omega
+            if (omegaSmoothed > OMEGA_CRITICAL_WARNING) {
+                omegaWarning.style.display = 'inline';
+            } else {
+                omegaWarning.style.display = 'none';
+            }
+        }
+        
+        // Smooth omega changes to prevent jitter
+        function smoothOmega() {
+            omegaSmoothed += (omega - omegaSmoothed) * OMEGA_SMOOTHING;
+        }
+        
+        // Drawing functions
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+            
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+        }
+        
+        function drawWaves(ctx, cx, cy, size) {
+            const amplitude = size / 4;
+            const frequency = 3;
+            ctx.moveTo(cx - size/2, cy);
+            for (let i = 0; i <= 20; i++) {
+                const x = cx - size/2 + (i * size / 20);
+                const y = cy + amplitude * Math.sin(i * frequency * Math.PI / 20);
+                ctx.lineTo(x, y);
+            }
+        }
+        
+        function drawCross(ctx, cx, cy, size) {
+            const thickness = size / 5;
+            ctx.moveTo(cx - size/2, cy - thickness/2);
+            ctx.lineTo(cx - size/2, cy + thickness/2);
+            ctx.lineTo(cx - thickness/2, cy + thickness/2);
+            ctx.lineTo(cx - thickness/2, cy + size/2);
+            ctx.lineTo(cx + thickness/2, cy + size/2);
+            ctx.lineTo(cx + thickness/2, cy + thickness/2);
+            ctx.lineTo(cx + size/2, cy + thickness/2);
+            ctx.lineTo(cx + size/2, cy - thickness/2);
+            ctx.lineTo(cx + thickness/2, cy - thickness/2);
+            ctx.lineTo(cx + thickness/2, cy - size/2);
+            ctx.lineTo(cx - thickness/2, cy - size/2);
+            ctx.lineTo(cx - thickness/2, cy - thickness/2);
+            ctx.closePath();
+        }
+        
+        function drawBaseShapes() {
+            const width = trainingCanvas.width;
+            const height = trainingCanvas.height;
+            
+            trainingCtx.clearRect(0, 0, width, height);
+            trainingCtx.strokeStyle = '#2c3e50';
+            trainingCtx.fillStyle = '#34495e';
+            trainingCtx.lineWidth = 2;
+            
+            baseShapes.forEach(shape => {
+                const x = shape.x * width;
+                const y = shape.y * height;
+                const size = 40;
+                
+                trainingCtx.beginPath();
+                
+                switch(shape.type) {
+                    case 'circle':
+                        trainingCtx.arc(x, y, size/2, 0, Math.PI * 2);
+                        break;
+                    case 'square':
+                        trainingCtx.rect(x - size/2, y - size/2, size, size);
+                        break;
+                    case 'star':
+                        drawStar(trainingCtx, x, y, 5, size/2, size/4);
+                        break;
+                    case 'waves':
+                        drawWaves(trainingCtx, x, y, size);
+                        break;
+                    case 'cross':
+                        drawCross(trainingCtx, x, y, size);
+                        break;
+                }
+                
+                trainingCtx.stroke();
+            });
+        }
+        
+        function drawPhantasmScreen() {
+            const width = phantasmCanvas.width;
+            const height = phantasmCanvas.height;
+            
+            phantasmCtx.clearRect(0, 0, width, height);
+            
+            // Background brightness affected by coherence (higher C = more "training")
+            const bgBrightness = 248 + Math.min(7, coherence * 0.3);
+            phantasmCanvas.style.backgroundColor = `rgb(${bgBrightness}, ${bgBrightness}, ${bgBrightness + 2})`;
+            
+            // Draw background with blanket thickness effect
+            const blurAmount = Math.max(0, (100 - blanketThickness) / 10);
+            phantasmCtx.filter = `blur(${blurAmount}px)`;
+            
+            baseShapes.forEach(shape => {
+                // Full CRR memory weighting
+                const weight = calculateMemoryWeight(shape.coherence);
+                
+                // Normalize weight for display - but respect extreme values
+                // At high coherence + high shape coherence, weights can be enormous
+                const maxWeight = Math.max(...baseShapes.map(s => calculateMemoryWeight(s.coherence)));
+                const normalizedWeight = weight / maxWeight;
+                
+                // Position with omega-dependent jitter
+                const jitterAmount = (1/omegaSmoothed) * 20;
+                const jitter = jitterAmount * Math.sin(time + shape.x * 10);
+                const x = shape.x * width + jitter;
+                const y = shape.y * height + jitter * 0.5;
+                
+                // Size affected by precision AND coherence
+                const baseSize = 40;
+                const sizeVariation = (1/precision) * 15;
+                // High coherence = more stable size (less variation)
+                const coherenceStability = Math.exp(-coherence / 10);
+                const size = baseSize + sizeVariation * coherenceStability * Math.sin(time * 2 + shape.y * 5);
+                
+                // Opacity based on memory weight - this is the key coherence effect
+                // Higher global coherence makes everything more visible/accessible
+                const baseOpacity = 0.2;
+                const weightOpacity = Math.min(0.95, baseOpacity + 0.75 * normalizedWeight);
+                
+                // Color shifts with omega (more varied in high omega)
+                const hueShift = omegaSmoothed * 20 * Math.sin(time + shape.coherence);
+                const baseHue = 200;
+                
+                // Line weight affected by coherence (sharper at high C)
+                const coherenceSharpness = 1 + coherence * 0.1;
+                const lineWeight = (3 - (omegaSmoothed * 0.15)) * coherenceSharpness;
+                
+                phantasmCtx.strokeStyle = `hsla(${baseHue + hueShift}, 70%, 50%, ${weightOpacity})`;
+                phantasmCtx.fillStyle = `hsla(${baseHue + hueShift}, 70%, 50%, ${weightOpacity * 0.3})`;
+                phantasmCtx.lineWidth = lineWeight;
+                
+                // Add glow effect for high omega OR high coherence
+                const glowIntensity = Math.max(0, (omegaSmoothed - 5) * 4) + Math.max(0, (coherence - 8) * 3);
+                if (glowIntensity > 0) {
+                    phantasmCtx.shadowBlur = glowIntensity;
+                    phantasmCtx.shadowColor = phantasmCtx.strokeStyle;
+                } else {
+                    phantasmCtx.shadowBlur = 0;
+                }
+                
+                phantasmCtx.beginPath();
+                
+                switch(shape.type) {
+                    case 'circle':
+                        phantasmCtx.arc(x, y, size/2, 0, Math.PI * 2);
+                        break;
+                    case 'square':
+                        phantasmCtx.rect(x - size/2, y - size/2, size, size);
+                        break;
+                    case 'star':
+                        drawStar(phantasmCtx, x, y, 5, size/2, size/4);
+                        break;
+                    case 'waves':
+                        drawWaves(phantasmCtx, x, y, size);
+                        break;
+                    case 'cross':
+                        drawCross(phantasmCtx, x, y, size);
+                        break;
+                }
+                
+                phantasmCtx.fill();
+                phantasmCtx.stroke();
+            });
+            
+            phantasmCtx.filter = 'none';
+            phantasmCtx.shadowBlur = 0;
+        }
+        
+        // Event listeners
+        omegaSlider.addEventListener('input', (e) => {
+            const rawValue = parseFloat(e.target.value);
+            // Clamp omega to safe range
+            omega = Math.max(OMEGA_MIN, Math.min(OMEGA_MAX, rawValue));
+            omegaValue.textContent = omega.toFixed(2);
+            updateDerivedValues();
+        });
+        
+        coherenceSlider.addEventListener('input', (e) => {
+            coherence = parseFloat(e.target.value);
+            coherenceValue.textContent = coherence.toFixed(2);
+            updateDerivedValues();
+        });
+        
+        dailyButton.addEventListener('click', () => {
+            mode = 'daily';
+            omega = 0.8;
+            coherence = 5.0;
+            omegaSlider.value = omega;
+            coherenceSlider.value = coherence;
+            omegaValue.textContent = omega.toFixed(2);
+            coherenceValue.textContent = coherence.toFixed(2);
+            updateDerivedValues();
+            dailyButton.classList.add('active');
+            dreamButton.classList.remove('active');
+        });
+        
+        dreamButton.addEventListener('click', () => {
+            mode = 'dream';
+            omega = 8.0;
+            coherence = 3.0;
+            omegaSlider.value = omega;
+            coherenceSlider.value = coherence;
+            omegaValue.textContent = omega.toFixed(2);
+            coherenceValue.textContent = coherence.toFixed(2);
+            updateDerivedValues();
+            dreamButton.classList.add('active');
+            dailyButton.classList.remove('active');
+        });
+        
+        // Animation loop
+        function animate() {
+            time += 0.05;
+            smoothOmega(); // Apply smoothing to prevent jitter
+            drawBaseShapes();
+            drawPhantasmScreen();
+            requestAnimationFrame(animate);
+        }
+        
+        // Initialize
+        updateDerivedValues();
+        dailyButton.classList.add('active');
+        animate();
+    </script>
+</body>
+</html>
