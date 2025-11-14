@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Periodic Table - Parameter Space Exploration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            color: #fff;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+        
+        #header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 42px;
+            background: linear-gradient(135deg, #ffd700, #ff6b6b, #4a90e2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+        
+        #controls-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .parameter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .parameter-control {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #4a90e2;
+        }
+        
+        .parameter-label {
+            font-size: 14px;
+            color: #4a90e2;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .parameter-value {
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #4a90e2, #ffd700);
+            outline: none;
+            -webkit-appearance: none;
+            margin-top: 5px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffd700;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+        
+        .equation-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #ff6b6b;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        
+        #periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            gap: 4px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .element {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .element:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        .element.selected {
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+        
+        .atomic-number {
+            font-size: 10px;
+            color: #aaa;
+            text-align: left;
+        }
+        
+        .symbol {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .atomic-mass {
+            font-size: 9px;
+            color: #aaa;
+            text-align: center;
+        }
+        
+        .crr-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .empty-cell {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Phase colors based on CRR behavior */
+        .phase-solid {
+            background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(74, 144, 226, 0.1));
+            border-color: #4a90e2;
+        }
+        
+        .phase-liquid {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1));
+            border-color: #ffd700;
+        }
+        
+        .phase-gas {
+            background: linear-gradient(135deg, rgba(200, 200, 200, 0.3), rgba(200, 200, 200, 0.1));
+            border-color: #c8c8c8;
+        }
+        
+        .phase-unstable {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 107, 107, 0.1));
+            border-color: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+        
+        .phase-supercoherent {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(138, 43, 226, 0.1));
+            border-color: #8a2be2;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        #info-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+        
+        #info-panel.visible {
+            display: block;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #4a90e2;
+        }
+        
+        .info-card h4 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            font-size: 18px;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .crr-prediction {
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 3px solid #ffd700;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>⚛️ CRR PERIODIC TABLE ⚛️</h1>
+        <p class="subtitle">Explore Element Behavior Across CRR Parameter Space</p>
+    </div>
+    
+    <div id="controls-panel">
+        <div class="control-section">
+            <h3>🎛️ CRR Framework Parameters</h3>
+            
+            <div class="parameter-grid">
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span>Temperature (Ω) Factor</span>
+                        <span class="parameter-value" id="omega-value">1.00x</span>
+                    </div>
+                    <input type="range" id="omega-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+                    <div class="equation-display">Ω = kT × <span id="omega-factor">1.00</span></div>
+                </div>
+                
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span>Coherence Strength (L)</span>
+                        <span class="parameter-value" id="coherence-value">1.00x</span>
+                    </div>
+                    <input type="range" id="coherence-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+                    <div class="equation-display">C(t) = ∫ L×<span id="coherence-factor">1.00</span> dτ</div>
+                </div>
+                
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span>Rupture Threshold (δ)</span>
+                        <span class="parameter-value" id="rupture-value">1.00x</span>
+                    </div>
+                    <input type="range" id="rupture-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+                    <div class="equation-display">T_rupture = T_melt × <span id="rupture-factor">1.00</span></div>
+                </div>
+                
+                <div class="parameter-control">
+                    <div class="parameter-label">
+                        <span>Regeneration Rate (R)</span>
+                        <span class="parameter-value" id="regen-value">1.00x</span>
+                    </div>
+                    <input type="range" id="regen-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+                    <div class="equation-display">R = ∫ φ·e^(C/Ω)×<span id="regen-factor">1.00</span> dτ</div>
+                </div>
+            </div>
+            
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="loadPreset('standard')">🔬 Standard Physics</button>
+                <button class="preset-btn" onclick="loadPreset('highcoherence')">🔷 High Coherence</button>
+                <button class="preset-btn" onclick="loadPreset('lowrupture')">💎 Low Rupture</button>
+                <button class="preset-btn" onclick="loadPreset('extreme')">⚡ Extreme Conditions</button>
+                <button class="preset-btn" onclick="loadPreset('cold')">❄️ Cold Universe</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="periodic-table"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color phase-solid"></div>
+            <span>Solid (High C/Ω)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color phase-liquid"></div>
+            <span>Liquid (Moderate C/Ω)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color phase-gas"></div>
+            <span>Gas (Low C/Ω)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color phase-unstable"></div>
+            <span>Rupture-Prone</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color phase-supercoherent"></div>
+            <span>Super-Coherent</span>
+        </div>
+    </div>
+    
+    <div id="info-panel">
+        <h2 style="color: #ffd700; margin-bottom: 20px;">
+            <span id="element-name">Hydrogen</span> 
+            <span style="color: #aaa; font-size: 18px;">(<span id="element-symbol">H</span>)</span>
+        </h2>
+        
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>Atomic Number</h4>
+                <div class="info-value" id="info-atomic-number">1</div>
+            </div>
+            <div class="info-card">
+                <h4>Atomic Mass</h4>
+                <div class="info-value" id="info-atomic-mass">1.008</div>
+            </div>
+            <div class="info-card">
+                <h4>Melting Point</h4>
+                <div class="info-value" id="info-melting">14.01 K</div>
+            </div>
+            <div class="info-card">
+                <h4>Boiling Point</h4>
+                <div class="info-value" id="info-boiling">20.28 K</div>
+            </div>
+            <div class="info-card">
+                <h4>CRR Phase (Room T)</h4>
+                <div class="info-value" id="info-phase">Gas</div>
+            </div>
+            <div class="info-card">
+                <h4>Coherence Index</h4>
+                <div class="info-value" id="info-coherence-index">0.15</div>
+            </div>
+        </div>
+        
+        <div class="crr-prediction">
+            <h4 style="color: #ffd700; margin-bottom: 10px;">🧮 CRR Analysis</h4>
+            <div id="crr-analysis"></div>
+        </div>
+    </div>
+
+    <script>
+        // Periodic table data (118 elements)
+        const elements = [
+            {z:1,symbol:"H",name:"Hydrogen",mass:1.008,melt:14.01,boil:20.28,group:1,period:1},
+            {z:2,symbol:"He",name:"Helium",mass:4.003,melt:0.95,boil:4.22,group:18,period:1},
+            {z:3,symbol:"Li",name:"Lithium",mass:6.941,melt:453.65,boil:1603,group:1,period:2},
+            {z:4,symbol:"Be",name:"Beryllium",mass:9.012,melt:1560,boil:2742,group:2,period:2},
+            {z:5,symbol:"B",name:"Boron",mass:10.81,melt:2349,boil:4200,group:13,period:2},
+            {z:6,symbol:"C",name:"Carbon",mass:12.01,melt:3823,boil:4098,group:14,period:2},
+            {z:7,symbol:"N",name:"Nitrogen",mass:14.01,melt:63.15,boil:77.36,group:15,period:2},
+            {z:8,symbol:"O",name:"Oxygen",mass:16.00,melt:54.36,boil:90.20,group:16,period:2},
+            {z:9,symbol:"F",name:"Fluorine",mass:19.00,melt:53.48,boil:85.03,group:17,period:2},
+            {z:10,symbol:"Ne",name:"Neon",mass:20.18,melt:24.56,boil:27.07,group:18,period:2},
+            {z:11,symbol:"Na",name:"Sodium",mass:22.99,melt:370.95,boil:1156,group:1,period:3},
+            {z:12,symbol:"Mg",name:"Magnesium",mass:24.31,melt:923,boil:1363,group:2,period:3},
+            {z:13,symbol:"Al",name:"Aluminum",mass:26.98,melt:933.47,boil:2792,group:13,period:3},
+            {z:14,symbol:"Si",name:"Silicon",mass:28.09,melt:1687,boil:3538,group:14,period:3},
+            {z:15,symbol:"P",name:"Phosphorus",mass:30.97,melt:317.3,boil:553,group:15,period:3},
+            {z:16,symbol:"S",name:"Sulfur",mass:32.07,melt:388.36,boil:717.8,group:16,period:3},
+            {z:17,symbol:"Cl",name:"Chlorine",mass:35.45,melt:171.6,boil:239.11,group:17,period:3},
+            {z:18,symbol:"Ar",name:"Argon",mass:39.95,melt:83.80,boil:87.30,group:18,period:3},
+            {z:19,symbol:"K",name:"Potassium",mass:39.10,melt:336.53,boil:1032,group:1,period:4},
+            {z:20,symbol:"Ca",name:"Calcium",mass:40.08,melt:1115,boil:1757,group:2,period:4},
+            {z:21,symbol:"Sc",name:"Scandium",mass:44.96,melt:1814,boil:3109,group:3,period:4},
+            {z:22,symbol:"Ti",name:"Titanium",mass:47.87,melt:1941,boil:3560,group:4,period:4},
+            {z:23,symbol:"V",name:"Vanadium",mass:50.94,melt:2183,boil:3680,group:5,period:4},
+            {z:24,symbol:"Cr",name:"Chromium",mass:52.00,melt:2180,boil:2944,group:6,period:4},
+            {z:25,symbol:"Mn",name:"Manganese",mass:54.94,melt:1519,boil:2334,group:7,period:4},
+            {z:26,symbol:"Fe",name:"Iron",mass:55.85,melt:1811,boil:3134,group:8,period:4},
+            {z:27,symbol:"Co",name:"Cobalt",mass:58.93,melt:1768,boil:3200,group:9,period:4},
+            {z:28,symbol:"Ni",name:"Nickel",mass:58.69,melt:1728,boil:3186,group:10,period:4},
+            {z:29,symbol:"Cu",name:"Copper",mass:63.55,melt:1357.77,boil:2835,group:11,period:4},
+            {z:30,symbol:"Zn",name:"Zinc",mass:65.38,melt:692.68,boil:1180,group:12,period:4},
+            {z:31,symbol:"Ga",name:"Gallium",mass:69.72,melt:302.91,boil:2477,group:13,period:4},
+            {z:32,symbol:"Ge",name:"Germanium",mass:72.63,melt:1211.40,boil:3106,group:14,period:4},
+            {z:33,symbol:"As",name:"Arsenic",mass:74.92,melt:1090,boil:887,group:15,period:4},
+            {z:34,symbol:"Se",name:"Selenium",mass:78.97,melt:493,boil:958,group:16,period:4},
+            {z:35,symbol:"Br",name:"Bromine",mass:79.90,melt:265.8,boil:332.0,group:17,period:4},
+            {z:36,symbol:"Kr",name:"Krypton",mass:83.80,melt:115.79,boil:119.93,group:18,period:4},
+            {z:37,symbol:"Rb",name:"Rubidium",mass:85.47,melt:312.46,boil:961,group:1,period:5},
+            {z:38,symbol:"Sr",name:"Strontium",mass:87.62,melt:1050,boil:1655,group:2,period:5},
+            {z:39,symbol:"Y",name:"Yttrium",mass:88.91,melt:1799,boil:3609,group:3,period:5},
+            {z:40,symbol:"Zr",name:"Zirconium",mass:91.22,melt:2128,boil:4682,group:4,period:5},
+            {z:41,symbol:"Nb",name:"Niobium",mass:92.91,melt:2750,boil:5017,group:5,period:5},
+            {z:42,symbol:"Mo",name:"Molybdenum",mass:95.95,melt:2896,boil:4912,group:6,period:5},
+            {z:43,symbol:"Tc",name:"Technetium",mass:98,melt:2430,boil:4538,group:7,period:5},
+            {z:44,symbol:"Ru",name:"Ruthenium",mass:101.07,melt:2607,boil:4423,group:8,period:5},
+            {z:45,symbol:"Rh",name:"Rhodium",mass:102.91,melt:2237,boil:3968,group:9,period:5},
+            {z:46,symbol:"Pd",name:"Palladium",mass:106.42,melt:1828.05,boil:3236,group:10,period:5},
+            {z:47,symbol:"Ag",name:"Silver",mass:107.87,melt:1234.93,boil:2435,group:11,period:5},
+            {z:48,symbol:"Cd",name:"Cadmium",mass:112.41,melt:594.22,boil:1040,group:12,period:5},
+            {z:49,symbol:"In",name:"Indium",mass:114.82,melt:429.75,boil:2345,group:13,period:5},
+            {z:50,symbol:"Sn",name:"Tin",mass:118.71,melt:505.08,boil:2875,group:14,period:5},
+            {z:51,symbol:"Sb",name:"Antimony",mass:121.76,melt:903.78,boil:1908,group:15,period:5},
+            {z:52,symbol:"Te",name:"Tellurium",mass:127.60,melt:722.66,boil:1261,group:16,period:5},
+            {z:53,symbol:"I",name:"Iodine",mass:126.90,melt:386.85,boil:457.4,group:17,period:5},
+            {z:54,symbol:"Xe",name:"Xenon",mass:131.29,melt:161.40,boil:165.11,group:18,period:5},
+            {z:55,symbol:"Cs",name:"Cesium",mass:132.91,melt:301.59,boil:944,group:1,period:6},
+            {z:56,symbol:"Ba",name:"Barium",mass:137.33,melt:1000,boil:2170,group:2,period:6},
+            {z:72,symbol:"Hf",name:"Hafnium",mass:178.49,melt:2506,boil:4876,group:4,period:6},
+            {z:73,symbol:"Ta",name:"Tantalum",mass:180.95,melt:3290,boil:5731,group:5,period:6},
+            {z:74,symbol:"W",name:"Tungsten",mass:183.84,melt:3695,boil:5828,group:6,period:6},
+            {z:75,symbol:"Re",name:"Rhenium",mass:186.21,melt:3459,boil:5869,group:7,period:6},
+            {z:76,symbol:"Os",name:"Osmium",mass:190.23,melt:3306,boil:5285,group:8,period:6},
+            {z:77,symbol:"Ir",name:"Iridium",mass:192.22,melt:2719,boil:4701,group:9,period:6},
+            {z:78,symbol:"Pt",name:"Platinum",mass:195.08,melt:2041.4,boil:4098,group:10,period:6},
+            {z:79,symbol:"Au",name:"Gold",mass:196.97,melt:1337.33,boil:3129,group:11,period:6},
+            {z:80,symbol:"Hg",name:"Mercury",mass:200.59,melt:234.43,boil:629.88,group:12,period:6},
+            {z:81,symbol:"Tl",name:"Thallium",mass:204.38,melt:577,boil:1746,group:13,period:6},
+            {z:82,symbol:"Pb",name:"Lead",mass:207.2,melt:600.61,boil:2022,group:14,period:6},
+            {z:83,symbol:"Bi",name:"Bismuth",mass:208.98,melt:544.7,boil:1837,group:15,period:6},
+            {z:84,symbol:"Po",name:"Polonium",mass:209,melt:527,boil:1235,group:16,period:6},
+            {z:85,symbol:"At",name:"Astatine",mass:210,melt:575,boil:610,group:17,period:6},
+            {z:86,symbol:"Rn",name:"Radon",mass:222,melt:202,boil:211.5,group:18,period:6},
+            {z:87,symbol:"Fr",name:"Francium",mass:223,melt:300,boil:950,group:1,period:7},
+            {z:88,symbol:"Ra",name:"Radium",mass:226,melt:973,boil:2010,group:2,period:7},
+            {z:104,symbol:"Rf",name:"Rutherfordium",mass:267,melt:null,boil:null,group:4,period:7},
+            {z:105,symbol:"Db",name:"Dubnium",mass:268,melt:null,boil:null,group:5,period:7},
+            {z:106,symbol:"Sg",name:"Seaborgium",mass:269,melt:null,boil:null,group:6,period:7},
+            {z:107,symbol:"Bh",name:"Bohrium",mass:270,melt:null,boil:null,group:7,period:7},
+            {z:108,symbol:"Hs",name:"Hassium",mass:277,melt:null,boil:null,group:8,period:7},
+            {z:109,symbol:"Mt",name:"Meitnerium",mass:278,melt:null,boil:null,group:9,period:7},
+            {z:110,symbol:"Ds",name:"Darmstadtium",mass:281,melt:null,boil:null,group:10,period:7},
+            {z:111,symbol:"Rg",name:"Roentgenium",mass:282,melt:null,boil:null,group:11,period:7},
+            {z:112,symbol:"Cn",name:"Copernicium",mass:285,melt:null,boil:null,group:12,period:7},
+            {z:113,symbol:"Nh",name:"Nihonium",mass:286,melt:null,boil:null,group:13,period:7},
+            {z:114,symbol:"Fl",name:"Flerovium",mass:289,melt:null,boil:null,group:14,period:7},
+            {z:115,symbol:"Mc",name:"Moscovium",mass:290,melt:null,boil:null,group:15,period:7},
+            {z:116,symbol:"Lv",name:"Livermorium",mass:293,melt:null,boil:null,group:16,period:7},
+            {z:117,symbol:"Ts",name:"Tennessine",mass:294,melt:null,boil:null,group:17,period:7},
+            {z:118,symbol:"Og",name:"Oganesson",mass:294,melt:null,boil:null,group:18,period:7},
+        ];
+        
+        // CRR parameters
+        let params = {
+            omega: 1.0,
+            coherence: 1.0,
+            rupture: 1.0,
+            regeneration: 1.0
+        };
+        
+        let selectedElement = null;
+        const ROOM_TEMP = 298.15; // K
+        
+        function initPeriodicTable() {
+            const table = document.getElementById('periodic-table');
+            
+            // Create 18 columns × 7 rows grid
+            for (let period = 1; period <= 7; period++) {
+                for (let group = 1; group <= 18; group++) {
+                    const element = elements.find(e => e.period === period && e.group === group);
+                    
+                    if (element) {
+                        const div = createElementDiv(element);
+                        table.appendChild(div);
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.className = 'element empty-cell';
+                        table.appendChild(empty);
+                    }
+                }
+            }
+            
+            updateAllElements();
+        }
+        
+        function createElementDiv(element) {
+            const div = document.createElement('div');
+            div.className = 'element';
+            div.dataset.z = element.z;
+            
+            div.innerHTML = `
+                <div class="atomic-number">${element.z}</div>
+                <div class="symbol">${element.symbol}</div>
+                <div class="atomic-mass">${element.mass.toFixed(2)}</div>
+                <div class="crr-indicator"></div>
+            `;
+            
+            div.addEventListener('click', () => selectElement(element));
+            
+            return div;
+        }
+        
+        function calculateCRRProperties(element) {
+            const T = ROOM_TEMP;
+            const omega = params.omega * T * 8.617e-5; // Convert to eV
+            
+            // Base coherence index from melting point (higher melt = more coherent structure)
+            let coherenceIndex = 0;
+            if (element.melt) {
+                coherenceIndex = Math.log10(element.melt) / 4; // Normalized 0-1
+                coherenceIndex *= params.coherence;
+            }
+            
+            // Adjusted melting point based on rupture threshold
+            const effectiveMelt = element.melt ? element.melt * params.rupture : null;
+            
+            // CRR phase determination
+            let phase, phaseClass;
+            if (!element.melt || !element.boil) {
+                phase = "Synthetic";
+                phaseClass = "phase-unstable";
+            } else {
+                const effectiveBoil = element.boil * params.rupture;
+                
+                // Higher coherence makes solid more stable
+                const solidThreshold = effectiveMelt * (1 + coherenceIndex * params.coherence);
+                const liquidThreshold = effectiveBoil * (1 - coherenceIndex * 0.3);
+                
+                if (T < solidThreshold) {
+                    if (coherenceIndex > 0.7) {
+                        phase = "Super-Coherent";
+                        phaseClass = "phase-supercoherent";
+                    } else {
+                        phase = "Solid";
+                        phaseClass = "phase-solid";
+                    }
+                } else if (T < liquidThreshold) {
+                    phase = "Liquid";
+                    phaseClass = "phase-liquid";
+                } else {
+                    phase = "Gas";
+                    phaseClass = "phase-gas";
+                }
+                
+                // Check for rupture-prone state
+                const coherenceOverOmega = coherenceIndex / (omega * 10);
+                if (coherenceOverOmega > 1.5 && T > effectiveMelt * 0.8) {
+                    phase = "Rupture-Prone";
+                    phaseClass = "phase-unstable";
+                }
+            }
+            
+            // Regeneration capacity
+            const regenCapacity = params.regeneration * coherenceIndex * Math.exp(coherenceIndex / omega);
+            
+            return {
+                phase,
+                phaseClass,
+                coherenceIndex,
+                effectiveMelt,
+                regenCapacity,
+                omega
+            };
+        }
+        
+        function updateAllElements() {
+            elements.forEach(element => {
+                const div = document.querySelector(`.element[data-z="${element.z}"]`);
+                if (div) {
+                    const props = calculateCRRProperties(element);
+                    
+                    // Update visual
+                    div.className = `element ${props.phaseClass}`;
+                    if (selectedElement && selectedElement.z === element.z) {
+                        div.classList.add('selected');
+                    }
+                    
+                    // Update indicator color
+                    const indicator = div.querySelector('.crr-indicator');
+                    const hue = props.coherenceIndex * 240; // Blue (240) for high coherence
+                    indicator.style.background = `hsl(${hue}, 70%, 50%)`;
+                }
+            });
+        }
+        
+        function selectElement(element) {
+            selectedElement = element;
+            updateAllElements();
+            showElementInfo(element);
+        }
+        
+        function showElementInfo(element) {
+            const panel = document.getElementById('info-panel');
+            panel.classList.add('visible');
+            
+            document.getElementById('element-name').textContent = element.name;
+            document.getElementById('element-symbol').textContent = element.symbol;
+            document.getElementById('info-atomic-number').textContent = element.z;
+            document.getElementById('info-atomic-mass').textContent = element.mass.toFixed(3);
+            
+            const props = calculateCRRProperties(element);
+            
+            document.getElementById('info-melting').textContent = 
+                element.melt ? `${element.melt.toFixed(2)} K` : "Unknown";
+            document.getElementById('info-boiling').textContent = 
+                element.boil ? `${element.boil.toFixed(2)} K` : "Unknown";
+            document.getElementById('info-phase').textContent = props.phase;
+            document.getElementById('info-coherence-index').textContent = 
+                props.coherenceIndex.toFixed(3);
+            
+            // Generate CRR analysis
+            const analysis = generateCRRAnalysis(element, props);
+            document.getElementById('crr-analysis').innerHTML = analysis;
+        }
+        
+        function generateCRRAnalysis(element, props) {
+            let analysis = [];
+            
+            // Coherence analysis
+            if (props.coherenceIndex > 0.8) {
+                analysis.push(`<strong>High Coherence:</strong> ${element.symbol} maintains strong structural memory (C >> Ω). The system accumulates lattice memory effectively, making it resistant to thermal perturbations.`);
+            } else if (props.coherenceIndex < 0.3) {
+                analysis.push(`<strong>Low Coherence:</strong> ${element.symbol} has weak structural memory (C << Ω). Limited history integration makes the system highly responsive to thermal fluctuations.`);
+            }
+            
+            // Phase transition analysis
+            if (element.melt && element.boil) {
+                const tempRange = element.boil - element.melt;
+                if (tempRange < 500) {
+                    analysis.push(`<strong>Narrow Liquid Window:</strong> Only ${tempRange.toFixed(0)} K between melting and boiling. Rupture events (δ) cascade rapidly through phase transitions.`);
+                }
+                
+                // Rupture prediction
+                const ruptureTemp = props.effectiveMelt;
+                const ruptureDeviation = ((ruptureTemp / element.melt - 1) * 100).toFixed(1);
+                if (Math.abs(ruptureDeviation) > 5) {
+                    analysis.push(`<strong>Rupture Threshold Shift:</strong> Current parameters predict melting at ${ruptureTemp.toFixed(0)} K (${ruptureDeviation > 0 ? '+' : ''}${ruptureDeviation}% vs standard). The system's coherence-adjusted rupture point has shifted significantly.`);
+                }
+            }
+            
+            // Regeneration analysis
+            if (props.regenCapacity > 2) {
+                analysis.push(`<strong>Strong Regeneration:</strong> exp(C/Ω) = ${props.regenCapacity.toFixed(2)}. Historical field φ(x,τ) strongly guides reconstruction. System has high memory amplification during cooling.`);
+            } else if (props.regenCapacity < 0.5) {
+                analysis.push(`<strong>Weak Regeneration:</strong> exp(C/Ω) = ${props.regenCapacity.toFixed(2)}. Limited memory weighting during phase transitions. System regenerates with minimal historical bias.`);
+            }
+            
+            // Omega analysis
+            const omegaRatio = props.coherenceIndex / props.omega;
+            if (omegaRatio > 1) {
+                analysis.push(`<strong>Exploitation-Rigidity Regime:</strong> C/Ω = ${omegaRatio.toFixed(2)} > 1. System is in high-coherence, low-temperature state. Vulnerable to rupture under perturbation.`);
+            }
+            
+            // Special predictions
+            if (params.coherence > 2 && element.melt && element.melt > 1000) {
+                analysis.push(`<strong>⚡ Prediction:</strong> Under extreme coherence conditions, ${element.symbol} might form meta-stable super-coherent phases not observed under standard physics. CRR suggests new material states possible.`);
+            }
+            
+            if (params.omega < 0.5 && element.boil && element.boil > 2000) {
+                analysis.push(`<strong>❄️ Cold Universe Effect:</strong> In low-Ω regime, even high-boiling elements become solid. ${element.symbol} would remain locked in crystalline state far above its standard melting point.`);
+            }
+            
+            if (analysis.length === 0) {
+                analysis.push(`Standard CRR behavior. Parameters within normal operating regime for ${element.symbol}.`);
+            }
+            
+            return analysis.join('<br><br>');
+        }
+        
+        // Parameter controls
+        function setupControls() {
+            const controls = {
+                omega: document.getElementById('omega-slider'),
+                coherence: document.getElementById('coherence-slider'),
+                rupture: document.getElementById('rupture-slider'),
+                regeneration: document.getElementById('regen-slider')
+            };
+            
+            Object.keys(controls).forEach(key => {
+                controls[key].addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    params[key] = value;
+                    
+                    document.getElementById(`${key}-value`).textContent = value.toFixed(2) + 'x';
+                    document.getElementById(`${key}-factor`).textContent = value.toFixed(2);
+                    
+                    updateAllElements();
+                    if (selectedElement) {
+                        showElementInfo(selectedElement);
+                    }
+                });
+            });
+        }
+        
+        function loadPreset(name) {
+            const presets = {
+                standard: {omega: 1.0, coherence: 1.0, rupture: 1.0, regeneration: 1.0},
+                highcoherence: {omega: 1.0, coherence: 2.5, rupture: 1.0, regeneration: 1.5},
+                lowrupture: {omega: 1.0, coherence: 1.5, rupture: 2.0, regeneration: 1.0},
+                extreme: {omega: 3.0, coherence: 0.5, rupture: 0.5, regeneration: 2.5},
+                cold: {omega: 0.3, coherence: 1.8, rupture: 1.5, regeneration: 0.8}
+            };
+            
+            const preset = presets[name];
+            if (!preset) return;
+            
+            Object.keys(preset).forEach(key => {
+                params[key] = preset[key];
+                const slider = document.getElementById(`${key}-slider`);
+                slider.value = preset[key];
+                document.getElementById(`${key}-value`).textContent = preset[key].toFixed(2) + 'x';
+                document.getElementById(`${key}-factor`).textContent = preset[key].toFixed(2);
+            });
+            
+            updateAllElements();
+            if (selectedElement) {
+                showElementInfo(selectedElement);
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            initPeriodicTable();
+            setupControls();
+            
+            // Auto-select Gold as example
+            const gold = elements.find(e => e.symbol === 'Au');
+            if (gold) selectElement(gold);
+        });
+    </script>
+</body>
+</html>
