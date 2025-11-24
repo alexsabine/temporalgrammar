@@ -1,0 +1,2714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marine Ecosystem: Enhanced CRR Simulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: white;
+    }
+    
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px 30px;
+      border-bottom: 3px solid #34495e;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .math-explanation {
+      background: #ecf0f1;
+      border-bottom: 1px solid #bdc3c7;
+    }
+    
+    .math-toggle {
+      width: 100%;
+      padding: 15px 30px;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #2c3e50;
+      transition: background 0.2s;
+    }
+    
+    .math-toggle:hover {
+      background: #d5dbdb;
+    }
+    
+    .math-toggle-icon {
+      transition: transform 0.3s;
+    }
+    
+    .math-toggle-icon.open {
+      transform: rotate(180deg);
+    }
+    
+    .math-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    
+    .math-content.open {
+      max-height: 3000px;
+    }
+    
+    .math-inner {
+      padding: 20px 30px 30px;
+      font-size: 14px;
+    }
+    
+    .math-section {
+      margin-bottom: 20px;
+    }
+    
+    .math-section h3 {
+      font-size: 16px;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    .math-equation {
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 3px solid #3498db;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    
+    .canvas-container {
+      padding: 0;
+      background: #0d1b2a;
+      position: relative;
+      width: 100%;
+      height: 70vh;
+      min-height: 500px;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #1a3a52 0%, #0d1b2a 100%);
+      cursor: crosshair;
+    }
+    
+    .overlay-controls {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10;
+      max-height: calc(100% - 30px);
+      overflow-y: auto;
+      max-width: 200px;
+    }
+    
+    .overlay-controls h4 {
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: #2c3e50;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+    }
+    
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .control-section-title {
+      font-size: 11px;
+      color: #7f8c8d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      padding: 4px 0;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    
+    .checkbox-item label {
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+    
+    .controls {
+      padding: 20px 30px;
+      background: white;
+      border-top: 1px solid #ecf0f1;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn:hover {
+      background: #2980b9;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn.danger {
+      background: #e74c3c;
+    }
+    
+    .btn.danger:hover {
+      background: #c0392b;
+    }
+    
+    .btn.warning {
+      background: #f39c12;
+    }
+    
+    .btn.warning:hover {
+      background: #e67e22;
+    }
+    
+    .btn.secondary {
+      background: #95a5a6;
+    }
+    
+    .btn.secondary:hover {
+      background: #7f8c8d;
+    }
+    
+    .btn.active {
+      background: #27ae60;
+    }
+    
+    .btn.active:hover {
+      background: #229954;
+    }
+    
+    .btn.purple {
+      background: #9b59b6;
+    }
+    
+    .btn.purple:hover {
+      background: #8e44ad;
+    }
+    
+    .btn.teal {
+      background: #16a085;
+    }
+    
+    .btn.teal:hover {
+      background: #1abc9c;
+    }
+    
+    .btn.storm {
+      background: #34495e;
+    }
+    
+    .btn.storm:hover {
+      background: #2c3e50;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .time-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 15px;
+      background: #ecf0f1;
+      border-radius: 4px;
+    }
+    
+    .time-control label {
+      font-size: 13px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+    
+    .time-control input[type="range"] {
+      width: 100px;
+      cursor: pointer;
+    }
+    
+    .time-control span {
+      font-size: 12px;
+      color: #7f8c8d;
+      min-width: 30px;
+    }
+    
+    .metrics {
+      padding: 20px 30px;
+      background: #f8f9fa;
+      border-top: 1px solid #ecf0f1;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+    }
+    
+    .metric-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .metric-label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    
+    .metric-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .metric-value.stress {
+      color: #e74c3c;
+    }
+    
+    .metric-value.good {
+      color: #27ae60;
+    }
+    
+    .metric-value.night {
+      color: #9b59b6;
+    }
+    
+    .metric-subtext {
+      font-size: 11px;
+      color: #95a5a6;
+      margin-top: 3px;
+    }
+    
+    .perf-indicator {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #0f0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 10;
+    }
+    
+    .day-indicator {
+      position: absolute;
+      top: 50px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 10;
+    }
+    
+    .day-indicator.night {
+      background: rgba(75, 0, 130, 0.7);
+      color: #e0e0ff;
+    }
+    
+    .entity-inspector {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 10;
+      min-width: 220px;
+      display: none;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .entity-inspector.visible {
+      display: block;
+    }
+    
+    .entity-inspector h5 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      color: #3498db;
+    }
+    
+    .entity-inspector .stat {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .entity-inspector .stat-label {
+      color: #aaa;
+    }
+    
+    .entity-inspector .stat-value {
+      font-weight: 600;
+    }
+    
+    .entity-inspector .coherence-bar {
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .entity-inspector .coherence-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3498db, #9b59b6);
+      transition: width 0.3s;
+    }
+    
+    .entity-inspector .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    .entity-inspector .close-btn:hover {
+      color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+      .header, .controls, .metrics, .math-inner {
+        padding: 15px;
+      }
+      
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .canvas-container {
+        height: 50vh;
+        min-height: 400px;
+      }
+      
+      .overlay-controls {
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Marine Ecosystem Simulation (Enhanced)</h1>
+      <p>Advanced CRR Dynamics • Day/Night Cycle • Jellyfish • Sea Turtles • Kelp Forests • Storms</p>
+    </div>
+    
+    <div class="math-explanation">
+      <button class="math-toggle" id="mathToggle">
+        <span>Mathematical Framework & New Features</span>
+        <span class="math-toggle-icon" id="mathIcon">▼</span>
+      </button>
+      <div class="math-content" id="mathContent">
+        <div class="math-inner">
+          <div class="math-section">
+            <h3>New Features</h3>
+            <p><strong>Day/Night Cycle:</strong> 5-minute cycle affects light, behavior, and triggers bioluminescence in jellyfish at night.</p>
+            <p><strong>Jellyfish:</strong> Drift with currents, pulse rhythmically, sting nearby fish. Bioluminescent at night.</p>
+            <p><strong>Sea Turtles:</strong> Gentle giants that hunt jellyfish, providing ecosystem balance.</p>
+            <p><strong>Kelp Forest:</strong> Swaying vegetation provides shelter (fish hide, reduced predation).</p>
+            <p><strong>Marine Snow:</strong> Organic particles drift down, adding atmospheric depth.</p>
+            <p><strong>Storms:</strong> Increase currents, reduce light, stir sediment, stress organisms.</p>
+            <p><strong>Spawning Events:</strong> Synchronized reproduction when conditions are optimal.</p>
+          </div>
+          
+          <div class="math-section">
+            <h3>Core CRR Framework</h3>
+            <p>Non-Markovian dynamics with full memory integration:</p>
+            <div class="math-equation">
+              dx/dt = f(x,t) + ∫₀ᵗ K(t-τ)·x(τ)·exp(C(τ)/Ω) dτ
+            </div>
+            <p>where C(t) = ∫₀ᵗ L(x,τ) dτ accumulates over entire history.</p>
+          </div>
+          
+          <div class="math-section">
+            <h3>Environmental Coupling</h3>
+            <p>All agents couple through shared environmental fields:</p>
+            <div class="math-equation">
+              L_total = L_intrinsic + Σⱼ κⱼ·Φⱼ(x,t) + L_daynight(t) + L_shelter(x)
+            </div>
+            <p>Φⱼ: nutrient, current, temperature, oxygen fields. Day/night modulates behavior.</p>
+          </div>
+          
+          <div class="math-section">
+            <h3>Jellyfish Dynamics</h3>
+            <div class="math-equation">
+              Pulse(t) = A·sin(ωt + φ)·(1 + C/Ω)
+            </div>
+            <p>Bioluminescence intensity scales with coherence at night.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="canvas-container">
+      <canvas id="ocean"></canvas>
+      
+      <div class="perf-indicator" id="perfIndicator">
+        FPS: -- | Entities: --
+      </div>
+      
+      <div class="day-indicator" id="dayIndicator">
+        ☀️ Day | 12:00
+      </div>
+      
+      <div class="entity-inspector" id="entityInspector">
+        <button class="close-btn" onclick="closeInspector()">✕</button>
+        <h5 id="inspectorTitle">Entity</h5>
+        <div class="stat">
+          <span class="stat-label">Type:</span>
+          <span class="stat-value" id="inspectorType">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Coherence (C):</span>
+          <span class="stat-value" id="inspectorCoherence">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Omega (Ω):</span>
+          <span class="stat-value" id="inspectorOmega">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">C/Ω Ratio:</span>
+          <span class="stat-value" id="inspectorRatio">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Health/Energy:</span>
+          <span class="stat-value" id="inspectorHealth">-</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Age:</span>
+          <span class="stat-value" id="inspectorAge">-</span>
+        </div>
+        <div class="coherence-bar">
+          <div class="coherence-fill" id="inspectorBar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="overlay-controls">
+        <h4>Environmental Processes</h4>
+        
+        <div class="control-section">
+          <div class="control-section-title">Physical</div>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="showCurrents" onchange="toggleProcess('currents')">
+              <label for="showCurrents">Water Currents</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showTemp" onchange="toggleProcess('temperature')">
+              <label for="showTemp">Temperature</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showLight" onchange="toggleProcess('light')">
+              <label for="showLight">Light Rays</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="control-section-title">Biological</div>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="showPlankton" checked onchange="toggleProcess('plankton')">
+              <label for="showPlankton">Plankton</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showKelp" checked onchange="toggleProcess('kelp')">
+              <label for="showKelp">Kelp Forest</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showSnow" checked onchange="toggleProcess('snow')">
+              <label for="showSnow">Marine Snow</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="control-section-title">CRR Dynamics</div>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="showCoherence" onchange="toggleProcess('coherence')">
+              <label for="showCoherence">Coherence Fields</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showConnections" onchange="toggleProcess('connections')">
+              <label for="showConnections">Social Networks</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="showBio" onchange="toggleProcess('bioluminescence')">
+              <label for="showBio">Bioluminescence</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="btn" onclick="addCoral()">🪸 Coral</button>
+      <button class="btn" onclick="addFishSchool()">🐠 Fish School</button>
+      <button class="btn purple" onclick="addJellyfish()">🎐 Jellyfish</button>
+      <button class="btn teal" onclick="addTurtle()">🐢 Sea Turtle</button>
+      <button class="btn" onclick="addKelp()">🌿 Kelp</button>
+      <button class="btn" onclick="addNutrients()">✨ Nutrients</button>
+      <button class="btn danger" onclick="addPredator()">🦈 Predator</button>
+      <button class="btn warning" id="heatStressBtn" onclick="toggleHeatStress()">🌡️ Heat Stress</button>
+      <button class="btn storm" id="stormBtn" onclick="toggleStorm()">⛈️ Storm</button>
+      <button class="btn secondary" onclick="triggerSpawning()">🌊 Spawning</button>
+      <button class="btn secondary" onclick="resetEcosystem()">↻ Reset</button>
+      <button class="btn secondary" id="soundBtn" onclick="toggleSound()">🔇 Sound</button>
+      
+      <div class="time-control">
+        <label>Speed:</label>
+        <input type="range" id="speedSlider" min="0.25" max="3" step="0.25" value="1" onchange="updateSpeed(this.value)">
+        <span id="speedValue">1x</span>
+      </div>
+    </div>
+    
+    <div class="metrics">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Coral Polyps</div>
+          <div class="metric-value" id="coralCount">0</div>
+          <div class="metric-subtext">Avg C: <span id="avgCoralC">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fish Population</div>
+          <div class="metric-value" id="fishCount">0</div>
+          <div class="metric-subtext">School C: <span id="schoolC">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Jellyfish</div>
+          <div class="metric-value" id="jellyCount">0</div>
+          <div class="metric-subtext">Avg pulse: <span id="avgPulse">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sea Turtles</div>
+          <div class="metric-value" id="turtleCount">0</div>
+          <div class="metric-subtext">Hunting: <span id="turtleHunting">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Time of Day</div>
+          <div class="metric-value" id="timeOfDay">12:00</div>
+          <div class="metric-subtext">Cycle: <span id="dayNight">Day</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Water Temp</div>
+          <div class="metric-value" id="waterTemp">26°C</div>
+          <div class="metric-subtext">Storm: <span id="stormStatus">None</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ecosystem C</div>
+          <div class="metric-value" id="ecoCoherence">0</div>
+          <div class="metric-subtext">Ruptures: <span id="ruptureCount">0</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Kelp Coverage</div>
+          <div class="metric-value" id="kelpCount">0</div>
+          <div class="metric-subtext">Shelter zones: <span id="shelterZones">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const mathToggle = document.getElementById('mathToggle');
+  const mathContent = document.getElementById('mathContent');
+  const mathIcon = document.getElementById('mathIcon');
+  
+  mathToggle.addEventListener('click', () => {
+    mathContent.classList.toggle('open');
+    mathIcon.classList.toggle('open');
+  });
+  
+  // Process toggles
+  let processToggles = {
+    currents: false,
+    temperature: false,
+    light: false,
+    plankton: true,
+    kelp: true,
+    snow: true,
+    coherence: false,
+    connections: false,
+    bioluminescence: false
+  };
+  
+  window.toggleProcess = function(process) {
+    const el = document.getElementById(`show${process.charAt(0).toUpperCase() + process.slice(1)}`);
+    if (el) processToggles[process] = el.checked;
+  };
+  
+  // Simulation speed
+  let simSpeed = 1;
+  window.updateSpeed = function(val) {
+    simSpeed = parseFloat(val);
+    document.getElementById('speedValue').textContent = val + 'x';
+  };
+  
+  // Performance monitoring
+  let lastFrameTime = performance.now();
+  let frameCount = 0;
+  let fps = 60;
+  
+  function updatePerformance() {
+    const now = performance.now();
+    frameCount++;
+    
+    if (now - lastFrameTime >= 1000) {
+      fps = Math.round(frameCount * 1000 / (now - lastFrameTime));
+      frameCount = 0;
+      lastFrameTime = now;
+      
+      const totalEntities = coralPolyps.length + fishSchools.length + predators.length + 
+                           jellyfish.length + turtles.length + kelps.length + activePlankton;
+      document.getElementById('perfIndicator').textContent = `FPS: ${fps} | Entities: ${totalEntities}`;
+    }
+  }
+  
+  // Audio system
+  let audioContext;
+  let soundEnabled = false;
+  let masterGain;
+  
+  function initAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.12;
+      masterGain.connect(audioContext.destination);
+    }
+  }
+  
+  function playSound(freq, duration, vol) {
+    if (!soundEnabled || !audioContext) return;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + duration);
+  }
+  
+  window.toggleSound = function() {
+    const btn = document.getElementById('soundBtn');
+    if (!soundEnabled) {
+      initAudio();
+      soundEnabled = true;
+      btn.textContent = '🔊 Sound';
+      btn.classList.remove('secondary');
+      btn.classList.add('active');
+    } else {
+      soundEnabled = false;
+      btn.textContent = '🔇 Sound';
+      btn.classList.remove('active');
+      btn.classList.add('secondary');
+    }
+  };
+  
+  // Heat stress & Storm
+  let heatStressActive = false;
+  let stormActive = false;
+  let targetTemp = 26;
+  let stormIntensity = 0;
+  
+  window.toggleHeatStress = function() {
+    const btn = document.getElementById('heatStressBtn');
+    if (!heatStressActive) {
+      heatStressActive = true;
+      targetTemp = 32;
+      btn.textContent = '🌡️ Cool Down';
+      btn.classList.add('active');
+    } else {
+      heatStressActive = false;
+      targetTemp = 26;
+      btn.textContent = '🌡️ Heat Stress';
+      btn.classList.remove('active');
+    }
+  };
+  
+  window.toggleStorm = function() {
+    const btn = document.getElementById('stormBtn');
+    if (!stormActive) {
+      stormActive = true;
+      stormIntensity = 1;
+      btn.textContent = '⛈️ Calm Storm';
+      btn.classList.add('active');
+      playSound(80, 2, 0.15);
+    } else {
+      stormActive = false;
+      btn.textContent = '⛈️ Storm';
+      btn.classList.remove('active');
+    }
+  };
+  
+  // Day/Night cycle
+  let dayTime = 0.5; // 0 = midnight, 0.5 = noon, 1 = midnight
+  const DAY_CYCLE_LENGTH = 18000; // ~5 minutes at 60fps
+  
+  function getDayNightFactor() {
+    // Returns 0-1 where 1 = full day, 0 = full night
+    return Math.sin(dayTime * Math.PI) ** 0.8;
+  }
+  
+  function isNight() {
+    return getDayNightFactor() < 0.3;
+  }
+  
+  function getTimeString() {
+    const hours = Math.floor(dayTime * 24);
+    const mins = Math.floor((dayTime * 24 - hours) * 60);
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+  
+  // Simulation
+  const canvas = document.getElementById('ocean');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  
+  let coralPolyps = [];
+  let fishSchools = [];
+  let predators = [];
+  let jellyfish = [];
+  let turtles = [];
+  let kelps = [];
+  let marineSnow = [];
+  
+  // Object pool for plankton
+  const PLANKTON_POOL_SIZE = 500;
+  let planktonPool = [];
+  let activePlankton = 0;
+  
+  // Typed arrays for fields
+  let nutrientField, currentFieldX, currentFieldY, temperatureField, oxygenField;
+  
+  let simulationTime = 0;
+  let waterTemp = 26;
+  let surfaceTemp = 26;
+  let bottomTemp = 24;
+  let avgOxygen = 8.2;
+  let totalRuptures = 0;
+  let ecosystemCoherence = 0;
+  
+  const OMEGA = 50;
+  const RUPTURE_THRESHOLD = OMEGA * Math.log(10);
+  
+  let gridSize = 25;
+  let gridWidth, gridHeight;
+  
+  // Entity inspector
+  let selectedEntity = null;
+  
+  window.closeInspector = function() {
+    selectedEntity = null;
+    document.getElementById('entityInspector').classList.remove('visible');
+  };
+  
+  function updateInspector() {
+    const inspector = document.getElementById('entityInspector');
+    if (!selectedEntity) {
+      inspector.classList.remove('visible');
+      return;
+    }
+    
+    inspector.classList.add('visible');
+    
+    let type = 'Unknown';
+    let coherence = 0;
+    let omega = OMEGA;
+    let health = 1;
+    let age = 0;
+    
+    if (selectedEntity instanceof CoralPolyp) {
+      type = `Coral (${selectedEntity.species})`;
+      coherence = selectedEntity.coherence;
+      omega = selectedEntity.omega;
+      health = selectedEntity.health;
+      age = selectedEntity.age;
+    } else if (selectedEntity instanceof Fish) {
+      type = `Fish (School ${selectedEntity.schoolId})`;
+      coherence = selectedEntity.coherence;
+      omega = selectedEntity.omega;
+      health = 1 - selectedEntity.hunger;
+      age = selectedEntity.age;
+    } else if (selectedEntity instanceof Jellyfish) {
+      type = 'Jellyfish';
+      coherence = selectedEntity.coherence;
+      omega = selectedEntity.omega;
+      health = selectedEntity.energy;
+      age = selectedEntity.age;
+    } else if (selectedEntity instanceof Turtle) {
+      type = 'Sea Turtle';
+      coherence = selectedEntity.coherence;
+      omega = selectedEntity.omega;
+      health = selectedEntity.energy;
+      age = selectedEntity.age;
+    } else if (selectedEntity instanceof Predator) {
+      type = 'Predator (Shark)';
+      coherence = selectedEntity.huntCoherence;
+      omega = selectedEntity.omega;
+      health = selectedEntity.energy;
+      age = selectedEntity.age;
+    } else if (selectedEntity instanceof Kelp) {
+      type = 'Kelp';
+      coherence = selectedEntity.coherence;
+      omega = selectedEntity.omega;
+      health = selectedEntity.health;
+      age = selectedEntity.age;
+    }
+    
+    document.getElementById('inspectorTitle').textContent = type;
+    document.getElementById('inspectorType').textContent = type.split(' ')[0];
+    document.getElementById('inspectorCoherence').textContent = coherence.toFixed(1);
+    document.getElementById('inspectorOmega').textContent = omega.toFixed(1);
+    document.getElementById('inspectorRatio').textContent = (coherence / omega).toFixed(2);
+    document.getElementById('inspectorHealth').textContent = (health * 100).toFixed(0) + '%';
+    document.getElementById('inspectorAge').textContent = Math.floor(age / 60) + 's';
+    
+    const barWidth = Math.min(100, (coherence / RUPTURE_THRESHOLD) * 100);
+    document.getElementById('inspectorBar').style.width = barWidth + '%';
+  }
+  
+  // Spatial hash grid
+  class SpatialHash {
+    constructor(cellSize) {
+      this.cellSize = cellSize;
+      this.grid = new Map();
+    }
+    
+    clear() { this.grid.clear(); }
+    
+    hash(x, y) {
+      return `${Math.floor(x / this.cellSize)},${Math.floor(y / this.cellSize)}`;
+    }
+    
+    insert(entity) {
+      const key = this.hash(entity.x, entity.y);
+      if (!this.grid.has(key)) this.grid.set(key, []);
+      this.grid.get(key).push(entity);
+    }
+    
+    queryRadius(x, y, radius) {
+      const results = [];
+      const cellRadius = Math.ceil(radius / this.cellSize);
+      const centerCellX = Math.floor(x / this.cellSize);
+      const centerCellY = Math.floor(y / this.cellSize);
+      
+      for (let dy = -cellRadius; dy <= cellRadius; dy++) {
+        for (let dx = -cellRadius; dx <= cellRadius; dx++) {
+          const key = `${centerCellX + dx},${centerCellY + dy}`;
+          const cell = this.grid.get(key);
+          if (cell) results.push(...cell);
+        }
+      }
+      return results;
+    }
+  }
+  
+  const spatialHash = new SpatialHash(60);
+  
+  // Plankton
+  class Plankton {
+    constructor() { this.reset(0, 0); }
+    
+    reset(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 0.5;
+      this.vy = (Math.random() - 0.5) * 0.5;
+      this.size = 1 + Math.random() * 2;
+      this.energy = 1.0;
+      this.age = 0;
+      this.opacity = 0.3 + Math.random() * 0.4;
+      this.active = true;
+    }
+    
+    update() {
+      if (!this.active) return false;
+      this.age++;
+      
+      const gridX = Math.floor(this.x / gridSize);
+      const gridY = Math.floor(this.y / gridSize);
+      const gridIdx = gridX + gridY * gridWidth;
+      
+      if (gridIdx >= 0 && gridIdx < nutrientField.length) {
+        this.vx += currentFieldX[gridIdx] * 0.3;
+        this.vy += currentFieldY[gridIdx] * 0.3;
+      }
+      
+      // Storm effect
+      if (stormActive) {
+        this.vx += (Math.random() - 0.5) * stormIntensity * 0.5;
+        this.vy += (Math.random() - 0.5) * stormIntensity * 0.3;
+      }
+      
+      this.vx += (Math.random() - 0.5) * 0.1;
+      this.vy -= 0.02;
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      this.vx *= 0.98;
+      this.vy *= 0.98;
+      
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+      if (this.y < 0) this.y = height;
+      if (this.y > height) this.y = 0;
+      
+      this.energy -= 0.0002;
+      
+      if (this.energy <= 0) {
+        this.active = false;
+        activePlankton--;
+        return false;
+      }
+      return true;
+    }
+  }
+  
+  function getPlankton(x, y) {
+    for (let p of planktonPool) {
+      if (!p.active) {
+        p.reset(x, y);
+        activePlankton++;
+        return p;
+      }
+    }
+    return null;
+  }
+  
+  // Marine Snow
+  class MarineSnowParticle {
+    constructor() {
+      this.reset();
+    }
+    
+    reset() {
+      this.x = Math.random() * width;
+      this.y = -10;
+      this.size = 0.5 + Math.random() * 1.5;
+      this.speed = 0.2 + Math.random() * 0.4;
+      this.drift = (Math.random() - 0.5) * 0.3;
+      this.opacity = 0.2 + Math.random() * 0.3;
+    }
+    
+    update() {
+      this.y += this.speed;
+      this.x += this.drift + Math.sin(simulationTime * 0.01 + this.x * 0.01) * 0.2;
+      
+      if (stormActive) {
+        this.x += (Math.random() - 0.5) * stormIntensity * 2;
+        this.y += stormIntensity * 0.5;
+      }
+      
+      if (this.y > height + 10) this.reset();
+      if (this.x < 0) this.x = width;
+      if (this.x > width) this.x = 0;
+    }
+    
+    draw(ctx) {
+      const nightFactor = 1 - getDayNightFactor() * 0.5;
+      ctx.fillStyle = `rgba(200, 220, 255, ${this.opacity * nightFactor})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  // Kelp
+  class Kelp {
+    constructor(x, y) {
+      this.x = x;
+      this.baseY = y;
+      this.y = y;
+      this.segments = 8 + Math.floor(Math.random() * 6);
+      this.segmentLength = 15 + Math.random() * 10;
+      this.maxHeight = this.segments * this.segmentLength;
+      this.health = 0.8 + Math.random() * 0.2;
+      this.coherence = 0;
+      this.omega = OMEGA * 1.2;
+      this.age = 0;
+      this.phase = Math.random() * Math.PI * 2;
+      this.swayAmplitude = 0.15 + Math.random() * 0.1;
+    }
+    
+    update() {
+      this.age++;
+      
+      const gridIdx = Math.floor(this.x / gridSize) + Math.floor(this.baseY / gridSize) * gridWidth;
+      if (gridIdx >= 0 && gridIdx < nutrientField.length) {
+        const nutrients = nutrientField[gridIdx];
+        const light = getDayNightFactor() * (1 - this.baseY / height);
+        
+        const L = nutrients * 0.3 + light * 0.2;
+        this.coherence += L;
+        this.health = Math.max(0.1, Math.min(1, this.health + L * 0.001));
+        
+        // Produce oxygen during day
+        if (getDayNightFactor() > 0.3) {
+          oxygenField[gridIdx] = Math.min(12, oxygenField[gridIdx] + 0.01);
+        }
+      }
+      
+      // Growth
+      if (this.coherence > this.omega * 2 && this.segments < 20) {
+        this.segments++;
+        this.maxHeight = this.segments * this.segmentLength;
+        this.coherence *= 0.5;
+      }
+    }
+    
+    draw(ctx) {
+      const baseColor = { r: 50, g: 120, b: 50 };
+      const tipColor = { r: 80, g: 180, b: 80 };
+      
+      ctx.lineWidth = 4 * this.health;
+      ctx.lineCap = 'round';
+      
+      let prevX = this.x;
+      let prevY = this.baseY;
+      
+      for (let i = 0; i < this.segments; i++) {
+        const t = i / this.segments;
+        const stormSway = stormActive ? stormIntensity * 0.5 : 0;
+        const sway = Math.sin(simulationTime * 0.02 + this.phase + i * 0.3) * 
+                    this.swayAmplitude * (i + 1) * (1 + stormSway);
+        const currentSway = currentFieldX[Math.floor(this.x / gridSize) + Math.floor(prevY / gridSize) * gridWidth] || 0;
+        
+        const nextX = this.x + sway * 20 + currentSway * 10;
+        const nextY = this.baseY - (i + 1) * this.segmentLength * this.health;
+        
+        const r = Math.floor(baseColor.r + (tipColor.r - baseColor.r) * t);
+        const g = Math.floor(baseColor.g + (tipColor.g - baseColor.g) * t);
+        const b = Math.floor(baseColor.b + (tipColor.b - baseColor.b) * t);
+        
+        const dayFactor = 0.5 + getDayNightFactor() * 0.5;
+        ctx.strokeStyle = `rgba(${r * dayFactor}, ${g * dayFactor}, ${b * dayFactor}, ${0.8 * this.health})`;
+        
+        ctx.beginPath();
+        ctx.moveTo(prevX, prevY);
+        ctx.quadraticCurveTo(
+          (prevX + nextX) / 2 + sway * 10,
+          (prevY + nextY) / 2,
+          nextX, nextY
+        );
+        ctx.stroke();
+        
+        // Leaves
+        if (i > 2 && i % 2 === 0) {
+          ctx.fillStyle = `rgba(${r * dayFactor}, ${g * dayFactor + 20}, ${b * dayFactor}, ${0.6 * this.health})`;
+          const leafAngle = Math.sin(simulationTime * 0.03 + i) * 0.3;
+          
+          ctx.save();
+          ctx.translate(nextX, nextY);
+          ctx.rotate(leafAngle + 0.5);
+          ctx.beginPath();
+          ctx.ellipse(8, 0, 12, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          
+          ctx.save();
+          ctx.translate(nextX, nextY);
+          ctx.rotate(-leafAngle - 0.5);
+          ctx.beginPath();
+          ctx.ellipse(-8, 0, 12, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        
+        prevX = nextX;
+        prevY = nextY;
+      }
+    }
+    
+    provideShelter(x, y) {
+      const dx = x - this.x;
+      const dy = y - (this.baseY - this.maxHeight / 2);
+      return Math.abs(dx) < 40 && dy > -this.maxHeight && dy < 20;
+    }
+  }
+  
+  // Jellyfish
+  class Jellyfish {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = 0;
+      this.vy = 0;
+      this.size = 12 + Math.random() * 8;
+      this.age = 0;
+      
+      this.coherence = 0;
+      this.omega = OMEGA * 0.7;
+      this.energy = 1.0;
+      
+      this.pulsePhase = Math.random() * Math.PI * 2;
+      this.pulseSpeed = 0.03 + Math.random() * 0.02;
+      this.tentacleCount = 6 + Math.floor(Math.random() * 4);
+      
+      // Colors - translucent purples/blues/pinks
+      const hue = 260 + Math.random() * 60;
+      this.hue = hue;
+      this.biolumIntensity = 0;
+    }
+    
+    update() {
+      this.age++;
+      this.energy -= 0.0001;
+      
+      // Pulse movement
+      const pulse = Math.sin(this.age * this.pulseSpeed + this.pulsePhase);
+      if (pulse > 0.8) {
+        this.vy -= 0.15 * (1 + this.coherence / this.omega * 0.5);
+        this.coherence += 0.1;
+      }
+      
+      // Current drift
+      const gridIdx = Math.floor(this.x / gridSize) + Math.floor(this.y / gridSize) * gridWidth;
+      if (gridIdx >= 0 && gridIdx < currentFieldX.length) {
+        this.vx += currentFieldX[gridIdx] * 0.4;
+        this.vy += currentFieldY[gridIdx] * 0.3;
+      }
+      
+      // Storm effect - jellyfish get tossed around
+      if (stormActive) {
+        this.vx += (Math.random() - 0.5) * stormIntensity * 0.8;
+        this.vy += (Math.random() - 0.5) * stormIntensity * 0.5;
+        this.coherence -= stormIntensity * 0.1;
+      }
+      
+      // Slight gravity
+      this.vy += 0.02;
+      
+      // Apply velocity
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Damping
+      this.vx *= 0.97;
+      this.vy *= 0.97;
+      
+      // Boundaries
+      if (this.x < 30) { this.x = 30; this.vx = Math.abs(this.vx) * 0.5; }
+      if (this.x > width - 30) { this.x = width - 30; this.vx = -Math.abs(this.vx) * 0.5; }
+      if (this.y < 30) { this.y = 30; this.vy = Math.abs(this.vy) * 0.5; }
+      if (this.y > height - 30) { this.y = height - 30; this.vy = -Math.abs(this.vy) * 0.5; }
+      
+      // Bioluminescence at night
+      const nightness = 1 - getDayNightFactor();
+      this.biolumIntensity = nightness * (0.3 + this.coherence / this.omega * 0.7);
+      
+      // Sting nearby fish
+      if (this.age % 30 === 0) {
+        this.stingNearbyFish();
+      }
+      
+      // Death
+      if (this.energy <= 0) {
+        const idx = jellyfish.indexOf(this);
+        if (idx > -1) jellyfish.splice(idx, 1);
+      }
+    }
+    
+    stingNearbyFish() {
+      const nearby = spatialHash.queryRadius(this.x, this.y, 25);
+      for (let entity of nearby) {
+        if (entity instanceof Fish) {
+          const dist = Math.hypot(entity.x - this.x, entity.y - this.y);
+          if (dist < 20) {
+            // Sting! Fish loses coherence and takes damage
+            entity.coherence *= 0.7;
+            entity.hunger += 0.1;
+            this.coherence += 0.5;
+            if (Math.random() < 0.1) playSound(800, 0.1, 0.05);
+          }
+        }
+      }
+    }
+    
+    draw(ctx) {
+      const pulse = Math.sin(this.age * this.pulseSpeed + this.pulsePhase);
+      const pulseScale = 0.8 + pulse * 0.2;
+      
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      
+      // Bioluminescence glow
+      if (this.biolumIntensity > 0.1) {
+        const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 3);
+        glowGrad.addColorStop(0, `hsla(${this.hue}, 80%, 70%, ${this.biolumIntensity * 0.4})`);
+        glowGrad.addColorStop(1, `hsla(${this.hue}, 80%, 70%, 0)`);
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Bell (dome)
+      const dayFactor = 0.6 + getDayNightFactor() * 0.4;
+      const bellGrad = ctx.createRadialGradient(0, -this.size * 0.2, 0, 0, 0, this.size * pulseScale);
+      bellGrad.addColorStop(0, `hsla(${this.hue}, 60%, ${70 * dayFactor}%, 0.7)`);
+      bellGrad.addColorStop(0.6, `hsla(${this.hue}, 70%, ${50 * dayFactor}%, 0.5)`);
+      bellGrad.addColorStop(1, `hsla(${this.hue}, 80%, ${40 * dayFactor}%, 0.3)`);
+      
+      ctx.fillStyle = bellGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * pulseScale, this.size * 0.7 * pulseScale, 0, Math.PI, 0);
+      ctx.fill();
+      
+      // Inner pattern
+      ctx.strokeStyle = `hsla(${this.hue + 20}, 50%, 80%, 0.3)`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.ellipse(0, -this.size * 0.1, (this.size * 0.3 + i * 3) * pulseScale, 
+                   (this.size * 0.2 + i * 2) * pulseScale, 0, Math.PI, 0);
+        ctx.stroke();
+      }
+      
+      // Tentacles
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < this.tentacleCount; i++) {
+        const angle = (i / this.tentacleCount) * Math.PI - Math.PI / 2;
+        const startX = Math.cos(angle + Math.PI / 2) * this.size * 0.7 * pulseScale;
+        const startY = 0;
+        
+        const tentacleWave = Math.sin(this.age * 0.05 + i * 0.5) * 15;
+        const tentacleLength = 25 + Math.sin(this.age * 0.03 + i) * 10;
+        
+        const alpha = 0.4 + this.biolumIntensity * 0.3;
+        ctx.strokeStyle = `hsla(${this.hue}, 60%, ${60 * dayFactor}%, ${alpha})`;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(
+          startX + tentacleWave * 0.5,
+          startY + tentacleLength * 0.5,
+          startX + tentacleWave,
+          startY + tentacleLength
+        );
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+  }
+  
+  // Sea Turtle
+  class Turtle {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 1;
+      this.vy = (Math.random() - 0.5) * 0.5;
+      this.size = 25 + Math.random() * 10;
+      this.age = 0;
+      
+      this.coherence = 20; // Start with some coherence
+      this.omega = OMEGA * 0.8;
+      this.energy = 1.0;
+      
+      this.flipperPhase = Math.random() * Math.PI * 2;
+      this.huntingTarget = null;
+      this.surfaceTimer = 0;
+    }
+    
+    update() {
+      this.age++;
+      this.energy -= 0.0002;
+      
+      // Occasionally surface for air
+      this.surfaceTimer--;
+      if (this.surfaceTimer <= 0 && this.y > 100) {
+        if (Math.random() < 0.001) {
+          this.surfaceTimer = 300;
+        }
+      }
+      
+      if (this.surfaceTimer > 0) {
+        this.vy -= 0.05;
+        if (this.y < 50) {
+          this.surfaceTimer = 0;
+          this.energy = Math.min(1, this.energy + 0.1);
+        }
+      }
+      
+      // Hunt jellyfish
+      let nearestJelly = null;
+      let nearestDist = 200;
+      
+      const nearby = spatialHash.queryRadius(this.x, this.y, 200);
+      for (let entity of nearby) {
+        if (entity instanceof Jellyfish) {
+          const dist = Math.hypot(entity.x - this.x, entity.y - this.y);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestJelly = entity;
+          }
+        }
+      }
+      
+      if (nearestJelly) {
+        this.huntingTarget = nearestJelly;
+        const dx = nearestJelly.x - this.x;
+        const dy = nearestJelly.y - this.y;
+        
+        const huntStrength = 0.08 * (1 + this.coherence / this.omega * 0.3);
+        this.vx += (dx / nearestDist) * huntStrength;
+        this.vy += (dy / nearestDist) * huntStrength;
+        
+        this.coherence += 0.05;
+        
+        // Eat jellyfish
+        if (nearestDist < this.size * 0.8) {
+          const jellyIdx = jellyfish.indexOf(nearestJelly);
+          if (jellyIdx > -1) {
+            jellyfish.splice(jellyIdx, 1);
+            this.energy = Math.min(1, this.energy + 0.2);
+            this.coherence += 5;
+            playSound(250, 0.2, 0.1);
+          }
+        }
+      } else {
+        this.huntingTarget = null;
+        // Gentle wandering
+        if (Math.random() < 0.02) {
+          this.vx += (Math.random() - 0.5) * 0.3;
+          this.vy += (Math.random() - 0.5) * 0.2;
+        }
+        this.coherence *= 0.999;
+      }
+      
+      // Current influence
+      const gridIdx = Math.floor(this.x / gridSize) + Math.floor(this.y / gridSize) * gridWidth;
+      if (gridIdx >= 0 && gridIdx < currentFieldX.length) {
+        this.vx += currentFieldX[gridIdx] * 0.02;
+        this.vy += currentFieldY[gridIdx] * 0.02;
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Speed limit
+      const speed = Math.hypot(this.vx, this.vy);
+      const maxSpeed = this.huntingTarget ? 2.5 : 1.5;
+      if (speed > maxSpeed) {
+        this.vx = (this.vx / speed) * maxSpeed;
+        this.vy = (this.vy / speed) * maxSpeed;
+      }
+      
+      // Damping
+      this.vx *= 0.98;
+      this.vy *= 0.98;
+      
+      // Boundaries
+      const margin = 50;
+      if (this.x < margin) this.vx += 0.1;
+      if (this.x > width - margin) this.vx -= 0.1;
+      if (this.y < 30) this.vy += 0.1;
+      if (this.y > height - margin) this.vy -= 0.1;
+      
+      // Death from starvation
+      if (this.energy <= 0) {
+        const idx = turtles.indexOf(this);
+        if (idx > -1) turtles.splice(idx, 1);
+      }
+    }
+    
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Math.atan2(this.vy, this.vx));
+      
+      const dayFactor = 0.7 + getDayNightFactor() * 0.3;
+      
+      // Shell
+      const shellGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+      shellGrad.addColorStop(0, `rgba(${100 * dayFactor}, ${130 * dayFactor}, ${80 * dayFactor}, 0.95)`);
+      shellGrad.addColorStop(0.6, `rgba(${70 * dayFactor}, ${100 * dayFactor}, ${60 * dayFactor}, 0.95)`);
+      shellGrad.addColorStop(1, `rgba(${50 * dayFactor}, ${80 * dayFactor}, ${40 * dayFactor}, 0.9)`);
+      
+      ctx.fillStyle = shellGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size, this.size * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Shell pattern
+      ctx.strokeStyle = `rgba(${40 * dayFactor}, ${60 * dayFactor}, ${30 * dayFactor}, 0.5)`;
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(angle) * this.size * 0.8, Math.sin(angle) * this.size * 0.5);
+        ctx.stroke();
+      }
+      
+      // Head
+      ctx.fillStyle = `rgba(${90 * dayFactor}, ${120 * dayFactor}, ${70 * dayFactor}, 0.95)`;
+      ctx.beginPath();
+      ctx.ellipse(this.size * 0.9, 0, this.size * 0.35, this.size * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Eye
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.beginPath();
+      ctx.arc(this.size * 1.05, -this.size * 0.1, 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Flippers
+      const flipperAngle = Math.sin(this.age * 0.1 + this.flipperPhase) * 0.4;
+      ctx.fillStyle = `rgba(${80 * dayFactor}, ${110 * dayFactor}, ${60 * dayFactor}, 0.9)`;
+      
+      // Front flippers
+      ctx.save();
+      ctx.translate(this.size * 0.3, -this.size * 0.5);
+      ctx.rotate(-0.5 + flipperAngle);
+      ctx.beginPath();
+      ctx.ellipse(0, -this.size * 0.3, this.size * 0.15, this.size * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      ctx.save();
+      ctx.translate(this.size * 0.3, this.size * 0.5);
+      ctx.rotate(0.5 - flipperAngle);
+      ctx.beginPath();
+      ctx.ellipse(0, this.size * 0.3, this.size * 0.15, this.size * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      // Back flippers
+      ctx.save();
+      ctx.translate(-this.size * 0.7, -this.size * 0.4);
+      ctx.rotate(-0.3 - flipperAngle * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 0.25, this.size * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      ctx.save();
+      ctx.translate(-this.size * 0.7, this.size * 0.4);
+      ctx.rotate(0.3 + flipperAngle * 0.5);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 0.25, this.size * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      ctx.restore();
+    }
+  }
+  
+  // Coral
+  class CoralPolyp {
+    constructor(x, y, parent = null, species = 'branching') {
+      this.x = x;
+      this.y = y;
+      this.parent = parent;
+      this.children = [];
+      this.species = species;
+      this.size = 3 + Math.random() * 5;
+      this.health = 0.8 + Math.random() * 0.2;
+      this.age = 0;
+      this.generation = parent ? parent.generation + 1 : 0;
+      
+      this.coherence = 0;
+      this.omega = OMEGA * (0.8 + Math.random() * 0.4);
+      this.lastRuptureTime = 0;
+      this.bleached = false;
+      
+      this.color = this.getSpeciesColor();
+      this.pulsatePhase = Math.random() * Math.PI * 2;
+    }
+    
+    getSpeciesColor() {
+      if (this.bleached) return { r: 220, g: 220, b: 215 };
+      
+      const colors = {
+        branching: { r: 255, g: 120, b: 80 },
+        table: { r: 255, g: 160, b: 180 },
+        brain: { r: 140, g: 90, b: 255 },
+        staghorn: { r: 255, g: 190, b: 60 },
+      };
+      const base = colors[this.species] || colors.branching;
+      const intensity = 0.4 + this.health * 0.6;
+      
+      return {
+        r: Math.floor(base.r * intensity),
+        g: Math.floor(base.g * intensity),
+        b: Math.floor(base.b * intensity)
+      };
+    }
+    
+    update() {
+      this.age++;
+      
+      const gridX = Math.floor(this.x / gridSize);
+      const gridY = Math.floor(this.y / gridSize);
+      const gridIdx = gridX + gridY * gridWidth;
+      
+      if (gridIdx >= 0 && gridIdx < nutrientField.length) {
+        const localNutrients = nutrientField[gridIdx];
+        const localTemp = temperatureField[gridIdx];
+        
+        const dayFactor = getDayNightFactor();
+        const lightLevel = Math.exp(-1.5 * (this.y / height)) * dayFactor;
+        
+        const nutritionTerm = localNutrients * 0.5;
+        const tempStress = Math.abs(localTemp - 26) * 0.3;
+        
+        // Storm stress
+        const stormStress = stormActive ? stormIntensity * 0.2 : 0;
+        
+        const stabilityTerm = (1 - tempStress) * lightLevel * 0.3;
+        
+        // Heat stress bleaching
+        if (localTemp > 30) {
+          const thermalStress = (localTemp - 30) * 0.06;
+          this.coherence -= thermalStress;
+          this.health -= thermalStress * 0.015;
+          
+          if (!this.bleached && Math.random() < 0.008) {
+            this.bleached = true;
+            this.coherence *= 0.05;
+            totalRuptures++;
+            playSound(100 + Math.random() * 50, 0.4, 0.03);
+          }
+        } else if (this.bleached && localTemp < 28 && this.health > 0.3) {
+          const recoveryRate = 0.002;
+          this.health += recoveryRate;
+          if (this.health > 0.6 && Math.random() < 0.003) {
+            this.bleached = false;
+          }
+        }
+        
+        const L = nutritionTerm + stabilityTerm - stormStress;
+        this.coherence += L;
+        this.health = Math.max(0.05, Math.min(1.0, this.health + L * 0.0008));
+        
+        // Rupture (reproduction)
+        if (this.coherence > RUPTURE_THRESHOLD && 
+            this.age - this.lastRuptureTime > 80 &&
+            this.generation < 8 &&
+            !this.bleached) {
+          this.rupture();
+        }
+        
+        // Consume nutrients
+        if (this.age % 5 === 0 && localNutrients > 0.5) {
+          nutrientField[gridIdx] = Math.max(0.1, localNutrients - 0.003);
+        }
+      }
+      
+      this.color = this.getSpeciesColor();
+      
+      if (this.health < 0.1 && Math.random() < 0.015) {
+        this.die();
+      }
+    }
+    
+    rupture() {
+      totalRuptures++;
+      this.lastRuptureTime = this.age;
+      
+      const angle = this.parent 
+        ? Math.atan2(this.y - this.parent.y, this.x - this.parent.x) + (Math.random() - 0.5) * Math.PI / 2.5
+        : Math.random() * Math.PI * 2;
+      
+      const distance = 12 + Math.random() * 12;
+      const newX = this.x + Math.cos(angle) * distance;
+      const newY = this.y + Math.sin(angle) * distance;
+      
+      if (newX > 15 && newX < width - 15 && newY > 15 && newY < height - 15) {
+        const child = new CoralPolyp(newX, newY, this, this.species);
+        child.coherence = this.coherence * 0.25;
+        this.children.push(child);
+        coralPolyps.push(child);
+      }
+      
+      this.coherence *= 0.35;
+      playSound(300 + Math.random() * 200, 0.2, 0.02);
+    }
+    
+    die() {
+      const index = coralPolyps.indexOf(this);
+      if (index > -1) coralPolyps.splice(index, 1);
+    }
+    
+    draw(ctx) {
+      const dayFactor = 0.5 + getDayNightFactor() * 0.5;
+      
+      if (this.parent) {
+        ctx.strokeStyle = `rgba(${this.color.r * dayFactor}, ${this.color.g * dayFactor}, ${this.color.b * dayFactor}, 0.6)`;
+        ctx.lineWidth = Math.max(0.5, this.size * 0.25);
+        ctx.beginPath();
+        ctx.moveTo(this.parent.x, this.parent.y);
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+      }
+      
+      const pulsate = 1 + Math.sin(this.age * 0.08 + this.pulsatePhase) * 0.1;
+      const drawSize = this.size * pulsate;
+      
+      const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, drawSize);
+      gradient.addColorStop(0, `rgba(${this.color.r * dayFactor}, ${this.color.g * dayFactor}, ${this.color.b * dayFactor}, 1)`);
+      gradient.addColorStop(1, `rgba(${this.color.r * 0.5 * dayFactor}, ${this.color.g * 0.5 * dayFactor}, ${this.color.b * 0.5 * dayFactor}, 0.6)`);
+      ctx.fillStyle = gradient;
+      
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  // Fish
+  class Fish {
+    constructor(x, y, schoolId) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.schoolId = schoolId;
+      this.size = 2.5 + Math.random() * 2.5;
+      this.age = 0;
+      
+      this.coherence = 0;
+      this.omega = OMEGA * 0.6;
+      this.lastRuptureTime = 0;
+      this.fear = 0;
+      this.hunger = 0.5;
+      this.inShelter = false;
+      
+      this.color = this.getFishColor(schoolId);
+      this.trail = [];
+      this.swimPhase = Math.random() * Math.PI * 2;
+    }
+    
+    getFishColor(schoolId) {
+      const colors = [
+        { r: 255, g: 140, b: 40 },
+        { r: 40, g: 140, b: 255 },
+        { r: 255, g: 210, b: 40 },
+        { r: 140, g: 90, b: 255 },
+        { r: 40, g: 255, b: 140 }
+      ];
+      return colors[schoolId % colors.length];
+    }
+    
+    update(allFish, predators, corals) {
+      this.age++;
+      this.hunger += 0.0005;
+      
+      // Check if in kelp shelter
+      this.inShelter = false;
+      for (let k of kelps) {
+        if (k.provideShelter(this.x, this.y)) {
+          this.inShelter = true;
+          this.coherence += 0.05; // Safety bonus
+          break;
+        }
+      }
+      
+      // Flocking
+      const nearby = spatialHash.queryRadius(this.x, this.y, 65);
+      const flockForces = this.computeFlocking(nearby);
+      
+      const L = (Math.hypot(flockForces.alignment.x, flockForces.alignment.y) * 0.1 +
+                Math.hypot(flockForces.cohesion.x, flockForces.cohesion.y) * 0.05) * (1 - this.fear);
+      this.coherence += L;
+      
+      const coherenceWeight = Math.tanh(this.coherence / this.omega);
+      this.vx += flockForces.separation.x * 0.15 * coherenceWeight;
+      this.vy += flockForces.separation.y * 0.15 * coherenceWeight;
+      this.vx += flockForces.alignment.x * 0.08 * coherenceWeight;
+      this.vy += flockForces.alignment.y * 0.08 * coherenceWeight;
+      this.vx += flockForces.cohesion.x * 0.005 * coherenceWeight;
+      this.vy += flockForces.cohesion.y * 0.005 * coherenceWeight;
+      
+      // Current
+      const gridIdx = Math.floor(this.x / gridSize) + Math.floor(this.y / gridSize) * gridWidth;
+      if (gridIdx >= 0 && gridIdx < currentFieldX.length) {
+        this.vx += currentFieldX[gridIdx] * 0.05;
+        this.vy += currentFieldY[gridIdx] * 0.05;
+      }
+      
+      // Storm effect
+      if (stormActive) {
+        this.vx += (Math.random() - 0.5) * stormIntensity * 0.3;
+        this.vy += (Math.random() - 0.5) * stormIntensity * 0.2;
+        this.coherence -= stormIntensity * 0.05;
+      }
+      
+      this.avoidPredators(predators);
+      
+      // Day/night behavior - more active during day, shelter at night
+      if (isNight() && !this.inShelter) {
+        // Seek shelter at night
+        for (let k of kelps) {
+          const dx = k.x - this.x;
+          const dy = (k.baseY - k.maxHeight / 2) - this.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 150) {
+            this.vx += (dx / dist) * 0.05;
+            this.vy += (dy / dist) * 0.05;
+          }
+        }
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Boundaries
+      const margin = 50;
+      if (this.x < margin) this.vx += 0.5;
+      if (this.x > width - margin) this.vx -= 0.5;
+      if (this.y < margin) this.vy += 0.5;
+      if (this.y > height - margin) this.vy -= 0.5;
+      
+      const speed = Math.hypot(this.vx, this.vy);
+      const maxSpeed = this.fear > 0.5 ? 5.5 : 2.8;
+      if (speed > maxSpeed) {
+        this.vx = (this.vx / speed) * maxSpeed;
+        this.vy = (this.vy / speed) * maxSpeed;
+      }
+      
+      this.trail.push({ x: this.x, y: this.y });
+      if (this.trail.length > 8) this.trail.shift();
+      
+      this.fear = Math.max(0, this.fear - 0.025);
+    }
+    
+    computeFlocking(nearby) {
+      let separation = { x: 0, y: 0 };
+      let alignment = { x: 0, y: 0 };
+      let cohesion = { x: 0, y: 0 };
+      let neighborCount = 0;
+      
+      for (let other of nearby) {
+        if (!(other instanceof Fish) || other === this || other.schoolId !== this.schoolId) continue;
+        
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const distance = Math.hypot(dx, dy);
+        
+        if (distance < 65 && distance > 0) {
+          if (distance < 20) {
+            separation.x -= dx / distance;
+            separation.y -= dy / distance;
+          }
+          
+          alignment.x += other.vx;
+          alignment.y += other.vy;
+          cohesion.x += other.x;
+          cohesion.y += other.y;
+          neighborCount++;
+        }
+      }
+      
+      if (neighborCount > 0) {
+        alignment.x = alignment.x / neighborCount - this.vx;
+        alignment.y = alignment.y / neighborCount - this.vy;
+        cohesion.x = cohesion.x / neighborCount - this.x;
+        cohesion.y = cohesion.y / neighborCount - this.y;
+      }
+      
+      return { separation, alignment, cohesion };
+    }
+    
+    avoidPredators(predators) {
+      for (let predator of predators) {
+        const dx = this.x - predator.x;
+        const dy = this.y - predator.y;
+        const distance = Math.hypot(dx, dy);
+        
+        // Reduced fear if in shelter
+        const effectiveRange = this.inShelter ? 60 : 130;
+        
+        if (distance < effectiveRange) {
+          if (distance < 90 && this.age - this.lastRuptureTime > 50) {
+            this.lastRuptureTime = this.age;
+            totalRuptures++;
+            this.coherence *= 0.18;
+          }
+          
+          this.fear = this.inShelter ? 0.5 : 1.0;
+          const avoidStrength = (effectiveRange - distance) / effectiveRange;
+          const escapeBoost = 1 + Math.exp(this.coherence / this.omega) * 0.6;
+          this.vx += (dx / distance) * avoidStrength * 1.4 * escapeBoost;
+          this.vy += (dy / distance) * avoidStrength * 1.4 * escapeBoost;
+        }
+      }
+    }
+    
+    draw(ctx) {
+      const dayFactor = 0.6 + getDayNightFactor() * 0.4;
+      
+      // Trail
+      if (this.trail.length > 1) {
+        for (let i = 0; i < this.trail.length - 1; i++) {
+          const alpha = (i / this.trail.length) * 0.3;
+          ctx.strokeStyle = `rgba(${this.color.r * dayFactor}, ${this.color.g * dayFactor}, ${this.color.b * dayFactor}, ${alpha})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(this.trail[i].x, this.trail[i].y);
+          ctx.lineTo(this.trail[i + 1].x, this.trail[i + 1].y);
+          ctx.stroke();
+        }
+      }
+      
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Math.atan2(this.vy, this.vx));
+      
+      const intensity = (this.fear > 0.5 ? 1.4 : 1.0) * dayFactor;
+      
+      ctx.fillStyle = `rgba(${this.color.r * intensity}, ${this.color.g * intensity}, ${this.color.b * intensity}, 0.95)`;
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 1.7, this.size * 0.95, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Tail
+      const swimOffset = Math.sin(this.age * 0.15 + this.swimPhase) * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(-this.size * 1.7, 0);
+      ctx.lineTo(-this.size * 2.8 + swimOffset, -this.size * 1.0);
+      ctx.lineTo(-this.size * 2.8 + swimOffset, this.size * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Eye
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.arc(this.size * 0.5, -this.size * 0.4, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+  }
+  
+  // Predator
+  class Predator {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+      this.size = 20;
+      this.age = 0;
+      
+      this.huntCoherence = 0;
+      this.omega = OMEGA * 0.5;
+      this.lastKillTime = 0;
+      
+      this.huntingTarget = null;
+      this.energy = 1.0;
+      this.swimPhase = Math.random() * Math.PI * 2;
+    }
+    
+    update(fish) {
+      this.age++;
+      this.energy -= 0.0007;
+      
+      // Find nearest fish (not in shelter)
+      let nearestFish = null;
+      let nearestDistance = 160;
+      
+      const nearby = spatialHash.queryRadius(this.x, this.y, 160);
+      for (let f of nearby) {
+        if (!(f instanceof Fish) || f.inShelter) continue;
+        const distance = Math.hypot(f.x - this.x, f.y - this.y);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestFish = f;
+        }
+      }
+      
+      if (nearestFish) {
+        this.huntingTarget = nearestFish;
+        
+        const L_hunt = (1 / (1 + nearestDistance / 50)) * 0.5;
+        this.huntCoherence += L_hunt;
+        
+        const dx = nearestFish.x - this.x;
+        const dy = nearestFish.y - this.y;
+        
+        const pursuitStrength = 0.22 * (1 + Math.tanh(this.huntCoherence / this.omega));
+        this.vx += (dx / nearestDistance) * pursuitStrength;
+        this.vy += (dy / nearestDistance) * pursuitStrength;
+        
+        if (nearestDistance < this.size * 0.9) {
+          const strikeProbability = 1 - Math.exp(-this.huntCoherence / this.omega);
+          if (Math.random() < strikeProbability) {
+            const fishIndex = fish.indexOf(nearestFish);
+            if (fishIndex > -1) {
+              fish.splice(fishIndex, 1);
+              this.energy = Math.min(1.0, this.energy + 0.35);
+              this.huntCoherence *= 0.25;
+              totalRuptures++;
+              playSound(180, 0.25, 0.025);
+            }
+          }
+        }
+      } else {
+        this.huntingTarget = null;
+        this.huntCoherence *= 0.996;
+        
+        if (Math.random() < 0.018) {
+          this.vx += (Math.random() - 0.5) * 0.5;
+          this.vy += (Math.random() - 0.5) * 0.5;
+        }
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+      
+      // Boundaries
+      const margin = 65;
+      if (this.x < margin) this.vx += 0.6;
+      if (this.x > width - margin) this.vx -= 0.6;
+      if (this.y < margin) this.vy += 0.6;
+      if (this.y > height - margin) this.vy -= 0.6;
+      
+      const speed = Math.hypot(this.vx, this.vy);
+      const maxSpeed = this.huntingTarget ? 4.5 : 2.8;
+      if (speed > maxSpeed) {
+        this.vx = (this.vx / speed) * maxSpeed;
+        this.vy = (this.vy / speed) * maxSpeed;
+      }
+      
+      if (this.energy < 0.03) {
+        const index = predators.indexOf(this);
+        if (index > -1) predators.splice(index, 1);
+      }
+    }
+    
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(Math.atan2(this.vy, this.vx));
+      
+      const dayFactor = 0.7 + getDayNightFactor() * 0.3;
+      
+      ctx.fillStyle = `rgba(${55 * dayFactor}, ${55 * dayFactor}, ${60 * dayFactor}, 0.97)`;
+      
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size, this.size * 0.32, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Tail
+      const tailWave = Math.sin(this.age * 0.12 + this.swimPhase) * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(-this.size, 0);
+      ctx.lineTo(-this.size * 1.6 + tailWave, -this.size * 0.5);
+      ctx.lineTo(-this.size * 1.6 + tailWave, this.size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Dorsal fin
+      ctx.beginPath();
+      ctx.moveTo(0, -this.size * 0.32);
+      ctx.lineTo(-this.size * 0.3, -this.size * 0.7);
+      ctx.lineTo(-this.size * 0.6, -this.size * 0.32);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Eye
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.arc(this.size * 0.42, -this.size * 0.12, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.beginPath();
+      ctx.arc(this.size * 0.45, -this.size * 0.12, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+  }
+  
+  // Field updates
+  let fieldUpdateOffset = 0;
+  
+  function updateEnvironmentalFields() {
+    const batchSize = Math.ceil(gridWidth * gridHeight / 3);
+    const start = fieldUpdateOffset;
+    const end = Math.min(start + batchSize, gridWidth * gridHeight);
+    
+    for (let idx = start; idx < end; idx++) {
+      const i = idx % gridWidth;
+      const j = Math.floor(idx / gridWidth);
+      
+      const x = i * gridSize + gridSize / 2;
+      const y = j * gridSize + gridSize / 2;
+      
+      let curlX = 0, curlY = 0;
+      
+      // Storm currents
+      if (stormActive) {
+        curlX += Math.sin(simulationTime * 0.02 + i * 0.1) * stormIntensity * 0.3;
+        curlY += Math.cos(simulationTime * 0.015 + j * 0.1) * stormIntensity * 0.2;
+      }
+      
+      const nearbyCoral = spatialHash.queryRadius(x, y, 100);
+      for (let coral of nearbyCoral) {
+        if (!(coral instanceof CoralPolyp)) continue;
+        const dx = x - coral.x;
+        const dy = y - coral.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq > 25 && distSq < 10000) {
+          const strength = (coral.coherence / OMEGA) * 0.5 / distSq;
+          curlX += -dy * strength;
+          curlY += dx * strength;
+        }
+      }
+      
+      currentFieldX[idx] = currentFieldX[idx] * 0.95 + curlX;
+      currentFieldY[idx] = currentFieldY[idx] * 0.95 + curlY;
+      
+      // Temperature
+      const depthFactor = j / gridHeight;
+      const targetTemperature = surfaceTemp - (surfaceTemp - bottomTemp) * depthFactor;
+      temperatureField[idx] = temperatureField[idx] * 0.98 + targetTemperature * 0.02;
+      
+      // Oxygen
+      const surfaceProduction = (1 - depthFactor) * 0.01 * getDayNightFactor();
+      oxygenField[idx] += surfaceProduction;
+      oxygenField[idx] = Math.max(2, Math.min(12, oxygenField[idx]));
+      
+      // Nutrients
+      nutrientField[idx] = Math.min(1.0, nutrientField[idx] + 0.002);
+    }
+    
+    fieldUpdateOffset = (fieldUpdateOffset + batchSize) % (gridWidth * gridHeight);
+  }
+  
+  function drawEnvironmentalProcesses(ctx) {
+    if (processToggles.currents) {
+      ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < gridWidth; i += 2) {
+        for (let j = 0; j < gridHeight; j += 2) {
+          const idx = i + j * gridWidth;
+          const magnitude = Math.hypot(currentFieldX[idx], currentFieldY[idx]);
+          if (magnitude > 0.05) {
+            const x = i * gridSize + gridSize / 2;
+            const y = j * gridSize + gridSize / 2;
+            const scale = Math.min(gridSize * 0.8, magnitude * 20);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + currentFieldX[idx] * scale, y + currentFieldY[idx] * scale);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    
+    if (processToggles.temperature) {
+      for (let i = 0; i < gridWidth; i++) {
+        for (let j = 0; j < gridHeight; j++) {
+          const idx = i + j * gridWidth;
+          const temp = temperatureField[idx];
+          const hue = 240 - (temp - 24) * 20;
+          ctx.fillStyle = `hsla(${hue}, 70%, 50%, 0.15)`;
+          ctx.fillRect(i * gridSize, j * gridSize, gridSize, gridSize);
+        }
+      }
+    }
+    
+    if (processToggles.light && getDayNightFactor() > 0.2) {
+      // Light rays
+      const rayCount = Math.floor(5 + getDayNightFactor() * 5);
+      for (let i = 0; i < rayCount; i++) {
+        const x = (i + 0.5) * width / rayCount + Math.sin(simulationTime * 0.01 + i) * 30;
+        const gradient = ctx.createLinearGradient(x, 0, x + 50, height);
+        const alpha = getDayNightFactor() * 0.15;
+        gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
+        gradient.addColorStop(0.5, `rgba(255, 255, 150, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(255, 255, 100, 0)`);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 80, height);
+        ctx.lineTo(x + 30, height);
+        ctx.lineTo(x - 20, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    
+    if (processToggles.plankton) {
+      const dayFactor = 0.5 + getDayNightFactor() * 0.5;
+      ctx.fillStyle = `rgba(200, 255, 200, ${0.5 * dayFactor})`;
+      ctx.beginPath();
+      for (let p of planktonPool) {
+        if (!p.active) continue;
+        ctx.moveTo(p.x + p.size, p.y);
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    }
+    
+    if (processToggles.snow) {
+      for (let s of marineSnow) {
+        s.draw(ctx);
+      }
+    }
+    
+    if (processToggles.coherence) {
+      coralPolyps.forEach(coral => {
+        if (coral.coherence < 10) return;
+        const radius = coral.coherence / 4;
+        const gradient = ctx.createRadialGradient(coral.x, coral.y, 0, coral.x, coral.y, radius);
+        gradient.addColorStop(0, `rgba(255, 200, 100, ${0.3 * coral.coherence / OMEGA})`);
+        gradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(coral.x, coral.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    if (processToggles.connections) {
+      ctx.strokeStyle = 'rgba(200, 200, 255, 0.08)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      fishSchools.forEach(fish => {
+        const nearby = spatialHash.queryRadius(fish.x, fish.y, 65);
+        for (let other of nearby) {
+          if (!(other instanceof Fish) || other === fish || other.schoolId !== fish.schoolId) continue;
+          ctx.moveTo(fish.x, fish.y);
+          ctx.lineTo(other.x, other.y);
+        }
+      });
+      ctx.stroke();
+    }
+    
+    if (processToggles.bioluminescence && isNight()) {
+      jellyfish.forEach(jelly => {
+        if (jelly.biolumIntensity > 0.2) {
+          const gradient = ctx.createRadialGradient(jelly.x, jelly.y, 0, jelly.x, jelly.y, jelly.size * 4);
+          gradient.addColorStop(0, `hsla(${jelly.hue}, 80%, 70%, ${jelly.biolumIntensity * 0.5})`);
+          gradient.addColorStop(1, `hsla(${jelly.hue}, 80%, 70%, 0)`);
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(jelly.x, jelly.y, jelly.size * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+  }
+  
+  function resizeCanvas() {
+    const container = canvas.parentElement;
+    width = container.clientWidth;
+    height = container.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    
+    gridWidth = Math.ceil(width / gridSize);
+    gridHeight = Math.ceil(height / gridSize);
+    
+    const fieldSize = gridWidth * gridHeight;
+    nutrientField = new Float32Array(fieldSize).fill(0.7);
+    currentFieldX = new Float32Array(fieldSize);
+    currentFieldY = new Float32Array(fieldSize);
+    temperatureField = new Float32Array(fieldSize).fill(26);
+    oxygenField = new Float32Array(fieldSize).fill(8.2);
+    
+    if (planktonPool.length === 0) {
+      for (let i = 0; i < PLANKTON_POOL_SIZE; i++) {
+        planktonPool.push(new Plankton());
+      }
+    }
+    
+    // Initialize marine snow
+    if (marineSnow.length === 0) {
+      for (let i = 0; i < 100; i++) {
+        const particle = new MarineSnowParticle();
+        particle.y = Math.random() * height;
+        marineSnow.push(particle);
+      }
+    }
+  }
+  
+  function updateMetrics() {
+    document.getElementById('coralCount').textContent = coralPolyps.length;
+    document.getElementById('fishCount').textContent = fishSchools.length;
+    document.getElementById('jellyCount').textContent = jellyfish.length;
+    document.getElementById('turtleCount').textContent = turtles.length;
+    document.getElementById('kelpCount').textContent = kelps.length;
+    
+    const tempEl = document.getElementById('waterTemp');
+    tempEl.textContent = waterTemp.toFixed(1) + '°C';
+    tempEl.classList.toggle('stress', waterTemp > 30);
+    
+    document.getElementById('stormStatus').textContent = stormActive ? 'Active' : 'None';
+    
+    const timeEl = document.getElementById('timeOfDay');
+    timeEl.textContent = getTimeString();
+    timeEl.classList.toggle('night', isNight());
+    
+    document.getElementById('dayNight').textContent = isNight() ? 'Night 🌙' : 'Day ☀️';
+    
+    const dayIndicator = document.getElementById('dayIndicator');
+    dayIndicator.textContent = (isNight() ? '🌙 Night' : '☀️ Day') + ' | ' + getTimeString();
+    dayIndicator.classList.toggle('night', isNight());
+    
+    const avgCoralC = coralPolyps.length > 0 
+      ? (coralPolyps.reduce((sum, c) => sum + c.coherence, 0) / coralPolyps.length).toFixed(1)
+      : 0;
+    document.getElementById('avgCoralC').textContent = avgCoralC;
+    
+    const schoolC = fishSchools.length > 0
+      ? (fishSchools.reduce((sum, f) => sum + f.coherence, 0) / fishSchools.length).toFixed(1)
+      : 0;
+    document.getElementById('schoolC').textContent = schoolC;
+    
+    const avgPulse = jellyfish.length > 0
+      ? (jellyfish.reduce((sum, j) => sum + j.coherence, 0) / jellyfish.length).toFixed(1)
+      : 0;
+    document.getElementById('avgPulse').textContent = avgPulse;
+    
+    document.getElementById('turtleHunting').textContent = turtles.filter(t => t.huntingTarget).length;
+    document.getElementById('shelterZones').textContent = kelps.length;
+    
+    ecosystemCoherence = coralPolyps.reduce((sum, c) => sum + c.coherence, 0) +
+                        fishSchools.reduce((sum, f) => sum + f.coherence, 0) +
+                        jellyfish.reduce((sum, j) => sum + j.coherence, 0) +
+                        turtles.reduce((sum, t) => sum + t.coherence, 0);
+    document.getElementById('ecoCoherence').textContent = ecosystemCoherence.toFixed(0);
+    document.getElementById('ruptureCount').textContent = totalRuptures;
+  }
+  
+  function animate() {
+    // Day/night cycle
+    dayTime += (0.00005 * simSpeed);
+    if (dayTime > 1) dayTime = 0;
+    
+    // Temperature
+    if (waterTemp < targetTemp) {
+      waterTemp = Math.min(targetTemp, waterTemp + 0.015 * simSpeed);
+      surfaceTemp = Math.min(targetTemp + 1, surfaceTemp + 0.02 * simSpeed);
+    } else if (waterTemp > targetTemp) {
+      waterTemp = Math.max(targetTemp, waterTemp - 0.015 * simSpeed);
+      surfaceTemp = Math.max(targetTemp, surfaceTemp - 0.02 * simSpeed);
+    }
+    
+    // Storm decay
+    if (!stormActive && stormIntensity > 0) {
+      stormIntensity = Math.max(0, stormIntensity - 0.005);
+    }
+    
+    // Background
+    const dayFactor = getDayNightFactor();
+    const r1 = Math.floor(26 * (0.3 + dayFactor * 0.7));
+    const g1 = Math.floor(58 * (0.3 + dayFactor * 0.7));
+    const b1 = Math.floor(82 * (0.3 + dayFactor * 0.7));
+    const r2 = Math.floor(13 * (0.2 + dayFactor * 0.8));
+    const g2 = Math.floor(27 * (0.2 + dayFactor * 0.8));
+    const b2 = Math.floor(42 * (0.2 + dayFactor * 0.8));
+    
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0, `rgb(${r1}, ${g1}, ${b1})`);
+    bgGrad.addColorStop(0.65, `rgb(${Math.floor((r1+r2)/2)}, ${Math.floor((g1+g2)/2)}, ${Math.floor((b1+b2)/2)})`);
+    bgGrad.addColorStop(1, `rgb(${r2}, ${g2}, ${b2})`);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Storm overlay
+    if (stormIntensity > 0) {
+      ctx.fillStyle = `rgba(50, 50, 70, ${stormIntensity * 0.3})`;
+      ctx.fillRect(0, 0, width, height);
+    }
+    
+    // Caustics
+    if (dayFactor > 0.3) {
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.025 * dayFactor})`;
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 7; i++) {
+        const x = (i + 1) * width / 8 + Math.sin(simulationTime * 0.018 + i * 0.5) * 25;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.quadraticCurveTo(x + Math.cos(simulationTime * 0.025 + i * 0.3) * 15, height / 2, x + 70, height);
+        ctx.stroke();
+      }
+    }
+    
+    // Environmental processes
+    drawEnvironmentalProcesses(ctx);
+    
+    // Rebuild spatial hash
+    spatialHash.clear();
+    coralPolyps.forEach(c => spatialHash.insert(c));
+    fishSchools.forEach(f => spatialHash.insert(f));
+    predators.forEach(p => spatialHash.insert(p));
+    jellyfish.forEach(j => spatialHash.insert(j));
+    turtles.forEach(t => spatialHash.insert(t));
+    
+    // Update marine snow
+    for (let s of marineSnow) {
+      s.update();
+    }
+    
+    // Draw kelp (background layer)
+    if (processToggles.kelp) {
+      kelps.forEach(k => {
+        k.update();
+        k.draw(ctx);
+      });
+    }
+    
+    // Update & draw entities
+    coralPolyps.forEach(polyp => {
+      polyp.update();
+      polyp.draw(ctx);
+    });
+    
+    fishSchools.forEach(fish => {
+      fish.update(fishSchools, predators, coralPolyps);
+      fish.draw(ctx);
+    });
+    
+    jellyfish.forEach(jelly => {
+      jelly.update();
+      jelly.draw(ctx);
+    });
+    
+    turtles.forEach(turtle => {
+      turtle.update();
+      turtle.draw(ctx);
+    });
+    
+    predators.forEach(predator => {
+      predator.update(fishSchools);
+      predator.draw(ctx);
+    });
+    
+    // Update plankton
+    for (let p of planktonPool) {
+      if (p.active) p.update();
+    }
+    
+    // Replenish plankton
+    if (activePlankton < 300 && Math.random() < 0.08) {
+      getPlankton(Math.random() * width, height * 0.2 + Math.random() * height * 0.3);
+    }
+    
+    // Update fields
+    if (simulationTime % 3 === 0) {
+      updateEnvironmentalFields();
+    }
+    
+    // Update metrics
+    if (simulationTime % 60 === 0) {
+      updateMetrics();
+    }
+    
+    // Update inspector
+    updateInspector();
+    
+    simulationTime++;
+    updatePerformance();
+    requestAnimationFrame(animate);
+  }
+  
+  // Click handling
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (width / rect.width);
+    const y = (e.clientY - rect.top) * (height / rect.height);
+    
+    // Check for entity selection
+    let closestEntity = null;
+    let closestDist = 40;
+    
+    const nearby = spatialHash.queryRadius(x, y, 50);
+    for (let entity of nearby) {
+      const dist = Math.hypot(entity.x - x, entity.y - y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestEntity = entity;
+      }
+    }
+    
+    // Also check kelps
+    for (let k of kelps) {
+      const dist = Math.hypot(k.x - x, (k.baseY - k.maxHeight / 2) - y);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestEntity = k;
+      }
+    }
+    
+    if (closestEntity) {
+      selectedEntity = closestEntity;
+      playSound(600, 0.1, 0.05);
+    } else {
+      // Add nutrients on click
+      const gridX = Math.floor(x / gridSize);
+      const gridY = Math.floor(y / gridSize);
+      const radius = 2;
+      
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const gx = gridX + dx;
+          const gy = gridY + dy;
+          if (gx >= 0 && gx < gridWidth && gy >= 0 && gy < gridHeight) {
+            const idx = gx + gy * gridWidth;
+            nutrientField[idx] = Math.min(1.0, nutrientField[idx] + 0.5);
+          }
+        }
+      }
+      
+      for (let i = 0; i < 10; i++) {
+        getPlankton(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 30);
+      }
+      
+      playSound(1100 + Math.random() * 400, 0.15, 0.015);
+    }
+  });
+  
+  // Window functions
+  window.addCoral = function() {
+    const x = 40 + Math.random() * (width - 80);
+    const y = height * 0.6 + Math.random() * (height * 0.35);
+    const species = ['branching', 'table', 'brain', 'staghorn'][Math.floor(Math.random() * 4)];
+    coralPolyps.push(new CoralPolyp(x, y, null, species));
+    playSound(400, 0.12, 0.018);
+  };
+  
+  window.addFishSchool = function() {
+    const schoolSize = 12 + Math.floor(Math.random() * 16);
+    const centerX = 50 + Math.random() * (width - 100);
+    const centerY = 50 + Math.random() * (height - 100);
+    const schoolId = Math.floor(Math.random() * 5);
+    
+    for (let i = 0; i < schoolSize; i++) {
+      fishSchools.push(new Fish(
+        centerX + (Math.random() - 0.5) * 60,
+        centerY + (Math.random() - 0.5) * 60,
+        schoolId
+      ));
+    }
+    playSound(600, 0.1, 0.015);
+  };
+  
+  window.addJellyfish = function() {
+    const x = 50 + Math.random() * (width - 100);
+    const y = 50 + Math.random() * (height * 0.6);
+    jellyfish.push(new Jellyfish(x, y));
+    playSound(500, 0.15, 0.02);
+  };
+  
+  window.addTurtle = function() {
+    const x = 50 + Math.random() * (width - 100);
+    const y = 50 + Math.random() * (height - 100);
+    turtles.push(new Turtle(x, y));
+    playSound(200, 0.2, 0.025);
+  };
+  
+  window.addKelp = function() {
+    const x = 40 + Math.random() * (width - 80);
+    const y = height - 10;
+    kelps.push(new Kelp(x, y));
+    playSound(350, 0.12, 0.015);
+  };
+  
+  window.addPredator = function() {
+    predators.push(new Predator(Math.random() * width, Math.random() * height));
+    playSound(200, 0.3, 0.025);
+  };
+  
+  window.addNutrients = function() {
+    for (let i = 0; i < nutrientField.length; i++) {
+      if (Math.random() < 0.45) {
+        nutrientField[i] = Math.min(1.0, nutrientField[i] + 0.6);
+      }
+    }
+    for (let i = 0; i < 50; i++) {
+      getPlankton(Math.random() * width, Math.random() * height * 0.4);
+    }
+    playSound(1000, 0.2, 0.02);
+  };
+  
+  window.triggerSpawning = function() {
+    // Mass synchronized reproduction event
+    coralPolyps.forEach(c => {
+      if (c.coherence > OMEGA * 0.5 && !c.bleached) {
+        c.coherence += OMEGA;
+      }
+    });
+    
+    fishSchools.forEach(f => {
+      if (f.coherence > OMEGA * 0.3) {
+        f.coherence += OMEGA * 0.5;
+      }
+    });
+    
+    // Spawn extra plankton
+    for (let i = 0; i < 100; i++) {
+      getPlankton(Math.random() * width, Math.random() * height);
+    }
+    
+    playSound(800, 0.3, 0.03);
+  };
+  
+  window.resetEcosystem = function() {
+    coralPolyps = [];
+    fishSchools = [];
+    predators = [];
+    jellyfish = [];
+    turtles = [];
+    kelps = [];
+    
+    for (let p of planktonPool) p.active = false;
+    activePlankton = 0;
+    
+    simulationTime = 0;
+    dayTime = 0.5;
+    waterTemp = 26;
+    surfaceTemp = 26;
+    bottomTemp = 24;
+    targetTemp = 26;
+    totalRuptures = 0;
+    ecosystemCoherence = 0;
+    heatStressActive = false;
+    stormActive = false;
+    stormIntensity = 0;
+    selectedEntity = null;
+    
+    nutrientField.fill(0.7);
+    currentFieldX.fill(0);
+    currentFieldY.fill(0);
+    temperatureField.fill(26);
+    oxygenField.fill(8.2);
+    
+    document.getElementById('heatStressBtn').textContent = '🌡️ Heat Stress';
+    document.getElementById('heatStressBtn').classList.remove('active');
+    document.getElementById('stormBtn').textContent = '⛈️ Storm';
+    document.getElementById('stormBtn').classList.remove('active');
+    document.getElementById('entityInspector').classList.remove('visible');
+    
+    // Initial population
+    for (let i = 0; i < 10; i++) addCoral();
+    for (let i = 0; i < 4; i++) addFishSchool();
+    for (let i = 0; i < 3; i++) addJellyfish();
+    for (let i = 0; i < 5; i++) addKelp();
+    addTurtle();
+    
+    for (let i = 0; i < 300; i++) {
+      getPlankton(Math.random() * width, Math.random() * height);
+    }
+  };
+  
+  resizeCanvas();
+  resetEcosystem();
+  
+  window.addEventListener('resize', resizeCanvas);
+  
+  animate();
+})();
+</script>
+</body>
+</html>
