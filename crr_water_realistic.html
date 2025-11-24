@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Water Flow — Realistic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@300;400&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(180deg, #1a1c2e 0%, #0f1019 100%);
+            min-height: 100vh;
+            font-family: 'IBM Plex Mono', monospace;
+            color: #c4cad6;
+            overflow: hidden;
+        }
+        
+        .sim-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #waterCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .title-block {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+        }
+        
+        .title-block h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: -0.02em;
+        }
+        
+        .title-block .sub {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 0.25rem;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+        
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .control-item label {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .control-item input[type="range"] {
+            -webkit-appearance: none;
+            width: 160px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        .control-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .metrics {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            text-align: right;
+        }
+        
+        .metric {
+            margin-bottom: 0.75rem;
+        }
+        
+        .metric .val {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Instrument Serif', serif;
+        }
+        
+        .metric .lbl {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        
+        .state-pill {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+        }
+        
+        .state-pill.coherence.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #86efac;
+        }
+        
+        .state-pill.rupture.active {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+        
+        .state-pill.regen.active {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+        }
+        
+        .hint {
+            position: absolute;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.1em;
+        }
+        
+        .omega-display {
+            position: absolute;
+            left: 50%;
+            top: 2rem;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+        
+        .omega-display .symbol {
+            font-family: 'Instrument Serif', serif;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .omega-display .meaning {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="sim-wrapper">
+        <canvas id="waterCanvas"></canvas>
+        
+        <div class="ui-overlay">
+            <div class="title-block">
+                <h1>CRR Water</h1>
+                <div class="sub">Coherence–Rupture–Regeneration</div>
+            </div>
+            
+            <div class="omega-display">
+                <div class="symbol">Ω <span id="omegaVal">0.50</span></div>
+                <div class="meaning">Rigidity ← → Liquidity</div>
+            </div>
+            
+            <div class="metrics">
+                <div class="metric">
+                    <div class="val" id="coherenceVal">0.00</div>
+                    <div class="lbl">Coherence C(t)</div>
+                </div>
+                <div>
+                    <span class="state-pill coherence" id="stateC">C</span>
+                    <span class="state-pill rupture" id="stateR">δ</span>
+                    <span class="state-pill regen" id="stateG">R</span>
+                </div>
+            </div>
+            
+            <div class="hint">Click & drag to interact • Obstacles deflect flow</div>
+            
+            <div class="controls">
+                <div class="control-item">
+                    <label>Ω Parameter</label>
+                    <input type="range" id="omegaSlider" min="0.1" max="1.0" step="0.01" value="0.5">
+                </div>
+                <div class="control-item">
+                    <label>Flow Rate</label>
+                    <input type="range" id="flowSlider" min="0.5" max="4" step="0.1" value="2">
+                </div>
+                <div class="control-item">
+                    <label>Surface Tension</label>
+                    <input type="range" id="tensionSlider" min="0.5" max="2" step="0.1" value="1">
+                </div>
+                <div class="control-item">
+                    <label>Viscosity</label>
+                    <input type="range" id="viscSlider" min="0.01" max="0.3" step="0.01" value="0.08">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('waterCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Setup
+        let W, H, dpr;
+        function resize() {
+            dpr = window.devicePixelRatio || 1;
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Parameters
+        let omega = 0.5;
+        let flowRate = 2;
+        let surfaceTension = 1;
+        let baseViscosity = 0.08;
+        
+        // Fluid state
+        const GRID_SCALE = 4; // Render at 1/4 resolution for performance
+        let gridW, gridH;
+        let densityField = [];
+        let velocityFieldX = [];
+        let velocityFieldY = [];
+        
+        // Particles (hidden, just for physics)
+        let particles = [];
+        const MAX_PARTICLES = 2000;
+        
+        // Obstacles
+        let obstacles = [
+            { x: 0.3, y: 0.5, r: 0.06 },
+            { x: 0.55, y: 0.35, r: 0.035 },
+            { x: 0.5, y: 0.7, r: 0.04 }
+        ];
+        
+        // CRR state
+        let globalCoherence = 0;
+        let coherenceHistory = [];
+        let isRupturing = false;
+        let isRegenerating = false;
+        let lastRuptureTime = 0;
+        
+        // Mouse
+        let mouse = { x: 0, y: 0, down: false, px: 0, py: 0 };
+        
+        class Particle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1;
+                this.coherence = 0;
+            }
+        }
+        
+        function initGrid() {
+            gridW = Math.ceil(W / GRID_SCALE);
+            gridH = Math.ceil(H / GRID_SCALE);
+            densityField = new Float32Array(gridW * gridH);
+            velocityFieldX = new Float32Array(gridW * gridH);
+            velocityFieldY = new Float32Array(gridW * gridH);
+        }
+        
+        function init() {
+            initGrid();
+            particles = [];
+            globalCoherence = 0;
+            coherenceHistory = [];
+        }
+        
+        // Spawn particles from left edge
+        function spawnParticles() {
+            const spawnRate = Math.floor(flowRate * 8);
+            for (let i = 0; i < spawnRate && particles.length < MAX_PARTICLES; i++) {
+                const y = Math.random() * H;
+                const speed = flowRate * (0.8 + Math.random() * 0.4);
+                particles.push(new Particle(
+                    -10 + Math.random() * 5,
+                    y,
+                    speed,
+                    (Math.random() - 0.5) * 0.5
+                ));
+            }
+        }
+        
+        function updateParticles() {
+            // Effective viscosity: low omega = high viscosity
+            const visc = baseViscosity * (1.5 - omega * 0.8);
+            const turbulence = omega * 0.5;
+            
+            let totalAlignment = 0;
+            let alignCount = 0;
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                
+                // Gravity (slight)
+                p.vy += 0.02;
+                
+                // Flow force (push right)
+                p.vx += 0.05 * flowRate;
+                
+                // Turbulent noise based on omega
+                if (omega > 0.4) {
+                    p.vx += (Math.random() - 0.5) * turbulence * 0.3;
+                    p.vy += (Math.random() - 0.5) * turbulence * 0.3;
+                }
+                
+                // Obstacle avoidance
+                for (const obs of obstacles) {
+                    const ox = obs.x * W;
+                    const oy = obs.y * H;
+                    const or = obs.r * Math.min(W, H);
+                    
+                    const dx = p.x - ox;
+                    const dy = p.y - oy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < or + 20) {
+                        const force = (or + 20 - dist) / (or + 20);
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        
+                        p.vx += nx * force * 2;
+                        p.vy += ny * force * 2;
+                        
+                        // Bounce if inside
+                        if (dist < or) {
+                            p.x = ox + nx * or;
+                            p.y = oy + ny * or;
+                            const dot = p.vx * nx + p.vy * ny;
+                            p.vx -= 1.8 * dot * nx;
+                            p.vy -= 1.8 * dot * ny;
+                        }
+                    }
+                }
+                
+                // Particle-particle interaction (simplified SPH)
+                for (let j = i + 1; j < particles.length; j++) {
+                    const q = particles[j];
+                    const dx = q.x - p.x;
+                    const dy = q.y - p.y;
+                    const distSq = dx * dx + dy * dy;
+                    const minDist = 15;
+                    
+                    if (distSq < minDist * minDist && distSq > 0.01) {
+                        const dist = Math.sqrt(distSq);
+                        const overlap = minDist - dist;
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        
+                        // Repulsion (pressure)
+                        const repel = overlap * 0.15 * surfaceTension;
+                        p.vx -= nx * repel;
+                        p.vy -= ny * repel;
+                        q.vx += nx * repel;
+                        q.vy += ny * repel;
+                        
+                        // Viscosity (velocity averaging)
+                        const avgVx = (p.vx + q.vx) * 0.5;
+                        const avgVy = (p.vy + q.vy) * 0.5;
+                        p.vx += (avgVx - p.vx) * visc;
+                        p.vy += (avgVy - p.vy) * visc;
+                        q.vx += (avgVx - q.vx) * visc;
+                        q.vy += (avgVy - q.vy) * visc;
+                        
+                        // Coherence: alignment of velocities
+                        const pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                        const qSpeed = Math.sqrt(q.vx * q.vx + q.vy * q.vy);
+                        if (pSpeed > 0.1 && qSpeed > 0.1) {
+                            const dot = (p.vx * q.vx + p.vy * q.vy) / (pSpeed * qSpeed);
+                            totalAlignment += (dot + 1) / 2;
+                            alignCount++;
+                        }
+                    }
+                }
+                
+                // Mouse interaction
+                if (mouse.down) {
+                    const dx = p.x - mouse.x;
+                    const dy = p.y - mouse.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 100 && dist > 1) {
+                        const mvx = mouse.x - mouse.px;
+                        const mvy = mouse.y - mouse.py;
+                        p.vx += mvx * 0.3 * (1 - dist / 100);
+                        p.vy += mvy * 0.3 * (1 - dist / 100);
+                    }
+                }
+                
+                // Damping
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+                
+                // Speed limit
+                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                if (speed > 8) {
+                    p.vx = (p.vx / speed) * 8;
+                    p.vy = (p.vy / speed) * 8;
+                }
+                
+                // Integrate
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                // Boundaries
+                if (p.y < 5) { p.y = 5; p.vy *= -0.5; }
+                if (p.y > H - 5) { p.y = H - 5; p.vy *= -0.5; }
+                
+                // Remove if off right edge
+                if (p.x > W + 50) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Update global coherence
+            globalCoherence = alignCount > 0 ? totalAlignment / alignCount : 0;
+            coherenceHistory.push(globalCoherence);
+            if (coherenceHistory.length > 100) coherenceHistory.shift();
+            
+            // Detect rupture
+            detectCRRState();
+        }
+        
+        function detectCRRState() {
+            if (coherenceHistory.length < 20) return;
+            
+            const recent = coherenceHistory.slice(-10).reduce((a, b) => a + b, 0) / 10;
+            const older = coherenceHistory.slice(-20, -10).reduce((a, b) => a + b, 0) / 10;
+            
+            const drop = older - recent;
+            const ruptureThreshold = 0.1 * (1 - omega * 0.5);
+            
+            const wasRupturing = isRupturing;
+            isRupturing = drop > ruptureThreshold;
+            
+            if (isRupturing && !wasRupturing) {
+                lastRuptureTime = Date.now();
+            }
+            
+            isRegenerating = !isRupturing && (Date.now() - lastRuptureTime < 1500);
+        }
+        
+        function buildDensityField() {
+            densityField.fill(0);
+            
+            const radius = 30 / GRID_SCALE;
+            const radiusSq = radius * radius;
+            
+            for (const p of particles) {
+                const gx = Math.floor(p.x / GRID_SCALE);
+                const gy = Math.floor(p.y / GRID_SCALE);
+                
+                const r = Math.ceil(radius);
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        const nx = gx + dx;
+                        const ny = gy + dy;
+                        
+                        if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH) {
+                            const distSq = dx * dx + dy * dy;
+                            if (distSq < radiusSq) {
+                                // Smooth kernel
+                                const w = Math.pow(1 - distSq / radiusSq, 2);
+                                densityField[ny * gridW + nx] += w;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        function render() {
+            // Dark background
+            ctx.fillStyle = '#0a0c14';
+            ctx.fillRect(0, 0, W, H);
+            
+            // Build density field from particles
+            buildDensityField();
+            
+            // Create image data for fluid rendering
+            const imageData = ctx.createImageData(gridW, gridH);
+            const data = imageData.data;
+            
+            const threshold = 0.8;
+            
+            for (let y = 0; y < gridH; y++) {
+                for (let x = 0; x < gridW; x++) {
+                    const idx = y * gridW + x;
+                    const density = densityField[idx];
+                    const pixelIdx = idx * 4;
+                    
+                    if (density > threshold) {
+                        // Water color with depth
+                        const depth = Math.min(1, (density - threshold) / 3);
+                        const edgeFactor = Math.min(1, (density - threshold) / 0.5);
+                        
+                        // Base water color
+                        let r, g, b, a;
+                        
+                        if (isRupturing) {
+                            // Turbulent: more white/foam
+                            r = 120 + depth * 80 + (1 - edgeFactor) * 100;
+                            g = 160 + depth * 60 + (1 - edgeFactor) * 80;
+                            b = 200 + depth * 40;
+                        } else if (isRegenerating) {
+                            // Regenerating: slight purple tint
+                            r = 100 + depth * 60;
+                            g = 140 + depth * 80;
+                            b = 210 + depth * 40;
+                        } else {
+                            // Normal water
+                            r = 40 + depth * 80;
+                            g = 120 + depth * 100;
+                            b = 180 + depth * 60;
+                        }
+                        
+                        // Edge highlight (fresnel-like)
+                        if (edgeFactor < 0.3) {
+                            const highlight = (0.3 - edgeFactor) / 0.3;
+                            r = Math.min(255, r + highlight * 120);
+                            g = Math.min(255, g + highlight * 130);
+                            b = Math.min(255, b + highlight * 140);
+                        }
+                        
+                        // Depth darkening
+                        if (depth > 0.6) {
+                            const darken = (depth - 0.6) / 0.4;
+                            r *= (1 - darken * 0.3);
+                            g *= (1 - darken * 0.2);
+                        }
+                        
+                        a = Math.min(255, 180 + depth * 75);
+                        
+                        data[pixelIdx] = Math.floor(r);
+                        data[pixelIdx + 1] = Math.floor(g);
+                        data[pixelIdx + 2] = Math.floor(b);
+                        data[pixelIdx + 3] = Math.floor(a);
+                    } else {
+                        // Transparent
+                        data[pixelIdx + 3] = 0;
+                    }
+                }
+            }
+            
+            // Draw to offscreen canvas at grid resolution, then scale up
+            const offscreen = document.createElement('canvas');
+            offscreen.width = gridW;
+            offscreen.height = gridH;
+            const offCtx = offscreen.getContext('2d');
+            offCtx.putImageData(imageData, 0, 0);
+            
+            // Scale up with smoothing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(offscreen, 0, 0, gridW, gridH, 0, 0, W, H);
+            
+            // Draw obstacles
+            for (const obs of obstacles) {
+                const ox = obs.x * W;
+                const oy = obs.y * H;
+                const or = obs.r * Math.min(W, H);
+                
+                // Obstacle shadow/glow
+                const grad = ctx.createRadialGradient(ox, oy, or * 0.5, ox, oy, or * 1.3);
+                grad.addColorStop(0, 'rgba(20, 25, 40, 0.95)');
+                grad.addColorStop(0.7, 'rgba(30, 40, 60, 0.9)');
+                grad.addColorStop(1, 'rgba(40, 60, 90, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(ox, oy, or * 1.3, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                
+                // Obstacle body
+                ctx.beginPath();
+                ctx.arc(ox, oy, or, 0, Math.PI * 2);
+                ctx.fillStyle = '#1a1f2e';
+                ctx.fill();
+                
+                // Rim highlight
+                ctx.beginPath();
+                ctx.arc(ox, oy, or, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(100, 140, 180, 0.15)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Surface caustics/highlights
+            renderCaustics();
+            
+            // Foam particles on surface
+            renderFoam();
+        }
+        
+        function renderCaustics() {
+            const time = Date.now() * 0.001;
+            ctx.globalCompositeOperation = 'screen';
+            
+            for (let i = 0; i < 15; i++) {
+                const x = (Math.sin(time * 0.5 + i * 0.7) * 0.3 + 0.5) * W;
+                const y = (Math.cos(time * 0.3 + i * 1.1) * 0.3 + 0.5) * H;
+                const size = 50 + Math.sin(time + i) * 20;
+                
+                // Check if this area has water
+                const gx = Math.floor(x / GRID_SCALE);
+                const gy = Math.floor(y / GRID_SCALE);
+                if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH) {
+                    const density = densityField[gy * gridW + gx];
+                    if (density > 1) {
+                        const grad = ctx.createRadialGradient(x, y, 0, x, y, size);
+                        grad.addColorStop(0, 'rgba(200, 230, 255, 0.08)');
+                        grad.addColorStop(0.5, 'rgba(150, 200, 240, 0.03)');
+                        grad.addColorStop(1, 'transparent');
+                        
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fillStyle = grad;
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        function renderFoam() {
+            // Add foam at high-velocity areas and after obstacles
+            ctx.globalCompositeOperation = 'screen';
+            
+            for (const p of particles) {
+                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                
+                // Foam at high speed / turbulence
+                if (speed > 3 || (isRupturing && Math.random() < 0.3)) {
+                    const size = 2 + Math.random() * 3;
+                    const alpha = Math.min(0.5, (speed - 3) * 0.2 + (isRupturing ? 0.2 : 0));
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(220, 240, 255, ${alpha})`;
+                    ctx.fill();
+                }
+            }
+            
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        function updateUI() {
+            document.getElementById('omegaVal').textContent = omega.toFixed(2);
+            document.getElementById('coherenceVal').textContent = globalCoherence.toFixed(2);
+            
+            document.getElementById('stateC').classList.toggle('active', 
+                globalCoherence > 0.6 && !isRupturing && !isRegenerating);
+            document.getElementById('stateR').classList.toggle('active', isRupturing);
+            document.getElementById('stateG').classList.toggle('active', isRegenerating);
+        }
+        
+        // Controls
+        document.getElementById('omegaSlider').addEventListener('input', e => {
+            omega = parseFloat(e.target.value);
+        });
+        
+        document.getElementById('flowSlider').addEventListener('input', e => {
+            flowRate = parseFloat(e.target.value);
+        });
+        
+        document.getElementById('tensionSlider').addEventListener('input', e => {
+            surfaceTension = parseFloat(e.target.value);
+        });
+        
+        document.getElementById('viscSlider').addEventListener('input', e => {
+            baseViscosity = parseFloat(e.target.value);
+        });
+        
+        // Mouse
+        canvas.addEventListener('mousedown', e => {
+            mouse.down = true;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.px = mouse.x;
+            mouse.py = mouse.y;
+        });
+        
+        canvas.addEventListener('mousemove', e => {
+            mouse.px = mouse.x;
+            mouse.py = mouse.y;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            mouse.down = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            mouse.down = false;
+        });
+        
+        // Touch support
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            mouse.down = true;
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            mouse.px = mouse.x;
+            mouse.py = mouse.y;
+        });
+        
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            mouse.px = mouse.x;
+            mouse.py = mouse.y;
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        });
+        
+        canvas.addEventListener('touchend', () => {
+            mouse.down = false;
+        });
+        
+        // Animation loop
+        function loop() {
+            spawnParticles();
+            updateParticles();
+            render();
+            updateUI();
+            requestAnimationFrame(loop);
+        }
+        
+        init();
+        loop();
+    </script>
+</body>
+</html>
