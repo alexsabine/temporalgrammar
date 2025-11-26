@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Photorealistic Brain</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #030306;
+            --panel-bg: rgba(8, 8, 12, 0.92);
+            --border: rgba(255,255,255,0.08);
+            --text: #c8c4bc;
+            --text-dim: #6a6660;
+            --coherence: #4a9eff;
+            --rupture: #ff5070;
+            --regen: #50ffa0;
+        }
+        
+        body {
+            font-family: 'EB Garamond', Georgia, serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+        
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .panel {
+            position: fixed;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            padding: 14px 18px;
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+        
+        .header {
+            top: 16px; left: 16px;
+        }
+        
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            margin-bottom: 2px;
+        }
+        
+        .header .sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+        
+        .stats {
+            top: 16px; right: 16px;
+            display: flex; gap: 16px;
+            font-size: 0.75rem;
+        }
+        
+        .stat { display: flex; gap: 5px; align-items: center; }
+        .stat-label { color: var(--text-dim); }
+        .stat-val { font-variant-numeric: tabular-nums; font-weight: 500; }
+        .stat-val.c { color: var(--coherence); }
+        .stat-val.r { color: var(--rupture); }
+        .stat-val.g { color: var(--regen); }
+        
+        .controls {
+            bottom: 16px; left: 16px;
+            width: 280px;
+        }
+        
+        .panel-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .ctrl-group { margin-bottom: 14px; }
+        .ctrl-group:last-of-type { margin-bottom: 0; }
+        
+        .ctrl-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .ctrl-val {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .slider-wrap {
+            position: relative;
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%; height: 3px;
+            background: transparent;
+            cursor: pointer;
+            position: relative; z-index: 2;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            background: var(--text);
+        }
+        
+        .slider-fill {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            pointer-events: none;
+        }
+        
+        .fill-omega { background: var(--coherence); }
+        .fill-neurons { background: var(--regen); }
+        .fill-activity { background: var(--rupture); }
+        
+        .modes {
+            display: flex; gap: 6px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 6px 8px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: inherit;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        
+        .mode-btn:hover {
+            border-color: var(--text-dim);
+            color: var(--text);
+        }
+        
+        .mode-btn.active {
+            background: var(--text);
+            color: var(--bg);
+            border-color: var(--text);
+        }
+        
+        .equations {
+            bottom: 16px; right: 16px;
+            width: 220px;
+        }
+        
+        .eq {
+            font-size: 0.8rem;
+            padding: 7px 10px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.02);
+            border-left: 2px solid var(--border);
+        }
+        
+        .eq:last-child { margin-bottom: 0; }
+        
+        .eq-name {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .eq-formula { font-style: italic; }
+        
+        .eq.active-c { border-left-color: var(--coherence); }
+        .eq.active-r { border-left-color: var(--rupture); }
+        .eq.active-g { border-left-color: var(--regen); }
+        
+        .legend {
+            top: 85px; left: 16px;
+            font-size: 0.75rem;
+        }
+        
+        .leg-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .leg-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+        
+        .leg-dot.c { background: var(--coherence); box-shadow: 0 0 6px var(--coherence); }
+        .leg-dot.r { background: var(--rupture); box-shadow: 0 0 6px var(--rupture); }
+        .leg-dot.g { background: var(--regen); box-shadow: 0 0 6px var(--regen); }
+        
+        .hint {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="brain"></canvas>
+    </div>
+    
+    <div class="panel header">
+        <h1>CRR Neural Dynamics</h1>
+        <div class="sub">Photorealistic Brain Simulation</div>
+    </div>
+    
+    <div class="panel stats">
+        <div class="stat">
+            <span class="stat-label">Neurons</span>
+            <span class="stat-val" id="nCount">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Synapses</span>
+            <span class="stat-val" id="sCount">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">C̄</span>
+            <span class="stat-val c" id="avgC">0.00</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">δ/s</span>
+            <span class="stat-val r" id="rRate">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">R̄</span>
+            <span class="stat-val g" id="avgR">0.00</span>
+        </div>
+    </div>
+    
+    <div class="panel legend">
+        <div class="panel-title">Neural Activity</div>
+        <div class="leg-item"><div class="leg-dot c"></div><span>Coherence (C)</span></div>
+        <div class="leg-item"><div class="leg-dot r"></div><span>Rupture (δ)</span></div>
+        <div class="leg-item"><div class="leg-dot g"></div><span>Regeneration (R)</span></div>
+        <div class="hint">Click brain to stimulate</div>
+    </div>
+    
+    <div class="panel controls">
+        <div class="panel-title">Parameters</div>
+        
+        <div class="ctrl-group">
+            <div class="ctrl-label">
+                <span>Ω (Temporal Integration)</span>
+                <span class="ctrl-val" id="omegaVal">1.00</span>
+            </div>
+            <div class="slider-wrap">
+                <div class="slider-fill fill-omega" id="omegaFill"></div>
+                <input type="range" id="omega" min="0.3" max="2.5" step="0.05" value="1">
+            </div>
+        </div>
+        
+        <div class="ctrl-group">
+            <div class="ctrl-label">
+                <span>Neuron Count</span>
+                <span class="ctrl-val" id="neuronsVal">1500</span>
+            </div>
+            <div class="slider-wrap">
+                <div class="slider-fill fill-neurons" id="neuronsFill"></div>
+                <input type="range" id="neurons" min="500" max="3000" step="100" value="1500">
+            </div>
+        </div>
+        
+        <div class="ctrl-group">
+            <div class="ctrl-label">
+                <span>Spontaneous Activity</span>
+                <span class="ctrl-val" id="activityVal">0.012</span>
+            </div>
+            <div class="slider-wrap">
+                <div class="slider-fill fill-activity" id="activityFill"></div>
+                <input type="range" id="activity" min="0" max="0.04" step="0.001" value="0.012">
+            </div>
+        </div>
+        
+        <div class="modes">
+            <button class="mode-btn active" data-mode="rest">Resting</button>
+            <button class="mode-btn" data-mode="think">Thinking</button>
+            <button class="mode-btn" data-mode="dream">Dreaming</button>
+        </div>
+    </div>
+    
+    <div class="panel equations">
+        <div class="panel-title">CRR Equations</div>
+        <div class="eq active-c" id="eqC">
+            <span class="eq-name">Coherence</span>
+            <span class="eq-formula">C(t) = ∫ L(τ) dτ</span>
+        </div>
+        <div class="eq" id="eqR">
+            <span class="eq-name">Rupture</span>
+            <span class="eq-formula">δ(now) at C = Ω</span>
+        </div>
+        <div class="eq" id="eqG">
+            <span class="eq-name">Regeneration</span>
+            <span class="eq-formula">R = ∫ φ e^(C/Ω) dτ</span>
+        </div>
+    </div>
+
+    <script>
+    // ============ PERLIN NOISE ============
+    class Perlin {
+        constructor(seed = 1) {
+            this.p = new Uint8Array(512);
+            const perm = new Uint8Array(256);
+            for (let i = 0; i < 256; i++) perm[i] = i;
+            let s = seed;
+            for (let i = 255; i > 0; i--) {
+                s = (s * 16807) % 2147483647;
+                const j = s % (i + 1);
+                [perm[i], perm[j]] = [perm[j], perm[i]];
+            }
+            for (let i = 0; i < 512; i++) this.p[i] = perm[i & 255];
+        }
+        
+        fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+        lerp(a, b, t) { return a + t * (b - a); }
+        grad(h, x, y) {
+            const u = (h & 1) ? y : x;
+            const v = (h & 1) ? x : y;
+            return ((h & 2) ? -u : u) + ((h & 4) ? -v : v);
+        }
+        
+        noise(x, y) {
+            const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+            x -= Math.floor(x); y -= Math.floor(y);
+            const u = this.fade(x), v = this.fade(y);
+            const A = this.p[X] + Y, B = this.p[X + 1] + Y;
+            return this.lerp(
+                this.lerp(this.grad(this.p[A], x, y), this.grad(this.p[B], x - 1, y), u),
+                this.lerp(this.grad(this.p[A + 1], x, y - 1), this.grad(this.p[B + 1], x - 1, y - 1), u),
+                v
+            ) * 0.5 + 0.5;
+        }
+        
+        fbm(x, y, oct = 4) {
+            let v = 0, a = 0.5, f = 1;
+            for (let i = 0; i < oct; i++) {
+                v += a * this.noise(x * f, y * f);
+                a *= 0.5; f *= 2;
+            }
+            return v;
+        }
+    }
+    
+    // ============ SPATIAL HASH ============
+    class SpatialHash {
+        constructor(size) {
+            this.size = size;
+            this.map = new Map();
+        }
+        
+        key(x, y) { return `${Math.floor(x/this.size)},${Math.floor(y/this.size)}`; }
+        
+        add(n) {
+            const k = this.key(n.x, n.y);
+            if (!this.map.has(k)) this.map.set(k, []);
+            this.map.get(k).push(n);
+        }
+        
+        clear() { this.map.clear(); }
+        
+        nearby(x, y, r) {
+            const res = [];
+            const cr = Math.ceil(r / this.size);
+            const cx = Math.floor(x / this.size), cy = Math.floor(y / this.size);
+            for (let dx = -cr; dx <= cr; dx++) {
+                for (let dy = -cr; dy <= cr; dy++) {
+                    const c = this.map.get(`${cx+dx},${cy+dy}`);
+                    if (c) for (const n of c) {
+                        const d = Math.hypot(n.x - x, n.y - y);
+                        if (d <= r && d > 0) res.push({ n, d });
+                    }
+                }
+            }
+            return res;
+        }
+    }
+    
+    // ============ NEURON (Pyramidal Cell) ============
+    class Neuron {
+        constructor(x, y, z, layer) {
+            this.x = x;
+            this.y = y;
+            this.z = z; // depth 0-1
+            this.layer = layer; // cortical layer
+            
+            // CRR state
+            this.C = Math.random() * 0.2;
+            this.phase = 'acc'; // acc, rup, reg
+            this.R = 0;
+            this.phaseT = 0;
+            
+            // History buffer for regeneration integral
+            this.histSize = 24;
+            this.histIdx = 0;
+            this.histC = new Float32Array(this.histSize);
+            this.histPhi = new Float32Array(this.histSize);
+            
+            // Morphology
+            this.somaR = 2 + Math.random() * 1.5;
+            this.brightness = 0.2;
+            this.input = 0;
+            
+            // Dendrite tree (apical + basal)
+            this.dendrites = this.generateDendrites();
+            this.axon = this.generateAxon();
+            
+            // Synapses
+            this.synapses = [];
+        }
+        
+        generateDendrites() {
+            const branches = [];
+            // Apical dendrite (upward)
+            const apicalLen = 30 + Math.random() * 40;
+            const apicalAngle = -Math.PI/2 + (Math.random() - 0.5) * 0.4;
+            branches.push(this.growBranch(apicalAngle, apicalLen, 3, 0));
+            
+            // Basal dendrites (around soma)
+            const basalCount = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < basalCount; i++) {
+                const angle = (i / basalCount) * Math.PI * 2 + Math.random() * 0.5;
+                const len = 15 + Math.random() * 20;
+                branches.push(this.growBranch(angle, len, 2, 0));
+            }
+            
+            return branches;
+        }
+        
+        growBranch(angle, len, depth, startDist) {
+            if (depth <= 0 || len < 5) return null;
+            
+            const segments = [];
+            let x = 0, y = 0;
+            const segLen = len / 4;
+            
+            for (let i = 0; i < 4; i++) {
+                const nx = x + Math.cos(angle) * segLen;
+                const ny = y + Math.sin(angle) * segLen;
+                segments.push({ x1: x, y1: y, x2: nx, y2: ny });
+                x = nx; y = ny;
+                angle += (Math.random() - 0.5) * 0.6;
+            }
+            
+            const children = [];
+            if (depth > 1 && Math.random() < 0.7) {
+                const branchAngle1 = angle + 0.4 + Math.random() * 0.4;
+                const branchAngle2 = angle - 0.4 - Math.random() * 0.4;
+                const childLen = len * 0.6;
+                const child1 = this.growBranch(branchAngle1, childLen, depth - 1, startDist + len);
+                const child2 = this.growBranch(branchAngle2, childLen, depth - 1, startDist + len);
+                if (child1) children.push({ offsetX: x, offsetY: y, branch: child1 });
+                if (child2) children.push({ offsetX: x, offsetY: y, branch: child2 });
+            }
+            
+            return { segments, children };
+        }
+        
+        generateAxon() {
+            // Axon goes downward/sideways
+            const angle = Math.PI/2 + (Math.random() - 0.5) * 1.2;
+            const segments = [];
+            let x = 0, y = 0;
+            const totalLen = 40 + Math.random() * 60;
+            const segCount = 6;
+            const segLen = totalLen / segCount;
+            let curAngle = angle;
+            
+            for (let i = 0; i < segCount; i++) {
+                const nx = x + Math.cos(curAngle) * segLen;
+                const ny = y + Math.sin(curAngle) * segLen;
+                segments.push({ x1: x, y1: y, x2: nx, y2: ny });
+                x = nx; y = ny;
+                curAngle += (Math.random() - 0.5) * 0.4;
+            }
+            
+            // Terminal boutons
+            const terminals = [];
+            const termCount = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < termCount; i++) {
+                const tAngle = curAngle + (Math.random() - 0.5) * 1.5;
+                const tLen = 8 + Math.random() * 12;
+                terminals.push({
+                    x: x + Math.cos(tAngle) * tLen,
+                    y: y + Math.sin(tAngle) * tLen
+                });
+            }
+            
+            return { segments, terminals, endX: x, endY: y };
+        }
+        
+        getOmega(globalOmega) {
+            // Layer-specific Ω modulation
+            const layerMod = [1.8, 1.4, 1.0, 0.8, 0.6, 0.5][this.layer] || 1;
+            return globalOmega * layerMod;
+        }
+        
+        update(dt, globalOmega, spontRate, time) {
+            const omega = this.getOmega(globalOmega);
+            this.phaseT += dt;
+            
+            const inp = Math.min(this.input, 1.5);
+            
+            // Record history
+            this.histC[this.histIdx] = this.C;
+            this.histPhi[this.histIdx] = Math.min(inp + 0.03, 0.8);
+            this.histIdx = (this.histIdx + 1) % this.histSize;
+            
+            switch (this.phase) {
+                case 'acc':
+                    // C(t) = ∫ L(τ) dτ with leak
+                    const leak = 0.12 / omega;
+                    this.C += (inp + spontRate) * dt * 1.8;
+                    this.C -= this.C * leak * dt;
+                    this.C = Math.max(0, Math.min(this.C, omega * 1.3));
+                    
+                    if (this.C >= omega) {
+                        this.phase = 'rup';
+                        this.phaseT = 0;
+                        this.calcR(omega);
+                    }
+                    
+                    this.brightness = 0.15 + Math.min(this.C / omega, 1) * 0.6;
+                    break;
+                    
+                case 'rup':
+                    this.brightness = 1;
+                    if (this.phaseT > 0.035) {
+                        this.phase = 'reg';
+                        this.phaseT = 0;
+                        this.C = 0;
+                    }
+                    break;
+                    
+                case 'reg':
+                    const regDur = 0.12 + omega * 0.08;
+                    const prog = Math.min(this.phaseT / regDur, 1);
+                    
+                    if (prog >= 1) {
+                        this.phase = 'acc';
+                        this.C = Math.min(this.R * 0.12, omega * 0.25);
+                        this.phaseT = 0;
+                    }
+                    
+                    this.brightness = 0.85 - prog * 0.55;
+                    break;
+            }
+            
+            this.input *= 0.82;
+        }
+        
+        calcR(omega) {
+            // R = ∫ φ(τ) exp(C/Ω) dτ
+            let sum = 0, wSum = 0;
+            for (let i = 0; i < this.histSize; i++) {
+                const w = Math.exp(Math.min(this.histC[i] / omega, 2.5));
+                sum += this.histPhi[i] * w;
+                wSum += w;
+            }
+            this.R = wSum > 0 ? sum / wSum : 0;
+        }
+        
+        receive(str) { this.input += Math.min(str, 0.8); }
+        isRup() { return this.phase === 'rup'; }
+    }
+    
+    // ============ SYNAPSE ============
+    class Synapse {
+        constructor(src, tgt, str) {
+            this.src = src;
+            this.tgt = tgt;
+            this.str = str;
+            this.sig = 0;
+            this.prog = 0;
+        }
+        
+        update(dt) {
+            if (this.src.isRup() && this.sig === 0) {
+                this.sig = 0.7;
+                this.prog = 0;
+            }
+            
+            if (this.sig > 0) {
+                this.prog += dt * 5;
+                if (this.prog >= 1) {
+                    this.tgt.receive(this.str * this.sig);
+                    this.sig = 0;
+                    this.prog = 0;
+                }
+            }
+        }
+    }
+    
+    // ============ BRAIN ============
+    class Brain {
+        constructor(canvas) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.perlin = new Perlin(42);
+            this.neurons = [];
+            this.synapses = [];
+            this.hash = new SpatialHash(50);
+            
+            this.omega = 1;
+            this.nCount = 1500;
+            this.spontRate = 0.012;
+            this.mode = 'rest';
+            
+            this.rupCount = 0;
+            this.lastSec = 0;
+            this.rupRate = 0;
+            
+            this.time = 0;
+            this.lastT = performance.now();
+            
+            this.cx = 0; this.cy = 0;
+            this.bw = 0; this.bh = 0;
+            
+            // Pre-render brain tissue texture
+            this.tissueCanvas = null;
+            this.veinsCanvas = null;
+            
+            this.resize();
+            this.init();
+            
+            window.addEventListener('resize', () => { this.resize(); this.init(); });
+            this.canvas.addEventListener('click', e => this.click(e));
+        }
+        
+        resize() {
+            const dpr = window.devicePixelRatio || 1;
+            this.canvas.width = window.innerWidth * dpr;
+            this.canvas.height = window.innerHeight * dpr;
+            this.ctx.scale(dpr, dpr);
+            this.w = window.innerWidth;
+            this.h = window.innerHeight;
+            
+            this.cx = this.w / 2;
+            this.cy = this.h / 2;
+            this.bw = Math.min(this.w * 0.6, 700);
+            this.bh = Math.min(this.h * 0.55, 500);
+            
+            this.createTissueTexture();
+            this.createVeins();
+        }
+        
+        createTissueTexture() {
+            // Create brain tissue texture with gyri/sulci
+            this.tissueCanvas = document.createElement('canvas');
+            this.tissueCanvas.width = this.w;
+            this.tissueCanvas.height = this.h;
+            const tc = this.tissueCanvas.getContext('2d');
+            
+            // Base gradient
+            const grad = tc.createRadialGradient(
+                this.cx, this.cy, 0,
+                this.cx, this.cy, Math.max(this.bw, this.bh) * 0.6
+            );
+            grad.addColorStop(0, 'rgba(180, 140, 140, 0.12)');
+            grad.addColorStop(0.5, 'rgba(160, 130, 135, 0.08)');
+            grad.addColorStop(1, 'rgba(140, 120, 130, 0.03)');
+            
+            tc.fillStyle = grad;
+            tc.fillRect(0, 0, this.w, this.h);
+            
+            // Gyri (ridges) using noise
+            for (let x = 0; x < this.w; x += 3) {
+                for (let y = 0; y < this.h; y += 3) {
+                    const dx = (x - this.cx) / (this.bw * 0.5);
+                    const dy = (y - this.cy) / (this.bh * 0.5);
+                    const dist = dx * dx + dy * dy;
+                    
+                    if (dist < 1.2) {
+                        const n = this.perlin.fbm(x * 0.015, y * 0.015, 4);
+                        const n2 = this.perlin.fbm(x * 0.008 + 100, y * 0.008 + 100, 3);
+                        
+                        // Sulci (darker valleys)
+                        if (n < 0.45) {
+                            const depth = (0.45 - n) * 2;
+                            tc.fillStyle = `rgba(60, 50, 55, ${depth * 0.15 * (1 - dist)})`;
+                            tc.fillRect(x, y, 3, 3);
+                        }
+                        // Gyri (lighter ridges)
+                        else if (n > 0.55) {
+                            const height = (n - 0.55) * 2;
+                            tc.fillStyle = `rgba(200, 170, 175, ${height * 0.08 * (1 - dist)})`;
+                            tc.fillRect(x, y, 3, 3);
+                        }
+                        
+                        // Subtle surface variation
+                        tc.fillStyle = `rgba(${150 + n2 * 40}, ${120 + n2 * 30}, ${130 + n2 * 30}, ${0.02 * (1 - dist)})`;
+                        tc.fillRect(x, y, 3, 3);
+                    }
+                }
+            }
+        }
+        
+        createVeins() {
+            // Create blood vessel network
+            this.veinsCanvas = document.createElement('canvas');
+            this.veinsCanvas.width = this.w;
+            this.veinsCanvas.height = this.h;
+            const vc = this.veinsCanvas.getContext('2d');
+            
+            vc.strokeStyle = 'rgba(120, 40, 50, 0.15)';
+            vc.lineWidth = 1;
+            
+            // Major vessels
+            for (let i = 0; i < 8; i++) {
+                vc.beginPath();
+                let x = this.cx + (Math.random() - 0.5) * this.bw * 0.3;
+                let y = this.cy - this.bh * 0.4;
+                vc.moveTo(x, y);
+                
+                let angle = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                for (let j = 0; j < 20; j++) {
+                    const len = 15 + Math.random() * 25;
+                    x += Math.cos(angle) * len;
+                    y += Math.sin(angle) * len;
+                    angle += (Math.random() - 0.5) * 0.6;
+                    vc.lineTo(x, y);
+                    
+                    // Branch
+                    if (Math.random() < 0.3) {
+                        vc.stroke();
+                        vc.beginPath();
+                        vc.moveTo(x, y);
+                        const branchAngle = angle + (Math.random() < 0.5 ? 0.5 : -0.5);
+                        for (let k = 0; k < 8; k++) {
+                            const bLen = 8 + Math.random() * 12;
+                            const bx = x + Math.cos(branchAngle + k * 0.1) * bLen * k;
+                            const by = y + Math.sin(branchAngle + k * 0.1) * bLen * k;
+                            vc.lineTo(bx, by);
+                        }
+                        vc.stroke();
+                        vc.beginPath();
+                        vc.moveTo(x, y);
+                    }
+                }
+                vc.stroke();
+            }
+            
+            // Capillary network
+            vc.strokeStyle = 'rgba(100, 50, 60, 0.06)';
+            vc.lineWidth = 0.5;
+            for (let i = 0; i < 50; i++) {
+                const sx = this.cx + (Math.random() - 0.5) * this.bw * 0.8;
+                const sy = this.cy + (Math.random() - 0.5) * this.bh * 0.8;
+                vc.beginPath();
+                vc.moveTo(sx, sy);
+                let cx = sx, cy = sy;
+                for (let j = 0; j < 6; j++) {
+                    cx += (Math.random() - 0.5) * 30;
+                    cy += (Math.random() - 0.5) * 30;
+                    vc.lineTo(cx, cy);
+                }
+                vc.stroke();
+            }
+        }
+        
+        inBrain(x, y) {
+            const nx = (x - this.cx) / (this.bw * 0.5);
+            const ny = (y - this.cy) / (this.bh * 0.5);
+            
+            // Main ellipse with noise
+            const noise = this.perlin.fbm(x * 0.01, y * 0.01, 2) * 0.15;
+            let inside = nx * nx + ny * ny <= (0.95 + noise) * (0.95 + noise);
+            
+            // Temporal lobes
+            if (Math.abs(nx) > 0.6 && Math.abs(nx) < 1.1 && ny > -0.15 && ny < 0.35) {
+                inside = true;
+            }
+            
+            // Frontal bulge
+            if (ny < -0.35 && nx * nx * 1.3 + (ny + 0.5) * (ny + 0.5) * 2 < 0.5) {
+                inside = true;
+            }
+            
+            // Occipital slight extension
+            if (ny > 0.4 && nx * nx * 1.5 + (ny - 0.3) * (ny - 0.3) < 0.6) {
+                inside = true;
+            }
+            
+            return inside;
+        }
+        
+        genPos() {
+            let x, y, z, att = 0;
+            do {
+                const a = Math.random() * Math.PI * 2;
+                const r = Math.pow(Math.random(), 0.6);
+                x = this.cx + Math.cos(a) * r * this.bw * 0.45;
+                y = this.cy + Math.sin(a) * r * this.bh * 0.45;
+                
+                // Cortical fold displacement
+                const fold = this.perlin.fbm(x * 0.012, y * 0.012, 3);
+                x += (fold - 0.5) * 20;
+                y += (fold - 0.5) * 15;
+                
+                // Temporal lobe extension
+                if (Math.random() < 0.2) {
+                    const side = Math.random() < 0.5 ? -1 : 1;
+                    x += side * this.bw * 0.12;
+                    y += (Math.random() - 0.3) * this.bh * 0.15;
+                }
+                
+                z = Math.random();
+                att++;
+            } while (!this.inBrain(x, y) && att < 80);
+            
+            return { x, y, z };
+        }
+        
+        init() {
+            this.neurons = [];
+            this.synapses = [];
+            this.hash.clear();
+            
+            for (let i = 0; i < this.nCount; i++) {
+                const p = this.genPos();
+                // Assign cortical layer (0-5) based on depth
+                const layer = Math.floor(p.z * 6);
+                const n = new Neuron(p.x, p.y, p.z, layer);
+                this.neurons.push(n);
+                this.hash.add(n);
+            }
+            
+            // Create synapses
+            const connR = 60;
+            const maxConn = 5;
+            
+            for (const n of this.neurons) {
+                const nearby = this.hash.nearby(n.x, n.y, connR);
+                nearby.sort((a, b) => a.d - b.d);
+                
+                let conn = 0;
+                for (const { n: t, d } of nearby) {
+                    if (conn >= maxConn) break;
+                    
+                    // Layer-appropriate connections
+                    const layerDiff = Math.abs(n.layer - t.layer);
+                    const prob = (1 - d / connR) * (layerDiff <= 2 ? 0.5 : 0.15);
+                    
+                    if (Math.random() < prob) {
+                        const str = (1 - d / connR) * 0.2;
+                        const syn = new Synapse(n, t, str);
+                        this.synapses.push(syn);
+                        n.synapses.push(syn);
+                        conn++;
+                    }
+                }
+            }
+            
+            this.updateStats();
+        }
+        
+        click(e) {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const nearby = this.hash.nearby(x, y, 70);
+            for (const { n, d } of nearby) {
+                n.receive((1 - d / 70) * 1.2);
+            }
+        }
+        
+        update() {
+            const now = performance.now();
+            const dt = Math.min((now - this.lastT) / 1000, 0.03);
+            this.lastT = now;
+            this.time += dt;
+            
+            if (Math.floor(this.time) > this.lastSec) {
+                this.rupRate = this.rupCount;
+                this.rupCount = 0;
+                this.lastSec = Math.floor(this.time);
+            }
+            
+            this.applyMode(dt);
+            
+            for (const n of this.neurons) {
+                const wasRup = n.isRup();
+                n.update(dt, this.omega, this.spontRate, this.time);
+                if (!wasRup && n.isRup()) this.rupCount++;
+            }
+            
+            for (const s of this.synapses) s.update(dt);
+            
+            this.updateStats();
+        }
+        
+        applyMode(dt) {
+            switch (this.mode) {
+                case 'think':
+                    // Focused frontal activity
+                    const fx = this.cx + Math.sin(this.time * 0.8) * 30;
+                    const fy = this.cy - this.bh * 0.3;
+                    for (const n of this.neurons) {
+                        const d = Math.hypot(n.x - fx, n.y - fy);
+                        if (d < 100) n.receive((1 - d / 100) * 0.4 * dt);
+                    }
+                    break;
+                    
+                case 'dream':
+                    // Random waves across brain
+                    if (Math.random() < 0.05) {
+                        const rx = this.cx + (Math.random() - 0.5) * this.bw * 0.6;
+                        const ry = this.cy + (Math.random() - 0.5) * this.bh * 0.6;
+                        for (const n of this.neurons) {
+                            const d = Math.hypot(n.x - rx, n.y - ry);
+                            if (d < 80) n.receive((1 - d / 80) * 0.6);
+                        }
+                    }
+                    break;
+            }
+        }
+        
+        updateStats() {
+            let tC = 0, tR = 0, valid = 0;
+            for (const n of this.neurons) {
+                if (isFinite(n.C)) { tC += n.C; valid++; }
+                if (isFinite(n.R)) tR += n.R;
+            }
+            
+            document.getElementById('nCount').textContent = this.neurons.length;
+            document.getElementById('sCount').textContent = this.synapses.length;
+            document.getElementById('avgC').textContent = valid ? (tC / valid).toFixed(2) : '0.00';
+            document.getElementById('rRate').textContent = this.rupRate;
+            document.getElementById('avgR').textContent = valid ? (tR / valid).toFixed(2) : '0.00';
+        }
+        
+        render() {
+            const ctx = this.ctx;
+            
+            // Dark background
+            ctx.fillStyle = '#030306';
+            ctx.fillRect(0, 0, this.w, this.h);
+            
+            // Ambient glow behind brain
+            const ambGrad = ctx.createRadialGradient(
+                this.cx, this.cy, 0,
+                this.cx, this.cy, this.bw * 0.6
+            );
+            ambGrad.addColorStop(0, 'rgba(60, 40, 50, 0.15)');
+            ambGrad.addColorStop(0.5, 'rgba(40, 30, 40, 0.08)');
+            ambGrad.addColorStop(1, 'rgba(20, 15, 25, 0)');
+            ctx.fillStyle = ambGrad;
+            ctx.fillRect(0, 0, this.w, this.h);
+            
+            // Draw veins (behind neurons)
+            ctx.drawImage(this.veinsCanvas, 0, 0);
+            
+            // Sort neurons by depth
+            const sorted = [...this.neurons].sort((a, b) => a.z - b.z);
+            
+            // Draw dendrites and axons (back layer neurons)
+            ctx.globalAlpha = 0.4;
+            for (const n of sorted.slice(0, Math.floor(sorted.length * 0.5))) {
+                this.drawNeuronStructure(ctx, n, 0.3);
+            }
+            ctx.globalAlpha = 1;
+            
+            // Draw tissue texture (translucent overlay)
+            ctx.globalAlpha = 0.6;
+            ctx.drawImage(this.tissueCanvas, 0, 0);
+            ctx.globalAlpha = 1;
+            
+            // Draw dendrites and axons (front layer)
+            ctx.globalAlpha = 0.6;
+            for (const n of sorted.slice(Math.floor(sorted.length * 0.5))) {
+                this.drawNeuronStructure(ctx, n, 0.5);
+            }
+            ctx.globalAlpha = 1;
+            
+            // Draw synaptic signals
+            for (const s of this.synapses) {
+                if (s.sig > 0) {
+                    const sx = s.src.x, sy = s.src.y;
+                    const tx = s.tgt.x, ty = s.tgt.y;
+                    const px = sx + (tx - sx) * s.prog;
+                    const py = sy + (ty - sy) * s.prog;
+                    
+                    // Signal traveling along axon
+                    const sigGrad = ctx.createRadialGradient(px, py, 0, px, py, 6);
+                    sigGrad.addColorStop(0, `rgba(255, 80, 112, ${s.sig})`);
+                    sigGrad.addColorStop(0.5, `rgba(255, 80, 112, ${s.sig * 0.4})`);
+                    sigGrad.addColorStop(1, 'rgba(255, 80, 112, 0)');
+                    ctx.fillStyle = sigGrad;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // Draw neuron somas
+            for (const n of sorted) {
+                const depthScale = 0.5 + n.z * 0.6;
+                const r = n.somaR * depthScale;
+                const depthAlpha = 0.4 + n.z * 0.6;
+                
+                // Glow for active neurons
+                if (n.brightness > 0.4) {
+                    const glowR = r * (3 + n.brightness * 4);
+                    const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+                    
+                    if (n.phase === 'rup') {
+                        glow.addColorStop(0, `rgba(255, 80, 112, ${0.7 * depthAlpha})`);
+                        glow.addColorStop(0.3, `rgba(255, 80, 112, ${0.3 * depthAlpha})`);
+                        glow.addColorStop(1, 'rgba(255, 80, 112, 0)');
+                    } else if (n.phase === 'reg') {
+                        glow.addColorStop(0, `rgba(80, 255, 160, ${0.5 * depthAlpha})`);
+                        glow.addColorStop(1, 'rgba(80, 255, 160, 0)');
+                    } else {
+                        glow.addColorStop(0, `rgba(74, 158, 255, ${0.4 * depthAlpha * n.brightness})`);
+                        glow.addColorStop(1, 'rgba(74, 158, 255, 0)');
+                    }
+                    
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Soma body
+                let somaColor;
+                switch (n.phase) {
+                    case 'acc':
+                        const ratio = Math.min(n.C / this.omega, 1);
+                        somaColor = `rgba(${180 + ratio * 40}, ${160 - ratio * 40}, ${170 - ratio * 50}, ${n.brightness * depthAlpha})`;
+                        break;
+                    case 'rup':
+                        somaColor = `rgba(255, 100, 130, ${depthAlpha})`;
+                        break;
+                    case 'reg':
+                        somaColor = `rgba(100, 230, 170, ${n.brightness * depthAlpha})`;
+                        break;
+                }
+                
+                // Soma gradient for 3D effect
+                const somaGrad = ctx.createRadialGradient(
+                    n.x - r * 0.3, n.y - r * 0.3, 0,
+                    n.x, n.y, r
+                );
+                somaGrad.addColorStop(0, somaColor.replace(/[\d.]+\)$/, `${n.brightness * depthAlpha * 1.3})`));
+                somaGrad.addColorStop(1, somaColor);
+                
+                ctx.fillStyle = somaGrad;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Brain outline (subtle, organic)
+            ctx.save();
+            ctx.beginPath();
+            for (let a = 0; a < Math.PI * 2; a += 0.03) {
+                const noise = this.perlin.fbm(Math.cos(a) * 3, Math.sin(a) * 3, 3) * 0.1;
+                const r = 1 + noise;
+                const x = this.cx + Math.cos(a) * this.bw * 0.5 * r;
+                const y = this.cy + Math.sin(a) * this.bh * 0.5 * r;
+                if (a === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(140, 100, 110, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+            
+            // Update equation highlights
+            let acc = 0, rup = 0, reg = 0;
+            for (const n of this.neurons) {
+                if (n.phase === 'acc') acc++;
+                else if (n.phase === 'rup') rup++;
+                else reg++;
+            }
+            
+            document.getElementById('eqC').className = 'eq' + (acc > rup * 5 ? ' active-c' : '');
+            document.getElementById('eqR').className = 'eq' + (rup > 0 ? ' active-r' : '');
+            document.getElementById('eqG').className = 'eq' + (reg > acc * 0.15 ? ' active-g' : '');
+        }
+        
+        drawNeuronStructure(ctx, n, alpha) {
+            const depthAlpha = (0.3 + n.z * 0.7) * alpha;
+            const activity = n.brightness;
+            
+            // Dendrite color modulated by activity
+            const dendR = 80 + activity * 100;
+            const dendG = 60 + activity * 80;
+            const dendB = 70 + activity * 60;
+            
+            ctx.strokeStyle = `rgba(${dendR}, ${dendG}, ${dendB}, ${depthAlpha * 0.6})`;
+            ctx.lineWidth = 0.5;
+            
+            // Draw dendrites
+            const drawBranch = (branch, ox, oy) => {
+                if (!branch) return;
+                
+                for (const seg of branch.segments) {
+                    ctx.beginPath();
+                    ctx.moveTo(n.x + ox + seg.x1, n.y + oy + seg.y1);
+                    ctx.lineTo(n.x + ox + seg.x2, n.y + oy + seg.y2);
+                    ctx.stroke();
+                }
+                
+                for (const child of branch.children) {
+                    drawBranch(child.branch, ox + child.offsetX, oy + child.offsetY);
+                }
+            };
+            
+            for (const d of n.dendrites) {
+                drawBranch(d, 0, 0);
+            }
+            
+            // Draw axon
+            ctx.strokeStyle = `rgba(${60 + activity * 80}, ${50 + activity * 60}, ${80 + activity * 80}, ${depthAlpha * 0.5})`;
+            ctx.lineWidth = 0.6;
+            
+            for (const seg of n.axon.segments) {
+                ctx.beginPath();
+                ctx.moveTo(n.x + seg.x1, n.y + seg.y1);
+                ctx.lineTo(n.x + seg.x2, n.y + seg.y2);
+                ctx.stroke();
+            }
+            
+            // Terminal boutons
+            ctx.fillStyle = `rgba(${100 + activity * 100}, ${80 + activity * 80}, ${100 + activity * 80}, ${depthAlpha * 0.4})`;
+            for (const t of n.axon.terminals) {
+                ctx.beginPath();
+                ctx.arc(n.x + t.x, n.y + t.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        setOmega(v) { this.omega = v; }
+        setNeurons(n) { if (n !== this.nCount) { this.nCount = n; this.init(); } }
+        setSpontRate(r) { this.spontRate = r; }
+        setMode(m) { this.mode = m; }
+    }
+    
+    // ============ INIT ============
+    const brain = new Brain(document.getElementById('brain'));
+    
+    // Sliders
+    const setupSlider = (id, valId, fillId, onChange) => {
+        const slider = document.getElementById(id);
+        const val = document.getElementById(valId);
+        const fill = document.getElementById(fillId);
+        
+        const update = () => {
+            const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+            fill.style.width = pct + '%';
+            onChange(slider.value);
+        };
+        
+        slider.addEventListener('input', () => {
+            val.textContent = parseFloat(slider.value).toFixed(slider.step.includes('.') ? 3 : 0);
+            update();
+        });
+        
+        update();
+    };
+    
+    setupSlider('omega', 'omegaVal', 'omegaFill', v => brain.setOmega(parseFloat(v)));
+    setupSlider('neurons', 'neuronsVal', 'neuronsFill', v => brain.setNeurons(parseInt(v)));
+    setupSlider('activity', 'activityVal', 'activityFill', v => brain.setSpontRate(parseFloat(v)));
+    
+    // Mode buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            brain.setMode(btn.dataset.mode);
+        });
+    });
+    
+    // Animation
+    function animate() {
+        brain.update();
+        brain.render();
+        requestAnimationFrame(animate);
+    }
+    animate();
+    </script>
+</body>
+</html>
