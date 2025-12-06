@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anatomy of Rupture — Dirac Delta in CRR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafafa;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --accent: #c44;
+            --accent-soft: rgba(204, 68, 68, 0.15);
+            --border: #ddd;
+            --curve-stroke: #c44;
+            --curve-fill: rgba(204, 68, 68, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.7;
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .main-visualization {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+        }
+
+        .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .equation-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--text);
+            background: var(--accent-soft);
+            padding: 12px 20px;
+            border-radius: 2px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .epsilon-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 280px;
+        }
+
+        .epsilon-label {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .epsilon-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .axis-labels {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 60px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        .perspectives {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .perspectives {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .perspective-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 30px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+        }
+
+        .perspective-card h3 {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .perspective-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .from-outside .perspective-icon {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .from-within .perspective-icon {
+            background: rgba(68, 136, 204, 0.15);
+            color: #48c;
+        }
+
+        .perspective-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .mini-canvas {
+            width: 100%;
+            height: 120px;
+            margin-top: 20px;
+        }
+
+        .timeline-section {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+        }
+
+        .timeline-section h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            padding: 10px 24px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+        }
+
+        button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .timeline-canvas-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        .progress-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.9);
+            padding: 4px 10px;
+            border-radius: 2px;
+        }
+
+        .explanation {
+            max-width: 800px;
+            margin: 0 auto 40px;
+        }
+
+        .explanation p {
+            margin-bottom: 1.2em;
+            text-align: justify;
+            hyphens: auto;
+        }
+
+        .explanation p:last-child {
+            margin-bottom: 0;
+        }
+
+        .math-inline {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            background: var(--accent-soft);
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .convergence-demo {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 40px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.04);
+        }
+
+        .convergence-demo h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .convergence-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .convergence-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .convergence-item {
+            text-align: center;
+        }
+
+        .convergence-canvas {
+            width: 100%;
+            height: 140px;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            margin-bottom: 8px;
+        }
+
+        .convergence-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>The Anatomy of Rupture</h1>
+            <p class="subtitle">How the Dirac delta formalises the moment of transformation in CRR</p>
+        </header>
+
+        <div class="main-visualization">
+            <div class="viz-header">
+                <div class="equation-display">
+                    δ<sub>ε</sub>(t) = (1/ε√π) · exp(−t²/ε²)
+                </div>
+                <div class="epsilon-control">
+                    <div class="epsilon-label">
+                        <span>Timescale of transformation</span>
+                        <span class="epsilon-value">ε = <span id="epsilon-display">0.50</span></span>
+                    </div>
+                    <input type="range" id="epsilon-slider" min="0.05" max="1.5" step="0.01" value="0.5">
+                </div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="main-canvas"></canvas>
+                <div class="axis-labels">
+                    <span>past</span>
+                    <span>t₀ (rupture)</span>
+                    <span>future</span>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div class="stat">
+                    <div class="stat-label">Peak Height</div>
+                    <div class="stat-value" id="peak-height">1.13</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Area Under Curve</div>
+                    <div class="stat-value" id="area-value">≈ 1.00</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Duration (FWHM)</div>
+                    <div class="stat-value" id="duration-value">0.83</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="perspectives">
+            <div class="perspective-card from-outside">
+                <h3><span class="perspective-icon">◉</span> From Outside</h3>
+                <p>From sufficient distance—across years, from another's view, in historical retrospect—the rupture appears as a point. A crisis, a revelation, a death: discrete moments marking before and after.</p>
+                <canvas class="mini-canvas" id="outside-canvas"></canvas>
+            </div>
+            <div class="perspective-card from-within">
+                <h3><span class="perspective-icon">◎</span> From Within</h3>
+                <p>From inside the transformation, there is always duration: confusion, processing, the slow dawn of reorganisation. What seems instantaneous contains worlds of felt time.</p>
+                <canvas class="mini-canvas" id="within-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="timeline-section">
+            <h2>Witnessing Rupture Unfold</h2>
+            <div class="timeline-controls">
+                <button id="play-btn">▶ Play</button>
+                <button id="reset-btn">↺ Reset</button>
+                <button id="speed-slow">Slow</button>
+                <button id="speed-normal" class="active">Normal</button>
+                <button id="speed-fast">Fast</button>
+            </div>
+            <div class="timeline-canvas-container">
+                <canvas id="timeline-canvas"></canvas>
+                <div class="progress-indicator">
+                    <span id="time-display">t = -3.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <p>
+                The idealised Dirac delta, written <span class="math-inline">δ(t − t₀)</span>, represents the pure mathematical essence of rupture: the limit case of instantaneous transformation. However, no real process can happen in literally zero time.
+            </p>
+            <p>
+                To model this, we use the smooth approximation <span class="math-inline">δ<sub>ε</sub>(t)</span>, where the small parameter <span class="math-inline">ε</span> controls how narrow the transition is. When ε is relatively large, the change unfolds gently; as ε becomes smaller, the curve becomes sharper, steeper, and more focused, until in the limit as ε approaches zero, the spike becomes infinitely thin and high, converging toward the true Dirac delta.
+            </p>
+            <p>
+                In this way, ε marks the timescale of transformation, reminding us that what seems "instantaneous" is always relative to the resolution from which we observe. The smooth delta captures both perspectives: the felt process and the formal ideal.
+            </p>
+        </div>
+
+        <div class="convergence-demo">
+            <h2>Convergence Toward the Ideal</h2>
+            <div class="convergence-grid">
+                <div class="convergence-item">
+                    <canvas class="convergence-canvas" id="conv-1"></canvas>
+                    <div class="convergence-label">ε = 1.00</div>
+                </div>
+                <div class="convergence-item">
+                    <canvas class="convergence-canvas" id="conv-2"></canvas>
+                    <div class="convergence-label">ε = 0.50</div>
+                </div>
+                <div class="convergence-item">
+                    <canvas class="convergence-canvas" id="conv-3"></canvas>
+                    <div class="convergence-label">ε = 0.20</div>
+                </div>
+                <div class="convergence-item">
+                    <canvas class="convergence-canvas" id="conv-4"></canvas>
+                    <div class="convergence-label">ε → 0</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Part of the <a href="https://cohere.org.uk">Coherence-Rupture-Regeneration</a> framework</p>
+        </footer>
+    </div>
+
+    <script>
+        // Gaussian approximation of Dirac delta
+        function gaussianDelta(t, epsilon) {
+            const coeff = 1 / (epsilon * Math.sqrt(Math.PI));
+            return coeff * Math.exp(-(t * t) / (epsilon * epsilon));
+        }
+
+        // High-DPI canvas setup
+        function setupCanvas(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            return { ctx, width: rect.width, height: rect.height };
+        }
+
+        // Main visualization
+        const mainCanvas = document.getElementById('main-canvas');
+        const epsilonSlider = document.getElementById('epsilon-slider');
+        const epsilonDisplay = document.getElementById('epsilon-display');
+        const peakHeight = document.getElementById('peak-height');
+        const areaValue = document.getElementById('area-value');
+        const durationValue = document.getElementById('duration-value');
+
+        function drawMainVisualization(epsilon) {
+            const { ctx, width, height } = setupCanvas(mainCanvas);
+            
+            const margin = { top: 30, right: 60, bottom: 50, left: 60 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+
+            // Clear
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+
+            // Calculate scaling
+            const tMin = -3, tMax = 3;
+            const peak = gaussianDelta(0, epsilon);
+            const yMax = Math.max(peak * 1.15, 2);
+
+            const scaleX = t => margin.left + ((t - tMin) / (tMax - tMin)) * plotWidth;
+            const scaleY = y => margin.top + plotHeight - (y / yMax) * plotHeight;
+
+            // Grid lines
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 1;
+            
+            // Horizontal grid
+            for (let y = 0; y <= yMax; y += 0.5) {
+                ctx.beginPath();
+                ctx.moveTo(margin.left, scaleY(y));
+                ctx.lineTo(width - margin.right, scaleY(y));
+                ctx.stroke();
+            }
+
+            // Vertical grid
+            for (let t = tMin; t <= tMax; t += 1) {
+                ctx.beginPath();
+                ctx.moveTo(scaleX(t), margin.top);
+                ctx.lineTo(scaleX(t), height - margin.bottom);
+                ctx.stroke();
+            }
+
+            // Axes
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1.5;
+            
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(margin.left, scaleY(0));
+            ctx.lineTo(width - margin.right, scaleY(0));
+            ctx.stroke();
+
+            // Y-axis at t=0
+            ctx.beginPath();
+            ctx.moveTo(scaleX(0), margin.top);
+            ctx.lineTo(scaleX(0), height - margin.bottom);
+            ctx.stroke();
+
+            // Fill under curve
+            ctx.fillStyle = 'rgba(204, 68, 68, 0.08)';
+            ctx.beginPath();
+            ctx.moveTo(scaleX(tMin), scaleY(0));
+            for (let t = tMin; t <= tMax; t += 0.02) {
+                const y = gaussianDelta(t, epsilon);
+                ctx.lineTo(scaleX(t), scaleY(y));
+            }
+            ctx.lineTo(scaleX(tMax), scaleY(0));
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw curve
+            ctx.strokeStyle = '#c44';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            let first = true;
+            for (let t = tMin; t <= tMax; t += 0.01) {
+                const y = gaussianDelta(t, epsilon);
+                if (first) {
+                    ctx.moveTo(scaleX(t), scaleY(y));
+                    first = false;
+                } else {
+                    ctx.lineTo(scaleX(t), scaleY(y));
+                }
+            }
+            ctx.stroke();
+
+            // Peak marker
+            ctx.fillStyle = '#c44';
+            ctx.beginPath();
+            ctx.arc(scaleX(0), scaleY(peak), 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Y-axis labels
+            ctx.fillStyle = '#999';
+            ctx.font = '12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'right';
+            for (let y = 0; y <= yMax; y += 0.5) {
+                if (y > 0) {
+                    ctx.fillText(y.toFixed(1), margin.left - 10, scaleY(y) + 4);
+                }
+            }
+
+            // Update stats
+            epsilonDisplay.textContent = epsilon.toFixed(2);
+            peakHeight.textContent = peak.toFixed(2);
+            areaValue.textContent = '≈ 1.00'; // Gaussian integral is always 1
+            
+            // FWHM = 2 * epsilon * sqrt(ln(2))
+            const fwhm = 2 * epsilon * Math.sqrt(Math.log(2));
+            durationValue.textContent = fwhm.toFixed(2);
+        }
+
+        epsilonSlider.addEventListener('input', (e) => {
+            drawMainVisualization(parseFloat(e.target.value));
+        });
+
+        // Perspective canvases
+        function drawOutsidePerspective() {
+            const canvas = document.getElementById('outside-canvas');
+            const { ctx, width, height } = setupCanvas(canvas);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw timeline
+            const y = height / 2;
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(20, y);
+            ctx.lineTo(width - 20, y);
+            ctx.stroke();
+
+            // Draw sharp spike at center
+            const cx = width / 2;
+            ctx.strokeStyle = '#c44';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, y);
+            ctx.lineTo(cx, y - 50);
+            ctx.stroke();
+
+            // Dot at peak
+            ctx.fillStyle = '#c44';
+            ctx.beginPath();
+            ctx.arc(cx, y - 50, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Labels
+            ctx.fillStyle = '#999';
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('before', 60, y + 20);
+            ctx.fillText('t₀', cx, y + 20);
+            ctx.fillText('after', width - 60, y + 20);
+        }
+
+        function drawWithinPerspective() {
+            const canvas = document.getElementById('within-canvas');
+            const { ctx, width, height } = setupCanvas(canvas);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+
+            const margin = 20;
+            const plotWidth = width - margin * 2;
+            const plotHeight = height - margin * 2;
+
+            // Draw gentle curve (large epsilon)
+            const epsilon = 0.8;
+            const tMin = -2, tMax = 2;
+            const peak = gaussianDelta(0, epsilon);
+
+            const scaleX = t => margin + ((t - tMin) / (tMax - tMin)) * plotWidth;
+            const scaleY = y => height - margin - (y / (peak * 1.2)) * plotHeight * 0.8;
+
+            // Baseline
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin, scaleY(0));
+            ctx.lineTo(width - margin, scaleY(0));
+            ctx.stroke();
+
+            // Fill under curve
+            ctx.fillStyle = 'rgba(68, 136, 204, 0.1)';
+            ctx.beginPath();
+            ctx.moveTo(scaleX(tMin), scaleY(0));
+            for (let t = tMin; t <= tMax; t += 0.05) {
+                ctx.lineTo(scaleX(t), scaleY(gaussianDelta(t, epsilon)));
+            }
+            ctx.lineTo(scaleX(tMax), scaleY(0));
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw curve
+            ctx.strokeStyle = '#48c';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            let first = true;
+            for (let t = tMin; t <= tMax; t += 0.02) {
+                const y = gaussianDelta(t, epsilon);
+                if (first) {
+                    ctx.moveTo(scaleX(t), scaleY(y));
+                    first = false;
+                } else {
+                    ctx.lineTo(scaleX(t), scaleY(y));
+                }
+            }
+            ctx.stroke();
+
+            // Duration bracket
+            const fwhm = 2 * epsilon * Math.sqrt(Math.log(2));
+            const halfMax = peak / 2;
+            const bracketY = scaleY(halfMax);
+
+            ctx.strokeStyle = '#48c';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(scaleX(-fwhm/2), bracketY);
+            ctx.lineTo(scaleX(fwhm/2), bracketY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#48c';
+            ctx.font = '10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('duration', width/2, bracketY - 6);
+        }
+
+        // Timeline animation
+        const timelineCanvas = document.getElementById('timeline-canvas');
+        const timeDisplay = document.getElementById('time-display');
+        let animationId = null;
+        let currentTime = -3;
+        let animationSpeed = 1;
+        let isPlaying = false;
+
+        function drawTimeline(t) {
+            const { ctx, width, height } = setupCanvas(timelineCanvas);
+            const epsilon = parseFloat(epsilonSlider.value);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+
+            const margin = { left: 50, right: 50, top: 30, bottom: 30 };
+            const plotWidth = width - margin.left - margin.right;
+            const plotHeight = height - margin.top - margin.bottom;
+
+            const tMin = -3, tMax = 3;
+            const peak = gaussianDelta(0, epsilon);
+            const yMax = Math.max(peak * 1.1, 1.5);
+
+            const scaleX = time => margin.left + ((time - tMin) / (tMax - tMin)) * plotWidth;
+            const scaleY = y => margin.top + plotHeight - (y / yMax) * plotHeight;
+
+            // Baseline
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, scaleY(0));
+            ctx.lineTo(width - margin.right, scaleY(0));
+            ctx.stroke();
+
+            // Draw full curve faintly
+            ctx.strokeStyle = 'rgba(204, 68, 68, 0.2)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            let first = true;
+            for (let time = tMin; time <= tMax; time += 0.02) {
+                const y = gaussianDelta(time, epsilon);
+                if (first) {
+                    ctx.moveTo(scaleX(time), scaleY(y));
+                    first = false;
+                } else {
+                    ctx.lineTo(scaleX(time), scaleY(y));
+                }
+            }
+            ctx.stroke();
+
+            // Fill accumulated area
+            ctx.fillStyle = 'rgba(204, 68, 68, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(scaleX(tMin), scaleY(0));
+            for (let time = tMin; time <= Math.min(t, tMax); time += 0.02) {
+                ctx.lineTo(scaleX(time), scaleY(gaussianDelta(time, epsilon)));
+            }
+            ctx.lineTo(scaleX(Math.min(t, tMax)), scaleY(0));
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw curve up to current time
+            ctx.strokeStyle = '#c44';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            first = true;
+            for (let time = tMin; time <= Math.min(t, tMax); time += 0.02) {
+                const y = gaussianDelta(time, epsilon);
+                if (first) {
+                    ctx.moveTo(scaleX(time), scaleY(y));
+                    first = false;
+                } else {
+                    ctx.lineTo(scaleX(time), scaleY(y));
+                }
+            }
+            ctx.stroke();
+
+            // Current point
+            if (t >= tMin && t <= tMax) {
+                const currentY = gaussianDelta(t, epsilon);
+                
+                // Vertical line to curve
+                ctx.strokeStyle = 'rgba(204, 68, 68, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(scaleX(t), scaleY(0));
+                ctx.lineTo(scaleX(t), scaleY(currentY));
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Point on curve
+                ctx.fillStyle = '#c44';
+                ctx.beginPath();
+                ctx.arc(scaleX(t), scaleY(currentY), 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // White center
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(scaleX(t), scaleY(currentY), 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Time labels
+            ctx.fillStyle = '#999';
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('−3', scaleX(-3), height - 10);
+            ctx.fillText('0', scaleX(0), height - 10);
+            ctx.fillText('+3', scaleX(3), height - 10);
+
+            timeDisplay.textContent = `t = ${t.toFixed(2)}`;
+        }
+
+        function animate() {
+            if (!isPlaying) return;
+            
+            currentTime += 0.03 * animationSpeed;
+            if (currentTime > 3.5) {
+                currentTime = 3.5;
+                isPlaying = false;
+                document.getElementById('play-btn').textContent = '▶ Play';
+            }
+            
+            drawTimeline(currentTime);
+            
+            if (isPlaying) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        document.getElementById('play-btn').addEventListener('click', () => {
+            if (isPlaying) {
+                isPlaying = false;
+                cancelAnimationFrame(animationId);
+                document.getElementById('play-btn').textContent = '▶ Play';
+            } else {
+                if (currentTime >= 3.5) currentTime = -3;
+                isPlaying = true;
+                document.getElementById('play-btn').textContent = '⏸ Pause';
+                animate();
+            }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            isPlaying = false;
+            cancelAnimationFrame(animationId);
+            currentTime = -3;
+            document.getElementById('play-btn').textContent = '▶ Play';
+            drawTimeline(currentTime);
+        });
+
+        // Speed controls
+        const speedBtns = ['speed-slow', 'speed-normal', 'speed-fast'];
+        speedBtns.forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                speedBtns.forEach(btnId => document.getElementById(btnId).classList.remove('active'));
+                e.target.classList.add('active');
+                if (id === 'speed-slow') animationSpeed = 0.4;
+                else if (id === 'speed-normal') animationSpeed = 1;
+                else animationSpeed = 2.5;
+            });
+        });
+
+        // Convergence demo
+        function drawConvergenceItem(canvasId, epsilon, isLimit = false) {
+            const canvas = document.getElementById(canvasId);
+            const { ctx, width, height } = setupCanvas(canvas);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+
+            const margin = 15;
+            const plotWidth = width - margin * 2;
+            const plotHeight = height - margin * 2;
+
+            const tMin = -2, tMax = 2;
+            
+            // For the limit case, draw a spike
+            if (isLimit) {
+                const cx = width / 2;
+                const baseY = height - margin;
+
+                // Draw baseline
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(margin, baseY);
+                ctx.lineTo(width - margin, baseY);
+                ctx.stroke();
+
+                // Draw spike
+                ctx.strokeStyle = '#c44';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, baseY);
+                ctx.lineTo(cx, margin + 10);
+                ctx.stroke();
+
+                // Arrow at top
+                ctx.fillStyle = '#c44';
+                ctx.beginPath();
+                ctx.moveTo(cx, margin);
+                ctx.lineTo(cx - 5, margin + 10);
+                ctx.lineTo(cx + 5, margin + 10);
+                ctx.closePath();
+                ctx.fill();
+
+                // Infinity symbol
+                ctx.fillStyle = '#c44';
+                ctx.font = '14px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('∞', cx + 15, margin + 10);
+
+                return;
+            }
+
+            const peak = gaussianDelta(0, epsilon);
+            const yMax = Math.max(peak * 1.1, 2);
+
+            const scaleX = t => margin + ((t - tMin) / (tMax - tMin)) * plotWidth;
+            const scaleY = y => height - margin - (y / yMax) * plotHeight;
+
+            // Baseline
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin, scaleY(0));
+            ctx.lineTo(width - margin, scaleY(0));
+            ctx.stroke();
+
+            // Fill
+            ctx.fillStyle = 'rgba(204, 68, 68, 0.1)';
+            ctx.beginPath();
+            ctx.moveTo(scaleX(tMin), scaleY(0));
+            for (let t = tMin; t <= tMax; t += 0.05) {
+                ctx.lineTo(scaleX(t), scaleY(gaussianDelta(t, epsilon)));
+            }
+            ctx.lineTo(scaleX(tMax), scaleY(0));
+            ctx.closePath();
+            ctx.fill();
+
+            // Curve
+            ctx.strokeStyle = '#c44';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let first = true;
+            for (let t = tMin; t <= tMax; t += 0.02) {
+                const y = gaussianDelta(t, epsilon);
+                if (first) {
+                    ctx.moveTo(scaleX(t), scaleY(y));
+                    first = false;
+                } else {
+                    ctx.lineTo(scaleX(t), scaleY(y));
+                }
+            }
+            ctx.stroke();
+        }
+
+        // Initialize
+        function init() {
+            drawMainVisualization(0.5);
+            drawOutsidePerspective();
+            drawWithinPerspective();
+            drawTimeline(-3);
+            drawConvergenceItem('conv-1', 1.0);
+            drawConvergenceItem('conv-2', 0.5);
+            drawConvergenceItem('conv-3', 0.2);
+            drawConvergenceItem('conv-4', 0.05, true);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            drawMainVisualization(parseFloat(epsilonSlider.value));
+            drawOutsidePerspective();
+            drawWithinPerspective();
+            drawTimeline(currentTime);
+            drawConvergenceItem('conv-1', 1.0);
+            drawConvergenceItem('conv-2', 0.5);
+            drawConvergenceItem('conv-3', 0.2);
+            drawConvergenceItem('conv-4', 0.05, true);
+        });
+
+        init();
+    </script>
+</body>
+</html>
