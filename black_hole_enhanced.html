@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Black Hole Physics - Enhanced Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .simulation-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #blackhole-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Overlay UI */
+        .overlay-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .overlay-ui > * {
+            pointer-events: auto;
+        }
+
+        /* Header */
+        .header-panel {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px 32px;
+        }
+
+        .header-panel h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .header-panel .subtitle {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.5px;
+        }
+
+        /* CRR Phase Indicator */
+        .crr-phase-indicator {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 12px 30px;
+        }
+
+        .phase-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .phase-item.active {
+            transform: scale(1.1);
+        }
+
+        .phase-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .phase-coherence .phase-icon {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .phase-coherence.active .phase-icon {
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.8);
+        }
+
+        .phase-rupture .phase-icon {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .phase-rupture.active .phase-icon {
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+            animation: rupturePulse 0.5s ease;
+        }
+
+        .phase-regeneration .phase-icon {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .phase-regeneration.active .phase-icon {
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+        }
+
+        .phase-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes rupturePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Equation Display */
+        .equation-display {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .current-equation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            color: #60a5fa;
+            margin-bottom: 6px;
+        }
+
+        .equation-description {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.4;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .control-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .control-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 3px;
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .control-section {
+            margin-bottom: 20px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .control-section.crr-section {
+            border-left-color: #a78bfa;
+        }
+
+        .control-section.visual-section {
+            border-left-color: #10b981;
+        }
+
+        .control-section.effects-section {
+            border-left-color: #f472b6;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 12px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .control-row label {
+            min-width: 100px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .control-row input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+        }
+
+        .control-value {
+            min-width: 50px;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .control-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #60a5fa;
+        }
+
+        /* Metrics Panel */
+        .metrics-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .metric-group {
+            margin-bottom: 16px;
+        }
+
+        .metric-group-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+        }
+
+        .metric-label {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #60a5fa;
+            font-weight: 500;
+        }
+
+        .metric-value.coherence { color: #3b82f6; }
+        .metric-value.rupture { color: #ef4444; }
+        .metric-value.regeneration { color: #10b981; }
+
+        /* Time Dilation Display */
+        .time-dilation-display {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 18px;
+            text-align: center;
+        }
+
+        .time-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 6px;
+        }
+
+        .time-clocks {
+            display: flex;
+            gap: 20px;
+        }
+
+        .clock {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .clock-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+        }
+
+        .clock-label {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+        }
+
+        .clock.horizon .clock-value {
+            color: #ef4444;
+        }
+
+        /* Presets */
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(96, 165, 250, 0.2);
+            border-color: #60a5fa;
+            transform: translateY(-1px);
+        }
+
+        /* Gravitational Wave Indicator */
+        .gwave-indicator {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 18px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gwave-indicator.active {
+            opacity: 1;
+        }
+
+        .gwave-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a78bfa;
+            margin-bottom: 4px;
+        }
+
+        .gwave-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+
+        /* Rupture Flash Overlay */
+        .rupture-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(239, 68, 68, 0.3), transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            z-index: 100;
+        }
+
+        .rupture-flash.active {
+            opacity: 1;
+        }
+
+        /* Audio Toggle */
+        .audio-toggle {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .audio-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .audio-toggle span {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Info tooltip */
+        .info-tip {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+        }
+
+        /* Canvas overlay for post-processing hint */
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.3) 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="simulation-container">
+        <canvas id="blackhole-canvas"></canvas>
+        <div class="canvas-overlay"></div>
+        
+        <div class="overlay-ui">
+            <!-- Header -->
+            <div class="header-panel">
+                <h1>CRR Black Hole Physics</h1>
+                <div class="subtitle">Coherence • Rupture • Regeneration — Enhanced Gravitational Simulation</div>
+            </div>
+
+            <!-- CRR Phase Indicator -->
+            <div class="crr-phase-indicator">
+                <div class="phase-item phase-coherence" id="phaseCoherence">
+                    <div class="phase-icon">C</div>
+                    <div class="phase-label">Coherence</div>
+                </div>
+                <div class="phase-item phase-rupture" id="phaseRupture">
+                    <div class="phase-icon">δ</div>
+                    <div class="phase-label">Rupture</div>
+                </div>
+                <div class="phase-item phase-regeneration" id="phaseRegeneration">
+                    <div class="phase-icon">R</div>
+                    <div class="phase-label">Regeneration</div>
+                </div>
+            </div>
+
+            <!-- Metrics Panel -->
+            <div class="metrics-panel">
+                <div class="panel-title">System Metrics</div>
+                
+                <div class="metric-group">
+                    <div class="metric-group-title">CRR Framework</div>
+                    <div class="metric-row">
+                        <span class="metric-label">Coherence C(M,r)</span>
+                        <span class="metric-value coherence" id="metricCoherence">0.000</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Rupture Events δ</span>
+                        <span class="metric-value rupture" id="metricRuptures">0</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Regen Rate R[T_H]</span>
+                        <span class="metric-value regeneration" id="metricRegen">0.000</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Ω Parameter</span>
+                        <span class="metric-value" id="metricOmega">1.000</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">System Entropy S</span>
+                        <span class="metric-value" id="metricEntropy">0.000</span>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-group-title">Black Hole Properties</div>
+                    <div class="metric-row">
+                        <span class="metric-label">Mass</span>
+                        <span class="metric-value" id="metricMass">10 M☉</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Schwarzschild R</span>
+                        <span class="metric-value" id="metricRs">29.5 km</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Kerr Parameter a</span>
+                        <span class="metric-value" id="metricSpin">0.70</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">ISCO</span>
+                        <span class="metric-value" id="metricISCO">3.4 Rs</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Hawking Temp</span>
+                        <span class="metric-value" id="metricHawking">6.2e-8 K</span>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-group-title">Matter Dynamics</div>
+                    <div class="metric-row">
+                        <span class="metric-label">Coherent Orbits</span>
+                        <span class="metric-value" id="metricStable">0</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Infalling Matter</span>
+                        <span class="metric-value" id="metricInfalling">0</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Hawking Flux</span>
+                        <span class="metric-value" id="metricHawkingFlux">0</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Jet Power</span>
+                        <span class="metric-value" id="metricJetPower">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <div class="panel-title">Parameters</div>
+
+                <div class="control-section">
+                    <div class="section-title">Black Hole Physics</div>
+                    <div class="control-row">
+                        <label>Mass (M☉)</label>
+                        <input type="range" id="ctrlMass" min="1" max="100" value="10" step="1">
+                        <span class="control-value" id="valMass">10</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Spin (a/M)</label>
+                        <input type="range" id="ctrlSpin" min="0" max="0.998" value="0.7" step="0.01">
+                        <span class="control-value" id="valSpin">0.70</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Accretion Rate</label>
+                        <input type="range" id="ctrlAccretion" min="0" max="5" value="2" step="0.1">
+                        <span class="control-value" id="valAccretion">2.0</span>
+                    </div>
+                </div>
+
+                <div class="control-section crr-section">
+                    <div class="section-title">CRR Framework</div>
+                    <div class="control-row">
+                        <label>Coherence Str.</label>
+                        <input type="range" id="ctrlCoherence" min="0.1" max="3" value="1.5" step="0.1">
+                        <span class="control-value" id="valCoherence">1.5</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Rupture Rate</label>
+                        <input type="range" id="ctrlRupture" min="0" max="0.1" value="0.02" step="0.005">
+                        <span class="control-value" id="valRupture">0.020</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Regen Factor</label>
+                        <input type="range" id="ctrlRegen" min="0.1" max="2" value="0.8" step="0.1">
+                        <span class="control-value" id="valRegen">0.8</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Ω (Thickness)</label>
+                        <input type="range" id="ctrlOmega" min="0.1" max="3" value="1" step="0.1">
+                        <span class="control-value" id="valOmega">1.0</span>
+                    </div>
+                </div>
+
+                <div class="control-section visual-section">
+                    <div class="section-title">Visualization</div>
+                    <div class="control-row">
+                        <label>Particle Count</label>
+                        <input type="range" id="ctrlParticles" min="500" max="5000" value="2000" step="100">
+                        <span class="control-value" id="valParticles">2000</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Lensing Strength</label>
+                        <input type="range" id="ctrlLensing" min="0" max="3" value="1.5" step="0.1">
+                        <span class="control-value" id="valLensing">1.5</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Hawking Intensity</label>
+                        <input type="range" id="ctrlHawkingVis" min="0" max="3" value="1" step="0.1">
+                        <span class="control-value" id="valHawkingVis">1.0</span>
+                    </div>
+                </div>
+
+                <div class="control-section effects-section">
+                    <div class="section-title">Effects</div>
+                    <div class="control-row">
+                        <label>Relativistic Jets</label>
+                        <input type="checkbox" id="ctrlJets" checked>
+                    </div>
+                    <div class="control-row">
+                        <label>Doppler Beaming</label>
+                        <input type="checkbox" id="ctrlDoppler" checked>
+                    </div>
+                    <div class="control-row">
+                        <label>Grav. Waves</label>
+                        <input type="checkbox" id="ctrlGWaves" checked>
+                    </div>
+                    <div class="control-row">
+                        <label>Star Field</label>
+                        <input type="checkbox" id="ctrlStars" checked>
+                    </div>
+                    <div class="control-row">
+                        <label>Tidal Events</label>
+                        <input type="checkbox" id="ctrlTidal" checked>
+                    </div>
+                    <div class="control-row">
+                        <label>Bloom Effect</label>
+                        <input type="checkbox" id="ctrlBloom" checked>
+                    </div>
+                </div>
+
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="applyPreset('stellar')">Stellar Mass</button>
+                    <button class="preset-btn" onclick="applyPreset('supermassive')">Supermassive</button>
+                    <button class="preset-btn" onclick="applyPreset('extremal')">Extremal Kerr</button>
+                    <button class="preset-btn" onclick="applyPreset('quiet')">Quiet System</button>
+                    <button class="preset-btn" onclick="applyPreset('active')">Active Nucleus</button>
+                    <button class="preset-btn" onclick="applyPreset('merger')">Post-Merger</button>
+                </div>
+            </div>
+
+            <!-- Time Dilation Display -->
+            <div class="time-dilation-display">
+                <div class="time-label">Time Dilation</div>
+                <div class="time-clocks">
+                    <div class="clock distant">
+                        <div class="clock-value" id="timeDistant">00:00:00</div>
+                        <div class="clock-label">Distant Observer</div>
+                    </div>
+                    <div class="clock horizon">
+                        <div class="clock-value" id="timeHorizon">00:00:00</div>
+                        <div class="clock-label">Near Horizon</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equation Display -->
+            <div class="equation-display">
+                <div class="current-equation" id="currentEquation">C(t) = ∫₀ᵗ L(x,τ) dτ</div>
+                <div class="equation-description" id="equationDescription">Coherence accumulates through integrated Lagrangian density in stable orbital configurations</div>
+            </div>
+
+            <!-- Gravitational Wave Indicator -->
+            <div class="gwave-indicator" id="gwaveIndicator">
+                <div class="gwave-label">Gravitational Wave Detected</div>
+                <div class="gwave-value" id="gwaveStrain">h = 1.2×10⁻²¹</div>
+            </div>
+
+            <!-- Audio Toggle -->
+            <div class="audio-toggle" id="audioToggle">
+                <span id="audioIcon">🔇</span>
+                <span>Audio</span>
+            </div>
+
+            <!-- Info -->
+            <div class="info-tip">Drag to orbit • Scroll to zoom • CRR Framework drives all dynamics</div>
+        </div>
+
+        <!-- Rupture Flash -->
+        <div class="rupture-flash" id="ruptureFlash"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CRR Black Hole - Enhanced Edition
+        // Maintains CRR framework as the core driver while adding
+        // realistic physics and visual enhancements
+        // ============================================================
+
+        class CRRBlackHoleEnhanced {
+            constructor() {
+                this.canvas = document.getElementById('blackhole-canvas');
+                this.time = 0;
+                this.distantTime = 0;
+                this.horizonTime = 0;
+                
+                // Physics state
+                this.physics = {
+                    mass: 10.0,
+                    spin: 0.7,
+                    accretionRate: 2.0,
+                    schwarzschildRadius: 0,
+                    photonSphere: 0,
+                    isco: 0,
+                    hawkingTemp: 0,
+                    ergosphereRadius: 0
+                };
+                
+                // CRR Framework state - the heart of the simulation
+                this.crr = {
+                    coherenceStrength: 1.5,
+                    ruptureRate: 0.02,
+                    regenFactor: 0.8,
+                    omega: 1.0,  // Ω parameter - thickness of present
+                    
+                    // Dynamic state
+                    coherenceLevel: 0.0,
+                    coherenceHistory: [],  // For non-Markovian memory
+                    ruptureEvents: 0,
+                    lastRuptureTime: 0,
+                    regenerationPhase: 0,
+                    systemEntropy: 0,
+                    currentPhase: 'coherence'  // coherence, rupture, or regeneration
+                };
+                
+                // Visual settings
+                this.visual = {
+                    particleCount: 2000,
+                    lensingStrength: 1.5,
+                    hawkingIntensity: 1.0,
+                    showJets: true,
+                    showDoppler: true,
+                    showGWaves: true,
+                    showStars: true,
+                    showTidal: true,
+                    showBloom: true
+                };
+                
+                // Audio
+                this.audioEnabled = false;
+                this.audioContext = null;
+                this.oscillators = {};
+                
+                // Mouse/camera control
+                this.mouse = { x: 0, y: 0, dragging: false };
+                this.cameraAngle = { theta: Math.PI / 4, phi: Math.PI / 6 };
+                this.cameraDistance = 50;
+                
+                // Scene objects
+                this.objects = {};
+                
+                this.init();
+            }
+            
+            async init() {
+                this.setupRenderer();
+                this.setupCamera();
+                this.setupControls();
+                this.setupMouseControls();
+                this.calculatePhysics();
+                
+                await this.createStarField();
+                await this.createEventHorizon();
+                await this.createErgosphere();
+                await this.createPhotonSphere();
+                await this.createAccretionDisk();
+                await this.createParticleSystem();
+                await this.createHawkingRadiation();
+                await this.createRelativisticJets();
+                await this.createGravitationalLensing();
+                await this.createGravitationalWaves();
+                
+                this.setupAudio();
+                this.animate();
+            }
+            
+            setupRenderer() {
+                this.scene = new THREE.Scene();
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: false
+                });
+                
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.renderer.setSize(rect.width, rect.height);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.setClearColor(0x000005, 1);
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
+                
+                // Fog for depth
+                this.scene.fog = new THREE.FogExp2(0x000010, 0.008);
+                
+                window.addEventListener('resize', () => {
+                    const rect = this.canvas.parentElement.getBoundingClientRect();
+                    this.camera.aspect = rect.width / rect.height;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(rect.width, rect.height);
+                });
+            }
+            
+            setupCamera() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.camera = new THREE.PerspectiveCamera(60, rect.width / rect.height, 0.1, 2000);
+                this.updateCameraPosition();
+            }
+            
+            updateCameraPosition() {
+                const x = this.cameraDistance * Math.sin(this.cameraAngle.theta) * Math.cos(this.cameraAngle.phi);
+                const y = this.cameraDistance * Math.sin(this.cameraAngle.phi);
+                const z = this.cameraDistance * Math.cos(this.cameraAngle.theta) * Math.cos(this.cameraAngle.phi);
+                this.camera.position.set(x, y, z);
+                this.camera.lookAt(0, 0, 0);
+            }
+            
+            setupMouseControls() {
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.mouse.dragging = true;
+                    this.mouse.x = e.clientX;
+                    this.mouse.y = e.clientY;
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.mouse.dragging) {
+                        const dx = e.clientX - this.mouse.x;
+                        const dy = e.clientY - this.mouse.y;
+                        this.cameraAngle.theta += dx * 0.005;
+                        this.cameraAngle.phi = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, this.cameraAngle.phi + dy * 0.005));
+                        this.updateCameraPosition();
+                        this.mouse.x = e.clientX;
+                        this.mouse.y = e.clientY;
+                    }
+                });
+                
+                this.canvas.addEventListener('mouseup', () => this.mouse.dragging = false);
+                this.canvas.addEventListener('mouseleave', () => this.mouse.dragging = false);
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    this.cameraDistance = Math.max(15, Math.min(150, this.cameraDistance + e.deltaY * 0.05));
+                    this.updateCameraPosition();
+                });
+            }
+            
+            calculatePhysics() {
+                const G = 6.67430e-11;
+                const c = 299792458;
+                const M_sun = 1.989e30;
+                const k_B = 1.380649e-23;
+                const hbar = 1.054571817e-34;
+                
+                const mass_kg = this.physics.mass * M_sun;
+                const a = this.physics.spin;
+                
+                // Schwarzschild radius
+                this.physics.schwarzschildRadius = (2 * G * mass_kg) / (c * c);
+                
+                // Photon sphere (varies with spin)
+                this.physics.photonSphere = 1.5 * this.physics.schwarzschildRadius * (1 - a/3);
+                
+                // Ergosphere outer boundary (Kerr)
+                this.physics.ergosphereRadius = this.physics.schwarzschildRadius;
+                
+                // ISCO calculation for Kerr black hole
+                const Z1 = 1 + Math.pow(1 - a*a, 1/3) * (Math.pow(1 + a, 1/3) + Math.pow(Math.abs(1 - a), 1/3));
+                const Z2 = Math.sqrt(3*a*a + Z1*Z1);
+                this.physics.isco = (3 + Z2 - Math.sqrt((3 - Z1) * (3 + Z1 + 2*Z2)));
+                
+                // Hawking temperature
+                this.physics.hawkingTemp = (hbar * c * c * c) / (8 * Math.PI * G * mass_kg * k_B);
+                
+                this.updatePhysicsUI();
+            }
+            
+            updatePhysicsUI() {
+                const rs_km = this.physics.schwarzschildRadius / 1000;
+                document.getElementById('metricMass').textContent = `${this.physics.mass} M☉`;
+                document.getElementById('metricRs').textContent = `${rs_km.toFixed(1)} km`;
+                document.getElementById('metricSpin').textContent = this.physics.spin.toFixed(2);
+                document.getElementById('metricISCO').textContent = `${this.physics.isco.toFixed(1)} Rs`;
+                document.getElementById('metricHawking').textContent = `${this.physics.hawkingTemp.toExponential(1)} K`;
+            }
+            
+            // ============================================================
+            // CRR Framework Implementation
+            // This is the core driver of all dynamics
+            // ============================================================
+            
+            updateCRR(dt) {
+                // COHERENCE PHASE: C(t) = ∫₀ᵗ L(x,τ) dτ
+                // Approximated as exponential approach with memory
+                const coherenceTarget = this.crr.coherenceStrength * (1 + this.physics.accretionRate * 0.2);
+                const coherenceDelta = (coherenceTarget - this.crr.coherenceLevel) * dt * 0.5;
+                this.crr.coherenceLevel += coherenceDelta;
+                
+                // Store coherence history for non-Markovian effects
+                this.crr.coherenceHistory.push({
+                    time: this.time,
+                    value: this.crr.coherenceLevel
+                });
+                
+                // Keep only recent history (simulating finite memory depth controlled by Ω)
+                const memoryDepth = Math.floor(100 * this.crr.omega);
+                if (this.crr.coherenceHistory.length > memoryDepth) {
+                    this.crr.coherenceHistory.shift();
+                }
+                
+                // RUPTURE PHASE: δ(t - t_i) when C ≥ C_crit
+                // Probability increases with coherence level
+                const criticalCoherence = this.crr.omega * Math.log(10);  // C_crit = Ω log(Λ/λ₀)
+                const ruptureProb = this.crr.ruptureRate * dt * (1 + this.crr.coherenceLevel / criticalCoherence);
+                
+                if (Math.random() < ruptureProb && (this.time - this.crr.lastRuptureTime) > 1.0) {
+                    this.triggerRupture();
+                }
+                
+                // REGENERATION PHASE: R = ∫ φ(τ) exp(C(τ)/Ω) dτ
+                // Active after rupture, weighted by coherence history
+                if (this.crr.currentPhase === 'regeneration') {
+                    // Calculate regeneration using coherence history (non-Markovian)
+                    let regenIntegral = 0;
+                    for (const h of this.crr.coherenceHistory) {
+                        const weight = Math.exp(h.value / this.crr.omega);
+                        regenIntegral += weight * dt * 0.1;
+                    }
+                    this.crr.regenerationPhase += regenIntegral * this.crr.regenFactor;
+                    
+                    // Transition back to coherence phase when regeneration completes
+                    if (this.crr.regenerationPhase > 1.0) {
+                        this.crr.currentPhase = 'coherence';
+                        this.crr.regenerationPhase = 0;
+                    }
+                }
+                
+                // Entropy evolution: dS/dt ∝ accretion - hawking
+                const entropyGain = this.physics.accretionRate * dt * 0.1;
+                const entropyLoss = this.visual.hawkingIntensity * dt * 0.05 / this.physics.mass;
+                this.crr.systemEntropy += entropyGain - entropyLoss;
+                this.crr.systemEntropy = Math.max(0, this.crr.systemEntropy);
+                
+                // Update phase indicator
+                this.updatePhaseIndicator();
+                this.updateCRRMetrics();
+                this.updateEquationDisplay();
+            }
+            
+            triggerRupture() {
+                this.crr.ruptureEvents++;
+                this.crr.lastRuptureTime = this.time;
+                this.crr.currentPhase = 'rupture';
+                
+                // Visual flash
+                const flash = document.getElementById('ruptureFlash');
+                flash.classList.add('active');
+                setTimeout(() => {
+                    flash.classList.remove('active');
+                    this.crr.currentPhase = 'regeneration';
+                }, 200);
+                
+                // Trigger gravitational wave burst
+                if (this.visual.showGWaves && this.objects.gwaveRings) {
+                    this.triggerGravitationalWave();
+                }
+                
+                // Audio burst
+                if (this.audioEnabled) {
+                    this.playRuptureBurst();
+                }
+                
+                // Coherence drops significantly at rupture
+                this.crr.coherenceLevel *= 0.3;
+            }
+            
+            updatePhaseIndicator() {
+                const phases = ['Coherence', 'Rupture', 'Regeneration'];
+                const elements = {
+                    coherence: document.getElementById('phaseCoherence'),
+                    rupture: document.getElementById('phaseRupture'),
+                    regeneration: document.getElementById('phaseRegeneration')
+                };
+                
+                Object.values(elements).forEach(el => el.classList.remove('active'));
+                elements[this.crr.currentPhase].classList.add('active');
+            }
+            
+            updateCRRMetrics() {
+                document.getElementById('metricCoherence').textContent = this.crr.coherenceLevel.toFixed(3);
+                document.getElementById('metricRuptures').textContent = this.crr.ruptureEvents;
+                document.getElementById('metricRegen').textContent = this.crr.regenerationPhase.toFixed(3);
+                document.getElementById('metricOmega').textContent = this.crr.omega.toFixed(2);
+                document.getElementById('metricEntropy').textContent = this.crr.systemEntropy.toFixed(2);
+            }
+            
+            updateEquationDisplay() {
+                const equations = [
+                    {
+                        formula: "C(t) = ∫₀ᵗ L(x,τ) dτ",
+                        description: "Coherence accumulates through integrated Lagrangian density in stable orbital configurations"
+                    },
+                    {
+                        formula: "δ(t - tᵢ) : C(tᵢ) ≥ Ω log(Λ/λ₀)",
+                        description: "Rupture occurs when coherence exceeds critical threshold — the event horizon boundary"
+                    },
+                    {
+                        formula: "R = ∫ φ(τ) exp(C(τ)/Ω) dτ",
+                        description: "Regeneration weighted by coherence history — Hawking radiation as quantum rebirth"
+                    },
+                    {
+                        formula: "Rs = 2GM/c²",
+                        description: "Schwarzschild radius — the rupture boundary where spacetime itself transitions"
+                    },
+                    {
+                        formula: "T_H = ℏc³/(8πGMkB)",
+                        description: "Hawking temperature — regeneration rate inversely proportional to mass"
+                    },
+                    {
+                        formula: "exp(C/Ω) → e when C = Ω",
+                        description: "At rupture: memory amplification factor equals e — the natural emergence constant"
+                    }
+                ];
+                
+                const idx = Math.floor(this.time * 0.15) % equations.length;
+                document.getElementById('currentEquation').textContent = equations[idx].formula;
+                document.getElementById('equationDescription').textContent = equations[idx].description;
+            }
+            
+            // ============================================================
+            // Visual Components
+            // ============================================================
+            
+            async createStarField() {
+                const geometry = new THREE.BufferGeometry();
+                const count = 8000;
+                const positions = new Float32Array(count * 3);
+                const colors = new Float32Array(count * 3);
+                const sizes = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    // Distribute on sphere
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const r = 300 + Math.random() * 500;
+                    
+                    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                    positions[i * 3 + 2] = r * Math.cos(phi);
+                    
+                    // Star colors (spectral types)
+                    const temp = Math.random();
+                    if (temp < 0.1) {
+                        colors[i * 3] = 0.6; colors[i * 3 + 1] = 0.7; colors[i * 3 + 2] = 1.0; // Blue
+                    } else if (temp < 0.3) {
+                        colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 0.9; // White
+                    } else if (temp < 0.7) {
+                        colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.9; colors[i * 3 + 2] = 0.6; // Yellow
+                    } else {
+                        colors[i * 3] = 1.0; colors[i * 3 + 1] = 0.6; colors[i * 3 + 2] = 0.4; // Orange/Red
+                    }
+                    
+                    sizes[i] = 0.5 + Math.random() * 1.5;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        lensCenter: { value: new THREE.Vector3(0, 0, 0) },
+                        lensStrength: { value: this.visual.lensingStrength },
+                        showLensing: { value: 1.0 }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute vec3 color;
+                        uniform float time;
+                        uniform vec3 lensCenter;
+                        uniform float lensStrength;
+                        uniform float showLensing;
+                        varying vec3 vColor;
+                        varying float vIntensity;
+                        
+                        void main() {
+                            vColor = color;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            
+                            // Gravitational lensing distortion
+                            vec3 toCenter = lensCenter - position;
+                            float dist = length(toCenter);
+                            float lensFactor = lensStrength * 50.0 / (dist * dist + 100.0);
+                            vec3 lensedPos = position + normalize(toCenter) * lensFactor * showLensing;
+                            
+                            // Einstein ring effect - stars near black hole appear displaced
+                            float einsteinRadius = 8.0 * lensStrength;
+                            vec3 projectedPos = position - dot(position, normalize(cameraPosition)) * normalize(cameraPosition);
+                            float projDist = length(projectedPos);
+                            if (projDist < einsteinRadius * 2.0 && projDist > 0.1) {
+                                float ringFactor = 1.0 + einsteinRadius * einsteinRadius / (projDist * projDist);
+                                lensedPos = position * ringFactor * showLensing + position * (1.0 - showLensing);
+                            }
+                            
+                            mvPosition = modelViewMatrix * vec4(lensedPos, 1.0);
+                            
+                            // Twinkling
+                            float twinkle = sin(time * 2.0 + position.x * 0.1) * 0.3 + 0.7;
+                            vIntensity = twinkle;
+                            
+                            gl_PointSize = size * (200.0 / -mvPosition.z) * twinkle;
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vIntensity;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            
+                            float alpha = 1.0 - dist * 2.0;
+                            alpha = pow(alpha, 1.5) * vIntensity;
+                            
+                            gl_FragColor = vec4(vColor, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                
+                this.objects.starField = new THREE.Points(geometry, material);
+                this.scene.add(this.objects.starField);
+            }
+            
+            async createEventHorizon() {
+                const geometry = new THREE.SphereGeometry(3, 128, 64);
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        mass: { value: this.physics.mass },
+                        spin: { value: this.physics.spin },
+                        coherence: { value: this.crr.coherenceStrength },
+                        phase: { value: 0 }
+                    },
+                    vertexShader: `
+                        uniform float time;
+                        uniform float spin;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        varying vec2 vUv;
+                        
+                        void main() {
+                            vPosition = position;
+                            vNormal = normal;
+                            vUv = uv;
+                            
+                            // Frame dragging effect (Kerr metric)
+                            vec3 pos = position;
+                            float r = length(pos.xz);
+                            float frameDragAngle = spin * 0.3 * time / (r + 1.0);
+                            mat2 rotation = mat2(cos(frameDragAngle), -sin(frameDragAngle), 
+                                                  sin(frameDragAngle), cos(frameDragAngle));
+                            pos.xz = rotation * pos.xz;
+                            
+                            // Subtle pulsation based on coherence
+                            float pulse = 1.0 + sin(time * 0.5) * 0.02;
+                            pos *= pulse;
+                            
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float time;
+                        uniform float mass;
+                        uniform float coherence;
+                        uniform float phase;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        varying vec2 vUv;
+                        
+                        void main() {
+                            // Base color - very dark with subtle blue rim
+                            vec3 color = vec3(0.0, 0.0, 0.02);
+                            
+                            // Fresnel rim glow
+                            float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vPosition))), 3.0);
+                            
+                            // CRR phase coloring
+                            vec3 coherenceColor = vec3(0.1, 0.3, 0.9);
+                            vec3 ruptureColor = vec3(0.9, 0.1, 0.1);
+                            vec3 regenColor = vec3(0.1, 0.9, 0.4);
+                            
+                            vec3 phaseColor = mix(coherenceColor, ruptureColor, phase);
+                            phaseColor = mix(phaseColor, regenColor, max(0.0, phase - 1.0));
+                            
+                            color += phaseColor * fresnel * coherence * 0.15;
+                            
+                            // Gravitational redshift at edge
+                            float redshift = 1.0 - 1.0 / (1.0 + mass * 0.05);
+                            color *= 1.0 - redshift * 0.5;
+                            
+                            // Quantum fluctuations at horizon (Hawking effect visualization)
+                            float quantumNoise = fract(sin(dot(vUv * 100.0, vec2(12.9898, 78.233)) + time) * 43758.5453);
+                            color += vec3(quantumNoise * 0.02);
+                            
+                            gl_FragColor = vec4(color, 1.0);
+                        }
+                    `
+                });
+                
+                this.objects.eventHorizon = new THREE.Mesh(geometry, material);
+                this.scene.add(this.objects.eventHorizon);
+            }
+            
+            async createErgosphere() {
+                // Ergosphere for Kerr black holes (only visible with spin)
+                const geometry = new THREE.SphereGeometry(4.5, 64, 32);
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        spin: { value: this.physics.spin }
+                    },
+                    vertexShader: `
+                        uniform float time;
+                        uniform float spin;
+                        varying vec3 vPosition;
+                        varying vec3 vNormal;
+                        
+                        void main() {
+                            vPosition = position;
+                            vNormal = normal;
+                            
+                            // Ergosphere is oblate - flattened at poles
+                            vec3 pos = position;
+                            float theta = acos(pos.y / length(pos));
+                            float ergoRadius = 1.0 + spin * spin * cos(theta) * cos(theta);
+                            pos.xz *= ergoRadius;
+                            
+                            // Rotation due to frame dragging
+                            float angle = time * spin * 0.2;
+                            mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                            pos.xz = rot * pos.xz;
+                            
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float spin;
+                        varying vec3 vNormal;
+                        varying vec3 vPosition;
+                        
+                        void main() {
+                            float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vPosition))), 4.0);
+                            vec3 color = vec3(0.3, 0.1, 0.5) * fresnel * spin;
+                            float alpha = fresnel * spin * 0.3;
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                
+                this.objects.ergosphere = new THREE.Mesh(geometry, material);
+                this.scene.add(this.objects.ergosphere);
+            }
+            
+            async createPhotonSphere() {
+                // Multiple photon rings for realism
+                const rings = [];
+                const radii = [4.5, 4.7, 4.9];
+                
+                radii.forEach((r, idx) => {
+                    const geometry = new THREE.TorusGeometry(r, 0.05 + idx * 0.02, 16, 200);
+                    
+                    const material = new THREE.ShaderMaterial({
+                        uniforms: {
+                            time: { value: 0 },
+                            spin: { value: this.physics.spin },
+                            ringIndex: { value: idx },
+                            lensing: { value: this.visual.lensingStrength }
+                        },
+                        vertexShader: `
+                            uniform float time;
+                            uniform float spin;
+                            uniform float ringIndex;
+                            varying vec2 vUv;
+                            varying float vBrightness;
+                            
+                            void main() {
+                                vUv = uv;
+                                
+                                vec3 pos = position;
+                                
+                                // Different rotation speeds for each ring
+                                float speed = 1.0 + ringIndex * 0.5;
+                                float angle = time * speed * (1.0 + spin);
+                                mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                                pos.xy = rot * pos.xy;
+                                
+                                // Brightness varies around ring (Doppler + beaming)
+                                float phi = atan(pos.y, pos.x);
+                                vBrightness = 0.5 + 0.5 * cos(phi - time * 2.0);
+                                
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            uniform float time;
+                            uniform float lensing;
+                            varying vec2 vUv;
+                            varying float vBrightness;
+                            
+                            void main() {
+                                // Photon ring is bright yellow-white
+                                vec3 color = vec3(1.0, 0.95, 0.7);
+                                
+                                // Intensity variation
+                                float intensity = sin(vUv.x * 50.0 + time * 10.0) * 0.3 + 0.7;
+                                intensity *= vBrightness;
+                                intensity *= lensing;
+                                
+                                color *= intensity;
+                                
+                                gl_FragColor = vec4(color, intensity * 0.9);
+                            }
+                        `,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    
+                    const ring = new THREE.Mesh(geometry, material);
+                    ring.rotation.x = Math.PI / 2;
+                    rings.push(ring);
+                    this.scene.add(ring);
+                });
+                
+                this.objects.photonRings = rings;
+            }
+            
+            async createAccretionDisk() {
+                // Multi-layered accretion disk with turbulence
+                const geometry = new THREE.RingGeometry(5, 30, 128, 64);
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        mass: { value: this.physics.mass },
+                        spin: { value: this.physics.spin },
+                        accretion: { value: this.physics.accretionRate },
+                        coherence: { value: this.crr.coherenceStrength },
+                        showDoppler: { value: 1.0 },
+                        isco: { value: this.physics.isco }
+                    },
+                    vertexShader: `
+                        uniform float time;
+                        uniform float mass;
+                        uniform float spin;
+                        uniform float isco;
+                        varying vec2 vUv;
+                        varying vec3 vPosition;
+                        varying float vRadius;
+                        varying float vAngle;
+                        varying float vTemperature;
+                        varying float vOrbitalVel;
+                        
+                        void main() {
+                            vUv = uv;
+                            vPosition = position;
+                            
+                            vec3 pos = position;
+                            float r = length(pos.xy);
+                            vRadius = r;
+                            
+                            // Keplerian orbital velocity (modified by spin)
+                            float kepler = sqrt(mass / max(r, 0.1)) * 0.15;
+                            float spinBoost = 1.0 + spin * 0.5 * (6.0 / max(r, 6.0));
+                            float orbitalVel = kepler * spinBoost;
+                            vOrbitalVel = orbitalVel;
+                            
+                            // Differential rotation
+                            float angle = time * orbitalVel;
+                            mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                            pos.xy = rot * pos.xy;
+                            
+                            vAngle = atan(pos.y, pos.x);
+                            
+                            // Temperature profile: T ∝ r^(-3/4) (standard thin disk)
+                            float iscoR = isco * 1.5;
+                            vTemperature = pow(iscoR / max(r, iscoR), 0.75);
+                            
+                            // Turbulent vertical displacement (MRI-like instabilities)
+                            float turbulence = sin(r * 2.0 + time * 3.0) * cos(vAngle * 8.0 + time) * 0.3;
+                            turbulence *= (1.0 - vTemperature); // More turbulence in cooler outer regions
+                            pos.z += turbulence;
+                            
+                            // Disk warp for high spin
+                            pos.z += sin(vAngle + time * 0.5) * spin * 0.5 * (r / 30.0);
+                            
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float time;
+                        uniform float accretion;
+                        uniform float coherence;
+                        uniform float showDoppler;
+                        uniform float spin;
+                        varying vec2 vUv;
+                        varying vec3 vPosition;
+                        varying float vRadius;
+                        varying float vAngle;
+                        varying float vTemperature;
+                        varying float vOrbitalVel;
+                        
+                        // Blackbody color approximation
+                        vec3 blackbody(float temp) {
+                            temp = clamp(temp, 0.0, 2.0);
+                            vec3 color;
+                            if (temp < 0.4) {
+                                color = vec3(0.8, 0.2, 0.1); // Cool red
+                            } else if (temp < 0.7) {
+                                color = vec3(1.0, 0.5, 0.2); // Orange
+                            } else if (temp < 1.0) {
+                                color = vec3(1.0, 0.8, 0.4); // Yellow
+                            } else if (temp < 1.5) {
+                                color = vec3(1.0, 1.0, 0.8); // White
+                            } else {
+                                color = vec3(0.8, 0.9, 1.0); // Blue-white
+                            }
+                            return color;
+                        }
+                        
+                        void main() {
+                            // Base temperature coloring
+                            vec3 color = blackbody(vTemperature);
+                            
+                            // Relativistic Doppler beaming
+                            // Approaching side is brighter and blue-shifted
+                            // Receding side is dimmer and red-shifted
+                            float dopplerFactor = 1.0 + showDoppler * vOrbitalVel * cos(vAngle) * 2.0;
+                            dopplerFactor = clamp(dopplerFactor, 0.3, 3.0);
+                            
+                            // Blue shift on approaching side
+                            if (dopplerFactor > 1.0) {
+                                color = mix(color, vec3(0.8, 0.9, 1.0), (dopplerFactor - 1.0) * 0.3 * showDoppler);
+                            } else {
+                                color = mix(color, vec3(1.0, 0.4, 0.2), (1.0 - dopplerFactor) * 0.5 * showDoppler);
+                            }
+                            
+                            color *= dopplerFactor;
+                            
+                            // Spiral density waves (coherent structures)
+                            float spiral = sin(vAngle * 4.0 - vRadius * 0.5 + time * 2.0) * 0.3 + 0.7;
+                            spiral *= coherence * 0.5 + 0.5;
+                            color *= spiral;
+                            
+                            // Turbulent brightness variations
+                            float turbNoise = sin(vRadius * 3.0 + vAngle * 12.0 + time * 5.0) * 0.15 + 0.85;
+                            color *= turbNoise;
+                            
+                            // Accretion rate intensity
+                            color *= 0.5 + accretion * 0.25;
+                            
+                            // Fade at edges
+                            float innerFade = smoothstep(5.0, 7.0, vRadius);
+                            float outerFade = 1.0 - smoothstep(25.0, 30.0, vRadius);
+                            float alpha = innerFade * outerFade * (0.6 + vTemperature * 0.4);
+                            
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                
+                this.objects.accretionDisk = new THREE.Mesh(geometry, material);
+                this.objects.accretionDisk.rotation.x = -Math.PI / 2 + 0.1; // Slight tilt
+                this.scene.add(this.objects.accretionDisk);
+            }
+            
+            async createParticleSystem() {
+                const count = this.visual.particleCount;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(count * 3);
+                const velocities = new Float32Array(count * 3);
+                const colors = new Float32Array(count * 3);
+                const states = new Float32Array(count); // 0: coherent, 1: disrupted, 2: infalling
+                const energies = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    // Initialize in disk region
+                    const r = 6 + Math.random() * 20;
+                    const theta = Math.random() * Math.PI * 2;
+                    
+                    positions[i * 3] = r * Math.cos(theta);
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 2;
+                    positions[i * 3 + 2] = r * Math.sin(theta);
+                    
+                    // Orbital velocity
+                    const orbitalSpeed = Math.sqrt(10 / r) * 0.1;
+                    velocities[i * 3] = -Math.sin(theta) * orbitalSpeed;
+                    velocities[i * 3 + 1] = 0;
+                    velocities[i * 3 + 2] = Math.cos(theta) * orbitalSpeed;
+                    
+                    states[i] = 0; // Start coherent
+                    energies[i] = 0.5 + Math.random() * 0.5;
+                    
+                    colors[i * 3] = 1.0;
+                    colors[i * 3 + 1] = 0.6;
+                    colors[i * 3 + 2] = 0.3;
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('state', new THREE.BufferAttribute(states, 1));
+                geometry.setAttribute('energy', new THREE.BufferAttribute(energies, 1));
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        mass: { value: this.physics.mass },
+                        spin: { value: this.physics.spin },
+                        coherence: { value: this.crr.coherenceStrength },
+                        rupture: { value: 0 }
+                    },
+                    vertexShader: `
+                        attribute vec3 velocity;
+                        attribute vec3 color;
+                        attribute float state;
+                        attribute float energy;
+                        
+                        uniform float time;
+                        uniform float mass;
+                        uniform float spin;
+                        uniform float coherence;
+                        uniform float rupture;
+                        
+                        varying vec3 vColor;
+                        varying float vEnergy;
+                        varying float vState;
+                        
+                        void main() {
+                            vColor = color;
+                            vEnergy = energy;
+                            vState = state;
+                            
+                            vec3 pos = position;
+                            float r = length(pos.xz);
+                            
+                            // Gravitational acceleration toward center
+                            vec3 toCenter = -normalize(vec3(pos.x, 0.0, pos.z));
+                            float gravAccel = mass * 0.01 / (r * r + 1.0);
+                            
+                            // Orbital motion
+                            float orbitalSpeed = sqrt(mass / max(r, 1.0)) * 0.08;
+                            vec3 tangent = normalize(cross(vec3(0.0, 1.0, 0.0), toCenter));
+                            
+                            // Frame dragging (Lense-Thirring effect)
+                            float frameDrag = spin * 0.1 / (r + 1.0);
+                            
+                            // Update position based on state
+                            if (state < 0.5) {
+                                // Coherent orbit
+                                float angle = time * orbitalSpeed * (1.0 + frameDrag);
+                                mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                                pos.xz = rot * position.xz;
+                                
+                                // Add coherence-based stability
+                                float stability = coherence * 0.5;
+                                pos += tangent * sin(time * 3.0 + r) * 0.1 * (1.0 - stability);
+                            } else if (state < 1.5) {
+                                // Disrupted - chaotic motion
+                                pos += velocity * time * 0.1;
+                                pos += toCenter * gravAccel * time * 0.5;
+                                pos.y += sin(time * 5.0 + energy * 10.0) * 0.5;
+                            } else {
+                                // Infalling - spiraling toward horizon
+                                float infall = time * 0.05 * (1.0 - coherence * 0.3);
+                                float newR = max(3.5, r - infall);
+                                float angle = time * orbitalSpeed * 2.0;
+                                pos.x = newR * cos(angle + atan(position.z, position.x));
+                                pos.z = newR * sin(angle + atan(position.z, position.x));
+                                pos.y *= 0.95;
+                            }
+                            
+                            // Rupture perturbation
+                            pos += normalize(pos) * rupture * sin(time * 20.0) * 0.5;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            gl_PointSize = (3.0 + energy * 2.0) * (50.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vEnergy;
+                        varying float vState;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            
+                            vec3 color = vColor;
+                            
+                            // State-based coloring
+                            if (vState < 0.5) {
+                                color = mix(vec3(0.3, 0.6, 1.0), vec3(1.0, 0.8, 0.4), vEnergy);
+                            } else if (vState < 1.5) {
+                                color = vec3(1.0, 0.3, 0.2);
+                            } else {
+                                color = vec3(1.0, 0.5, 0.1);
+                            }
+                            
+                            float alpha = (1.0 - dist * 2.0) * vEnergy;
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                
+                this.objects.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.objects.particles);
+            }
+            
+            async createHawkingRadiation() {
+                const count = 500;
+                const geometry = new THREE.BufferGeometry();
+                
+                const positions = new Float32Array(count * 3);
+                const velocities = new Float32Array(count * 3);
+                const energies = new Float32Array(count);
+                const lifetimes = new Float32Array(count);
+                
+                for (let i = 0; i < count; i++) {
+                    // Spawn near event horizon
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const r = 3.1 + Math.random() * 0.2;
+                    
+                    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = r * Math.cos(phi);
+                    positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+                    
+                    // Outward velocity
+                    velocities[i * 3] = positions[i * 3] / r;
+                    velocities[i * 3 + 1] = positions[i * 3 + 1] / r;
+                    velocities[i * 3 + 2] = positions[i * 3 + 2] / r;
+                    
+                    energies[i] = Math.random();
+                    lifetimes[i] = Math.random();
+                }
+                
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+                geometry.setAttribute('energy', new THREE.BufferAttribute(energies, 1));
+                geometry.setAttribute('lifetime', new THREE.BufferAttribute(lifetimes, 1));
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        hawking: { value: this.visual.hawkingIntensity },
+                        regen: { value: this.crr.regenFactor }
+                    },
+                    vertexShader: `
+                        attribute vec3 velocity;
+                        attribute float energy;
+                        attribute float lifetime;
+                        
+                        uniform float time;
+                        uniform float hawking;
+                        uniform float regen;
+                        
+                        varying float vEnergy;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            vEnergy = energy;
+                            
+                            // Particle escape trajectory
+                            float t = mod(time + lifetime * 10.0, 10.0);
+                            float escape = t * hawking * 0.3;
+                            
+                            vec3 pos = position + velocity * escape;
+                            
+                            // Quantum jitter
+                            pos += vec3(
+                                sin(time * 20.0 + energy * 100.0),
+                                cos(time * 20.0 + energy * 50.0),
+                                sin(time * 20.0 + energy * 75.0)
+                            ) * 0.1 * energy;
+                            
+                            // Fade based on distance traveled
+                            vAlpha = 1.0 - t / 10.0;
+                            vAlpha *= hawking * regen;
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            gl_PointSize = (2.0 + energy * 3.0) * vAlpha * (50.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying float vEnergy;
+                        varying float vAlpha;
+                        
+                        void main() {
+                            float dist = length(gl_PointCoord - vec2(0.5));
+                            if (dist > 0.5) discard;
+                            
+                            // Hawking radiation color - mostly thermal spectrum
+                            vec3 color = mix(
+                                vec3(0.5, 0.8, 1.0),  // Cool photons
+                                vec3(1.0, 1.0, 0.8),  // Hot photons
+                                vEnergy
+                            );
+                            
+                            float alpha = (1.0 - dist * 2.0) * vAlpha;
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                
+                this.objects.hawking = new THREE.Points(geometry, material);
+                this.scene.add(this.objects.hawking);
+            }
+            
+            async createRelativisticJets() {
+                // Twin jets from poles
+                const createJet = (direction) => {
+                    const count = 1000;
+                    const geometry = new THREE.BufferGeometry();
+                    
+                    const positions = new Float32Array(count * 3);
+                    const velocities = new Float32Array(count * 3);
+                    const energies = new Float32Array(count);
+                    
+                    for (let i = 0; i < count; i++) {
+                        const spread = Math.random() * 0.3;
+                        const height = Math.random();
+                        
+                        positions[i * 3] = (Math.random() - 0.5) * spread * height * 20;
+                        positions[i * 3 + 1] = direction * (3 + height * 60);
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * spread * height * 20;
+                        
+                        energies[i] = 1.0 - height * 0.8;
+                    }
+                    
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    geometry.setAttribute('energy', new THREE.BufferAttribute(energies, 1));
+                    
+                    const material = new THREE.ShaderMaterial({
+                        uniforms: {
+                            time: { value: 0 },
+                            spin: { value: this.physics.spin },
+                            accretion: { value: this.physics.accretionRate },
+                            direction: { value: direction }
+                        },
+                        vertexShader: `
+                            attribute float energy;
+                            uniform float time;
+                            uniform float spin;
+                            uniform float accretion;
+                            uniform float direction;
+                            
+                            varying float vEnergy;
+                            varying float vAlpha;
+                            
+                            void main() {
+                                vEnergy = energy;
+                                
+                                vec3 pos = position;
+                                
+                                // Jet velocity (relativistic)
+                                float jetSpeed = spin * accretion * 0.3;
+                                float t = mod(time * jetSpeed + position.y * 0.1, 60.0);
+                                
+                                pos.y = direction * (3.0 + t);
+                                
+                                // Helical motion (magnetic field structure)
+                                float helixAngle = t * 0.5 + position.x * 0.1;
+                                float helixRadius = (t / 60.0) * 5.0;
+                                pos.x = cos(helixAngle) * helixRadius;
+                                pos.z = sin(helixAngle) * helixRadius;
+                                
+                                // Jet power fades with spin
+                                vAlpha = spin * accretion * 0.3 * energy * (1.0 - t / 60.0);
+                                
+                                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                                gl_PointSize = (2.0 + energy * 2.0) * (80.0 / -mvPosition.z);
+                                gl_Position = projectionMatrix * mvPosition;
+                            }
+                        `,
+                        fragmentShader: `
+                            varying float vEnergy;
+                            varying float vAlpha;
+                            
+                            void main() {
+                                float dist = length(gl_PointCoord - vec2(0.5));
+                                if (dist > 0.5) discard;
+                                
+                                // Jets are blue-shifted synchrotron radiation
+                                vec3 color = mix(
+                                    vec3(0.5, 0.7, 1.0),
+                                    vec3(0.9, 0.95, 1.0),
+                                    vEnergy
+                                );
+                                
+                                float alpha = (1.0 - dist * 2.0) * vAlpha;
+                                gl_FragColor = vec4(color, alpha);
+                            }
+                        `,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    
+                    return new THREE.Points(geometry, material);
+                };
+                
+                this.objects.jetTop = createJet(1);
+                this.objects.jetBottom = createJet(-1);
+                this.scene.add(this.objects.jetTop);
+                this.scene.add(this.objects.jetBottom);
+            }
+            
+            async createGravitationalLensing() {
+                // Einstein ring effect - distortion of background
+                const geometry = new THREE.RingGeometry(4, 12, 64, 1);
+                
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        lensing: { value: this.visual.lensingStrength }
+                    },
+                    vertexShader: `
+                        varying vec2 vUv;
+                        void main() {
+                            vUv = uv;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float time;
+                        uniform float lensing;
+                        varying vec2 vUv;
+                        
+                        void main() {
+                            // Einstein ring glow
+                            float ring = 1.0 - abs(vUv.x - 0.3) * 5.0;
+                            ring = max(0.0, ring);
+                            ring = pow(ring, 3.0);
+                            
+                            vec3 color = vec3(0.8, 0.85, 1.0) * ring * lensing * 0.3;
+                            
+                            gl_FragColor = vec4(color, ring * lensing * 0.2);
+                        }
+                    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                });
+                
+                this.objects.lensRing = new THREE.Mesh(geometry, material);
+                this.objects.lensRing.lookAt(this.camera.position);
+                this.scene.add(this.objects.lensRing);
+            }
+            
+            async createGravitationalWaves() {
+                // Expanding rings for gravitational wave visualization
+                const rings = [];
+                const count = 5;
+                
+                for (let i = 0; i < count; i++) {
+                    const geometry = new THREE.RingGeometry(0.1, 0.3, 64);
+                    const material = new THREE.ShaderMaterial({
+                        uniforms: {
+                            progress: { value: 0 },
+                            maxRadius: { value: 50 }
+                        },
+                        vertexShader: `
+                            uniform float progress;
+                            uniform float maxRadius;
+                            varying float vAlpha;
+                            
+                            void main() {
+                                vec3 pos = position;
+                                float scale = progress * maxRadius;
+                                pos.xy *= scale;
+                                
+                                vAlpha = 1.0 - progress;
+                                
+                                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                            }
+                        `,
+                        fragmentShader: `
+                            varying float vAlpha;
+                            
+                            void main() {
+                                vec3 color = vec3(0.6, 0.4, 0.9);
+                                gl_FragColor = vec4(color, vAlpha * 0.3);
+                            }
+                        `,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    
+                    const ring = new THREE.Mesh(geometry, material);
+                    ring.rotation.x = Math.PI / 2;
+                    ring.visible = false;
+                    rings.push(ring);
+                    this.scene.add(ring);
+                }
+                
+                this.objects.gwaveRings = rings;
+                this.gwaveState = { active: false, progress: [] };
+            }
+            
+            triggerGravitationalWave() {
+                const indicator = document.getElementById('gwaveIndicator');
+                indicator.classList.add('active');
+                
+                // Calculate strain (simplified)
+                const strain = (this.physics.mass * 1e-21) / (this.cameraDistance);
+                document.getElementById('gwaveStrain').textContent = `h = ${strain.toExponential(1)}`;
+                
+                setTimeout(() => indicator.classList.remove('active'), 2000);
+                
+                // Animate rings
+                this.objects.gwaveRings.forEach((ring, i) => {
+                    ring.visible = true;
+                    ring.material.uniforms.progress.value = 0;
+                    
+                    const animate = () => {
+                        ring.material.uniforms.progress.value += 0.02;
+                        if (ring.material.uniforms.progress.value < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            ring.visible = false;
+                        }
+                    };
+                    
+                    setTimeout(() => animate(), i * 200);
+                });
+            }
+            
+            // ============================================================
+            // Audio System
+            // ============================================================
+            
+            setupAudio() {
+                const toggle = document.getElementById('audioToggle');
+                toggle.addEventListener('click', () => {
+                    this.audioEnabled = !this.audioEnabled;
+                    document.getElementById('audioIcon').textContent = this.audioEnabled ? '🔊' : '🔇';
+                    
+                    if (this.audioEnabled && !this.audioContext) {
+                        this.initAudio();
+                    }
+                    
+                    if (this.audioEnabled) {
+                        this.startAmbientSound();
+                    } else {
+                        this.stopAllSound();
+                    }
+                });
+            }
+            
+            initAudio() {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.audioContext.createGain();
+                this.masterGain.gain.value = 0.15;
+                this.masterGain.connect(this.audioContext.destination);
+            }
+            
+            startAmbientSound() {
+                if (!this.audioContext) return;
+                
+                // Deep bass drone (represents gravitational hum)
+                const bass = this.audioContext.createOscillator();
+                bass.type = 'sine';
+                bass.frequency.value = 30 + this.physics.mass * 0.5;
+                
+                const bassGain = this.audioContext.createGain();
+                bassGain.gain.value = 0.3;
+                
+                bass.connect(bassGain);
+                bassGain.connect(this.masterGain);
+                bass.start();
+                
+                this.oscillators.bass = { osc: bass, gain: bassGain };
+                
+                // Higher frequency for accretion disk
+                const disk = this.audioContext.createOscillator();
+                disk.type = 'sawtooth';
+                disk.frequency.value = 80;
+                
+                const diskGain = this.audioContext.createGain();
+                diskGain.gain.value = 0.05;
+                
+                const diskFilter = this.audioContext.createBiquadFilter();
+                diskFilter.type = 'lowpass';
+                diskFilter.frequency.value = 200;
+                
+                disk.connect(diskFilter);
+                diskFilter.connect(diskGain);
+                diskGain.connect(this.masterGain);
+                disk.start();
+                
+                this.oscillators.disk = { osc: disk, gain: diskGain, filter: diskFilter };
+            }
+            
+            stopAllSound() {
+                Object.values(this.oscillators).forEach(({ osc }) => {
+                    try { osc.stop(); } catch(e) {}
+                });
+                this.oscillators = {};
+            }
+            
+            updateAudio() {
+                if (!this.audioEnabled || !this.audioContext) return;
+                
+                // Update bass frequency based on mass
+                if (this.oscillators.bass) {
+                    this.oscillators.bass.osc.frequency.value = 30 + this.physics.mass * 0.5;
+                }
+                
+                // Update disk sound based on accretion
+                if (this.oscillators.disk) {
+                    this.oscillators.disk.gain.gain.value = 0.03 + this.physics.accretionRate * 0.02;
+                    this.oscillators.disk.filter.frequency.value = 100 + this.physics.accretionRate * 50;
+                }
+            }
+            
+            playRuptureBurst() {
+                if (!this.audioContext) return;
+                
+                const osc = this.audioContext.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.value = 100;
+                osc.frequency.exponentialRampToValueAtTime(20, this.audioContext.currentTime + 0.5);
+                
+                const gain = this.audioContext.createGain();
+                gain.gain.value = 0.3;
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.audioContext.currentTime + 0.5);
+            }
+            
+            // ============================================================
+            // Controls
+            // ============================================================
+            
+            setupControls() {
+                const controls = [
+                    { id: 'ctrlMass', target: 'physics', prop: 'mass', valId: 'valMass', format: v => v },
+                    { id: 'ctrlSpin', target: 'physics', prop: 'spin', valId: 'valSpin', format: v => v.toFixed(2) },
+                    { id: 'ctrlAccretion', target: 'physics', prop: 'accretionRate', valId: 'valAccretion', format: v => v.toFixed(1) },
+                    { id: 'ctrlCoherence', target: 'crr', prop: 'coherenceStrength', valId: 'valCoherence', format: v => v.toFixed(1) },
+                    { id: 'ctrlRupture', target: 'crr', prop: 'ruptureRate', valId: 'valRupture', format: v => v.toFixed(3) },
+                    { id: 'ctrlRegen', target: 'crr', prop: 'regenFactor', valId: 'valRegen', format: v => v.toFixed(1) },
+                    { id: 'ctrlOmega', target: 'crr', prop: 'omega', valId: 'valOmega', format: v => v.toFixed(1) },
+                    { id: 'ctrlParticles', target: 'visual', prop: 'particleCount', valId: 'valParticles', format: v => v },
+                    { id: 'ctrlLensing', target: 'visual', prop: 'lensingStrength', valId: 'valLensing', format: v => v.toFixed(1) },
+                    { id: 'ctrlHawkingVis', target: 'visual', prop: 'hawkingIntensity', valId: 'valHawkingVis', format: v => v.toFixed(1) }
+                ];
+                
+                controls.forEach(({ id, target, prop, valId, format }) => {
+                    const el = document.getElementById(id);
+                    const valEl = document.getElementById(valId);
+                    
+                    if (el && valEl) {
+                        el.addEventListener('input', (e) => {
+                            const value = parseFloat(e.target.value);
+                            this[target][prop] = value;
+                            valEl.textContent = format(value);
+                            
+                            if (target === 'physics') {
+                                this.calculatePhysics();
+                            }
+                        });
+                        
+                        valEl.textContent = format(this[target][prop]);
+                    }
+                });
+                
+                // Checkbox controls
+                const checkboxes = [
+                    { id: 'ctrlJets', prop: 'showJets' },
+                    { id: 'ctrlDoppler', prop: 'showDoppler' },
+                    { id: 'ctrlGWaves', prop: 'showGWaves' },
+                    { id: 'ctrlStars', prop: 'showStars' },
+                    { id: 'ctrlTidal', prop: 'showTidal' },
+                    { id: 'ctrlBloom', prop: 'showBloom' }
+                ];
+                
+                checkboxes.forEach(({ id, prop }) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('change', (e) => {
+                            this.visual[prop] = e.target.checked;
+                        });
+                    }
+                });
+            }
+            
+            // ============================================================
+            // Update Loop
+            // ============================================================
+            
+            updateUniforms() {
+                // Event horizon
+                if (this.objects.eventHorizon) {
+                    const u = this.objects.eventHorizon.material.uniforms;
+                    u.time.value = this.time;
+                    u.mass.value = this.physics.mass;
+                    u.spin.value = this.physics.spin;
+                    u.coherence.value = this.crr.coherenceStrength;
+                    u.phase.value = this.crr.currentPhase === 'rupture' ? 1.0 : 
+                                    this.crr.currentPhase === 'regeneration' ? 1.5 : 0.0;
+                }
+                
+                // Ergosphere
+                if (this.objects.ergosphere) {
+                    this.objects.ergosphere.material.uniforms.time.value = this.time;
+                    this.objects.ergosphere.material.uniforms.spin.value = this.physics.spin;
+                }
+                
+                // Photon rings
+                if (this.objects.photonRings) {
+                    this.objects.photonRings.forEach(ring => {
+                        ring.material.uniforms.time.value = this.time;
+                        ring.material.uniforms.spin.value = this.physics.spin;
+                        ring.material.uniforms.lensing.value = this.visual.lensingStrength;
+                    });
+                }
+                
+                // Accretion disk
+                if (this.objects.accretionDisk) {
+                    const u = this.objects.accretionDisk.material.uniforms;
+                    u.time.value = this.time;
+                    u.mass.value = this.physics.mass;
+                    u.spin.value = this.physics.spin;
+                    u.accretion.value = this.physics.accretionRate;
+                    u.coherence.value = this.crr.coherenceStrength;
+                    u.showDoppler.value = this.visual.showDoppler ? 1.0 : 0.0;
+                    u.isco.value = this.physics.isco;
+                }
+                
+                // Particles
+                if (this.objects.particles) {
+                    const u = this.objects.particles.material.uniforms;
+                    u.time.value = this.time;
+                    u.mass.value = this.physics.mass;
+                    u.spin.value = this.physics.spin;
+                    u.coherence.value = this.crr.coherenceStrength;
+                    u.rupture.value = this.crr.currentPhase === 'rupture' ? 1.0 : 0.0;
+                }
+                
+                // Hawking radiation
+                if (this.objects.hawking) {
+                    this.objects.hawking.material.uniforms.time.value = this.time;
+                    this.objects.hawking.material.uniforms.hawking.value = this.visual.hawkingIntensity;
+                    this.objects.hawking.material.uniforms.regen.value = this.crr.regenFactor;
+                }
+                
+                // Jets
+                if (this.objects.jetTop && this.objects.jetBottom) {
+                    [this.objects.jetTop, this.objects.jetBottom].forEach(jet => {
+                        jet.material.uniforms.time.value = this.time;
+                        jet.material.uniforms.spin.value = this.physics.spin;
+                        jet.material.uniforms.accretion.value = this.physics.accretionRate;
+                        jet.visible = this.visual.showJets;
+                    });
+                }
+                
+                // Star field
+                if (this.objects.starField) {
+                    this.objects.starField.material.uniforms.time.value = this.time;
+                    this.objects.starField.material.uniforms.lensStrength.value = this.visual.lensingStrength;
+                    this.objects.starField.material.uniforms.showLensing.value = this.visual.showStars ? 1.0 : 0.0;
+                    this.objects.starField.visible = this.visual.showStars;
+                }
+                
+                // Lensing ring
+                if (this.objects.lensRing) {
+                    this.objects.lensRing.material.uniforms.time.value = this.time;
+                    this.objects.lensRing.material.uniforms.lensing.value = this.visual.lensingStrength;
+                    this.objects.lensRing.lookAt(this.camera.position);
+                }
+            }
+            
+            updateTimeDilation() {
+                // Time passes differently near the horizon
+                const dt = 0.016;
+                this.distantTime += dt;
+                
+                // Time dilation factor: sqrt(1 - Rs/r)
+                // Near horizon (r ≈ 1.1 Rs), time nearly stops
+                const dilationFactor = Math.sqrt(1 - 1/1.1) * (1 - this.physics.spin * 0.3);
+                this.horizonTime += dt * dilationFactor;
+                
+                // Format times
+                const formatTime = (t) => {
+                    const h = Math.floor(t / 3600) % 24;
+                    const m = Math.floor(t / 60) % 60;
+                    const s = Math.floor(t) % 60;
+                    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                };
+                
+                document.getElementById('timeDistant').textContent = formatTime(this.distantTime);
+                document.getElementById('timeHorizon').textContent = formatTime(this.horizonTime);
+            }
+            
+            updateMatterMetrics() {
+                // Count particle states
+                let stable = 0, infalling = 0, hawkingCount = 0;
+                
+                if (this.objects.particles) {
+                    const states = this.objects.particles.geometry.attributes.state.array;
+                    for (let i = 0; i < states.length; i++) {
+                        if (states[i] < 0.5) stable++;
+                        else if (states[i] < 1.5) {} // disrupted
+                        else infalling++;
+                    }
+                }
+                
+                hawkingCount = Math.floor(this.visual.hawkingIntensity * this.crr.regenFactor * 50);
+                
+                document.getElementById('metricStable').textContent = stable;
+                document.getElementById('metricInfalling').textContent = infalling;
+                document.getElementById('metricHawkingFlux').textContent = hawkingCount;
+                document.getElementById('metricJetPower').textContent = 
+                    `${Math.floor(this.physics.spin * this.physics.accretionRate * 20)}%`;
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                const dt = 0.016;
+                this.time += dt;
+                
+                // Core CRR update - drives everything
+                this.updateCRR(dt);
+                
+                // Update all shader uniforms
+                this.updateUniforms();
+                
+                // Update time dilation display
+                this.updateTimeDilation();
+                
+                // Update matter metrics
+                this.updateMatterMetrics();
+                
+                // Update audio
+                this.updateAudio();
+                
+                // Render
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+        
+        // ============================================================
+        // Presets
+        // ============================================================
+        
+        window.applyPreset = function(name) {
+            const presets = {
+                stellar: {
+                    ctrlMass: 10, ctrlSpin: 0.3, ctrlAccretion: 1.5,
+                    ctrlCoherence: 2.0, ctrlRupture: 0.01, ctrlRegen: 0.8, ctrlOmega: 1.0
+                },
+                supermassive: {
+                    ctrlMass: 80, ctrlSpin: 0.9, ctrlAccretion: 4.0,
+                    ctrlCoherence: 1.0, ctrlRupture: 0.005, ctrlRegen: 0.5, ctrlOmega: 2.0
+                },
+                extremal: {
+                    ctrlMass: 30, ctrlSpin: 0.998, ctrlAccretion: 3.0,
+                    ctrlCoherence: 0.5, ctrlRupture: 0.08, ctrlRegen: 1.5, ctrlOmega: 0.5
+                },
+                quiet: {
+                    ctrlMass: 5, ctrlSpin: 0.1, ctrlAccretion: 0.5,
+                    ctrlCoherence: 3.0, ctrlRupture: 0.002, ctrlRegen: 1.0, ctrlOmega: 2.5
+                },
+                active: {
+                    ctrlMass: 50, ctrlSpin: 0.85, ctrlAccretion: 5.0,
+                    ctrlCoherence: 1.5, ctrlRupture: 0.05, ctrlRegen: 1.2, ctrlOmega: 0.8
+                },
+                merger: {
+                    ctrlMass: 40, ctrlSpin: 0.7, ctrlAccretion: 2.5,
+                    ctrlCoherence: 0.8, ctrlRupture: 0.1, ctrlRegen: 2.0, ctrlOmega: 0.3
+                }
+            };
+            
+            const preset = presets[name];
+            if (!preset) return;
+            
+            Object.entries(preset).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = value;
+                    el.dispatchEvent(new Event('input'));
+                }
+            });
+        };
+        
+        // ============================================================
+        // Initialize
+        // ============================================================
+        
+        window.addEventListener('load', () => {
+            window.blackHole = new CRRBlackHoleEnhanced();
+        });
+    </script>
+</body>
+</html>
