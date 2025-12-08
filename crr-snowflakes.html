@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Snowflakes — Optimized</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #snowCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+
+        .header > * { pointer-events: auto; }
+
+        .title-block h1 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .title-block .subtitle {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: #666;
+        }
+
+        .omega-control {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .omega-label {
+            font-size: 1.1rem;
+            color: #1a1a2e;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .omega-symbol { font-size: 1.4rem; font-style: italic; }
+        .omega-value { font-size: 1rem; color: #4a6fa5; min-width: 50px; text-align: right; }
+
+        .omega-slider {
+            width: 220px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #8faabe, #4a6fa5, #2a3f5f);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .omega-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border: 2px solid #4a6fa5;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .omega-description {
+            font-size: 0.75rem;
+            color: #888;
+            font-style: italic;
+            max-width: 260px;
+            text-align: right;
+        }
+
+        .metrics-panel {
+            position: fixed;
+            bottom: 24px;
+            left: 40px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            padding: 20px 28px;
+            border: 1px solid rgba(74,111,165,0.2);
+            border-radius: 4px;
+            z-index: 100;
+        }
+
+        .metrics-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px 28px;
+        }
+
+        .metric { display: flex; flex-direction: column; gap: 2px; }
+        .metric-label { font-size: 0.7rem; color: #888; }
+        .metric-value { font-size: 1.1rem; color: #1a1a2e; font-style: italic; }
+        .metric-value .unit { font-size: 0.75rem; font-style: normal; color: #888; margin-left: 2px; }
+
+        .perf-panel {
+            position: fixed;
+            top: 100px;
+            left: 40px;
+            background: rgba(255,255,255,0.95);
+            padding: 16px 20px;
+            border: 1px solid rgba(74,111,165,0.2);
+            border-radius: 4px;
+            z-index: 100;
+        }
+
+        .perf-panel h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #888;
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+
+        .perf-row {
+            font-size: 0.75rem;
+            color: #555;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .perf-row .val { color: #4a6fa5; font-style: italic; }
+    </style>
+</head>
+<body>
+    <canvas id="snowCanvas"></canvas>
+
+    <div class="header">
+        <div class="title-block">
+            <h1>CRR Snowflakes</h1>
+            <div class="subtitle">Optimized — Ω governs boundary permeability</div>
+        </div>
+
+        <div class="omega-control">
+            <div class="omega-label">
+                <span class="omega-symbol">Ω</span>
+                <span>=</span>
+                <span class="omega-value" id="omegaDisplay">0.50</span>
+            </div>
+            <input type="range" class="omega-slider" id="omegaSlider" 
+                   min="0.1" max="2.0" step="0.01" value="0.5">
+            <div class="omega-description" id="omegaDesc">Moderate permeability</div>
+        </div>
+    </div>
+
+    <div class="perf-panel">
+        <h3>Performance</h3>
+        <div class="perf-row">
+            <span>FPS</span>
+            <span class="val" id="fps">0</span>
+        </div>
+        <div class="perf-row">
+            <span>Update (ms)</span>
+            <span class="val" id="updateTime">0.0</span>
+        </div>
+        <div class="perf-row">
+            <span>Draw (ms)</span>
+            <span class="val" id="drawTime">0.0</span>
+        </div>
+        <div class="perf-row">
+            <span>Flakes</span>
+            <span class="val" id="flakeCount">0</span>
+        </div>
+    </div>
+
+    <div class="metrics-panel">
+        <div class="metrics-title">CRR State</div>
+        <div class="metrics-grid">
+            <div class="metric">
+                <span class="metric-label">Total Born</span>
+                <span class="metric-value" id="totalFlakes">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Mean C</span>
+                <span class="metric-value" id="meanC">0.00</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Ruptures</span>
+                <span class="metric-value" id="ruptures">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Transforms</span>
+                <span class="metric-value" id="transforms">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('snowCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let omega = 0.5;
+        let totalCreated = 0;
+        let totalRuptures = 0;
+        let totalTransforms = 0;
+
+        // =============================================
+        // OPTIMIZATION 1: Pre-computed trig tables
+        // =============================================
+        const TRIG_RES = 1024;
+        const SIN_TABLE = new Float32Array(TRIG_RES);
+        const COS_TABLE = new Float32Array(TRIG_RES);
+        const TWO_PI = Math.PI * 2;
+        
+        for (let i = 0; i < TRIG_RES; i++) {
+            const angle = (i / TRIG_RES) * TWO_PI;
+            SIN_TABLE[i] = Math.sin(angle);
+            COS_TABLE[i] = Math.cos(angle);
+        }
+        
+        function fastSin(x) {
+            const idx = ((x % TWO_PI + TWO_PI) % TWO_PI) / TWO_PI * TRIG_RES | 0;
+            return SIN_TABLE[idx];
+        }
+        
+        function fastCos(x) {
+            const idx = ((x % TWO_PI + TWO_PI) % TWO_PI) / TWO_PI * TRIG_RES | 0;
+            return COS_TABLE[idx];
+        }
+
+        // =============================================
+        // OPTIMIZATION 2: Object pool for snowflakes
+        // =============================================
+        const MAX_FLAKES = 150;
+        const flakePool = [];
+        const activeFlakes = [];
+        
+        function getFlake() {
+            return flakePool.pop() || new CRRSnowflake();
+        }
+        
+        function releaseFlake(flake) {
+            if (flakePool.length < MAX_FLAKES) {
+                flakePool.push(flake);
+            }
+        }
+
+        // =============================================
+        // OPTIMIZATION 3: Global liveliness field
+        // Updated once per frame, sampled by flakes
+        // =============================================
+        let globalTime = 0;
+        let fieldParams = { t1: 0, t2: 0, t3: 0, t4: 0 };
+        
+        function updateLivelinessField(t) {
+            globalTime = t * 0.001;
+            fieldParams.t1 = fastSin(globalTime * 0.3);
+            fieldParams.t2 = fastCos(globalTime * 0.2);
+            fieldParams.t3 = fastSin(globalTime * 0.7);
+            fieldParams.t4 = fastSin(globalTime * 2.1);
+        }
+        
+        function sampleLiveliness(x, y, id) {
+            const sx = fastSin(x * 0.01 + fieldParams.t1) * 0.3;
+            const sy = fastCos(y * 0.008 + fieldParams.t2) * 0.25;
+            const temporal = fieldParams.t3 * fastSin(id * 20) * 0.2;
+            const turb = fieldParams.t4 * fastCos(y * 0.015 + x * 0.02) * 0.15;
+            
+            const L = 0.5 + sx + sy + temporal + turb;
+            return L < 0 ? 0 : (L > 1 ? 1 : L);
+        }
+
+        // =============================================
+        // OPTIMIZED CRR SNOWFLAKE
+        // =============================================
+        class CRRSnowflake {
+            constructor() {
+                // Pre-allocate all arrays and objects
+                this.armLengths = new Float32Array(6);
+                this.armExpressed = new Float32Array(6);
+                
+                // Branch data: 6 arms × 6 max branches × 4 values (pos, len, angle, phase)
+                this.branchData = new Float32Array(6 * 6 * 4);
+                this.branchCounts = new Uint8Array(6);
+                this.branchExpressed = new Float32Array(6 * 6 * 4); // pos, len, angle, subBranches
+                
+                // Ring buffer for history (fixed size, no allocation)
+                this.historySize = 32;
+                this.historyL = new Float32Array(this.historySize);
+                this.historyIdx = 0;
+                this.historySum = 0;
+                
+                // State
+                this.x = 0;
+                this.y = 0;
+                this.C = 0;
+                this.omega = 0.5;
+                this.id = 0;
+                this.baseSize = 0;
+                this.hue = 0;
+                this.rotationBias = 0;
+                this.rotation = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.opacity = 0;
+                this.active = false;
+                this.lastTransformC = 0;
+                this.frameSkip = 0;
+            }
+            
+            init(x, y, omega) {
+                this.x = x;
+                this.y = y;
+                this.omega = omega;
+                this.id = Math.random();
+                this.baseSize = 12 + Math.random() * 16;
+                this.hue = 200 + Math.random() * 40;
+                this.rotationBias = (Math.random() - 0.5) * 0.015;
+                this.rotation = Math.random() * TWO_PI;
+                this.vx = (Math.random() - 0.5) * 0.15;
+                this.vy = 0.35 + Math.random() * 0.35;
+                this.opacity = 0;
+                this.C = 0;
+                this.lastTransformC = 0;
+                this.historyIdx = 0;
+                this.historySum = 0;
+                this.active = true;
+                
+                // How often to update form (low Ω = rarely, high Ω = every frame)
+                this.frameSkip = Math.max(1, Math.floor(6 - omega * 4));
+                
+                // Initialize arms
+                for (let i = 0; i < 6; i++) {
+                    this.armLengths[i] = 0.6 + Math.random() * 0.4;
+                    this.armExpressed[i] = this.armLengths[i];
+                    
+                    const numBranches = 2 + (Math.random() * 4) | 0;
+                    this.branchCounts[i] = numBranches;
+                    
+                    for (let j = 0; j < numBranches; j++) {
+                        const idx = (i * 6 + j) * 4;
+                        this.branchData[idx] = 0.15 + Math.random() * 0.7;     // pos
+                        this.branchData[idx + 1] = 0.15 + Math.random() * 0.3; // len
+                        this.branchData[idx + 2] = 0.35 + Math.random() * 0.45; // angle
+                        this.branchData[idx + 3] = Math.random() * TWO_PI;      // phase
+                        
+                        // Copy to expressed
+                        this.branchExpressed[idx] = this.branchData[idx];
+                        this.branchExpressed[idx + 1] = this.branchData[idx + 1];
+                        this.branchExpressed[idx + 2] = this.branchData[idx + 2];
+                        this.branchExpressed[idx + 3] = 0; // subBranches
+                    }
+                }
+                
+                // Sort branches by position (simple bubble sort, small N)
+                for (let i = 0; i < 6; i++) {
+                    const n = this.branchCounts[i];
+                    for (let j = 0; j < n - 1; j++) {
+                        for (let k = 0; k < n - j - 1; k++) {
+                            const idx1 = (i * 6 + k) * 4;
+                            const idx2 = (i * 6 + k + 1) * 4;
+                            if (this.branchData[idx1] > this.branchData[idx2]) {
+                                // Swap
+                                for (let m = 0; m < 4; m++) {
+                                    const tmp = this.branchData[idx1 + m];
+                                    this.branchData[idx1 + m] = this.branchData[idx2 + m];
+                                    this.branchData[idx2 + m] = tmp;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            update(dt, frameCount) {
+                // Sample liveliness from global field
+                const L = sampleLiveliness(this.x, this.y, this.id);
+                
+                // Ring buffer update (no allocation)
+                this.historySum -= this.historyL[this.historyIdx];
+                this.historyL[this.historyIdx] = L;
+                this.historySum += L;
+                this.historyIdx = (this.historyIdx + 1) % this.historySize;
+                
+                // Coherence integration
+                const envContrib = L * dt * this.omega;
+                this.C = this.C * 0.999 + envContrib;
+                
+                // Update expressed form (skip frames at low Ω)
+                if (frameCount % this.frameSkip === 0) {
+                    this.updateExpressedForm();
+                }
+                
+                // Transformation check (high Ω only)
+                if (this.omega > 0.5) {
+                    const threshold = 0.3 / this.omega;
+                    if (this.C - this.lastTransformC > threshold) {
+                        this.transform();
+                        this.lastTransformC = this.C;
+                    }
+                }
+                
+                // Physics
+                if (this.opacity < 0.85) this.opacity += 0.02;
+                
+                const wind = fastSin(globalTime * 0.6 + this.id * 50) * 0.1 * (0.5 + this.omega * 0.5);
+                this.x += this.vx + wind;
+                this.y += this.vy;
+                this.rotation += this.rotationBias * (1 + this.omega * 0.3);
+                
+                // Wrap
+                if (this.x < -30) this.x = width + 30;
+                if (this.x > width + 30) this.x = -30;
+                
+                // Rupture
+                if (this.y > height + 30) {
+                    this.active = false;
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            updateExpressedForm() {
+                const p = this.omega;
+                const modStrength = p * 0.5;
+                
+                // Historical modulation (high Ω only)
+                let histMod = 0;
+                if (p > 0.7) {
+                    const avgL = this.historySum / this.historySize;
+                    histMod = (avgL - 0.5) * p * 0.3;
+                }
+                
+                const envMod = fastSin(this.C * 2) * modStrength;
+                const C3 = this.C * 3;
+                const C2 = this.C * 2;
+                const C15 = this.C * 1.5;
+                
+                // Update arms
+                for (let i = 0; i < 6; i++) {
+                    const armMod = fastSin(C3 + i) * modStrength * 0.2;
+                    this.armExpressed[i] = this.armLengths[i] * (1 + armMod);
+                    
+                    // Update branches
+                    const n = this.branchCounts[i];
+                    for (let j = 0; j < n; j++) {
+                        const srcIdx = (i * 6 + j) * 4;
+                        const phase = this.branchData[srcIdx + 3];
+                        
+                        const branchMod = fastSin(C2 + phase) * modStrength;
+                        const angleMod = fastCos(C15 + phase + histMod) * modStrength * 0.5;
+                        
+                        this.branchExpressed[srcIdx] = this.branchData[srcIdx] + branchMod * 0.1;
+                        this.branchExpressed[srcIdx + 1] = this.branchData[srcIdx + 1] * (1 + branchMod * 0.3);
+                        this.branchExpressed[srcIdx + 2] = this.branchData[srcIdx + 2] + angleMod * 0.3;
+                        
+                        // Sub-branches at high Ω
+                        if (p > 0.8 && this.C > 0.5) {
+                            const sub = ((p - 0.8) * 5 * (1 + fastSin(this.C + phase))) | 0;
+                            this.branchExpressed[srcIdx + 3] = sub < 0 ? 0 : (sub > 3 ? 3 : sub);
+                        } else {
+                            this.branchExpressed[srcIdx + 3] = 0;
+                        }
+                    }
+                }
+            }
+            
+            transform() {
+                const idx = (Math.random() * 6) | 0;
+                const n = this.branchCounts[idx];
+                if (n === 0) return;
+                
+                const bIdx = (Math.random() * n) | 0;
+                const dataIdx = (idx * 6 + bIdx) * 4;
+                
+                if (Math.random() < this.omega * 0.5) {
+                    this.branchData[dataIdx + 3] += Math.PI * 0.3 * (Math.random() - 0.5);
+                    this.branchData[dataIdx + 1] *= 0.85 + Math.random() * 0.3;
+                }
+                
+                if (Math.random() < this.omega * 0.3) {
+                    if (n < 6 && Math.random() > 0.5) {
+                        const newIdx = (idx * 6 + n) * 4;
+                        this.branchData[newIdx] = 0.2 + Math.random() * 0.6;
+                        this.branchData[newIdx + 1] = 0.15 + Math.random() * 0.25;
+                        this.branchData[newIdx + 2] = 0.35 + Math.random() * 0.4;
+                        this.branchData[newIdx + 3] = Math.random() * TWO_PI;
+                        this.branchCounts[idx]++;
+                    } else if (n > 1) {
+                        this.branchCounts[idx]--;
+                    }
+                }
+                
+                totalTransforms++;
+            }
+            
+            draw(ctx) {
+                const size = this.baseSize * (1 + fastSin(this.C * 2) * this.omega * 0.15);
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.opacity;
+                
+                // Color
+                const sat = 12 + (1 - this.omega) * 15;
+                const light = 50 + this.omega * 15;
+                ctx.strokeStyle = `hsl(${this.hue + this.C * 5},${sat}%,${light}%)`;
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.lineWidth = 0.4 + size * 0.015 + this.omega * 0.3;
+                ctx.lineCap = 'round';
+                
+                // Draw arms
+                const angleStep = TWO_PI / 6;
+                for (let i = 0; i < 6; i++) {
+                    const angle = angleStep * i;
+                    const cosA = fastCos(angle);
+                    const sinA = fastSin(angle);
+                    const armLen = size * this.armExpressed[i];
+                    
+                    // Main arm
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(cosA * armLen, sinA * armLen);
+                    ctx.stroke();
+                    
+                    // Branches
+                    const n = this.branchCounts[i];
+                    for (let j = 0; j < n; j++) {
+                        const idx = (i * 6 + j) * 4;
+                        let pos = this.branchExpressed[idx];
+                        pos = pos < 0.1 ? 0.1 : (pos > 0.9 ? 0.9 : pos);
+                        
+                        const bLen = armLen * this.branchExpressed[idx + 1];
+                        let bAngle = this.branchExpressed[idx + 2];
+                        bAngle = bAngle < 0.2 ? 0.2 : (bAngle > 0.85 ? 0.85 : bAngle);
+                        
+                        const bx = cosA * armLen * pos;
+                        const by = sinA * armLen * pos;
+                        
+                        // Rotate branch angle relative to arm
+                        const cosB = fastCos(bAngle);
+                        const sinB = fastSin(bAngle);
+                        
+                        // Upper branch (perpendicular to arm, then rotated)
+                        const ux = cosA * cosB - (-sinA) * sinB;
+                        const uy = sinA * cosB + cosA * sinB;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(bx + ux * bLen, by + uy * bLen);
+                        ctx.stroke();
+                        
+                        // Lower branch (mirror)
+                        const lx = cosA * cosB - sinA * sinB;
+                        const ly = sinA * cosB + (-cosA) * sinB;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(bx + lx * bLen, by - uy * bLen);
+                        ctx.stroke();
+                        
+                        // Sub-branches
+                        const subCount = this.branchExpressed[idx + 3] | 0;
+                        if (subCount > 0) {
+                            const subLen = bLen * 0.3;
+                            for (let s = 0; s < subCount; s++) {
+                                const subPos = 0.45 + s * 0.22;
+                                const sbx = bx + ux * bLen * subPos;
+                                const sby = by + uy * bLen * subPos;
+                                
+                                ctx.beginPath();
+                                ctx.moveTo(sbx, sby);
+                                ctx.lineTo(sbx + subLen * 0.5, sby - subLen * 0.45);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+                
+                // Center dot
+                ctx.beginPath();
+                ctx.arc(0, 0, size * 0.03, 0, TWO_PI);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // =============================================
+        // SIMULATION
+        // =============================================
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Omega control
+        const omegaSlider = document.getElementById('omegaSlider');
+        const omegaDisplay = document.getElementById('omegaDisplay');
+        const omegaDesc = document.getElementById('omegaDesc');
+
+        omegaSlider.addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+            omegaDisplay.textContent = omega.toFixed(2);
+            
+            if (omega < 0.3) omegaDesc.textContent = "Rigid blanket — crystalline lock";
+            else if (omega < 0.6) omegaDesc.textContent = "Moderate permeability";
+            else if (omega < 1.0) omegaDesc.textContent = "Porous — fluid transformation";
+            else if (omega < 1.5) omegaDesc.textContent = "Highly porous — organic flow";
+            else omegaDesc.textContent = "Liquid boundaries — constant becoming";
+        });
+
+        function spawnSnowflake() {
+            const flake = getFlake();
+            flake.init(Math.random() * width, -25, omega);
+            activeFlakes.push(flake);
+            totalCreated++;
+        }
+
+        // Performance tracking
+        let fpsFrames = 0;
+        let fpsTime = 0;
+        let lastFps = 0;
+
+        function updateMetrics(updateMs, drawMs) {
+            document.getElementById('flakeCount').textContent = activeFlakes.length;
+            document.getElementById('totalFlakes').textContent = totalCreated;
+            document.getElementById('ruptures').textContent = totalRuptures;
+            document.getElementById('transforms').textContent = totalTransforms;
+            document.getElementById('fps').textContent = lastFps;
+            document.getElementById('updateTime').textContent = updateMs.toFixed(1);
+            document.getElementById('drawTime').textContent = drawMs.toFixed(1);
+            
+            if (activeFlakes.length > 0) {
+                let sumC = 0;
+                for (let i = 0; i < activeFlakes.length; i++) {
+                    sumC += activeFlakes[i].C;
+                }
+                document.getElementById('meanC').textContent = (sumC / activeFlakes.length).toFixed(2);
+            }
+        }
+
+        let lastTime = performance.now();
+        let lastSpawn = 0;
+        let frameCount = 0;
+        const spawnInterval = 180;
+
+        function animate(timestamp) {
+            const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+            lastTime = timestamp;
+            frameCount++;
+            
+            // FPS counter
+            fpsFrames++;
+            if (timestamp - fpsTime >= 1000) {
+                lastFps = fpsFrames;
+                fpsFrames = 0;
+                fpsTime = timestamp;
+            }
+            
+            // Update global liveliness field (once per frame)
+            updateLivelinessField(timestamp);
+            
+            // Clear
+            ctx.fillStyle = 'rgba(255,255,255,0.22)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Spawn
+            if (timestamp - lastSpawn > spawnInterval && activeFlakes.length < MAX_FLAKES) {
+                spawnSnowflake();
+                lastSpawn = timestamp;
+            }
+            
+            // Update
+            const updateStart = performance.now();
+            let writeIdx = 0;
+            for (let i = 0; i < activeFlakes.length; i++) {
+                const flake = activeFlakes[i];
+                if (flake.update(dt, frameCount)) {
+                    activeFlakes[writeIdx++] = flake;
+                } else {
+                    releaseFlake(flake);
+                    totalRuptures++;
+                }
+            }
+            activeFlakes.length = writeIdx;
+            const updateEnd = performance.now();
+            
+            // Draw
+            const drawStart = performance.now();
+            for (let i = 0; i < activeFlakes.length; i++) {
+                activeFlakes[i].draw(ctx);
+            }
+            const drawEnd = performance.now();
+            
+            // Metrics (every 30 frames)
+            if (frameCount % 30 === 0) {
+                updateMetrics(updateEnd - updateStart, drawEnd - drawStart);
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Three-Phase Visualiser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white: #FAFAFA;
+            --paper: #F5F3EF;
+            --ink: #1A1A1A;
+            --ink-light: #4A4A4A;
+            --ink-faint: #8A8A8A;
+            --coherence: #2D5A4A;
+            --rupture: #8B3A3A;
+            --regeneration: #4A5A8B;
+            --accent: #C4A35A;
+            --grid: rgba(26, 26, 26, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+            background: var(--white);
+            color: var(--ink);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--grid);
+        }
+
+        .chapter-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: var(--ink-light);
+            font-size: 1.1rem;
+        }
+
+        .equation-panel {
+            background: var(--paper);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            padding: 2rem 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .equation-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .equation-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            font-size: 1.3rem;
+        }
+
+        .eq-segment {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.4s ease;
+            opacity: 0.4;
+        }
+
+        .eq-segment.active {
+            opacity: 1;
+        }
+
+        .eq-segment.coherence.active {
+            background: rgba(45, 90, 74, 0.1);
+        }
+
+        .eq-segment.rupture.active {
+            background: rgba(139, 58, 58, 0.1);
+        }
+
+        .eq-segment.regeneration.active {
+            background: rgba(74, 90, 139, 0.1);
+        }
+
+        .eq-coherence { color: var(--coherence); }
+        .eq-rupture { color: var(--rupture); }
+        .eq-regeneration { color: var(--regeneration); }
+
+        .visualisation-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .visualisation-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-wrapper {
+            background: var(--paper);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: 450px;
+            background: var(--white);
+        }
+
+        .phase-indicator {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: var(--white);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+        }
+
+        .phase-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ink-faint);
+            transition: all 0.3s ease;
+        }
+
+        .phase-dot.active {
+            transform: scale(1.5);
+        }
+
+        .phase-dot.coherence.active { background: var(--coherence); }
+        .phase-dot.rupture.active { background: var(--rupture); }
+        .phase-dot.regeneration.active { background: var(--regeneration); }
+
+        .phase-name {
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            min-width: 100px;
+        }
+
+        .controls-panel {
+            background: var(--paper);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            padding: 1.5rem;
+        }
+
+        .control-section {
+            margin-bottom: 2rem;
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .omega-display {
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .omega-symbol {
+            font-size: 3rem;
+            font-weight: 500;
+            color: var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .omega-value {
+            font-size: 2.5rem;
+            color: var(--ink);
+            transition: all 0.3s ease;
+        }
+
+        .omega-state {
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .omega-state.rigid {
+            background: rgba(139, 58, 58, 0.15);
+            color: var(--rupture);
+        }
+
+        .omega-state.balanced {
+            background: rgba(196, 163, 90, 0.2);
+            color: var(--ink);
+        }
+
+        .omega-state.liquid {
+            background: rgba(74, 90, 139, 0.15);
+            color: var(--regeneration);
+        }
+
+        .omega-desc {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--ink-light);
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .slider-container {
+            position: relative;
+            margin: 1.5rem 0;
+            padding: 0 0.5rem;
+        }
+
+        .slider-track-bg {
+            height: 8px;
+            background: linear-gradient(90deg, 
+                rgba(139, 58, 58, 0.3) 0%, 
+                rgba(196, 163, 90, 0.3) 50%, 
+                rgba(74, 90, 139, 0.3) 100%);
+            border-radius: 4px;
+            position: absolute;
+            top: 50%;
+            left: 0.5rem;
+            right: 0.5rem;
+            transform: translateY(-50%);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .slider-labels span:first-child { color: var(--rupture); }
+        .slider-labels span:last-child { color: var(--regeneration); }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 32px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+            border: 3px solid var(--white);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            background: transparent;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            background: transparent;
+        }
+
+        .omega-effects {
+            background: var(--white);
+            border: 1px solid rgba(26, 26, 26, 0.08);
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .omega-effects-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--ink-faint);
+            margin-bottom: 0.75rem;
+        }
+
+        .effect-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(26, 26, 26, 0.05);
+        }
+
+        .effect-row:last-child {
+            border-bottom: none;
+        }
+
+        .effect-label {
+            color: var(--ink-light);
+        }
+
+        .effect-value {
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .metric {
+            background: var(--white);
+            padding: 0.75rem;
+            border: 1px solid rgba(26, 26, 26, 0.08);
+        }
+
+        .metric-label {
+            font-size: 0.6rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 0.15rem;
+        }
+
+        .metric-value {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .metric-value.coherence { color: var(--coherence); }
+        .metric-value.rupture { color: var(--rupture); }
+        .metric-value.regeneration { color: var(--regeneration); }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: var(--white);
+            border: 1px solid rgba(26, 26, 26, 0.15);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--ink);
+            color: var(--white);
+            border-color: var(--ink);
+        }
+
+        button.primary {
+            background: var(--ink);
+            color: var(--white);
+            border-color: var(--ink);
+        }
+
+        button.primary:hover {
+            background: var(--ink-light);
+        }
+
+        .warning-panel {
+            background: var(--paper);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .warning-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+            margin-bottom: 1rem;
+        }
+
+        .warning-indicators {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .warning-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .warning-bar-container {
+            flex: 1;
+            height: 4px;
+            background: rgba(26, 26, 26, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .warning-bar {
+            height: 100%;
+            background: var(--ink-faint);
+            transition: all 0.3s ease;
+        }
+
+        .warning-bar.elevated {
+            background: var(--rupture);
+        }
+
+        .warning-label {
+            font-size: 0.8rem;
+            color: var(--ink-light);
+            min-width: 120px;
+        }
+
+        .warning-value {
+            font-size: 0.85rem;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .explanation {
+            background: var(--paper);
+            border: 1px solid rgba(26, 26, 26, 0.1);
+            padding: 1.5rem 2rem;
+            position: relative;
+        }
+
+        .explanation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            transition: background 0.4s ease;
+        }
+
+        .explanation.coherence::before { background: var(--coherence); }
+        .explanation.rupture::before { background: var(--rupture); }
+        .explanation.regeneration::before { background: var(--regeneration); }
+
+        .explanation-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .explanation-text {
+            font-size: 0.95rem;
+            color: var(--ink-light);
+            line-height: 1.7;
+        }
+
+        .explanation-equation {
+            font-style: italic;
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--white);
+            display: inline-block;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--ink-faint);
+            font-style: italic;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--grid);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulsing {
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="chapter-label">Chapter One · Interactive Companion</div>
+            <h1>The Three-Phase Visualiser</h1>
+            <p class="subtitle">Coherence, Rupture, and Regeneration in real time</p>
+        </header>
+
+        <div class="equation-panel">
+            <div class="equation-row">
+                <div class="eq-segment coherence" id="eq-coherence">
+                    <span class="eq-coherence">C(x,t) = ∫ L(x,τ) dτ</span>
+                </div>
+                <span style="color: var(--ink-faint);">→</span>
+                <div class="eq-segment rupture" id="eq-rupture">
+                    <span class="eq-rupture">δ(now)</span>
+                </div>
+                <span style="color: var(--ink-faint);">→</span>
+                <div class="eq-segment regeneration" id="eq-regeneration">
+                    <span class="eq-regeneration">R = ∫ φ(x,τ) · e<sup>C/Ω</sup> · Θ(…) dτ</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualisation-grid">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas"></canvas>
+                <div class="phase-indicator">
+                    <div class="phase-dot coherence" id="dot-coherence"></div>
+                    <div class="phase-dot rupture" id="dot-rupture"></div>
+                    <div class="phase-dot regeneration" id="dot-regeneration"></div>
+                    <span class="phase-name" id="phase-name">Coherence</span>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-section">
+                    <span class="control-label">Omega Modulator — Boundary Permeability</span>
+                    <div class="omega-display">
+                        <span class="omega-symbol">Ω</span>
+                        <span class="omega-value" id="omega-display">= 0.50</span>
+                    </div>
+                    <div class="omega-state balanced" id="omega-state">Balanced</div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-track-bg"></div>
+                        <input type="range" id="omega-slider" min="0.1" max="1.0" step="0.01" value="0.5">
+                    </div>
+                    <div class="slider-labels">
+                        <span>Rigid · Crystalline</span>
+                        <span>Liquid · Porous</span>
+                    </div>
+                    
+                    <p class="omega-desc" id="omega-desc">Balanced integration — moderate access to historical field</p>
+
+                    <div class="omega-effects">
+                        <div class="omega-effects-title">Current Ω Effects</div>
+                        <div class="effect-row">
+                            <span class="effect-label">Particle count</span>
+                            <span class="effect-value" id="effect-particles">60</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="effect-label">Connection range</span>
+                            <span class="effect-value" id="effect-connections">Medium</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="effect-label">Coherence rate</span>
+                            <span class="effect-value" id="effect-rate">1.0×</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="effect-label">Rupture intensity</span>
+                            <span class="effect-value" id="effect-rupture">Moderate</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="effect-label">Memory depth</span>
+                            <span class="effect-value" id="effect-memory">Selective</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="effect-label">Trail persistence</span>
+                            <span class="effect-value" id="effect-trail">Fading</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <span class="control-label">Live Metrics</span>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-label">Coherence</div>
+                            <div class="metric-value coherence" id="metric-coherence">0.00</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Tension</div>
+                            <div class="metric-value rupture" id="metric-tension">0.00</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Regeneration</div>
+                            <div class="metric-value regeneration" id="metric-regeneration">0.00</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Cycle</div>
+                            <div class="metric-value" id="metric-cycle">1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <span class="control-label">Controls</span>
+                    <div class="button-group">
+                        <button id="btn-reset">Reset</button>
+                        <button id="btn-pause" class="primary">Pause</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-panel">
+            <div class="warning-title">Early Warning Signals (Scheffer) — Approaching Rupture</div>
+            <div class="warning-indicators">
+                <div class="warning-item">
+                    <span class="warning-label">Autocorrelation</span>
+                    <div class="warning-bar-container">
+                        <div class="warning-bar" id="warning-autocorr" style="width: 10%"></div>
+                    </div>
+                    <span class="warning-value" id="warning-autocorr-val">0.10</span>
+                </div>
+                <div class="warning-item">
+                    <span class="warning-label">Variance</span>
+                    <div class="warning-bar-container">
+                        <div class="warning-bar" id="warning-variance" style="width: 10%"></div>
+                    </div>
+                    <span class="warning-value" id="warning-variance-val">0.10</span>
+                </div>
+                <div class="warning-item">
+                    <span class="warning-label">Recovery Time</span>
+                    <div class="warning-bar-container">
+                        <div class="warning-bar" id="warning-recovery" style="width: 10%"></div>
+                    </div>
+                    <span class="warning-value" id="warning-recovery-val">0.10</span>
+                </div>
+                <div class="warning-item">
+                    <span class="warning-label">Flickering</span>
+                    <div class="warning-bar-container">
+                        <div class="warning-bar" id="warning-flicker" style="width: 0%"></div>
+                    </div>
+                    <span class="warning-value" id="warning-flicker-val">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation coherence" id="explanation">
+            <div class="explanation-title" id="explanation-title">Phase I: Coherence Accumulation</div>
+            <p class="explanation-text" id="explanation-text">
+                The system accumulates its history as constraint. Each moment adds to the coherence integral, 
+                deepening commitment to particular patterns. Like Bergson's durée, the system <em>is</em> its 
+                accumulated past—not merely having a history, but being that history carried forward.
+            </p>
+            <div class="explanation-equation" id="explanation-eq">C(x,t) = ∫ L(x,τ) dτ</div>
+        </div>
+
+        <p class="footer-note">
+            Drag the Ω slider to experience how boundary permeability shapes transformation.<br>
+            Low Ω: rigid crystalline structure, few particles, sharp ruptures, shallow memory.<br>
+            High Ω: liquid porous field, many particles, gentle dispersal, deep historical access.
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function setupCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+        }
+
+        const colors = {
+            coherence: '#2D5A4A',
+            coherenceRGB: '45, 90, 74',
+            rupture: '#8B3A3A',
+            ruptureRGB: '139, 58, 58',
+            regeneration: '#4A5A8B',
+            regenerationRGB: '74, 90, 139',
+            accent: '#C4A35A',
+            ink: '#1A1A1A',
+            inkLight: '#4A4A4A',
+            inkFaint: '#8A8A8A'
+        };
+
+        let state = {
+            omega: 0.5,
+            coherence: 0,
+            tension: 0,
+            regeneration: 0,
+            phase: 'coherence',
+            time: 0,
+            cycle: 1,
+            paused: false,
+            history: [],
+            particles: [],
+            trails: [],
+            ruptureTrigger: 0.85,
+            regenerationComplete: 0.15
+        };
+
+        let historicalField = [];
+
+        // Omega-dependent particle count
+        function getParticleCount() {
+            // Low omega = few rigid particles (20-40)
+            // High omega = many fluid particles (80-120)
+            return Math.floor(20 + state.omega * 100);
+        }
+
+        // Omega-dependent connection distance
+        function getConnectionDistance() {
+            // Low omega = short connections (tight clusters)
+            // High omega = long connections (diffuse field)
+            return 30 + state.omega * 80;
+        }
+
+        // Omega-dependent trail length
+        function getTrailLength() {
+            // Low omega = no trails (no memory)
+            // High omega = long trails (deep memory)
+            return Math.floor(state.omega * 25);
+        }
+
+        function initParticles() {
+            const count = getParticleCount();
+            state.particles = [];
+            state.trails = [];
+            const rect = canvas.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                // Low omega = tight initial radius, high omega = spread out
+                const baseRadius = 60 + state.omega * 60;
+                const radius = baseRadius + Math.random() * 40;
+                state.particles.push({
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    vx: 0,
+                    vy: 0,
+                    phase: Math.random() * Math.PI * 2,
+                    size: 2 + Math.random() * 2
+                });
+                state.trails.push([]);
+            }
+        }
+
+        function updateOmegaDisplay() {
+            document.getElementById('omega-display').textContent = `= ${state.omega.toFixed(2)}`;
+            
+            const stateEl = document.getElementById('omega-state');
+            let stateText, stateClass, desc;
+            
+            if (state.omega < 0.35) {
+                stateText = 'Rigid · Crystalline';
+                stateClass = 'rigid';
+                desc = 'Thick Markov blanket — shallow temporal integration — only peak moments echo into regeneration. The system is locked to its strongest attractor.';
+            } else if (state.omega < 0.65) {
+                stateText = 'Balanced';
+                stateClass = 'balanced';
+                desc = 'Moderate boundary permeability — selective access to the historical field. The system balances stability with adaptability.';
+            } else {
+                stateText = 'Liquid · Porous';
+                stateClass = 'liquid';
+                desc = 'Thin Markov blanket — deep non-Markovian access — the full historical field is available. High inter-agent resonance. Approaching non-dual awareness.';
+            }
+            
+            stateEl.textContent = stateText;
+            stateEl.className = 'omega-state ' + stateClass;
+            document.getElementById('omega-desc').textContent = desc;
+
+            // Update effects display
+            const particleCount = getParticleCount();
+            document.getElementById('effect-particles').textContent = particleCount;
+            
+            if (state.omega < 0.35) {
+                document.getElementById('effect-connections').textContent = 'Tight';
+                document.getElementById('effect-rate').textContent = '0.6×';
+                document.getElementById('effect-rupture').textContent = 'Explosive';
+                document.getElementById('effect-memory').textContent = 'Shallow';
+                document.getElementById('effect-trail').textContent = 'None';
+            } else if (state.omega < 0.65) {
+                document.getElementById('effect-connections').textContent = 'Medium';
+                document.getElementById('effect-rate').textContent = '1.0×';
+                document.getElementById('effect-rupture').textContent = 'Moderate';
+                document.getElementById('effect-memory').textContent = 'Selective';
+                document.getElementById('effect-trail').textContent = 'Fading';
+            } else {
+                document.getElementById('effect-connections').textContent = 'Expansive';
+                document.getElementById('effect-rate').textContent = '1.5×';
+                document.getElementById('effect-rupture').textContent = 'Gentle diffusion';
+                document.getElementById('effect-memory').textContent = 'Full field';
+                document.getElementById('effect-trail').textContent = 'Persistent';
+            }
+        }
+
+        function updateMetrics() {
+            document.getElementById('metric-coherence').textContent = state.coherence.toFixed(2);
+            document.getElementById('metric-tension').textContent = state.tension.toFixed(2);
+            document.getElementById('metric-regeneration').textContent = state.regeneration.toFixed(2);
+            document.getElementById('metric-cycle').textContent = state.cycle;
+        }
+
+        function updateWarnings() {
+            const approachFactor = state.phase === 'coherence' ? state.tension : 0;
+            
+            // Low omega = sharper warning signals (more abrupt transition)
+            const sharpness = 1.5 - state.omega;
+            
+            const autocorr = Math.min(0.1 + approachFactor * 0.85 * sharpness, 0.95);
+            const variance = Math.min(0.1 + approachFactor * 0.7 * sharpness + Math.random() * 0.1 * approachFactor, 0.9);
+            const recovery = Math.min(0.1 + approachFactor * 0.8 * sharpness, 0.9);
+            const flicker = approachFactor > 0.6 ? (approachFactor - 0.6) * 2.5 * sharpness : 0;
+
+            const setWarning = (id, value) => {
+                const bar = document.getElementById(`warning-${id}`);
+                const val = document.getElementById(`warning-${id}-val`);
+                bar.style.width = `${Math.min(value * 100, 100)}%`;
+                val.textContent = Math.min(value, 1).toFixed(2);
+                bar.classList.toggle('elevated', value > 0.6);
+            };
+
+            setWarning('autocorr', autocorr);
+            setWarning('variance', variance);
+            setWarning('recovery', recovery);
+            setWarning('flicker', flicker);
+        }
+
+        function updatePhaseIndicators() {
+            const phases = ['coherence', 'rupture', 'regeneration'];
+            phases.forEach(p => {
+                document.getElementById(`dot-${p}`).classList.toggle('active', p === state.phase);
+                document.getElementById(`eq-${p}`).classList.toggle('active', p === state.phase);
+            });
+
+            const phaseNames = {
+                coherence: 'Coherence',
+                rupture: 'Rupture',
+                regeneration: 'Regeneration'
+            };
+            document.getElementById('phase-name').textContent = phaseNames[state.phase];
+
+            const explanation = document.getElementById('explanation');
+            explanation.className = `explanation ${state.phase}`;
+            
+            const explanations = {
+                coherence: {
+                    title: 'Phase I: Coherence Accumulation',
+                    text: `The system accumulates its history as constraint. Each moment adds to the coherence integral, 
+                           deepening commitment to particular patterns. <strong>With current Ω=${state.omega.toFixed(2)}</strong>, 
+                           ${state.omega < 0.35 ? 'the system forms tight crystalline structures with few elements—rigid and highly organised.' : 
+                             state.omega < 0.65 ? 'the system balances structure with fluidity—moderately connected, selectively remembering.' :
+                             'the system forms a diffuse, interconnected field—many elements, extensive connections, deep memory traces.'}`,
+                    eq: 'C(x,t) = ∫ L(x,τ) dτ'
+                },
+                rupture: {
+                    title: 'Phase II: Rupture — The Dirac Delta',
+                    text: `The threshold is crossed. The Dirac delta marks the ontological present. 
+                           <strong>With Ω=${state.omega.toFixed(2)}</strong>, 
+                           ${state.omega < 0.35 ? 'rupture is explosive and chaotic—rigid structures shatter violently when their threshold is crossed.' : 
+                             state.omega < 0.65 ? 'rupture is a moderate dispersal—the system loses coherence but maintains some structural memory.' :
+                             'rupture is a gentle diffusion—the liquid system simply expands and redistributes, carrying its connections with it.'}`,
+                    eq: 'δ(now) — discontinuous transformation'
+                },
+                regeneration: {
+                    title: 'Phase III: Regeneration Through the Historical Field',
+                    text: `The exponential weighting e<sup>C/Ω</sup> determines which moments echo into the new configuration. 
+                           <strong>With Ω=${state.omega.toFixed(2)}</strong>, 
+                           ${state.omega < 0.35 ? 'only peak coherence moments matter—the system rebuilds around its strongest prior attractor, ignoring most of its history.' : 
+                             state.omega < 0.65 ? 'the system selectively draws on its past—significant moments are weighted more heavily, but the broader field is accessible.' :
+                             'the full historical field is available—all past states contribute to regeneration. Deep non-Markovian access allows novel configurations.'}`,
+                    eq: 'R = ∫ φ(x,τ) · exp(C/Ω) · Θ(…) dτ'
+                }
+            };
+
+            const exp = explanations[state.phase];
+            document.getElementById('explanation-title').textContent = exp.title;
+            document.getElementById('explanation-text').innerHTML = exp.text;
+            document.getElementById('explanation-eq').innerHTML = exp.eq;
+        }
+
+        function update(dt) {
+            if (state.paused) return;
+
+            state.time += dt;
+            const rect = canvas.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const trailLength = getTrailLength();
+
+            if (state.phase === 'coherence') {
+                // Coherence rate depends on omega
+                // Low omega = slower, more deliberate crystallization
+                // High omega = faster, more fluid accumulation
+                const rateMultiplier = 0.6 + state.omega * 0.9;
+                state.coherence += dt * 0.15 * rateMultiplier;
+                state.tension = Math.min(state.coherence / state.ruptureTrigger, 1);
+                
+                if (state.time % 0.1 < dt) {
+                    historicalField.push({
+                        coherence: state.coherence,
+                        time: state.time
+                    });
+                }
+
+                // Particle behavior based on omega
+                // Low omega: tight geometric patterns
+                // High omega: loose organic flow
+                const targetRadius = state.omega < 0.35 ? 
+                    80 - state.coherence * 30 :  // Tight spiral inward
+                    120 - state.coherence * 20;   // Loose convergence
+                
+                const rotationSpeed = 0.3 + (1 - state.omega) * 0.4; // Low omega = faster rotation
+                const oscillationAmount = state.tension * (10 + state.omega * 20); // High omega = more wobble
+                
+                state.particles.forEach((p, i) => {
+                    const angle = (i / state.particles.length) * Math.PI * 2 + state.time * rotationSpeed;
+                    
+                    // Low omega: precise geometric positions
+                    // High omega: organic, flowing positions
+                    let targetX, targetY;
+                    if (state.omega < 0.35) {
+                        // Crystalline: snap to geometric positions
+                        const sides = 6; // Hexagonal
+                        const snapAngle = Math.round(angle / (Math.PI * 2 / sides)) * (Math.PI * 2 / sides);
+                        targetX = centerX + Math.cos(snapAngle) * targetRadius;
+                        targetY = centerY + Math.sin(snapAngle) * targetRadius;
+                    } else {
+                        // Fluid: smooth organic motion
+                        const wobble = Math.sin(state.time * 2 + p.phase) * oscillationAmount;
+                        targetX = centerX + Math.cos(angle) * (targetRadius + wobble);
+                        targetY = centerY + Math.sin(angle) * (targetRadius + wobble);
+                    }
+                    
+                    // Movement stiffness based on omega
+                    const stiffness = 0.01 + (1 - state.omega) * 0.03;
+                    const damping = 0.92 + state.omega * 0.05;
+                    
+                    p.vx += (targetX - p.x) * stiffness;
+                    p.vy += (targetY - p.y) * stiffness;
+                    p.vx *= damping;
+                    p.vy *= damping;
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Store trail
+                    if (trailLength > 0) {
+                        state.trails[i].push({ x: p.x, y: p.y });
+                        if (state.trails[i].length > trailLength) {
+                            state.trails[i].shift();
+                        }
+                    }
+                });
+
+                if (state.coherence >= state.ruptureTrigger) {
+                    state.phase = 'rupture';
+                    state.rupture = 1;
+                }
+
+            } else if (state.phase === 'rupture') {
+                // Rupture intensity based on omega
+                // Low omega: explosive, violent dispersal
+                // High omega: gentle, diffusive expansion
+                const decayRate = 1.5 + state.omega;
+                state.rupture -= dt * decayRate;
+                
+                const explosiveForce = state.omega < 0.35 ? 400 : 
+                                       state.omega < 0.65 ? 250 : 100;
+                const chaosAmount = (1 - state.omega) * 80;
+                
+                state.particles.forEach((p, i) => {
+                    const dx = p.x - centerX;
+                    const dy = p.y - centerY;
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    
+                    const force = explosiveForce * state.rupture / dist;
+                    p.vx += (dx / dist) * force * dt;
+                    p.vy += (dy / dist) * force * dt;
+                    
+                    // Chaos based on omega
+                    p.vx += (Math.random() - 0.5) * chaosAmount * state.rupture;
+                    p.vy += (Math.random() - 0.5) * chaosAmount * state.rupture;
+                    
+                    p.vx *= 0.98;
+                    p.vy *= 0.98;
+                    p.x += p.vx * dt * 60;
+                    p.y += p.vy * dt * 60;
+                    
+                    // Boundary
+                    if (p.x < 0) p.x = rect.width;
+                    if (p.x > rect.width) p.x = 0;
+                    if (p.y < 0) p.y = rect.height;
+                    if (p.y > rect.height) p.y = 0;
+
+                    // Trail during rupture
+                    if (trailLength > 0) {
+                        state.trails[i].push({ x: p.x, y: p.y });
+                        if (state.trails[i].length > trailLength * 2) {
+                            state.trails[i].shift();
+                        }
+                    }
+                });
+
+                if (state.rupture <= 0) {
+                    state.phase = 'regeneration';
+                    state.regeneration = 0;
+                }
+
+            } else if (state.phase === 'regeneration') {
+                // Regeneration rate and style based on omega
+                const regenRate = 0.15 + state.omega * 0.25;
+                state.regeneration += dt * regenRate;
+                
+                // Calculate new configuration based on historical field
+                // High omega = more variation from original (access to alternatives)
+                // Low omega = return to similar attractor
+                const newRadius = 100 + (state.omega - 0.5) * 40;
+                const rotationOffset = state.cycle * (0.1 + state.omega * 0.5);
+                
+                // Shape based on omega
+                const shapeSides = state.omega < 0.35 ? 6 : 0; // Hexagonal vs circular
+                
+                state.particles.forEach((p, i) => {
+                    let angle = (i / state.particles.length) * Math.PI * 2 + rotationOffset;
+                    
+                    if (shapeSides > 0) {
+                        angle = Math.round(angle / (Math.PI * 2 / shapeSides)) * (Math.PI * 2 / shapeSides);
+                    }
+                    
+                    const targetX = centerX + Math.cos(angle) * newRadius * state.regeneration;
+                    const targetY = centerY + Math.sin(angle) * newRadius * state.regeneration;
+                    
+                    const attractStrength = 0.02 + state.omega * 0.02;
+                    p.vx += (targetX - p.x) * attractStrength * state.regeneration;
+                    p.vy += (targetY - p.y) * attractStrength * state.regeneration;
+                    p.vx *= 0.95;
+                    p.vy *= 0.95;
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Trail
+                    if (trailLength > 0) {
+                        state.trails[i].push({ x: p.x, y: p.y });
+                        if (state.trails[i].length > trailLength) {
+                            state.trails[i].shift();
+                        }
+                    }
+                });
+
+                if (state.regeneration >= 1) {
+                    state.phase = 'coherence';
+                    state.coherence = 0;
+                    state.tension = 0;
+                    state.regeneration = 0;
+                    state.cycle++;
+                    historicalField = [];
+                    // Clear trails for fresh cycle
+                    state.trails = state.trails.map(() => []);
+                }
+            }
+
+            updateMetrics();
+            updateWarnings();
+            updatePhaseIndicators();
+        }
+
+        function render() {
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const connectionDist = getConnectionDistance();
+
+            // Background field based on phase and omega
+            let fieldColor, fieldIntensity;
+            if (state.phase === 'coherence') {
+                fieldColor = colors.coherenceRGB;
+                fieldIntensity = state.coherence * (0.1 + state.omega * 0.1);
+            } else if (state.phase === 'rupture') {
+                fieldColor = colors.ruptureRGB;
+                fieldIntensity = state.rupture * (0.15 + (1 - state.omega) * 0.15);
+            } else {
+                fieldColor = colors.regenerationRGB;
+                fieldIntensity = state.regeneration * (0.1 + state.omega * 0.1);
+            }
+
+            // Draw field gradient
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 250);
+            gradient.addColorStop(0, `rgba(${fieldColor}, ${fieldIntensity})`);
+            gradient.addColorStop(0.6, `rgba(${fieldColor}, ${fieldIntensity * 0.3})`);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            // Draw trails (memory visualization) - only for high omega
+            if (state.omega > 0.3) {
+                state.trails.forEach((trail, i) => {
+                    if (trail.length < 2) return;
+                    ctx.beginPath();
+                    ctx.moveTo(trail[0].x, trail[0].y);
+                    for (let j = 1; j < trail.length; j++) {
+                        ctx.lineTo(trail[j].x, trail[j].y);
+                    }
+                    const trailOpacity = (state.omega - 0.3) * 0.4;
+                    ctx.strokeStyle = `rgba(${fieldColor}, ${trailOpacity})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+            }
+
+            // Draw connections
+            ctx.lineWidth = 0.5;
+            state.particles.forEach((p1, i) => {
+                state.particles.slice(i + 1).forEach(p2 => {
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < connectionDist) {
+                        const opacity = (1 - dist / connectionDist) * (0.2 + state.omega * 0.3);
+                        ctx.globalAlpha = opacity;
+                        ctx.strokeStyle = `rgb(${fieldColor})`;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                });
+            });
+            ctx.globalAlpha = 1;
+
+            // Draw particles
+            let particleColor = colors.coherence;
+            if (state.phase === 'rupture') particleColor = colors.rupture;
+            else if (state.phase === 'regeneration') particleColor = colors.regeneration;
+
+            state.particles.forEach((p, i) => {
+                // Size based on omega and phase
+                let size = p.size;
+                if (state.omega < 0.35) {
+                    size = 4 + state.coherence * 2; // Larger, more defined
+                } else if (state.omega > 0.65) {
+                    size = 2 + state.coherence; // Smaller, more numerous
+                }
+                
+                if (state.phase === 'rupture') {
+                    size *= (1 + state.rupture * 0.5);
+                }
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                ctx.fillStyle = particleColor;
+                ctx.fill();
+
+                // Glow based on omega
+                const glowSize = size + 3 + state.omega * 6;
+                const glowOpacity = 0.1 + state.omega * 0.15;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
+                ctx.fillStyle = `${particleColor}${Math.floor(glowOpacity * 255).toString(16).padStart(2, '0')}`;
+                ctx.fill();
+            });
+
+            // Draw center
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = colors.accent;
+            ctx.fill();
+
+            // Draw coherence ring during accumulation
+            if (state.phase === 'coherence') {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 160, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * state.tension);
+                ctx.strokeStyle = colors.coherence;
+                ctx.lineWidth = 2 + (1 - state.omega) * 2; // Thicker for low omega
+                ctx.stroke();
+            }
+
+            // Omega visualization in corner
+            ctx.save();
+            ctx.font = '16px "EB Garamond", Georgia, serif';
+            ctx.fillStyle = colors.accent;
+            ctx.textAlign = 'left';
+            
+            // Draw omega bar
+            const barX = 15;
+            const barY = 35;
+            const barWidth = 100;
+            const barHeight = 6;
+            
+            // Background
+            ctx.fillStyle = 'rgba(26, 26, 26, 0.1)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Fill
+            const fillGradient = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+            fillGradient.addColorStop(0, colors.rupture);
+            fillGradient.addColorStop(0.5, colors.accent);
+            fillGradient.addColorStop(1, colors.regeneration);
+            ctx.fillStyle = fillGradient;
+            ctx.fillRect(barX, barY, barWidth * state.omega, barHeight);
+            
+            // Omega symbol
+            ctx.fillStyle = colors.ink;
+            ctx.fillText(`Ω = ${state.omega.toFixed(2)}`, barX, barY - 8);
+            
+            ctx.restore();
+
+            // Phase label
+            ctx.font = '14px "EB Garamond", Georgia, serif';
+            ctx.textAlign = 'right';
+            ctx.fillStyle = colors.ink;
+            const phaseLabels = {
+                coherence: `C accumulating · ${getParticleCount()} particles`,
+                rupture: `δ(now) · ${state.omega < 0.35 ? 'explosive' : state.omega < 0.65 ? 'dispersing' : 'diffusing'}`,
+                regeneration: `R rebuilding · ${state.omega < 0.35 ? 'shallow memory' : state.omega < 0.65 ? 'selective' : 'full field'}`
+            };
+            ctx.fillText(phaseLabels[state.phase], rect.width - 15, 25);
+        }
+
+        let lastTime = 0;
+        function animate(currentTime) {
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
+            lastTime = currentTime;
+            
+            update(dt);
+            render();
+            requestAnimationFrame(animate);
+        }
+
+        // Omega slider with live particle update
+        document.getElementById('omega-slider').addEventListener('input', (e) => {
+            const newOmega = parseFloat(e.target.value);
+            const oldParticleCount = getParticleCount();
+            state.omega = newOmega;
+            const newParticleCount = getParticleCount();
+            
+            // Reinitialize particles if count changed significantly
+            if (Math.abs(newParticleCount - oldParticleCount) > 5) {
+                // Preserve phase state but update particles
+                const rect = canvas.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                while (state.particles.length < newParticleCount) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 80 + Math.random() * 60;
+                    state.particles.push({
+                        x: centerX + Math.cos(angle) * radius,
+                        y: centerY + Math.sin(angle) * radius,
+                        vx: 0,
+                        vy: 0,
+                        phase: Math.random() * Math.PI * 2,
+                        size: 2 + Math.random() * 2
+                    });
+                    state.trails.push([]);
+                }
+                while (state.particles.length > newParticleCount) {
+                    state.particles.pop();
+                    state.trails.pop();
+                }
+            }
+            
+            updateOmegaDisplay();
+            updatePhaseIndicators();
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            state.paused = !state.paused;
+            document.getElementById('btn-pause').textContent = state.paused ? 'Resume' : 'Pause';
+            document.getElementById('btn-pause').classList.toggle('primary', !state.paused);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            state.coherence = 0;
+            state.tension = 0;
+            state.regeneration = 0;
+            state.phase = 'coherence';
+            state.time = 0;
+            state.cycle = 1;
+            historicalField = [];
+            initParticles();
+            updateMetrics();
+            updateWarnings();
+            updatePhaseIndicators();
+        });
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            initParticles();
+        });
+
+        setupCanvas();
+        initParticles();
+        updateOmegaDisplay();
+        updatePhaseIndicators();
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
