@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Temperature of Transformation | CRR Dynamics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            min-height: 100vh;
+            line-height: 1.65;
+        }
+
+        header {
+            padding: 2.5rem 2rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: normal;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.4rem;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        main {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .comparison-container { grid-template-columns: 1fr; }
+        }
+
+        .simulation-panel {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 1px solid #e0e0e0;
+        }
+
+        .simulation-panel.rigid {
+            border-left: 4px solid #d97706;
+        }
+
+        .simulation-panel.fluid {
+            border-left: 4px solid #7c3aed;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: normal;
+        }
+
+        .rigid .panel-title { color: #b45309; }
+        .fluid .panel-title { color: #6d28d9; }
+
+        .omega-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            background: #fff;
+            border: 1px solid #ddd;
+        }
+
+        .rigid .omega-badge { color: #b45309; }
+        .fluid .omega-badge { color: #6d28d9; }
+
+        .canvas-container {
+            position: relative;
+            aspect-ratio: 4/3;
+            background: #fff;
+            border-radius: 6px;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 0.6rem 0.4rem;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value { 
+            color: #333; 
+            margin-top: 0.25rem;
+            font-size: 1rem;
+        }
+
+        .rigid .stat-value.highlight { color: #b45309; font-weight: bold; }
+        .fluid .stat-value.highlight { color: #6d28d9; font-weight: bold; }
+
+        /* Controls */
+        .controls-panel {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 1.25rem 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            font-family: Georgia, serif;
+            font-size: 1rem;
+            padding: 0.75rem 2rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fff;
+            color: #333;
+        }
+
+        button:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+
+        button.primary {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+
+        button.primary:hover {
+            background: #333;
+        }
+
+        /* Summary bar */
+        .summary-bar {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-label {
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.3rem;
+        }
+
+        .summary-values {
+            font-family: 'Courier New', monospace;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .summary-values .rigid-val { color: #b45309; font-weight: bold; }
+        .summary-values .fluid-val { color: #6d28d9; font-weight: bold; }
+        .summary-values .sep { color: #ccc; }
+
+        /* Insight panel */
+        .insight-panel {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 1.75rem;
+            border: 1px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+        }
+
+        @media (max-width: 700px) {
+            .insight-panel { grid-template-columns: 1fr; }
+        }
+
+        .insight-column h3 {
+            font-size: 1.15rem;
+            font-weight: normal;
+            margin-bottom: 0.75rem;
+        }
+
+        .insight-column.rigid h3 { color: #b45309; }
+        .insight-column.fluid h3 { color: #6d28d9; }
+
+        .insight-column p {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 0.75rem;
+        }
+
+        .equation-block {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            background: #fff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            border: 1px solid #e5e5e5;
+        }
+
+        .rigid .equation-block { border-left: 3px solid #d97706; }
+        .fluid .equation-block { border-left: 3px solid #7c3aed; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-size: 0.9rem;
+            border-top: 1px solid #e5e5e5;
+            margin-top: 2rem;
+        }
+
+        footer a { color: #666; }
+
+        /* Event log */
+        .event-log {
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            margin-top: 0.75rem;
+            padding: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            max-height: 60px;
+            overflow-y: auto;
+            color: #666;
+        }
+
+        .event-log .transition { color: #059669; font-weight: bold; }
+        .event-log .reconstitute { color: #888; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>The Temperature of Transformation</h1>
+        <p class="subtitle">How Ω determines whether rupture reconstitutes or transforms</p>
+    </header>
+
+    <main>
+        <div class="summary-bar">
+            <div class="summary-item">
+                <div class="summary-label">Total Ruptures</div>
+                <div class="summary-values">
+                    <span class="rigid-val" id="sumRigidRuptures">0</span>
+                    <span class="sep">vs</span>
+                    <span class="fluid-val" id="sumFluidRuptures">0</span>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Basin Changes</div>
+                <div class="summary-values">
+                    <span class="rigid-val" id="sumRigidTrans">0</span>
+                    <span class="sep">vs</span>
+                    <span class="fluid-val" id="sumFluidTrans">0</span>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Change Rate</div>
+                <div class="summary-values">
+                    <span class="rigid-val" id="sumRigidRate">0%</span>
+                    <span class="sep">vs</span>
+                    <span class="fluid-val" id="sumFluidRate">0%</span>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Time</div>
+                <div class="summary-values">
+                    <span id="timeDisplay">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-container">
+            <!-- Rigid System -->
+            <div class="simulation-panel rigid">
+                <div class="panel-header">
+                    <div class="panel-title">Rigid System (Low Temperature)</div>
+                    <div class="omega-badge">Ω = 0.05</div>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="rigidCanvas"></canvas>
+                </div>
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="stat-label">Position</div>
+                        <div class="stat-value" id="rigidPos">0.250</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">C / Ω</div>
+                        <div class="stat-value" id="rigidCoh">0%</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Ruptures</div>
+                        <div class="stat-value highlight" id="rigidRup">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Changes</div>
+                        <div class="stat-value highlight" id="rigidTrans">0</div>
+                    </div>
+                </div>
+                <div class="event-log" id="rigidLog"></div>
+            </div>
+
+            <!-- Fluid System -->
+            <div class="simulation-panel fluid">
+                <div class="panel-header">
+                    <div class="panel-title">Fluid System (High Temperature)</div>
+                    <div class="omega-badge">Ω = 0.80</div>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="fluidCanvas"></canvas>
+                </div>
+                <div class="stats-row">
+                    <div class="stat">
+                        <div class="stat-label">Position</div>
+                        <div class="stat-value" id="fluidPos">0.250</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">C / Ω</div>
+                        <div class="stat-value" id="fluidCoh">0%</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Ruptures</div>
+                        <div class="stat-value highlight" id="fluidRup">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-label">Changes</div>
+                        <div class="stat-value highlight" id="fluidTrans">0</div>
+                    </div>
+                </div>
+                <div class="event-log" id="fluidLog"></div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <button class="primary" id="playBtn">▶ Run Comparison</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+
+        <div class="insight-panel">
+            <div class="insight-column rigid">
+                <h3>Low Ω: Rigid Dynamics</h3>
+                <p>With low temperature, the exp(C/Ω) weighting becomes sharply peaked. Only the highest-coherence moments dominate regeneration.</p>
+                <p>The system ruptures frequently but most ruptures reconstitute the same patterns—many ruptures, low success rate per rupture.</p>
+                <div class="equation-block">
+                    exp(C/Ω) with small Ω → peaked weighting<br><br>
+                    <em>Only recent/strongest memories count</em>
+                </div>
+            </div>
+
+            <div class="insight-column fluid">
+                <h3>High Ω: Fluid Dynamics</h3>
+                <p>With high temperature, the exp(C/Ω) weighting becomes flat. The full breadth of accumulated history informs regeneration.</p>
+                <p>Ruptures are rare, but when they occur, genuine transformation is far more likely—fewer ruptures, high success rate per rupture.</p>
+                <div class="equation-block">
+                    exp(C/Ω) with large Ω → flat weighting<br><br>
+                    <em>Entire history contributes equally</em>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        Coherence-Rupture-Regeneration Framework · <a href="https://cohere.org.uk">cohere.org.uk</a>
+    </footer>
+
+    <script>
+    // =========================================================
+    // CRR SIMULATION - CLEAN REWRITE
+    // =========================================================
+    
+    const BARRIER = 0.5;
+    const DEPTH = 0.3;
+    
+    function freeEnergy(x) {
+        const wellA = 0.5 * Math.pow(x - 0.25, 2) / 0.04;
+        const wellB = 0.5 * Math.pow(x - 0.75, 2) / 0.04 - DEPTH;
+        const barrier = BARRIER * Math.exp(-Math.pow(x - 0.5, 2) / 0.015);
+        return Math.min(wellA, wellB) + barrier;
+    }
+    
+    function freeEnergyGradient(x) {
+        const dx = 0.001;
+        return (freeEnergy(x + dx) - freeEnergy(x - dx)) / (2 * dx);
+    }
+    
+    // Coherence rate - ALWAYS positive
+    // Lower energy = higher coherence accumulation
+    function coherenceRate(x) {
+        const F = freeEnergy(x);
+        // Use absolute value to guarantee positive, add offset
+        return 1.0 / (1.0 + Math.abs(F));
+    }
+    
+    function getBasin(x) {
+        return x < 0.5 ? 'A' : 'B';
+    }
+    
+    class CRRSystem {
+        constructor(omega, colorMain, colorLight, canvasId, logId) {
+            this.omega = omega;
+            this.colorMain = colorMain;
+            this.colorLight = colorLight;
+            this.canvas = document.getElementById(canvasId);
+            this.ctx = this.canvas.getContext('2d');
+            this.logEl = document.getElementById(logId);
+            this.width = 400;
+            this.height = 300;
+            this.reset();
+        }
+        
+        reset() {
+            this.x = 0.25;  // Start in Basin A
+            this.coherence = 0;
+            this.history = [];
+            this.trail = [];
+            this.ruptures = 0;
+            this.transitions = 0;
+            this.cycleStartBasin = 'A';  // Track where each cycle begins
+            this.displayX = 0.25;
+            this.displayC = 0;
+            this.rng = this.createRNG(Date.now());
+            this.logEl.innerHTML = '';
+            this.eventCount = 0;
+        }
+        
+        createRNG(seed) {
+            return function() {
+                seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                return seed / 0x7fffffff;
+            };
+        }
+        
+        gaussianRandom() {
+            let u = 0, v = 0;
+            while (u === 0) u = this.rng();
+            while (v === 0) v = this.rng();
+            return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        }
+        
+        computeRegeneration() {
+            if (this.history.length === 0) {
+                return this.x;
+            }
+            
+            const bins = 100;
+            const weights = new Array(bins).fill(0.001);
+            const sigma = 0.08;
+            
+            // Compute regeneration distribution R(x) = Σ φ(x,τ)·exp(C(τ)/Ω)
+            for (const h of this.history) {
+                const expWeight = Math.exp(h.c / this.omega);
+                for (let i = 0; i < bins; i++) {
+                    const testX = (i + 0.5) / bins;
+                    const phi = Math.exp(-Math.pow(testX - h.x, 2) / (2 * sigma * sigma));
+                    weights[i] += phi * expWeight;
+                }
+            }
+            
+            // Normalize and sample
+            const total = weights.reduce((a, b) => a + b, 0);
+            let r = this.rng() * total;
+            let cumsum = 0;
+            
+            for (let i = 0; i < bins; i++) {
+                cumsum += weights[i];
+                if (cumsum >= r) {
+                    return (i + 0.5) / bins;
+                }
+            }
+            return 0.5;
+        }
+        
+        logEvent(startBasin, endBasin) {
+            this.eventCount++;
+            const changed = startBasin !== endBasin;
+            const cls = changed ? 'transition' : 'reconstitute';
+            const symbol = changed ? '★' : '·';
+            const text = changed 
+                ? `${symbol} #${this.eventCount}: ${startBasin}→${endBasin} CHANGED`
+                : `${symbol} #${this.eventCount}: ${startBasin}→${endBasin}`;
+            
+            this.logEl.innerHTML = `<span class="${cls}">${text}</span><br>` + this.logEl.innerHTML;
+            
+            // Keep log short
+            const lines = this.logEl.innerHTML.split('<br>');
+            if (lines.length > 12) {
+                this.logEl.innerHTML = lines.slice(0, 12).join('<br>');
+            }
+        }
+        
+        step(dt) {
+            // Gradient descent
+            const grad = freeEnergyGradient(this.x);
+            let dx = -grad * dt * 0.4;
+            
+            // Exploration noise - occasional large jumps
+            if (this.rng() < 0.05) {
+                dx += (this.rng() - 0.5) * 0.5;
+            } else {
+                dx += 0.02 * this.gaussianRandom();
+            }
+            
+            this.x = Math.max(0.02, Math.min(0.98, this.x + dx));
+            
+            // Accumulate coherence (always positive)
+            const rate = coherenceRate(this.x);
+            this.coherence += Math.max(0, rate * dt);
+            
+            // Store in history
+            this.history.push({ x: this.x, c: this.coherence });
+            if (this.history.length > 1500) {
+                this.history = this.history.slice(-1500);
+            }
+            
+            // Visual trail
+            this.trail.push(this.x);
+            if (this.trail.length > 120) this.trail.shift();
+            
+            // Check rupture: C ≥ Ω
+            if (this.coherence >= this.omega) {
+                // Regeneration
+                const newX = this.computeRegeneration();
+                const endBasin = getBasin(newX);
+                
+                // Count rupture
+                this.ruptures++;
+                
+                // Count transition if basin changed from CYCLE START
+                if (this.cycleStartBasin !== endBasin) {
+                    this.transitions++;
+                }
+                
+                // Log
+                this.logEvent(this.cycleStartBasin, endBasin);
+                
+                // Update position
+                this.x = newX;
+                
+                // Reset for next cycle
+                this.coherence = 0;
+                this.history = [];
+                this.cycleStartBasin = getBasin(this.x);  // New cycle starts here
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        resize() {
+            const rect = this.canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const w = rect.width || 400;
+            const h = rect.height || 300;
+            
+            this.canvas.width = w * dpr;
+            this.canvas.height = h * dpr;
+            this.ctx.scale(dpr, dpr);
+            this.canvas.style.width = w + 'px';
+            this.canvas.style.height = h + 'px';
+            this.width = w;
+            this.height = h;
+        }
+        
+        draw() {
+            const ctx = this.ctx;
+            const w = this.width;
+            const h = this.height;
+            
+            if (!w || !h) return;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            
+            const pad = { l: 35, r: 15, t: 35, b: 40 };
+            const plotW = w - pad.l - pad.r;
+            const plotH = h - pad.t - pad.b;
+            
+            // Energy bounds
+            let minE = Infinity, maxE = -Infinity;
+            for (let i = 0; i <= 100; i++) {
+                const e = freeEnergy(i / 100);
+                minE = Math.min(minE, e);
+                maxE = Math.max(maxE, e);
+            }
+            const eRange = (maxE - minE) || 1;
+            
+            // Basin shading
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(pad.l, pad.t, plotW * 0.5, plotH);
+            ctx.fillStyle = '#10b981';
+            ctx.fillRect(pad.l + plotW * 0.5, pad.t, plotW * 0.5, plotH);
+            ctx.globalAlpha = 1;
+            
+            // Grid
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = pad.t + (i / 4) * plotH;
+                ctx.beginPath();
+                ctx.moveTo(pad.l, y);
+                ctx.lineTo(w - pad.r, y);
+                ctx.stroke();
+            }
+            
+            // Trail
+            if (this.trail.length > 1) {
+                ctx.beginPath();
+                for (let i = 0; i < this.trail.length; i++) {
+                    const tx = this.trail[i];
+                    const te = freeEnergy(tx);
+                    const px = pad.l + tx * plotW;
+                    const py = pad.t + (1 - (te - minE) / eRange) * plotH;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.strokeStyle = this.colorLight;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Energy landscape
+            ctx.beginPath();
+            for (let i = 0; i <= 200; i++) {
+                const lx = i / 200;
+                const le = freeEnergy(lx);
+                const px = pad.l + lx * plotW;
+                const py = pad.t + (1 - (le - minE) / eRange) * plotH;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            // Smooth display values
+            this.displayX += (this.x - this.displayX) * 0.15;
+            this.displayC += (this.coherence - this.displayC) * 0.2;
+            
+            // Clamp display values
+            this.displayX = Math.max(0.02, Math.min(0.98, this.displayX));
+            this.displayC = Math.max(0, this.displayC);
+            
+            // Current position
+            const e = freeEnergy(this.displayX);
+            const px = pad.l + this.displayX * plotW;
+            const py = pad.t + (1 - (e - minE) / eRange) * plotH;
+            
+            if (isNaN(px) || isNaN(py)) return;
+            
+            // Glow
+            const cRatio = Math.min(1, Math.max(0, this.displayC / this.omega));
+            const glowSize = Math.max(8, 12 + cRatio * 20);
+            ctx.beginPath();
+            ctx.arc(px, py, glowSize, 0, Math.PI * 2);
+            ctx.fillStyle = this.colorLight;
+            ctx.fill();
+            
+            // Point
+            ctx.beginPath();
+            ctx.arc(px, py, 9, 0, Math.PI * 2);
+            ctx.fillStyle = this.colorMain;
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Coherence bar
+            const barY = pad.t - 20;
+            const barH = 6;
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.roundRect(pad.l, barY, plotW, barH, 3);
+            ctx.fill();
+            
+            if (cRatio > 0) {
+                ctx.fillStyle = this.colorMain;
+                ctx.beginPath();
+                ctx.roundRect(pad.l, barY, plotW * cRatio, barH, 3);
+                ctx.fill();
+            }
+            
+            // Labels
+            ctx.font = '12px Georgia';
+            ctx.fillStyle = '#888';
+            ctx.textAlign = 'center';
+            ctx.fillText('Basin A (local)', pad.l + plotW * 0.25, h - 12);
+            ctx.fillText('Basin B (global)', pad.l + plotW * 0.75, h - 12);
+        }
+    }
+    
+    // =========================================================
+    // MAIN
+    // =========================================================
+    
+    const rigidSystem = new CRRSystem(0.05, '#b45309', 'rgba(180, 83, 9, 0.25)', 'rigidCanvas', 'rigidLog');
+    const fluidSystem = new CRRSystem(0.80, '#6d28d9', 'rgba(109, 40, 217, 0.25)', 'fluidCanvas', 'fluidLog');
+    
+    function resizeAll() {
+        rigidSystem.resize();
+        fluidSystem.resize();
+    }
+    
+    resizeAll();
+    window.addEventListener('load', resizeAll);
+    window.addEventListener('resize', resizeAll);
+    
+    let playing = false;
+    let time = 0;
+    
+    function updateStats() {
+        document.getElementById('rigidPos').textContent = rigidSystem.displayX.toFixed(3);
+        document.getElementById('rigidCoh').textContent = Math.round(100 * rigidSystem.displayC / rigidSystem.omega) + '%';
+        document.getElementById('rigidRup').textContent = rigidSystem.ruptures;
+        document.getElementById('rigidTrans').textContent = rigidSystem.transitions;
+        
+        document.getElementById('fluidPos').textContent = fluidSystem.displayX.toFixed(3);
+        document.getElementById('fluidCoh').textContent = Math.round(100 * fluidSystem.displayC / fluidSystem.omega) + '%';
+        document.getElementById('fluidRup').textContent = fluidSystem.ruptures;
+        document.getElementById('fluidTrans').textContent = fluidSystem.transitions;
+        
+        document.getElementById('sumRigidRuptures').textContent = rigidSystem.ruptures;
+        document.getElementById('sumFluidRuptures').textContent = fluidSystem.ruptures;
+        document.getElementById('sumRigidTrans').textContent = rigidSystem.transitions;
+        document.getElementById('sumFluidTrans').textContent = fluidSystem.transitions;
+        
+        const rigidRate = rigidSystem.ruptures > 0 
+            ? Math.round(100 * rigidSystem.transitions / rigidSystem.ruptures) + '%' 
+            : '—';
+        const fluidRate = fluidSystem.ruptures > 0 
+            ? Math.round(100 * fluidSystem.transitions / fluidSystem.ruptures) + '%' 
+            : '—';
+        
+        document.getElementById('sumRigidRate').textContent = rigidRate;
+        document.getElementById('sumFluidRate').textContent = fluidRate;
+        
+        document.getElementById('timeDisplay').textContent = Math.floor(time);
+    }
+    
+    function animate() {
+        if (playing) {
+            // Run more steps per frame for faster results
+            for (let i = 0; i < 8; i++) {
+                rigidSystem.step(0.01);
+                fluidSystem.step(0.01);
+                time += 0.01;
+            }
+        }
+        
+        rigidSystem.draw();
+        fluidSystem.draw();
+        updateStats();
+        
+        requestAnimationFrame(animate);
+    }
+    
+    document.getElementById('playBtn').addEventListener('click', () => {
+        playing = !playing;
+        document.getElementById('playBtn').textContent = playing ? '⏸ Pause' : '▶ Run Comparison';
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        playing = false;
+        time = 0;
+        rigidSystem.reset();
+        fluidSystem.reset();
+        document.getElementById('playBtn').textContent = '▶ Run Comparison';
+        updateStats();
+    });
+    
+    updateStats();
+    animate();
+    </script>
+</body>
+</html>
