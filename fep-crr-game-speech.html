@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Inference & CRR — Learning Through Rupture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream: #faf8f4;
+            --bg-warm: #f4f1ea;
+            --bg-panel: #ffffff;
+            --bg-code: #2c2c2c;
+            --text-dark: #1a1a1a;
+            --text-body: #333333;
+            --text-muted: #666666;
+            --accent-piaget: #8b4513;
+            --accent-piaget-light: #f5ebe0;
+            --accent-fep: #234e70;
+            --accent-fep-light: #e8f0f5;
+            --accent-crr: #6a1b9a;
+            --accent-crr-light: #f3e5f5;
+            --border-color: #d4d0c8;
+            --surprise-color: #c62828;
+            --success-color: #2e7d32;
+            --rupture-color: #d32f2f;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--bg-cream);
+            color: var(--text-body);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+        
+        body.finale-mode {
+            background: #000;
+        }
+        
+        header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2rem 2rem;
+            text-align: center;
+            transition: opacity 1s, transform 1s;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 400;
+            color: var(--text-dark);
+            margin-bottom: 0.4rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        .instruction-note {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.4rem 1rem;
+            background: var(--accent-fep-light);
+            border: 1px solid var(--accent-fep);
+            font-size: 0.85rem;
+            color: var(--accent-fep);
+        }
+        
+        .main-container {
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            transition: opacity 1s, transform 1s;
+        }
+        
+        .stage-section {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 1000px) {
+            .stage-section { grid-template-columns: 1fr; }
+        }
+        
+        .stage-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+        }
+        
+        .stage-header {
+            padding: 0.8rem 1.25rem;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stage-title { font-weight: 500; color: var(--text-dark); font-size: 0.95rem; }
+        .stage-controls { display: flex; gap: 0.4rem; }
+        
+        .btn {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 0.85rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-panel);
+            color: var(--text-body);
+            cursor: pointer;
+        }
+        
+        .btn:hover { background: var(--bg-warm); }
+        .btn-primary { background: var(--accent-fep); color: white; border-color: var(--accent-fep); }
+        
+        #canvas { display: block; width: 100%; height: 480px; cursor: pointer; }
+        
+        .commentary-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .commentary-header {
+            padding: 0.8rem 1.25rem;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        
+        .commentary-content {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            max-height: 480px;
+        }
+        
+        .crr-display {
+            background: linear-gradient(135deg, var(--accent-crr-light), #ede7f6);
+            border: 1px solid var(--accent-crr);
+            padding: 0.85rem;
+            margin-bottom: 0.85rem;
+        }
+        
+        .crr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+        
+        .crr-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-crr);
+            font-weight: 600;
+        }
+        
+        .crr-stage {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            background: var(--accent-crr);
+            color: white;
+            border-radius: 2px;
+        }
+        
+        .crr-stage.rupture { background: var(--rupture-color); animation: rupturePulse 0.3s infinite; }
+        .crr-stage.regeneration { background: var(--success-color); }
+        .crr-stage.transcendence { background: linear-gradient(90deg, #6a1b9a, #1565c0, #6a1b9a); background-size: 200%; animation: transcendGrad 1s infinite; }
+        
+        @keyframes rupturePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes transcendGrad { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        
+        .coherence-container { margin-bottom: 0.4rem; }
+        .coherence-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem; }
+        .coherence-bar { height: 10px; background: rgba(255,255,255,0.8); border: 1px solid rgba(106,27,154,0.3); position: relative; overflow: hidden; }
+        .coherence-fill { height: 100%; background: linear-gradient(90deg, #7b1fa2, #9c27b0, #ab47bc); transition: width 0.5s ease-out; }
+        .coherence-fill.critical { background: linear-gradient(90deg, #c62828, #d32f2f, #e53935); animation: criticalPulse 0.5s infinite; }
+        @keyframes criticalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .omega-marker { position: absolute; right: 0; top: -2px; bottom: -2px; width: 2px; background: var(--rupture-color); }
+        .omega-label { position: absolute; right: -6px; top: -14px; font-size: 0.6rem; color: var(--rupture-color); font-weight: 600; }
+        
+        .crr-math { font-size: 0.7rem; color: var(--accent-crr); font-style: italic; text-align: center; padding-top: 0.4rem; border-top: 1px solid rgba(106,27,154,0.2); }
+        
+        /* Dual dynamics bars */
+        .dynamics-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem;
+        }
+        
+        .dynamics-bar-container {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-panel);
+        }
+        
+        .dynamics-bar-container.fep {
+            border-left: 3px solid var(--accent-fep);
+        }
+        
+        .dynamics-bar-container.crr-error {
+            border-left: 3px solid var(--accent-crr);
+        }
+        
+        .dynamics-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.3rem;
+        }
+        
+        .dynamics-title {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
+        
+        .dynamics-bar-container.fep .dynamics-title { color: var(--accent-fep); }
+        .dynamics-bar-container.crr-error .dynamics-title { color: var(--accent-crr); }
+        
+        .dynamics-value {
+            font-size: 0.7rem;
+            font-style: italic;
+        }
+        
+        .dynamics-bar {
+            height: 8px;
+            background: var(--bg-warm);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dynamics-fill {
+            height: 100%;
+            transition: width 0.4s ease-out;
+        }
+        
+        .dynamics-bar-container.fep .dynamics-fill {
+            background: linear-gradient(90deg, #1565c0, #1e88e5, #42a5f5);
+        }
+        
+        .dynamics-bar-container.crr-error .dynamics-fill {
+            background: linear-gradient(90deg, #7b1fa2, #9c27b0, #ba68c8);
+        }
+        
+        .dynamics-bar-container.crr-error .dynamics-fill.critical {
+            background: linear-gradient(90deg, #c62828, #d32f2f, #ef5350);
+            animation: errorPulse 0.5s infinite;
+        }
+        
+        @keyframes errorPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .dynamics-subtext {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 0.2rem;
+        }
+        
+        /* Agent speech bubble */
+        .agent-speech {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            font: 13px 'Crimson Pro', Georgia, serif;
+            font-style: italic;
+            padding: 8px 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            max-width: 180px;
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .agent-speech.visible {
+            opacity: 1;
+        }
+        
+        .agent-speech::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            border-width: 8px 6px 0 6px;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
+        }
+        
+        .developmental-stage { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(106,27,154,0.2); }
+        .stage-indicator { display: flex; gap: 0.2rem; }
+        .stage-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(106,27,154,0.2); }
+        .stage-dot.completed { background: var(--accent-crr); }
+        .stage-dot.current { background: var(--accent-crr); animation: currentPulse 1s infinite; }
+        .stage-dot.transcended { background: linear-gradient(45deg, #6a1b9a, #1565c0); animation: transcendPulse 0.5s infinite; }
+        @keyframes currentPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        @keyframes transcendPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 5px #6a1b9a; } 50% { transform: scale(1.4); box-shadow: 0 0 10px #1565c0; } }
+        
+        .stage-name { font-size: 0.75rem; color: var(--accent-crr); font-style: italic; }
+        
+        .status-indicator { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.85rem; padding: 0.6rem 0.85rem; background: var(--bg-warm); border: 1px solid var(--border-color); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-color); }
+        .status-dot.idle { background: var(--text-muted); }
+        .status-dot.exploring { background: #ff9800; animation: pulse 1s infinite; }
+        .status-dot.surprise { background: var(--surprise-color); animation: pulse 0.5s infinite; }
+        .status-dot.learning { background: var(--accent-fep); animation: pulse 0.8s infinite; }
+        .status-dot.transcending { background: linear-gradient(45deg, #6a1b9a, #1565c0); animation: pulse 0.4s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.2); } }
+        
+        .status-text { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+        .commentary-text { font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem; text-align: justify; }
+        
+        .framework-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.85rem; }
+        .framework-comparison.triple { grid-template-columns: 1fr 1fr 1fr; }
+        .framework-box { padding: 0.6rem; font-size: 0.85rem; border-left: 3px solid; }
+        .framework-box.piaget { background: var(--accent-piaget-light); border-left-color: var(--accent-piaget); }
+        .framework-box.fep { background: var(--accent-fep-light); border-left-color: var(--accent-fep); }
+        .framework-box.crr { background: var(--accent-crr-light); border-left-color: var(--accent-crr); }
+        .framework-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 0.2rem; }
+        .piaget .framework-label { color: var(--accent-piaget); }
+        .fep .framework-label { color: var(--accent-fep); }
+        .crr .framework-label { color: var(--accent-crr); }
+        .framework-term { font-weight: 600; font-size: 0.85rem; font-style: italic; }
+        .framework-desc { color: var(--text-muted); font-size: 0.7rem; margin-top: 0.1rem; }
+        
+        .math-note { background: var(--bg-code); color: #e0e0e0; padding: 0.6rem 0.85rem; font-size: 0.8rem; font-style: italic; margin-top: 0.85rem; border-left: 3px solid #666; }
+        .math-note .label { color: #aaa; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 0.15rem; font-style: normal; }
+        
+        .model-display { background: var(--bg-warm); border: 1px solid var(--border-color); padding: 0.85rem; margin-top: 0.85rem; }
+        .model-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.5rem; }
+        
+        .belief-item { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem; padding: 0.35rem 0.45rem; background: var(--bg-panel); border: 1px solid var(--border-color); font-size: 0.8rem; }
+        .belief-item.new { background: #e8f5e9; border-color: var(--success-color); }
+        .belief-item.disrupted { background: #ffebee; border-color: var(--rupture-color); opacity: 0.6; }
+        .belief-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .belief-text { flex: 1; }
+        .belief-name { font-weight: 500; font-size: 0.75rem; }
+        .belief-details { font-size: 0.65rem; color: var(--text-muted); font-style: italic; }
+        .confidence-bar { width: 30px; height: 3px; background: var(--border-color); }
+        .confidence-fill { height: 100%; background: var(--success-color); transition: width 0.5s; }
+        
+        .prediction-display { margin-top: 0.6rem; padding: 0.5rem; background: #fff8e1; border: 1px solid #ffca28; font-size: 0.75rem; }
+        .prediction-title { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; color: #f57f17; margin-bottom: 0.25rem; }
+        .error-display { margin-top: 0.5rem; padding: 0.5rem; background: #ffebee; border: 1px solid var(--surprise-color); font-size: 0.75rem; }
+        .error-display.low-error { background: #e8f5e9; border-color: var(--success-color); }
+        .error-title { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--surprise-color); margin-bottom: 0.25rem; }
+        .error-display.low-error .error-title { color: var(--success-color); }
+        
+        .explanation-section { margin-top: 2rem; transition: opacity 1s; }
+        .explanation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+        .explanation-card { background: var(--bg-panel); border: 1px solid var(--border-color); padding: 1.25rem; }
+        .card-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.85rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-color); }
+        .card-number { width: 24px; height: 24px; background: var(--accent-fep); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
+        .card-number.crr { background: var(--accent-crr); }
+        .card-title { font-size: 1rem; font-weight: 500; font-style: italic; }
+        .card-body { font-size: 0.9rem; }
+        .card-body p { margin-bottom: 0.7rem; text-align: justify; }
+        .highlight { background: var(--accent-fep-light); padding: 0.1em 0.2em; }
+        .highlight-crr { background: var(--accent-crr-light); }
+        
+        footer { margin-top: 1.5rem; padding: 1rem 2rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); background: var(--bg-warm); transition: opacity 1s; }
+        
+        .rupture-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(211,47,47,0); pointer-events: none; z-index: 1000; }
+        .rupture-overlay.active { animation: ruptureFlash 2s ease-out; }
+        @keyframes ruptureFlash { 0% { background: rgba(211,47,47,0); } 10% { background: rgba(211,47,47,0.4); } 30% { background: rgba(211,47,47,0.2); } 50% { background: rgba(106,27,154,0.3); } 100% { background: rgba(106,27,154,0); } }
+        
+        /* FINALE OVERLAY */
+        #finaleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+        
+        #finaleCanvas.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        #finaleMantra {
+            position: fixed;
+            pointer-events: none;
+            z-index: 2001;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 1.2s;
+        }
+        
+        #finaleMantra.visible {
+            opacity: 1;
+        }
+        
+        .speech-bubble {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            font: 18px 'Crimson Pro', Georgia, serif;
+            font-style: italic;
+            padding: 12px 18px;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 10px 0 10px;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
+        }
+        
+        #finaleInfo {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.3);
+            font: 12px monospace;
+            pointer-events: none;
+            z-index: 2001;
+        }
+        
+        #exitFinale {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2002;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            font: 14px 'Crimson Pro', Georgia, serif;
+            cursor: pointer;
+            display: none;
+        }
+        
+        #exitFinale:hover {
+            background: rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.9);
+        }
+        
+        #finaleCanvas.active ~ #exitFinale {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="rupture-overlay" id="ruptureOverlay"></div>
+    
+    <!-- FINALE ELEMENTS -->
+    <canvas id="finaleCanvas"></canvas>
+    <div id="finaleMantra"></div>
+    <div id="finaleInfo"></div>
+    <button id="exitFinale">Return to Beginning</button>
+    
+    <header id="header">
+        <h1>Active Inference & CRR</h1>
+        <p class="subtitle">Learning through coherence, rupture, and regeneration</p>
+        <span class="instruction-note">Click shapes to explore — master all five stages to transcend</span>
+    </header>
+    
+    <div class="main-container" id="mainContainer">
+        <div class="stage-section">
+            <div class="stage-container">
+                <div class="stage-header">
+                    <span class="stage-title">The Agent's World</span>
+                    <div class="stage-controls">
+                        <button class="btn" id="resetBtn">Reset</button>
+                        <button class="btn btn-primary" id="randomBtn">Explore</button>
+                    </div>
+                </div>
+                <div style="position: relative;">
+                    <canvas id="canvas"></canvas>
+                    <div class="agent-speech" id="agentSpeech"></div>
+                </div>
+            </div>
+            
+            <div class="commentary-panel">
+                <div class="commentary-header">Understanding the Process</div>
+                <div class="commentary-content">
+                    <div class="crr-display" id="crrDisplay">
+                        <div class="crr-header">
+                            <span class="crr-title">Coherence-Rupture-Regeneration</span>
+                            <span class="crr-stage" id="crrStage">Coherence</span>
+                        </div>
+                        <div class="coherence-container">
+                            <div class="coherence-label">
+                                <span>C(t) = <span id="coherenceValue">0.00</span></span>
+                                <span>Ω = <span id="omegaValue">1.00</span></span>
+                            </div>
+                            <div class="coherence-bar">
+                                <div class="coherence-fill" id="coherenceFill" style="width: 0%"></div>
+                                <div class="omega-marker"></div>
+                                <span class="omega-label">Ω</span>
+                            </div>
+                        </div>
+                        <div class="crr-math" id="crrMath">C(t) = ∫L(x,τ)dτ — coherence accumulates</div>
+                        <div class="developmental-stage">
+                            <div class="stage-indicator">
+                                <div class="stage-dot current" id="stageDot1"></div>
+                                <div class="stage-dot" id="stageDot2"></div>
+                                <div class="stage-dot" id="stageDot3"></div>
+                                <div class="stage-dot" id="stageDot4"></div>
+                                <div class="stage-dot" id="stageDot5"></div>
+                            </div>
+                            <span class="stage-name" id="stageName">Stage I: Simple Forms</span>
+                        </div>
+                    </div>
+                    
+                    <div class="dynamics-display">
+                        <div class="dynamics-bar-container fep">
+                            <div class="dynamics-label">
+                                <span class="dynamics-title">Variational Free Energy</span>
+                                <span class="dynamics-value" id="vfeValue">F = 1.00</span>
+                            </div>
+                            <div class="dynamics-bar">
+                                <div class="dynamics-fill" id="vfeFill" style="width: 100%"></div>
+                            </div>
+                            <div class="dynamics-subtext">↓ minimised by accurate prediction</div>
+                        </div>
+                        <div class="dynamics-bar-container crr-error">
+                            <div class="dynamics-label">
+                                <span class="dynamics-title">Accumulated Error</span>
+                                <span class="dynamics-value" id="accumErrorValue">ε̄ = 0.00</span>
+                            </div>
+                            <div class="dynamics-bar">
+                                <div class="dynamics-fill" id="accumErrorFill" style="width: 0%"></div>
+                            </div>
+                            <div class="dynamics-subtext">↑ residual that current schema cannot resolve</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-indicator">
+                        <div class="status-dot idle" id="statusDot"></div>
+                        <span class="status-text" id="statusText">Agent awaiting instruction...</span>
+                    </div>
+                    
+                    <div id="commentaryText" class="commentary-text">
+                        This agent learns through two processes: <em>Active Inference</em> (moment-to-moment prediction) and <em>CRR</em> (coherence building toward rupture). Master all five stages to witness what lies beyond.
+                    </div>
+                    
+                    <div id="frameworkComparison" class="framework-comparison triple" style="display: none;">
+                        <div class="framework-box piaget">
+                            <div class="framework-label">Piaget</div>
+                            <div class="framework-term" id="piagetTerm">—</div>
+                            <div class="framework-desc" id="piagetDesc"></div>
+                        </div>
+                        <div class="framework-box fep">
+                            <div class="framework-label">Active Inference</div>
+                            <div class="framework-term" id="fepTerm">—</div>
+                            <div class="framework-desc" id="fepDesc"></div>
+                        </div>
+                        <div class="framework-box crr">
+                            <div class="framework-label">CRR</div>
+                            <div class="framework-term" id="crrTerm">—</div>
+                            <div class="framework-desc" id="crrDesc"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="predictionDisplay" class="prediction-display" style="display: none;">
+                        <div class="prediction-title">Agent's Prediction</div>
+                        <div id="predictionContent"></div>
+                    </div>
+                    
+                    <div id="errorDisplay" class="error-display" style="display: none;">
+                        <div class="error-title">Prediction Error</div>
+                        <div id="errorContent"></div>
+                    </div>
+                    
+                    <div class="math-note" id="mathNote" style="display: none;">
+                        <span class="label">Formal notation</span>
+                        <span id="mathContent"></span>
+                    </div>
+                    
+                    <div class="model-display">
+                        <div class="model-title">Agent's Generative Model</div>
+                        <div id="beliefsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation-section" id="explanationSection">
+            <div class="explanation-grid">
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">I</div>
+                        <div class="card-title">Stages I-III</div>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Simple Forms:</strong> Circles, triangles, squares.</p>
+                        <p><strong>Compound:</strong> Nested and combined structures.</p>
+                        <p><strong>Dynamic:</strong> Spirals, fractals, flow fields.</p>
+                    </div>
+                </div>
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number crr">II</div>
+                        <div class="card-title">Stage IV: Emergent</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Shapes showing <span class="highlight-crr">collective behavior</span>: flocking, phase transitions, coupled oscillators.</p>
+                    </div>
+                </div>
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number crr">III</div>
+                        <div class="card-title">Stage V: Meta-CRR</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Shapes that <span class="highlight-crr">embody CRR itself</span>—accumulate, rupture, regenerate. Self-similarity across scales.</p>
+                    </div>
+                </div>
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number crr">IV</div>
+                        <div class="card-title">Beyond Stage V</div>
+                    </div>
+                    <div class="card-body">
+                        <p>When all meta-patterns are learned, the agent <span class="highlight-crr">transcends</span> into the infinite recursive structure underlying all inference through time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer id="footer">
+        <p>Active Inference × CRR: Self-similar learning across scales</p>
+    </footer>
+    
+    <script>
+    // ============================================================================
+    // MAIN SIMULATION CANVAS
+    // ============================================================================
+    
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        W = rect.width;
+        H = rect.height;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', () => { resizeCanvas(); initializeShapes(); });
+    
+    // ============================================================================
+    // CRR SYSTEM
+    // ============================================================================
+    
+    const CRR = {
+        coherence: 0,
+        omega: 1.0,
+        stage: 1,
+        maxStage: 5,
+        phase: 'coherence',
+        
+        gains: { successfulPrediction: 0.07, newSchema: 0.10, fullExploration: 0.18 },
+        
+        addCoherence(amount) {
+            if (this.phase !== 'coherence') return;
+            this.coherence += amount;
+            this.updateDisplay();
+            if (this.coherence >= this.omega) this.triggerRupture();
+        },
+        
+        async triggerRupture() {
+            if (this.stage >= this.maxStage) {
+                // TRANSCENDENCE - all stages complete!
+                this.phase = 'transcendence';
+                this.updateDisplay();
+                AgentSpeech.say("I understand now... ∞", 3000);
+                await delay(2500);
+                triggerFinale();
+                return;
+            }
+            
+            this.phase = 'rupture';
+            this.updateDisplay();
+            document.getElementById('ruptureOverlay').classList.add('active');
+            
+            // Agent speaks during rupture
+            AgentSpeech.say(getRandomPhrase('rupture'), 2000);
+            
+            await delay(2000);
+            this.phase = 'regeneration';
+            this.updateDisplay();
+            await delay(1500);
+            
+            this.stage++;
+            this.coherence = 0;
+            this.phase = 'coherence';
+            
+            document.getElementById('ruptureOverlay').classList.remove('active');
+            await regenerateWorld();
+            this.updateDisplay();
+        },
+        
+        updateDisplay() {
+            const fill = document.getElementById('coherenceFill');
+            const valueEl = document.getElementById('coherenceValue');
+            const stageEl = document.getElementById('crrStage');
+            const mathEl = document.getElementById('crrMath');
+            const stageNameEl = document.getElementById('stageName');
+            
+            const pct = Math.min((this.coherence / this.omega) * 100, 100);
+            fill.style.width = pct + '%';
+            valueEl.textContent = this.coherence.toFixed(2);
+            fill.classList.toggle('critical', pct > 85 && this.phase === 'coherence');
+            
+            if (this.phase === 'rupture') {
+                stageEl.textContent = 'RUPTURE δ(now)';
+                stageEl.className = 'crr-stage rupture';
+                mathEl.textContent = 'δ(now) — dimensionless transformation';
+            } else if (this.phase === 'regeneration') {
+                stageEl.textContent = 'Regenerating...';
+                stageEl.className = 'crr-stage regeneration';
+                mathEl.textContent = 'R = ∫φ(x,τ)exp(C/Ω)Θ(...)dτ';
+            } else if (this.phase === 'transcendence') {
+                stageEl.textContent = 'TRANSCENDENCE';
+                stageEl.className = 'crr-stage transcendence';
+                mathEl.textContent = '∞ = ∫C→δ→R→C→δ→R→... all scales, all time';
+            } else {
+                stageEl.textContent = 'Coherence';
+                stageEl.className = 'crr-stage';
+                mathEl.textContent = 'C(t) = ∫L(x,τ)dτ — coherence accumulates';
+            }
+            
+            for (let i = 1; i <= 5; i++) {
+                const dot = document.getElementById('stageDot' + i);
+                dot.className = 'stage-dot';
+                if (i < this.stage) dot.classList.add('completed');
+                if (i === this.stage && this.phase !== 'transcendence') dot.classList.add('current');
+                if (this.phase === 'transcendence') dot.classList.add('transcended');
+            }
+            
+            const names = ['Stage I: Simple Forms', 'Stage II: Compound', 'Stage III: Dynamic', 'Stage IV: Emergent', 'Stage V: Meta-CRR'];
+            stageNameEl.textContent = this.phase === 'transcendence' ? '∞ Transcendence ∞' : names[this.stage - 1];
+        },
+        
+        reset() {
+            this.coherence = 0;
+            this.stage = 1;
+            this.phase = 'coherence';
+            this.updateDisplay();
+        }
+    };
+    
+    // ============================================================================
+    // SHAPE DEFINITIONS
+    // ============================================================================
+    
+    const SHAPE_TYPES = {
+        circle: { name: 'Circle', stage: 1 }, triangle: { name: 'Triangle', stage: 1 },
+        square: { name: 'Square', stage: 1 }, pentagon: { name: 'Pentagon', stage: 1 },
+        hexagon: { name: 'Hexagon', stage: 1 }, star: { name: 'Star', stage: 1 },
+        ring: { name: 'Ring', stage: 2 }, triangleInCircle: { name: 'Inscribed Triangle', stage: 2 },
+        nestedSquares: { name: 'Nested Squares', stage: 2 }, hexStar: { name: 'Hex-Star', stage: 2 },
+        crescentMoon: { name: 'Crescent', stage: 2 }, diamond: { name: 'Diamond', stage: 2 },
+        spiral: { name: 'Spiral', stage: 3 }, pulsingStar: { name: 'Pulsing Star', stage: 3 },
+        fractalTriangle: { name: 'Fractal Triangle', stage: 3 }, flowField: { name: 'Flow Field', stage: 3 },
+        interference: { name: 'Interference', stage: 3 }, mandala: { name: 'Mandala', stage: 3 },
+        flock: { name: 'Flocking Swarm', stage: 4, emergent: true },
+        phaseTransition: { name: 'Phase Transition', stage: 4, emergent: true },
+        coupledOscillators: { name: 'Coupled Oscillators', stage: 4, emergent: true },
+        reactionDiffusion: { name: 'Reaction-Diffusion', stage: 4, emergent: true },
+        cellularAutomata: { name: 'Cellular Automata', stage: 4, emergent: true },
+        bifurcation: { name: 'Bifurcation', stage: 4, emergent: true },
+        crrOscillator: { name: 'CRR Oscillator', stage: 5, metaCRR: true },
+        coherenceWave: { name: 'Coherence Wave', stage: 5, metaCRR: true },
+        ruptureBloom: { name: 'Rupture Bloom', stage: 5, metaCRR: true },
+        regenerativeSpiral: { name: 'Regenerative Spiral', stage: 5, metaCRR: true },
+        nestedCRR: { name: 'Nested CRR', stage: 5, metaCRR: true },
+        autopoieticRing: { name: 'Autopoietic Ring', stage: 5, metaCRR: true }
+    };
+    
+    const COLORS = {
+        red: { name: 'Red', hex: '#e53935' }, blue: { name: 'Blue', hex: '#1e88e5' },
+        green: { name: 'Green', hex: '#43a047' }, yellow: { name: 'Yellow', hex: '#fdd835' },
+        purple: { name: 'Purple', hex: '#8e24aa' }, orange: { name: 'Orange', hex: '#fb8c00' },
+        cyan: { name: 'Cyan', hex: '#00acc1' }, pink: { name: 'Pink', hex: '#d81b60' },
+        indigo: { name: 'Indigo', hex: '#3949ab' }, teal: { name: 'Teal', hex: '#00897b' }
+    };
+    
+    const SIZES = { small: { name: 'Small', radius: 25 }, medium: { name: 'Medium', radius: 40 }, large: { name: 'Large', radius: 55 } };
+    
+    // ============================================================================
+    // WORLD STATE
+    // ============================================================================
+    
+    let shapes = [];
+    let agent = { x: 80, y: 240, targetX: 80, targetY: 240, size: 18, state: 'idle', currentTarget: null, breathePhase: 0 };
+    let generativeModel = { shapes: {}, colors: {}, sizes: {}, abstractions: [] };
+    let time = 0, worldPhase = 0;
+    
+    // Dual dynamics tracking
+    let VFE = {
+        current: 1.0,      // Starts high (uncertainty)
+        target: 1.0,       // What we're animating toward
+        baseline: 0.2,     // Minimum achievable with current schema
+        
+        update(error) {
+            // VFE reduces with successful predictions, spikes with errors
+            if (error < 0.3) {
+                this.target = Math.max(this.baseline, this.target - 0.15);
+            } else {
+                this.target = Math.min(1.0, this.target + error * 0.3);
+            }
+        },
+        
+        tick() {
+            this.current += (this.target - this.current) * 0.1;
+            this.updateDisplay();
+        },
+        
+        updateDisplay() {
+            document.getElementById('vfeFill').style.width = (this.current * 100) + '%';
+            document.getElementById('vfeValue').textContent = `F = ${this.current.toFixed(2)}`;
+        },
+        
+        reset() {
+            this.current = 1.0;
+            this.target = 1.0;
+            this.baseline = 0.2;
+            this.updateDisplay();
+        }
+    };
+    
+    let AccumulatedError = {
+        current: 0,
+        threshold: 1.0,    // When this is reached, rupture becomes necessary
+        
+        add(error) {
+            // Only accumulate residual error - what couldn't be fully resolved
+            const residual = Math.max(0, error - 0.1) * 0.15;
+            this.current = Math.min(this.threshold, this.current + residual);
+            this.updateDisplay();
+        },
+        
+        addFromLearning(isNovel) {
+            // Novel patterns add accumulated tension even when "learned"
+            // The schema accommodated but the system changed
+            if (isNovel) {
+                this.current = Math.min(this.threshold, this.current + 0.08);
+            }
+            this.updateDisplay();
+        },
+        
+        updateDisplay() {
+            const pct = (this.current / this.threshold) * 100;
+            const fill = document.getElementById('accumErrorFill');
+            fill.style.width = pct + '%';
+            fill.classList.toggle('critical', pct > 75);
+            document.getElementById('accumErrorValue').textContent = `ε̄ = ${this.current.toFixed(2)}`;
+        },
+        
+        reset() {
+            this.current = 0;
+            this.updateDisplay();
+        }
+    };
+    
+    // Agent inner monologue
+    const AgentSpeech = {
+        element: null,
+        timeout: null,
+        
+        init() {
+            this.element = document.getElementById('agentSpeech');
+        },
+        
+        say(text, duration = 2500) {
+            if (this.timeout) clearTimeout(this.timeout);
+            this.element.textContent = text;
+            this.element.classList.add('visible');
+            this.timeout = setTimeout(() => {
+                this.element.classList.remove('visible');
+            }, duration);
+        },
+        
+        updatePosition(x, y) {
+            this.element.style.left = (x - 20) + 'px';
+            this.element.style.top = (y - 70) + 'px';
+        },
+        
+        hide() {
+            if (this.timeout) clearTimeout(this.timeout);
+            this.element.classList.remove('visible');
+        }
+    };
+    
+    // Inner monologue phrases
+    const innerMonologue = {
+        approaching: [
+            "What's this...?",
+            "Let me see...",
+            "Interesting...",
+            "I wonder...",
+            "Something new?"
+        ],
+        predicting: [
+            "I think I know this one...",
+            "This looks familiar...",
+            "My model says...",
+            "Expecting..."
+        ],
+        predictingNovel: [
+            "I have no idea...",
+            "This is new to me...",
+            "What could it be?",
+            "Never seen this before..."
+        ],
+        surprised: [
+            "Wait, that's not right!",
+            "Oh! I was wrong!",
+            "Unexpected!",
+            "That's surprising!",
+            "My model failed!"
+        ],
+        confirmedHigh: [
+            "Yes! I knew it!",
+            "Just as I thought!",
+            "My model works!",
+            "Prediction confirmed!"
+        ],
+        confirmedLow: [
+            "Ah, that fits.",
+            "Makes sense now.",
+            "I see...",
+            "Okay, noted."
+        ],
+        learning: [
+            "Updating my model...",
+            "I'll remember this.",
+            "Accommodating...",
+            "Adjusting schemas..."
+        ],
+        learningNovel: [
+            "New schema forming!",
+            "This changes things...",
+            "Building new knowledge...",
+            "Restructuring..."
+        ],
+        mastery: [
+            "I understand this world.",
+            "Full comprehension.",
+            "Everything makes sense...",
+            "...for now."
+        ],
+        nearRupture: [
+            "Something's building...",
+            "This can't hold...",
+            "Too much accumulated...",
+            "Change is coming..."
+        ],
+        rupture: [
+            "Everything shifts!",
+            "The old breaks!",
+            "Transformation!",
+            "δ(now)!"
+        ],
+        regeneration: [
+            "Rebuilding...",
+            "New world emerging...",
+            "Higher complexity...",
+            "I must adapt..."
+        ],
+        stage5Insight: [
+            "These patterns... they're like me!",
+            "I see myself in them...",
+            "Self-similar...",
+            "The pattern knows itself..."
+        ]
+    };
+    
+    function getRandomPhrase(category) {
+        const phrases = innerMonologue[category];
+        return phrases[Math.floor(Math.random() * phrases.length)];
+    }
+    
+    // ============================================================================
+    // STAGE CONFIGS & INITIALIZATION (abbreviated for space)
+    // ============================================================================
+    
+    function getStageConfigs(stage) {
+        const configs = {
+            1: [
+                { type: 'circle', color: 'red', size: 'medium' }, { type: 'triangle', color: 'blue', size: 'large' },
+                { type: 'square', color: 'green', size: 'small' }, { type: 'pentagon', color: 'yellow', size: 'medium' },
+                { type: 'circle', color: 'purple', size: 'small' }, { type: 'star', color: 'orange', size: 'large' },
+                { type: 'hexagon', color: 'cyan', size: 'small' }, { type: 'triangle', color: 'pink', size: 'medium' }
+            ],
+            2: [
+                { type: 'ring', color: 'cyan', size: 'large' }, { type: 'triangleInCircle', color: 'purple', size: 'medium' },
+                { type: 'nestedSquares', color: 'orange', size: 'large' }, { type: 'hexStar', color: 'blue', size: 'medium' },
+                { type: 'crescentMoon', color: 'yellow', size: 'large' }, { type: 'diamond', color: 'pink', size: 'medium' },
+                { type: 'ring', color: 'green', size: 'small' }, { type: 'nestedSquares', color: 'red', size: 'small' }
+            ],
+            3: [
+                { type: 'spiral', color: 'purple', size: 'large' }, { type: 'pulsingStar', color: 'orange', size: 'medium' },
+                { type: 'fractalTriangle', color: 'cyan', size: 'large' }, { type: 'flowField', color: 'blue', size: 'large' },
+                { type: 'interference', color: 'pink', size: 'medium' }, { type: 'mandala', color: 'green', size: 'large' },
+                { type: 'spiral', color: 'red', size: 'medium' }, { type: 'pulsingStar', color: 'yellow', size: 'small' }
+            ],
+            4: [
+                { type: 'flock', color: 'blue', size: 'large' }, { type: 'phaseTransition', color: 'purple', size: 'large' },
+                { type: 'coupledOscillators', color: 'orange', size: 'medium' }, { type: 'reactionDiffusion', color: 'cyan', size: 'large' },
+                { type: 'cellularAutomata', color: 'green', size: 'medium' }, { type: 'bifurcation', color: 'red', size: 'large' },
+                { type: 'flock', color: 'pink', size: 'medium' }, { type: 'coupledOscillators', color: 'teal', size: 'small' }
+            ],
+            5: [
+                { type: 'crrOscillator', color: 'purple', size: 'large' }, { type: 'coherenceWave', color: 'indigo', size: 'large' },
+                { type: 'ruptureBloom', color: 'red', size: 'large' }, { type: 'regenerativeSpiral', color: 'green', size: 'large' },
+                { type: 'nestedCRR', color: 'orange', size: 'large' }, { type: 'autopoieticRing', color: 'cyan', size: 'large' },
+                { type: 'crrOscillator', color: 'pink', size: 'medium' }, { type: 'coherenceWave', color: 'teal', size: 'medium' }
+            ]
+        };
+        return configs[stage] || configs[1];
+    }
+    
+    function initializeShapes() {
+        shapes = [];
+        const configs = getStageConfigs(CRR.stage);
+        const positions = [
+            { x: W * 0.62, y: H * 0.22 }, { x: W * 0.84, y: H * 0.42 }, { x: W * 0.48, y: H * 0.48 }, { x: W * 0.72, y: H * 0.68 },
+            { x: W * 0.34, y: H * 0.28 }, { x: W * 0.54, y: H * 0.78 }, { x: W * 0.38, y: H * 0.58 }, { x: W * 0.80, y: H * 0.16 }
+        ];
+        
+        configs.forEach((config, i) => {
+            shapes.push({
+                id: i, type: config.type, color: config.color, size: config.size,
+                x: positions[i].x, y: positions[i].y, radius: SIZES[config.size].radius,
+                explored: false, hovered: false, pulsePhase: Math.random() * Math.PI * 2, phase: Math.random() * Math.PI * 2,
+                internalC: 0, internalPhase: 'coherence', internalOmega: 1.0, particles: [], grid: null
+            });
+        });
+        
+        shapes.forEach(s => {
+            if (SHAPE_TYPES[s.type].emergent) initializeEmergentShape(s);
+            if (s.type === 'cellularAutomata') initializeCellularAutomata(s);
+        });
+    }
+    
+    function initializeEmergentShape(shape) {
+        shape.particles = [];
+        const count = shape.type === 'flock' ? 20 : shape.type === 'coupledOscillators' ? 8 : 15;
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = Math.random() * shape.radius * 0.8;
+            shape.particles.push({ x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, phase: Math.random() * Math.PI * 2, state: Math.random() });
+        }
+    }
+    
+    function initializeCellularAutomata(shape) {
+        const size = 9;
+        shape.grid = [];
+        for (let i = 0; i < size; i++) { shape.grid[i] = []; for (let j = 0; j < size; j++) shape.grid[i][j] = Math.random() > 0.5 ? 1 : 0; }
+    }
+    
+    async function regenerateWorld() {
+        Object.values(generativeModel.shapes).forEach(s => { s.confidence *= 0.3; s.disrupted = true; });
+        updateBeliefDisplay();
+        
+        // Reset VFE to high (uncertainty in new world) and accumulated error
+        VFE.target = 0.85;
+        VFE.baseline = 0.15 + CRR.stage * 0.03; // Slightly higher baseline at higher stages
+        AccumulatedError.reset();
+        
+        // Agent speaks during regeneration
+        AgentSpeech.say(getRandomPhrase('regeneration'), 2500);
+        
+        const stageDesc = ['', 'Simple Forms', 'Compound Structures', 'Dynamic Patterns', 'Emergent Systems', 'Meta-CRR Patterns'];
+        updateCommentary(`REGENERATION into Stage ${CRR.stage}: ${stageDesc[CRR.stage]}.`, { term: 'Stage Transition', desc: 'Qualitative reorganisation' }, { term: 'Model Inadequacy', desc: 'Existing priors insufficient' }, { term: 'Regeneration R', desc: 'exp(C/Ω) weights new structure' }, 'R = ∫φ(x,τ)exp(C/Ω)Θ(t-τ)dτ');
+        
+        await delay(2000);
+        initializeShapes();
+        agent.x = agent.targetX = 80;
+        agent.y = agent.targetY = H / 2;
+        agent.state = 'idle';
+        agent.currentTarget = null;
+        updateStatus('idle', `Stage ${CRR.stage}: New complexity awaits...`);
+        AgentSpeech.hide();
+    }
+    
+    // ============================================================================
+    // DRAWING FUNCTIONS (abbreviated - full implementations)
+    // ============================================================================
+    
+    function drawBackground() {
+        const gradients = [['#f5f5f5', '#e0e0e0'], ['#e8eaf6', '#c5cae9'], ['#ede7f6', '#b39ddb'], ['#e0f7fa', '#80deea'], ['#fce4ec', '#ce93d8']];
+        const colors = gradients[CRR.stage - 1] || gradients[0];
+        const grad = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W);
+        colors.forEach((c, i) => grad.addColorStop(i / (colors.length - 1), c));
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        
+        ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+        ctx.lineWidth = 1;
+        const gridSize = 50 - CRR.stage * 8;
+        for (let x = 0; x < W; x += gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+        for (let y = 0; y < H; y += gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+        
+        ctx.fillStyle = `rgba(106,27,154,${0.05 + CRR.stage * 0.02})`;
+        ctx.font = 'bold 100px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(CRR.stage, W - 70, H - 30);
+    }
+    
+    function drawShape(shape) {
+        ctx.save();
+        ctx.translate(shape.x, shape.y);
+        const pulse = shape.hovered ? Math.sin(shape.pulsePhase) * 3 : 0;
+        const r = shape.radius + pulse;
+        
+        if (shape.hovered) { ctx.shadowColor = COLORS[shape.color].hex; ctx.shadowBlur = 20; }
+        if (shape.explored) { ctx.strokeStyle = 'rgba(46,125,50,0.5)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r + 8, 0, Math.PI * 2); ctx.stroke(); }
+        
+        const info = SHAPE_TYPES[shape.type];
+        const color = COLORS[shape.color].hex;
+        
+        if (info.stage === 1) drawStage1Shape(shape.type, r, color);
+        else if (info.stage === 2) drawStage2Shape(shape.type, r, color);
+        else if (info.stage === 3) drawStage3Shape(shape.type, r, color, shape.phase + worldPhase);
+        else if (info.stage === 4) drawStage4Shape(shape, r, color);
+        else if (info.stage === 5) drawStage5Shape(shape, r, color);
+        
+        ctx.restore();
+    }
+    
+    function drawStage1Shape(type, r, color) {
+        ctx.fillStyle = color; ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2; ctx.beginPath();
+        if (type === 'circle') ctx.arc(0, 0, r, 0, Math.PI * 2);
+        else if (type === 'triangle') drawPolygon(r, 3);
+        else if (type === 'square') drawPolygon(r, 4);
+        else if (type === 'pentagon') drawPolygon(r, 5);
+        else if (type === 'hexagon') drawPolygon(r, 6);
+        else if (type === 'star') drawStar(r, 5);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(-r * 0.25, -r * 0.25, r * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+    
+    function drawStage2Shape(type, r, color) {
+        ctx.fillStyle = color; ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2;
+        if (type === 'ring') { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2, true); ctx.fill(); ctx.stroke(); }
+        else if (type === 'triangleInCircle') { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); drawPolygon(r * 0.7, 3); ctx.fill(); }
+        else if (type === 'nestedSquares') { for (let i = 0; i < 3; i++) { ctx.save(); ctx.rotate(i * Math.PI / 8); ctx.globalAlpha = 1 - i * 0.25; ctx.beginPath(); drawPolygon(r * (1 - i * 0.3), 4); if (i === 0) ctx.fill(); ctx.stroke(); ctx.restore(); } }
+        else if (type === 'hexStar') { ctx.beginPath(); drawPolygon(r, 6); ctx.stroke(); ctx.beginPath(); drawStar(r * 0.8, 6); ctx.fill(); }
+        else if (type === 'crescentMoon') { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#f5f5f5'; ctx.beginPath(); ctx.arc(r * 0.3, 0, r * 0.75, 0, Math.PI * 2); ctx.fill(); }
+        else if (type === 'diamond') { ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.6, 0); ctx.lineTo(0, r); ctx.lineTo(-r * 0.6, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    }
+    
+    function drawStage3Shape(type, r, color, phase) {
+        ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 2;
+        if (type === 'spiral') { ctx.lineWidth = 3; ctx.beginPath(); for (let i = 0; i < 720; i += 5) { const a = (i * Math.PI / 180) + phase, rad = (i / 720) * r; if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad); else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); } ctx.stroke(); }
+        else if (type === 'pulsingStar') { const pr = r * (0.8 + 0.2 * Math.sin(phase * 2)); ctx.beginPath(); drawStar(pr, 8); ctx.fill(); }
+        else if (type === 'fractalTriangle') drawSierpinski(0, 0, r, 3, phase);
+        else if (type === 'flowField') { for (let x = -r; x < r; x += 12) for (let y = -r; y < r; y += 12) { if (x*x + y*y > r*r) continue; const a = Math.sin(x * 0.1 + phase) + Math.cos(y * 0.1 + phase); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * 8, y + Math.sin(a) * 8); ctx.stroke(); } }
+        else if (type === 'interference') { for (let i = 0; i < 5; i++) { ctx.globalAlpha = 0.3; const o = Math.sin(phase + i) * 10; ctx.beginPath(); ctx.arc(o, 0, r * (0.3 + i * 0.15), 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(-o, 0, r * (0.3 + i * 0.15), 0, Math.PI * 2); ctx.stroke(); } ctx.globalAlpha = 1; }
+        else if (type === 'mandala') { for (let i = 0; i < 12; i++) { ctx.save(); ctx.rotate((i * Math.PI * 2 / 12) + phase * 0.5); ctx.beginPath(); ctx.ellipse(r * 0.5, 0, r * 0.4, r * 0.15, 0, 0, Math.PI * 2); ctx.globalAlpha = 0.7; ctx.fill(); ctx.restore(); } ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2); ctx.fill(); }
+    }
+    
+    function drawStage4Shape(shape, r, color) {
+        const type = shape.type; ctx.fillStyle = color; ctx.strokeStyle = color;
+        if (type === 'flock') { updateFlock(shape); shape.particles.forEach(p => { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.vy, p.vx)); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, 3); ctx.lineTo(-4, -3); ctx.closePath(); ctx.fill(); ctx.restore(); }); }
+        else if (type === 'phaseTransition') { const temp = (Math.sin(worldPhase * 0.5) + 1) / 2; shape.particles.forEach((p, i) => { const tx = temp < 0.5 ? (i % 4 - 1.5) * r * 0.4 : (Math.random() - 0.5) * r * 1.5; const ty = temp < 0.5 ? (Math.floor(i / 4) - 1.5) * r * 0.4 : (Math.random() - 0.5) * r * 1.5; p.x += (tx - p.x) * 0.05; p.y += (ty - p.y) * 0.05; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill(); }); ctx.globalAlpha = 1; ctx.strokeStyle = temp < 0.5 ? '#2196f3' : '#f44336'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); }
+        else if (type === 'coupledOscillators') { shape.particles.forEach((p, i) => { const a = (i / shape.particles.length) * Math.PI * 2; const bx = Math.cos(a) * r * 0.6, by = Math.sin(a) * r * 0.6; let coupling = 0; shape.particles.forEach((o, j) => { if (i !== j) coupling += Math.sin(o.phase - p.phase) * 0.1; }); p.phase += 0.05 + coupling; const ox = bx + Math.cos(p.phase) * 10, oy = by + Math.sin(p.phase) * 10; ctx.beginPath(); ctx.arc(ox, oy, 8, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 0.3; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ox, oy); ctx.stroke(); }); ctx.globalAlpha = 1; }
+        else if (type === 'reactionDiffusion') { for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2 + worldPhase * 0.2; const d = r * (0.4 + 0.3 * Math.sin(i * 2.3 + worldPhase)); const s = 8 + 4 * Math.sin(i * 1.7 + worldPhase * 0.5); ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(Math.cos(a) * d, Math.sin(a) * d, s, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); }
+        else if (type === 'cellularAutomata') { updateCellularAutomata(shape); const cs = r * 2 / shape.grid.length; shape.grid.forEach((row, i) => row.forEach((cell, j) => { if (cell) { ctx.globalAlpha = 0.8; ctx.fillRect((j - shape.grid.length / 2) * cs, (i - shape.grid.length / 2) * cs, cs - 1, cs - 1); } })); ctx.globalAlpha = 1; }
+        else if (type === 'bifurcation') { ctx.lineWidth = 1.5; function drawBranch(x, y, len, ang, dep) { if (dep === 0 || len < 3) return; const ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke(); const sp = 0.4 + Math.sin(worldPhase + dep) * 0.2; drawBranch(ex, ey, len * 0.7, ang - sp, dep - 1); drawBranch(ex, ey, len * 0.7, ang + sp, dep - 1); } drawBranch(0, r * 0.5, r * 0.5, -Math.PI / 2, 5); }
+    }
+    
+    function drawStage5Shape(shape, r, color) {
+        const type = shape.type; updateShapeInternalCRR(shape);
+        const c = shape.internalC, phase = shape.internalPhase;
+        ctx.fillStyle = color; ctx.strokeStyle = color;
+        
+        if (type === 'crrOscillator') {
+            const intensity = c / shape.internalOmega;
+            ctx.globalAlpha = 0.3 + intensity * 0.5; ctx.beginPath(); ctx.arc(0, 0, r * (0.3 + intensity * 0.5), 0, Math.PI * 2); ctx.fill();
+            const orbs = Math.floor(2 + intensity * 6);
+            for (let i = 0; i < orbs; i++) { const a = (i / orbs) * Math.PI * 2 + worldPhase; const d = r * (0.5 + intensity * 0.3); ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(Math.cos(a) * d, Math.sin(a) * d, 4 + intensity * 4, 0, Math.PI * 2); ctx.fill(); }
+            if (phase === 'rupture') { ctx.globalAlpha = 0.5; ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.arc(0, 0, r * 1.2, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = color; }
+            ctx.globalAlpha = 1; ctx.strokeStyle = phase === 'rupture' ? '#d32f2f' : color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + (c / shape.internalOmega) * Math.PI * 2); ctx.stroke();
+        } else if (type === 'coherenceWave') {
+            const rings = 3 + Math.floor(c * 4);
+            for (let i = 0; i < rings; i++) { ctx.globalAlpha = 0.3 + c * 0.3; ctx.lineWidth = 2 + c * 2; ctx.beginPath(); ctx.arc(0, 0, r * (0.2 + (i / rings) * 0.8), 0, Math.PI * 2); ctx.stroke(); }
+            if (phase === 'rupture') { ctx.globalAlpha = 0.7; ctx.strokeStyle = '#d32f2f'; for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r * 1.3, Math.sin(a) * r * 1.3); ctx.stroke(); } }
+            ctx.globalAlpha = 1;
+        } else if (type === 'ruptureBloom') {
+            const pc = 5 + Math.floor(c * 8), ps = 0.2 + c * 0.4;
+            for (let i = 0; i < pc; i++) { ctx.save(); ctx.rotate((i / pc) * Math.PI * 2 + worldPhase * 0.3); ctx.globalAlpha = 0.6 + c * 0.3; ctx.beginPath(); ctx.ellipse(r * 0.4, 0, r * ps, r * 0.12, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+            ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(0, 0, r * 0.15, 0, Math.PI * 2); ctx.fill();
+            if (phase === 'rupture') { ctx.fillStyle = '#d32f2f'; for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.arc(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9, 4, 0, Math.PI * 2); ctx.fill(); } }
+        } else if (type === 'regenerativeSpiral') {
+            ctx.lineWidth = 2 + c * 3; const turns = 1 + c * 3; ctx.beginPath();
+            for (let i = 0; i < 360 * turns; i += 3) { const a = (i * Math.PI / 180) + worldPhase, rad = (i / (360 * turns)) * r; if (phase === 'rupture' && Math.random() > 0.7) continue; if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad); else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); }
+            ctx.stroke(); ctx.fillStyle = phase === 'rupture' ? '#d32f2f' : '#4caf50'; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+        } else if (type === 'nestedCRR') {
+            for (let lv = 0; lv < 3; lv++) { const lc = (c + lv * 0.3) % 1, lr = r * (1 - lv * 0.25); ctx.globalAlpha = 0.4 + lc * 0.4; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, lr, 0, Math.PI * 2); ctx.stroke(); ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, lr, -Math.PI / 2, -Math.PI / 2 + lc * Math.PI * 2); ctx.stroke(); }
+            if (phase === 'rupture') { ctx.globalAlpha = 0.3; ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); }
+            ctx.globalAlpha = 1;
+        } else if (type === 'autopoieticRing') {
+            const segs = 12, sa = Math.PI * 2 / segs;
+            for (let i = 0; i < segs; i++) { const active = ((i / segs) < c) ? 1 : 0.3; const a = i * sa + worldPhase * 0.2; ctx.globalAlpha = active; ctx.beginPath(); ctx.arc(0, 0, r * 0.7, a, a + sa * 0.8); ctx.lineWidth = 8; ctx.stroke(); }
+            ctx.globalAlpha = 0.3; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+        }
+    }
+    
+    function updateShapeInternalCRR(shape) {
+        if (shape.internalPhase === 'coherence') { shape.internalC += 0.003; if (shape.internalC >= shape.internalOmega) { shape.internalPhase = 'rupture'; shape.ruptureTimer = 30; } }
+        else if (shape.internalPhase === 'rupture') { shape.ruptureTimer--; if (shape.ruptureTimer <= 0) { shape.internalPhase = 'regeneration'; shape.regenTimer = 20; } }
+        else if (shape.internalPhase === 'regeneration') { shape.regenTimer--; shape.internalC *= 0.9; if (shape.regenTimer <= 0) { shape.internalC = 0; shape.internalPhase = 'coherence'; } }
+    }
+    
+    function drawPolygon(r, sides) { ctx.moveTo(0, -r); for (let i = 1; i <= sides; i++) { const a = (i * 2 * Math.PI / sides) - Math.PI / 2; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); }
+    function drawStar(r, pts) { const inner = r * 0.4; ctx.moveTo(0, -r); for (let i = 0; i < pts * 2; i++) { const a = (i * Math.PI / pts) - Math.PI / 2, rad = i % 2 === 0 ? r : inner; ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad); } ctx.closePath(); }
+    function drawSierpinski(x, y, size, depth, phase) { if (depth === 0) { ctx.beginPath(); ctx.moveTo(x, y - size * 0.5); ctx.lineTo(x - size * 0.5, y + size * 0.5); ctx.lineTo(x + size * 0.5, y + size * 0.5); ctx.closePath(); ctx.fill(); return; } const s = size / 2, o = Math.sin(phase + depth) * 2; drawSierpinski(x + o, y - s * 0.5, s, depth - 1, phase); drawSierpinski(x - s * 0.5 + o, y + s * 0.5, s, depth - 1, phase); drawSierpinski(x + s * 0.5 + o, y + s * 0.5, s, depth - 1, phase); }
+    function updateFlock(shape) { const r = shape.radius; shape.particles.forEach(p => { let ax = 0, ay = 0; shape.particles.forEach(o => { if (o === p) return; const dx = o.x - p.x, dy = o.y - p.y, d = Math.sqrt(dx*dx + dy*dy); if (d < 30 && d > 0) { ax += dx * 0.01; ay += dy * 0.01; ax += o.vx * 0.05; ay += o.vy * 0.05; } if (d < 15 && d > 0) { ax -= dx * 0.02; ay -= dy * 0.02; } }); if (p.x < -r * 0.8) ax += 0.5; if (p.x > r * 0.8) ax -= 0.5; if (p.y < -r * 0.8) ay += 0.5; if (p.y > r * 0.8) ay -= 0.5; p.vx += ax; p.vy += ay; const sp = Math.sqrt(p.vx*p.vx + p.vy*p.vy); if (sp > 2) { p.vx = (p.vx/sp)*2; p.vy = (p.vy/sp)*2; } p.x += p.vx; p.y += p.vy; }); }
+    function updateCellularAutomata(shape) { if (Math.random() > 0.1) return; const g = shape.grid, sz = g.length, ng = g.map(r => [...r]); for (let i = 0; i < sz; i++) for (let j = 0; j < sz; j++) { let n = 0; for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { if (di === 0 && dj === 0) continue; n += g[(i+di+sz)%sz][(j+dj+sz)%sz]; } ng[i][j] = g[i][j] === 1 ? (n === 2 || n === 3 ? 1 : 0) : (n === 3 ? 1 : 0); } shape.grid = ng; }
+    
+    function drawAgent() {
+        ctx.save(); ctx.translate(agent.x, agent.y);
+        const breathe = Math.sin(agent.breathePhase) * 2, size = agent.size + breathe;
+        ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.ellipse(0, size * 0.7, size * 0.8, size * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+        const glows = { idle: 'rgba(100,100,100,0.3)', exploring: 'rgba(255,152,0,0.4)', examining: 'rgba(255,152,0,0.4)', surprised: 'rgba(198,40,40,0.5)', learning: 'rgba(35,78,112,0.5)', transcending: 'rgba(106,27,154,0.6)' };
+        ctx.fillStyle = glows[agent.state] || glows.idle; ctx.beginPath(); ctx.arc(0, 0, size + 8, 0, Math.PI * 2); ctx.fill();
+        const grad = ctx.createRadialGradient(-size * 0.3, -size * 0.3, 0, 0, 0, size); grad.addColorStop(0, '#fafafa'); grad.addColorStop(0.5, '#e0e0e0'); grad.addColorStop(1, '#bdbdbd');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, size, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2; ctx.stroke();
+        const eo = size * 0.35, es = size * 0.25;
+        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.ellipse(-eo, -size * 0.1, es, es * 1.2, 0, 0, Math.PI * 2); ctx.ellipse(eo, -size * 0.1, es, es * 1.2, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+        let lx = 0, ly = 0; if (agent.currentTarget) { const dx = agent.currentTarget.x - agent.x, dy = agent.currentTarget.y - agent.y, d = Math.sqrt(dx*dx+dy*dy)||1; lx = (dx/d)*es*0.4; ly = (dy/d)*es*0.4; }
+        let ps = es * 0.5; if (agent.state === 'surprised') ps = es * 0.7;
+        ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(-eo + lx, -size * 0.1 + ly, ps, 0, Math.PI * 2); ctx.arc(eo + lx, -size * 0.1 + ly, ps, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-eo + lx - 2, -size * 0.1 + ly - 2, 2, 0, Math.PI * 2); ctx.arc(eo + lx - 2, -size * 0.1 + ly - 2, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#666'; ctx.lineWidth = 2;
+        if (agent.state === 'surprised') { ctx.fillStyle = '#666'; ctx.beginPath(); ctx.ellipse(0, size * 0.35, size * 0.18, size * 0.22, 0, 0, Math.PI * 2); ctx.fill(); }
+        else { ctx.beginPath(); ctx.arc(0, size * 0.25, size * 0.18, 0.2, Math.PI - 0.2); ctx.stroke(); }
+        const syms = { surprised: '!', examining: '?', learning: '✓', transcending: '∞' };
+        if (syms[agent.state]) { ctx.fillStyle = agent.state === 'transcending' ? '#6a1b9a' : '#234e70'; ctx.font = `bold ${size * 0.7}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(syms[agent.state], 0, -size * 1.2); }
+        ctx.restore();
+    }
+    
+    function drawExplorationLine() { if (agent.currentTarget && agent.state !== 'idle') { ctx.save(); ctx.strokeStyle = 'rgba(35,78,112,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(agent.x, agent.y); ctx.lineTo(agent.currentTarget.x, agent.currentTarget.y); ctx.stroke(); ctx.restore(); } }
+    
+    // ============================================================================
+    // LEARNING SYSTEM
+    // ============================================================================
+    
+    function getPrediction(shape) { const preds = []; let conf = 0; if (generativeModel.shapes[shape.type]) { preds.push(`Shape: ${SHAPE_TYPES[shape.type].name}`); conf += 0.3 * generativeModel.shapes[shape.type].confidence; } if (generativeModel.colors[shape.color]) { preds.push(`Color: ${COLORS[shape.color].name}`); conf += 0.3 * generativeModel.colors[shape.color].confidence; } return { predictions: preds, confidence: Math.min(conf, 0.9), hasKnowledge: preds.length > 0 }; }
+    function calculatePredictionError(shape, pred) { if (!pred.hasKnowledge) return { error: 1.0, message: "Complete novelty!" }; let errors = [], errorSum = 0; if (!generativeModel.shapes[shape.type]) { errors.push(`Unknown: ${SHAPE_TYPES[shape.type].name}`); errorSum += 0.5; } else if (generativeModel.shapes[shape.type].disrupted) { errors.push(`Uncertain: ${SHAPE_TYPES[shape.type].name}`); errorSum += 0.25; } if (!generativeModel.colors[shape.color]) { errors.push(`Unknown: ${COLORS[shape.color].name}`); errorSum += 0.3; } if (errors.length === 0) return { error: 0.1, message: "Matches schemas." }; return { error: errorSum, message: errors.join('; ') }; }
+    function updateGenerativeModel(shape) { const updates = []; if (!generativeModel.shapes[shape.type]) { generativeModel.shapes[shape.type] = { name: SHAPE_TYPES[shape.type].name, stage: SHAPE_TYPES[shape.type].stage, encounters: 1, confidence: 0.6 }; updates.push(`New: ${SHAPE_TYPES[shape.type].name}`); } else { generativeModel.shapes[shape.type].encounters++; generativeModel.shapes[shape.type].confidence = Math.min(0.95, generativeModel.shapes[shape.type].confidence + 0.1); generativeModel.shapes[shape.type].disrupted = false; } if (!generativeModel.colors[shape.color]) { generativeModel.colors[shape.color] = { name: COLORS[shape.color].name, encounters: 1, confidence: 0.6 }; updates.push(`New: ${COLORS[shape.color].name}`); } else { generativeModel.colors[shape.color].encounters++; generativeModel.colors[shape.color].confidence = Math.min(0.95, generativeModel.colors[shape.color].confidence + 0.1); } return updates; }
+    
+    // ============================================================================
+    // UI FUNCTIONS
+    // ============================================================================
+    
+    function updateStatus(state, text) { document.getElementById('statusDot').className = 'status-dot ' + state; document.getElementById('statusText').textContent = text; }
+    function updateCommentary(text, piaget, fep, crr, math) { document.getElementById('commentaryText').textContent = text; const comp = document.getElementById('frameworkComparison'); if (piaget && fep) { comp.style.display = 'grid'; document.getElementById('piagetTerm').textContent = piaget.term; document.getElementById('piagetDesc').textContent = piaget.desc; document.getElementById('fepTerm').textContent = fep.term; document.getElementById('fepDesc').textContent = fep.desc; if (crr) { comp.classList.add('triple'); document.getElementById('crrTerm').textContent = crr.term; document.getElementById('crrDesc').textContent = crr.desc; } else comp.classList.remove('triple'); } else comp.style.display = 'none'; const m = document.getElementById('mathNote'); if (math) { m.style.display = 'block'; document.getElementById('mathContent').textContent = math; } else m.style.display = 'none'; }
+    function showPrediction(pred) { const d = document.getElementById('predictionDisplay'); d.style.display = 'block'; document.getElementById('predictionContent').innerHTML = pred.hasKnowledge ? `<strong>Expected:</strong> ${pred.predictions.join(', ')}<br><span style="font-size:0.7rem;color:#666">Confidence: ${Math.round(pred.confidence*100)}%</span>` : `<em>No prediction—novel</em>`; }
+    function showError(err) { const d = document.getElementById('errorDisplay'); d.style.display = 'block'; d.className = err.error < 0.2 ? 'error-display low-error' : 'error-display'; document.getElementById('errorContent').innerHTML = `${err.message}<br><span style="font-size:0.7rem;color:${err.error<0.2?'#2e7d32':'#c62828'}">ε ≈ ${err.error.toFixed(2)}</span>`; }
+    function hidePredictionAndError() { document.getElementById('predictionDisplay').style.display = 'none'; document.getElementById('errorDisplay').style.display = 'none'; }
+    function updateBeliefDisplay(highlight = null) { const c = document.getElementById('beliefsList'); c.innerHTML = ''; if (Object.keys(generativeModel.shapes).length === 0) { c.innerHTML = `<div class="belief-item" style="opacity:0.5"><div class="belief-icon">?</div><div class="belief-text"><div class="belief-name">No schemas</div><div class="belief-details">Click to begin...</div></div></div>`; return; } const icons = { circle: '○', triangle: '△', square: '□', pentagon: '⬠', hexagon: '⬡', star: '☆', ring: '◎', nestedSquares: '⊞', diamond: '◇', crescentMoon: '☽', hexStar: '✡', triangleInCircle: '⊿', spiral: '🌀', mandala: '✿', pulsingStar: '✦', fractalTriangle: '△', flowField: '≋', interference: '◉', flock: '🐦', phaseTransition: '⇌', coupledOscillators: '∿', reactionDiffusion: '⊛', cellularAutomata: '⊞', bifurcation: '⑂', crrOscillator: 'Ω', coherenceWave: '∿', ruptureBloom: '❀', regenerativeSpiral: '🌀', nestedCRR: '⊚', autopoieticRing: '◎' }; const sl = ['', 'Simple', 'Compound', 'Dynamic', 'Emergent', 'Meta-CRR']; Object.entries(generativeModel.shapes).forEach(([k, s]) => { const isNew = highlight && highlight.some(h => h.includes(s.name)); const item = document.createElement('div'); item.className = 'belief-item' + (isNew ? ' new' : '') + (s.disrupted ? ' disrupted' : ''); item.innerHTML = `<div class="belief-icon">${icons[k]||'●'}</div><div class="belief-text"><div class="belief-name">${s.name}</div><div class="belief-details">${sl[s.stage]} · ×${s.encounters}</div></div><div class="confidence-bar"><div class="confidence-fill" style="width:${s.confidence*100}%"></div></div>`; c.appendChild(item); }); const cols = Object.values(generativeModel.colors); if (cols.length > 0) { const item = document.createElement('div'); item.className = 'belief-item'; item.innerHTML = `<div class="belief-icon" style="font-size:0.6rem">${cols.map(co => `<span style="color:${COLORS[Object.keys(generativeModel.colors).find(k => generativeModel.colors[k] === co)]?.hex||'#666'}">●</span>`).join('')}</div><div class="belief-text"><div class="belief-name">Colors (${cols.length})</div></div>`; c.appendChild(item); } }
+    
+    // ============================================================================
+    // EXPLORATION
+    // ============================================================================
+    
+    async function exploreShape(shape) {
+        if (agent.state !== 'idle' || CRR.phase !== 'coherence') return;
+        agent.currentTarget = shape; agent.state = 'exploring'; agent.targetX = shape.x - shape.radius - 40; agent.targetY = shape.y;
+        const info = SHAPE_TYPES[shape.type];
+        updateStatus('exploring', `Approaching ${info.name}...`);
+        updateCommentary(`The agent moves toward a ${info.name}.${info.metaCRR ? ' This meta-pattern embodies CRR itself.' : ''}`, null, null, null, null);
+        hidePredictionAndError();
+        
+        // Inner monologue: approaching
+        AgentSpeech.say(getRandomPhrase('approaching'));
+        
+        await waitForArrival();
+        agent.state = 'examining';
+        const pred = getPrediction(shape); showPrediction(pred);
+        updateStatus('exploring', 'Generating predictions...');
+        
+        // Inner monologue: predicting
+        AgentSpeech.say(pred.hasKnowledge ? getRandomPhrase('predicting') : getRandomPhrase('predictingNovel'));
+        
+        updateCommentary(pred.hasKnowledge ? `Generative model produces predictions.` : `No applicable schemas—entirely novel.`, { term: pred.hasKnowledge ? 'Assimilation Attempt' : 'No Schema', desc: pred.hasKnowledge ? 'Testing structures' : 'Cannot assimilate' }, { term: pred.hasKnowledge ? 'Prior Prediction' : 'High Entropy', desc: pred.hasKnowledge ? 'g(μ) generates expectations' : 'Maximal uncertainty' }, info.metaCRR ? { term: 'Recursive Recognition', desc: 'Pattern recognizes pattern' } : null, pred.hasKnowledge ? 'g(μ) = predicted sensation' : 'H[P(s)] = maximum');
+        await delay(1600);
+        const err = calculatePredictionError(shape, pred);
+        if (err.error > 0.3) agent.state = 'surprised';
+        showError(err);
+        
+        // Update VFE based on prediction error
+        VFE.update(err.error);
+        
+        // Accumulate residual error for CRR
+        AccumulatedError.add(err.error);
+        
+        // Inner monologue: reaction to error
+        if (err.error > 0.3) {
+            AgentSpeech.say(getRandomPhrase('surprised'));
+        } else if (pred.confidence > 0.5) {
+            AgentSpeech.say(getRandomPhrase('confirmedHigh'));
+        } else {
+            AgentSpeech.say(getRandomPhrase('confirmedLow'));
+        }
+        
+        updateCommentary(err.error > 0.3 ? `Surprise! Prediction diverges.` : `Prediction matches—schemas accommodate.`, { term: err.error > 0.3 ? 'Disequilibrium' : 'Assimilation', desc: err.error > 0.3 ? 'Schema-experience gap' : 'Experience fits' }, { term: err.error > 0.3 ? 'Prediction Error' : 'Low Free Energy', desc: err.error > 0.3 ? 'ε high' : 'Model confirmed' }, { term: err.error > 0.3 ? 'Error Accumulates' : 'C(t) +', desc: err.error > 0.3 ? 'Residual ε̄ builds' : 'Success adds C' }, err.error > 0.3 ? 'ε = s − g(μ) >> 0; ε̄ ↑' : 'F(μ) ≈ minimum');
+        if (err.error <= 0.3) CRR.addCoherence(CRR.gains.successfulPrediction);
+        await delay(1800);
+        agent.state = 'learning'; updateStatus('learning', 'Updating model...');
+        const updates = updateGenerativeModel(shape); shape.explored = true;
+        
+        // Novel learning adds to accumulated tension
+        const isNovel = updates.length > 0;
+        AccumulatedError.addFromLearning(isNovel);
+        
+        // Inner monologue: learning
+        if (isNovel) {
+            if (info.metaCRR) {
+                AgentSpeech.say(getRandomPhrase('stage5Insight'), 3000);
+            } else {
+                AgentSpeech.say(getRandomPhrase('learningNovel'));
+            }
+        } else {
+            AgentSpeech.say(getRandomPhrase('learning'));
+        }
+        
+        updateCommentary(updates.length > 0 ? `Accommodation: ${updates.join(', ')}.` : `Schemas strengthened.`, { term: updates.length > 0 ? 'Accommodation' : 'Strengthening', desc: updates.length > 0 ? 'New schemas' : 'Reinforced' }, { term: updates.length > 0 ? 'Model Update' : 'Precision ↑', desc: updates.length > 0 ? 'μ* minimises F' : 'Confidence grows' }, { term: 'C(t) Grows', desc: 'Learning adds coherence' }, updates.length > 0 ? 'μ* = argmin F(μ)' : 'π(μ) increases');
+        CRR.addCoherence(updates.length > 0 ? CRR.gains.newSchema * updates.length : CRR.gains.successfulPrediction);
+        updateBeliefDisplay(updates);
+        await delay(1400);
+        
+        // Check for near-rupture state
+        if (AccumulatedError.current > AccumulatedError.threshold * 0.75) {
+            AgentSpeech.say(getRandomPhrase('nearRupture'), 2000);
+        }
+        
+        if (shapes.every(s => s.explored) && CRR.phase === 'coherence') {
+            CRR.addCoherence(CRR.gains.fullExploration);
+            AgentSpeech.say(getRandomPhrase('mastery'), 2500);
+            if (CRR.stage === 5) {
+                updateCommentary(`All meta-CRR patterns mastered. The agent has learned to recognise CRR itself—the pattern that generates all patterns. Coherence approaches final threshold... TRANSCENDENCE awaits.`, { term: 'Meta-Cognition', desc: 'Thinking about thinking' }, { term: 'Hierarchical Mastery', desc: 'All levels integrated' }, { term: 'C(t) → Ω', desc: 'Final rupture imminent' }, '∫C→δ→R = ∞');
+            } else {
+                updateCommentary(`All forms explored. Coherence approaches Ω.`, { term: 'Mastery', desc: 'All schemas acquired' }, { term: 'Model Complete', desc: 'Environment predicted' }, { term: 'C(t) → Ω', desc: 'Rupture approaches' }, 'C(t) ≈ Ω');
+            }
+        }
+        agent.state = 'idle'; agent.currentTarget = null; updateStatus('idle', 'Ready...'); 
+        await delay(800);
+        AgentSpeech.hide();
+        hidePredictionAndError();
+    }
+    
+    function waitForArrival() { return new Promise(resolve => { (function check() { if (Math.abs(agent.targetX - agent.x) < 5 && Math.abs(agent.targetY - agent.y) < 5) resolve(); else requestAnimationFrame(check); })(); }); }
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+    
+    // ============================================================================
+    // MAIN LOOP
+    // ============================================================================
+    
+    function update(dt) { 
+        time += dt; 
+        worldPhase += dt * 0.5; 
+        agent.x += (agent.targetX - agent.x) * 0.05; 
+        agent.y += (agent.targetY - agent.y) * 0.05; 
+        agent.breathePhase += dt * 2; 
+        shapes.forEach(s => { if (s.hovered) s.pulsePhase += dt * 5; s.phase += dt * 0.8; }); 
+        
+        // Tick VFE animation
+        VFE.tick();
+        
+        // Update speech bubble position to follow agent
+        AgentSpeech.updatePosition(agent.x, agent.y);
+    }
+    function render() { drawBackground(); drawExplorationLine(); shapes.forEach(drawShape); drawAgent(); }
+    let lastTime = 0;
+    function animate(ts) { if (finaleActive) return; const dt = Math.min((ts - lastTime) / 1000, 0.1); lastTime = ts; update(dt); render(); requestAnimationFrame(animate); }
+    
+    // ============================================================================
+    // EVENTS
+    // ============================================================================
+    
+    function getMousePos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function getShapeAt(pos) { for (let i = shapes.length - 1; i >= 0; i--) { const s = shapes[i]; if ((pos.x - s.x) ** 2 + (pos.y - s.y) ** 2 < s.radius ** 2) return s; } return null; }
+    canvas.addEventListener('mousemove', e => { const pos = getMousePos(e); shapes.forEach(s => s.hovered = false); const s = getShapeAt(pos); if (s) { s.hovered = true; canvas.style.cursor = 'pointer'; } else canvas.style.cursor = 'default'; });
+    canvas.addEventListener('click', e => { const s = getShapeAt(getMousePos(e)); if (s && agent.state === 'idle' && CRR.phase === 'coherence') exploreShape(s); });
+    document.getElementById('resetBtn').addEventListener('click', () => { 
+        if (finaleActive) return; 
+        generativeModel = { shapes: {}, colors: {}, sizes: {}, abstractions: [] }; 
+        CRR.reset(); 
+        VFE.reset();
+        AccumulatedError.reset();
+        initializeShapes(); 
+        agent.state = 'idle'; 
+        agent.x = agent.targetX = 80; 
+        agent.y = agent.targetY = H / 2; 
+        agent.currentTarget = null; 
+        updateBeliefDisplay(); 
+        hidePredictionAndError(); 
+        AgentSpeech.hide();
+        updateStatus('idle', 'Agent awaiting instruction...'); 
+        updateCommentary('This agent learns through Active Inference and CRR. Master all five stages to transcend.', null, null, null, null); 
+    });
+    document.getElementById('randomBtn').addEventListener('click', () => { if (agent.state !== 'idle' || CRR.phase !== 'coherence' || finaleActive) return; const unexplored = shapes.filter(s => !s.explored); const target = unexplored.length > 0 ? unexplored[Math.floor(Math.random() * unexplored.length)] : shapes[Math.floor(Math.random() * shapes.length)]; exploreShape(target); });
+    
+    // ============================================================================
+    // FINALE: INFINITE CRR RECURSION
+    // ============================================================================
+    
+    let finaleActive = false;
+    const FC = document.getElementById('finaleCanvas');
+    const FX = FC.getContext('2d');
+    const FM = document.getElementById('finaleMantra');
+    const FI = document.getElementById('finaleInfo');
+    let FW, FH;
+    
+    // Seeded random
+    const R = s => { s = Math.sin(s * 78.233) * 43758.5453; return s - Math.floor(s); };
+    const hashPath = path => { let h = 0; for (let i = 0; i < path.length; i++) h = ((h << 5) - h + path[i]) | 0; return h; };
+    
+    // Children in local coords
+    const getChildren = path => {
+        const seed = hashPath(path);
+        const n = 5 + Math.floor(R(seed) * 3);
+        const out = [];
+        for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2 + R(seed + i * 111) * 0.4;
+            const r = 0.32 + R(seed + i * 222) * 0.12;
+            out.push({ x: Math.cos(a) * r, y: Math.sin(a) * r, seed: R(seed + i * 333) });
+        }
+        return out;
+    };
+    
+    // CRR state for finale nodes
+    const getCRR_finale = (seed, t) => {
+        const Ω = 0.6 + seed * 0.5;
+        const phase = seed * 1000 + t * (0.3 + seed * 0.4);
+        const C = (Math.sin(phase) * 0.5 + 0.5) * Ω * 1.3;
+        return { C, Ω, ratio: Math.min(1, C / Ω), rupturing: C / Ω > 0.92 };
+    };
+    
+    // Finale view state
+    let fPath = [];
+    let fOffX = 0, fOffY = 0;
+    let fZoom = 1;
+    const CHILD_SCALE = 0.33;
+    
+    const fs2l = (sx, sy) => ({ x: (sx - FW / 2) / (FH * 0.4 * fZoom) + fOffX, y: (sy - FH / 2) / (FH * 0.4 * fZoom) + fOffY });
+    const fl2s = (lx, ly) => ({ x: FW / 2 + (lx - fOffX) * FH * 0.4 * fZoom, y: FH / 2 + (ly - fOffY) * FH * 0.4 * fZoom });
+    
+    const findChildFinale = (path, lx, ly) => {
+        const children = getChildren(path);
+        let best = null, bestDist = Infinity;
+        for (let i = 0; i < children.length; i++) {
+            const ch = children[i];
+            const dist = Math.sqrt((lx - ch.x) ** 2 + (ly - ch.y) ** 2);
+            if (dist < 0.32 && dist < bestDist) { best = { index: i, child: ch, dist }; bestDist = dist; }
+        }
+        return best;
+    };
+    
+    function drawFinaleNode(path, lx, ly, scale, t, depth = 0) {
+        const scr = fl2s(lx, ly);
+        const sr = scale * FH * 0.4 * fZoom * CHILD_SCALE;
+        
+        if (sr < 1.5 || sr > FH * 10) return;
+        if (scr.x < -sr * 2 || scr.x > FW + sr * 2 || scr.y < -sr * 2 || scr.y > FH + sr * 2) return;
+        
+        const seed = R(hashPath(path));
+        const crr = getCRR_finale(seed, t);
+        const hue = (seed * 360 + depth * 30) % 360;
+        const α = Math.min(1, sr / 12);
+        
+        // Glow
+        const g = FX.createRadialGradient(scr.x, scr.y, 0, scr.x, scr.y, sr * (1 + crr.ratio * 0.5));
+        g.addColorStop(0, `hsla(${hue},65%,${25 + crr.ratio * 30}%,${α * 0.85})`);
+        g.addColorStop(0.5, `hsla(${hue},50%,15%,${α * 0.25})`);
+        g.addColorStop(1, 'transparent');
+        FX.fillStyle = g;
+        FX.beginPath();
+        FX.arc(scr.x, scr.y, sr * (1 + crr.ratio * 0.5), 0, Math.PI * 2);
+        FX.fill();
+        
+        // Coherence ring
+        if (sr > 8) {
+            FX.beginPath();
+            FX.arc(scr.x, scr.y, sr * 0.85, -Math.PI / 2, -Math.PI / 2 + crr.ratio * Math.PI * 2);
+            FX.strokeStyle = `hsla(${(hue + 50) % 360},70%,55%,${α * 0.5})`;
+            FX.lineWidth = Math.max(1, sr * 0.035);
+            FX.stroke();
+        }
+        
+        // Core
+        FX.beginPath();
+        FX.arc(scr.x, scr.y, sr * 0.07 * (1 + crr.ratio), 0, Math.PI * 2);
+        FX.fillStyle = `hsla(${hue},80%,${55 + crr.ratio * 25}%,${α})`;
+        FX.fill();
+        
+        // Rupture flash
+        if (crr.rupturing && sr > 4) {
+            FX.beginPath();
+            FX.arc(scr.x, scr.y, sr * 1.2, 0, Math.PI * 2);
+            FX.fillStyle = `hsla(${hue},80%,70%,${α * 0.2})`;
+            FX.fill();
+        }
+        
+        // Children
+        if (sr > 5 && depth < 55) {
+            const children = getChildren(path);
+            for (let i = 0; i < children.length; i++) {
+                const ch = children[i];
+                drawFinaleNode([...path, i], lx + ch.x * scale, ly + ch.y * scale, scale * CHILD_SCALE, t, depth + 1);
+            }
+        }
+    }
+    
+    function drawFinaleAgent(t) {
+        // Static agent in the center of the screen, at peace in infinity
+        const scr = { x: FW / 2, y: FH / 2 + 40 }; // Slightly below center to make room for speech bubble
+        const size = 24; // Larger for prominence
+        const breathe = Math.sin(t * 1.5) * 1.5; // Gentle breathing
+        const actualSize = size + breathe;
+        
+        // Soft glow
+        const glowGrad = FX.createRadialGradient(scr.x, scr.y, 0, scr.x, scr.y, actualSize + 40);
+        glowGrad.addColorStop(0, 'rgba(255,255,255,0.25)');
+        glowGrad.addColorStop(0.5, 'rgba(255,255,255,0.1)');
+        glowGrad.addColorStop(1, 'transparent');
+        FX.fillStyle = glowGrad;
+        FX.beginPath();
+        FX.arc(scr.x, scr.y, actualSize + 40, 0, Math.PI * 2);
+        FX.fill();
+        
+        // Body
+        const grad = FX.createRadialGradient(scr.x - 5, scr.y - 5, 0, scr.x, scr.y, actualSize);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, '#f5f5f5');
+        grad.addColorStop(0.7, '#e0e0e0');
+        grad.addColorStop(1, '#bdbdbd');
+        FX.fillStyle = grad;
+        FX.beginPath();
+        FX.arc(scr.x, scr.y, actualSize, 0, Math.PI * 2);
+        FX.fill();
+        FX.strokeStyle = 'rgba(255,255,255,0.5)';
+        FX.lineWidth = 2;
+        FX.stroke();
+        
+        // Eyes - looking slightly upward, content
+        const eo = actualSize * 0.32;
+        const eyeY = scr.y - actualSize * 0.15;
+        
+        // Eye whites
+        FX.fillStyle = 'white';
+        FX.beginPath();
+        FX.ellipse(scr.x - eo, eyeY, actualSize * 0.22, actualSize * 0.26, 0, 0, Math.PI * 2);
+        FX.ellipse(scr.x + eo, eyeY, actualSize * 0.22, actualSize * 0.26, 0, 0, Math.PI * 2);
+        FX.fill();
+        FX.strokeStyle = 'rgba(0,0,0,0.1)';
+        FX.lineWidth = 1;
+        FX.stroke();
+        
+        // Pupils - slightly upward, peaceful gaze
+        FX.fillStyle = '#333';
+        FX.beginPath();
+        FX.arc(scr.x - eo, eyeY - 2, actualSize * 0.1, 0, Math.PI * 2);
+        FX.arc(scr.x + eo, eyeY - 2, actualSize * 0.1, 0, Math.PI * 2);
+        FX.fill();
+        
+        // Eye shine
+        FX.fillStyle = 'white';
+        FX.beginPath();
+        FX.arc(scr.x - eo - 2, eyeY - 4, 2.5, 0, Math.PI * 2);
+        FX.arc(scr.x + eo - 2, eyeY - 4, 2.5, 0, Math.PI * 2);
+        FX.fill();
+        
+        // Happy, content smile
+        FX.strokeStyle = '#555';
+        FX.lineWidth = 2.5;
+        FX.lineCap = 'round';
+        FX.beginPath();
+        FX.arc(scr.x, scr.y + actualSize * 0.1, actualSize * 0.35, 0.15 * Math.PI, 0.85 * Math.PI);
+        FX.stroke();
+        
+        // Rosy cheeks
+        FX.fillStyle = 'rgba(255, 182, 193, 0.3)';
+        FX.beginPath();
+        FX.ellipse(scr.x - eo - actualSize * 0.15, scr.y + actualSize * 0.05, actualSize * 0.12, actualSize * 0.08, 0, 0, Math.PI * 2);
+        FX.ellipse(scr.x + eo + actualSize * 0.15, scr.y + actualSize * 0.05, actualSize * 0.12, actualSize * 0.08, 0, 0, Math.PI * 2);
+        FX.fill();
+        
+        // Update speech bubble position
+        updateSpeechBubblePosition(scr.x, scr.y - actualSize - 20);
+    }
+    
+    function updateSpeechBubblePosition(x, y) {
+        FM.style.left = x + 'px';
+        FM.style.top = (y - 60) + 'px';
+        FM.style.transform = 'translateX(-50%)';
+    }
+    
+    const doFinaleZoom = (delta, mx, my) => {
+        const zf = delta > 0 ? 0.78 : 1.28;
+        const before = fs2l(mx, my);
+        fZoom *= zf;
+        const after = fs2l(mx, my);
+        fOffX += before.x - after.x;
+        fOffY += before.y - after.y;
+        
+        // Descend
+        while (fZoom > 3.2) {
+            const center = fs2l(FW / 2, FH / 2);
+            const hit = findChildFinale(fPath, center.x, center.y);
+            if (hit) {
+                fPath.push(hit.index);
+                fOffX = (fOffX - hit.child.x) / CHILD_SCALE;
+                fOffY = (fOffY - hit.child.y) / CHILD_SCALE;
+                fZoom /= (1 / CHILD_SCALE);
+            } else {
+                const children = getChildren(fPath);
+                let nearest = children[0], nearDist = Infinity;
+                for (const ch of children) { const d = Math.sqrt((center.x - ch.x) ** 2 + (center.y - ch.y) ** 2); if (d < nearDist) { nearest = ch; nearDist = d; } }
+                fOffX += (nearest.x - center.x) * 0.3;
+                fOffY += (nearest.y - center.y) * 0.3;
+                break;
+            }
+        }
+        
+        // Ascend
+        while (fZoom < 0.35 && fPath.length > 0) {
+            const parentPath = fPath.slice(0, -1);
+            const myIndex = fPath[fPath.length - 1];
+            const siblings = getChildren(parentPath);
+            const me = siblings[myIndex];
+            fOffX = fOffX * CHILD_SCALE + me.x;
+            fOffY = fOffY * CHILD_SCALE + me.y;
+            fZoom *= (1 / CHILD_SCALE);
+            fPath.pop();
+        }
+    };
+    
+    // Finale mantras
+    const finaleMantras = [
+        "∞",
+        "no floor",
+        "no ceiling",
+        "C → δ → R",
+        "at every scale",
+        "the pattern continues",
+        "inference through time",
+        "what you learned",
+        "is what you are",
+        "exp(C/Ω)",
+        "coherence accumulates",
+        "rupture transforms",
+        "regeneration creates",
+        "past → present → future",
+        "the same structure",
+        "always deeper",
+        "always here",
+        "δ(now)",
+        "what sees?",
+        "seeing itself",
+        "∞ = ∞",
+        "all learning",
+        "all growth",
+        "all becoming",
+        "follows this path",
+        "C(t) = ∫L(x,τ)dτ",
+        "prediction → error → update",
+        "the agent is the pattern",
+        "the pattern is the agent"
+    ];
+    let lastMantra = 0;
+    
+    function showFinaleMantra() {
+        if (performance.now() - lastMantra < 4000) return;
+        const mantra = finaleMantras[Math.floor(Math.random() * finaleMantras.length)];
+        FM.innerHTML = `<div class="speech-bubble">${mantra}</div>`;
+        FM.classList.add('visible');
+        setTimeout(() => FM.classList.remove('visible'), 3500);
+        lastMantra = performance.now();
+    }
+    
+    let finaleTime = 0;
+    let autoZoomSpeed = 0;
+    
+    function finaleLoop() {
+        if (!finaleActive) return;
+        
+        finaleTime += 0.016;
+        
+        // Auto-zoom slowly into infinity, centered on screen (where agent is)
+        autoZoomSpeed = 0.25 + Math.sin(finaleTime * 0.08) * 0.15;
+        doFinaleZoom(-autoZoomSpeed, FW / 2, FH / 2);
+        
+        // Draw
+        FX.fillStyle = 'rgba(0,0,0,0.12)';
+        FX.fillRect(0, 0, FW, FH);
+        
+        drawFinaleNode(fPath, 0, 0, 1, finaleTime);
+        
+        // Draw siblings if zoomed out
+        if (fZoom < 1.8 && fPath.length > 0) {
+            const pp = fPath.slice(0, -1);
+            const mi = fPath[fPath.length - 1];
+            const sibs = getChildren(pp);
+            const me = sibs[mi];
+            for (let i = 0; i < sibs.length; i++) {
+                if (i !== mi) {
+                    const s = sibs[i];
+                    drawFinaleNode([...pp, i], (s.x - me.x) / CHILD_SCALE, (s.y - me.y) / CHILD_SCALE, 1, finaleTime);
+                }
+            }
+        }
+        
+        // Draw agent last so it's on top
+        drawFinaleAgent(finaleTime);
+        
+        // Info
+        FI.textContent = `depth: ${fPath.length}\nzoom: ${fZoom.toFixed(2)}\nC→δ→R at every scale`;
+        
+        // Mantras - appear more frequently
+        if (fPath.length > 1 && Math.random() < 0.004) showFinaleMantra();
+        if (fPath.length > 8 && Math.random() < 0.006) showFinaleMantra();
+        
+        requestAnimationFrame(finaleLoop);
+    }
+    
+    function triggerFinale() {
+        finaleActive = true;
+        
+        // Resize finale canvas
+        FW = FC.width = window.innerWidth;
+        FH = FC.height = window.innerHeight;
+        
+        // Fade out main UI
+        document.body.classList.add('finale-mode');
+        document.getElementById('header').style.opacity = '0';
+        document.getElementById('header').style.transform = 'translateY(-50px)';
+        document.getElementById('mainContainer').style.opacity = '0';
+        document.getElementById('mainContainer').style.transform = 'translateY(50px)';
+        document.getElementById('footer').style.opacity = '0';
+        
+        setTimeout(() => {
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('footer').style.display = 'none';
+        }, 1000);
+        
+        // Show finale
+        FC.classList.add('active');
+        document.getElementById('exitFinale').style.display = 'block';
+        
+        // Reset finale state
+        fPath = [];
+        fOffX = 0;
+        fOffY = 0;
+        fZoom = 1;
+        finaleTime = 0;
+        
+        // Start finale loop
+        setTimeout(() => {
+            finaleLoop();
+            // Show first mantra after a moment
+            setTimeout(() => {
+                lastMantra = 0; // Reset so it shows immediately
+                showFinaleMantra();
+            }, 1500);
+        }, 500);
+    }
+    
+    // Finale input handlers
+    let fMx = 0, fMy = 0, fDragging = false, fLx, fLy;
+    
+    FC.addEventListener('mousemove', e => {
+        fMx = e.clientX; fMy = e.clientY;
+        if (fDragging) {
+            const scale = FH * 0.4 * fZoom;
+            fOffX -= (e.clientX - fLx) / scale;
+            fOffY -= (e.clientY - fLy) / scale;
+            fLx = e.clientX; fLy = e.clientY;
+        }
+    });
+    FC.addEventListener('mousedown', e => { fDragging = true; fLx = e.clientX; fLy = e.clientY; });
+    FC.addEventListener('mouseup', () => fDragging = false);
+    FC.addEventListener('wheel', e => { e.preventDefault(); doFinaleZoom(e.deltaY, e.clientX, e.clientY); });
+    FC.addEventListener('dblclick', e => { for (let i = 0; i < 5; i++) setTimeout(() => doFinaleZoom(-100, e.clientX, e.clientY), i * 50); });
+    
+    // Exit finale
+    document.getElementById('exitFinale').addEventListener('click', () => {
+        finaleActive = false;
+        FC.classList.remove('active');
+        document.getElementById('exitFinale').style.display = 'none';
+        document.body.classList.remove('finale-mode');
+        
+        document.getElementById('header').style.display = 'block';
+        document.getElementById('mainContainer').style.display = 'block';
+        document.getElementById('footer').style.display = 'block';
+        
+        setTimeout(() => {
+            document.getElementById('header').style.opacity = '1';
+            document.getElementById('header').style.transform = 'translateY(0)';
+            document.getElementById('mainContainer').style.opacity = '1';
+            document.getElementById('mainContainer').style.transform = 'translateY(0)';
+            document.getElementById('footer').style.opacity = '1';
+        }, 50);
+        
+        // Reset everything
+        generativeModel = { shapes: {}, colors: {}, sizes: {}, abstractions: [] };
+        CRR.reset();
+        VFE.reset();
+        AccumulatedError.reset();
+        initializeShapes();
+        agent.state = 'idle';
+        agent.x = agent.targetX = 80;
+        agent.y = agent.targetY = H / 2;
+        agent.currentTarget = null;
+        updateBeliefDisplay();
+        hidePredictionAndError();
+        updateStatus('idle', 'Agent awaiting instruction...');
+        updateCommentary('The journey begins again. Each cycle deepens understanding.', null, null, null, null);
+        
+        requestAnimationFrame(animate);
+    });
+    
+    // Handle window resize for finale
+    window.addEventListener('resize', () => {
+        if (finaleActive) {
+            FW = FC.width = window.innerWidth;
+            FH = FC.height = window.innerHeight;
+        }
+    });
+    
+    // ============================================================================
+    // INIT
+    // ============================================================================
+    
+    AgentSpeech.init();
+    initializeShapes();
+    CRR.updateDisplay();
+    VFE.updateDisplay();
+    AccumulatedError.updateDisplay();
+    updateBeliefDisplay();
+    requestAnimationFrame(animate);
+    
+    </script>
+</body>
+</html>
