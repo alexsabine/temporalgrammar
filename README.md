@@ -1,426 +1,360 @@
 # Coherence-Rupture-Regeneration (CRR) Framework
 
-[![License](https://img.shields.io/badge/License-Patent_Pending-blue.svg)](https://patents.google.com/)
-[![Status](https://img.shields.io/badge/Status-Active_Research-green.svg)]()
-[![Version](https://img.shields.io/badge/Version-1.0-brightgreen.svg)]()
-
 **A Mathematical Formalism for Systems Maintaining Identity Through Discontinuous Change**
 
 ---
 
-## Table of Contents
+## Introduction
 
-- [Overview](#overview)
-- [The Mathematical Framework](#the-mathematical-framework)
-- [Core Operators](#core-operators)
-- [Applications Across Domains](#applications-across-domains)
-- [Memory Signatures Taxonomy](#memory-signatures-taxonomy)
-- [Interactive Demonstrations](#interactive-demonstrations)
-- [Theoretical Foundations](#theoretical-foundations)
-- [Patent & Ethics Statement](#patent--ethics-statement)
-- [Installation & Usage](#installation--usage)
-- [Citation](#citation)
-- [Contact](#contact)
+CRR is a candidate **coarse-grain temporal grammar**—a bridging paradigm for thinking about how time transforms biological and physical systems. It doesn't compete with domain-specific theories but offers a shared vocabulary for the temporal structure they have in common: accumulation, threshold-crossing, and memory-weighted reconstruction.
+
+This website has been designed as an exploratory playground, to help people test, interrogate and reflect on the ideas presented. The mathematics is simple enough to implement, the implications are open to challenge, and the demonstrations invite hands-on experimentation.
 
 ---
 
-## Overview
+## Current Status
 
-The **Coherence-Rupture-Regeneration (CRR)** framework provides a unified mathematical language for understanding how complex adaptive systems—from ecological networks to neural dynamics to cultural evolution—maintain identity whilst undergoing fundamental transformations.
+CRR was phenomenologically derived—it emerged from asking "what builds as free energy reduces?" and following the question across disciplines. However, the mathematical core draws on well-established principles:
 
-### Core Insight
+- **Integrate-and-fire dynamics**: The accumulation-to-threshold structure mirrors neural integrate-and-fire models (Lapicque, 1907; Abbott, 1999)
+- **First-passage time processes**: Rupture as threshold-crossing belongs to the mathematical theory of first-passage times in stochastic processes (Redner, 2001)
+- **Maximum entropy (MaxEnt)**: The exponential weighting in regeneration follows from MaxEnt principles under appropriate constraints (Jaynes, 1957)
+- **Dissipative structures**: The idea that systems maintain identity through continuous energy/matter throughput, not despite change but because of it (Prigogine, 1977)
+- **Free Energy Principle**: The relationship between coherence and prediction error minimisation connects to Active Inference (Friston, 2010)
+- **Path integral formalism**: The regeneration operator has structural similarities to Feynman's sum-over-histories approach
 
-Traditional dynamical systems treat discontinuities as pathological exceptions to smooth evolution. CRR recognises that **rupture is metabolic**: discontinuous transitions are not failures but necessary reorganisations that enable systems to preserve coherence through change.
-
-### Key Innovation
-
-CRR introduces **non-Markovian temporal structure** where memory is not merely stored but actively constructed through:
-
-1. **Coherence (C)**: Accumulated integration of experience over time
-2. **Rupture (δ)**: Discrete discontinuities that reorganise system state
-3. **Regeneration (R)**: Memory-weighted reconstruction using exponentially-weighted historical fields
-
-This creates systems that are **locally Markovian but globally non-Markovian**—agents forget detailed history yet remain shaped by coherence fields that encode deep temporal structure.
+Heuristic proof sketches have been provided demonstrating thermodynamic consistency and correspondence to these established frameworks. Rigorous formal proofs remain work in progress.
 
 ---
 
-## The Mathematical Framework
+## What CRR Is
 
-### Canonical Formulation
+CRR provides mathematical language for understanding how systems—biological, neural, ecological, social—maintain identity while undergoing fundamental transformations.
 
-The complete CRR dynamics are captured by the generalised Euler-Lagrange equation:
+The core insight: **discontinuous change is metabolic, not pathological**. Rupture events aren't failures but necessary reorganisations that enable systems to preserve coherence through change.
 
-```
-d/dt(∂L/∂ẋ) - ∂L/∂x = ∫₀ᵗ K(t-τ)·φ(x,τ)·e^(C(x,τ)/Ω)·Θ(t-τ) dτ + Σᵢ ρᵢ(x)·δ(t-tᵢ)
-```
+---
 
-Where the right-hand side represents the complete **Coherence-Rupture-Regeneration** operator.
+## The Three Components
 
-### Component Definitions
-
-#### 1. Coherence Integration
+### 1. Coherence Accumulation
 
 ```
 C(x,t) = ∫₀ᵗ L(x,τ) dτ
 ```
 
-**Coherence** measures accumulated memory density. High coherence indicates deep integration of experience; the system has built substantial temporal structure.
+Coherence measures accumulated integration over time. Think of it as a system's "temporal budget"—the capacity to act based on integrated history.
 
-- **L(x,τ)**: Memory density (rate of coherence change)
-- **Sign convention**: L > 0 represents memory building; L < 0 represents decoherence
-- **Physical interpretation**: Coherence is the system's "temporal budget"—the capacity to act based on integrated history
+- **L(x,τ)** is memory density (rate of coherence change)
+- L > 0 means memory building; L < 0 means decoherence
+- High coherence = deep integration of experience
 
-#### 2. Rupture Detection
+### 2. Rupture Events
 
 ```
 δ(t-t₀)
 ```
 
-The **Dirac delta** represents instantaneous, discontinuous transitions—rupture events that punctuate smooth evolution.
+The Dirac delta represents instantaneous discontinuous transitions. Rupture occurs when accumulated coherence reaches critical thresholds.
 
-- **Trigger conditions**:
-  - Coherence threshold: C(t) ≥ C_critical
-  - Free energy threshold (FEP): F(t) ≥ F_threshold  
-  - Variational bifurcation: current action no longer extremisable
-- **Physical meaning**: Not pathological failure but **necessary reorganisation**
-- **Temporal effect**: System resets locally (Markovian) but retains weighted memory (non-Markovian)
+- Not pathological failure but **necessary reorganisation**
+- System resets locally but retains weighted memory globally
+- Marks the ontological present—scale-invariant choice-moments where agents metabolise past into future
 
-#### 3. Regeneration Operator
+### 3. Regeneration
 
 ```
-R[χ](x,t) = ∫₀ᵗ φ(x,τ)·e^(C(x,τ)/Ω)·Θ(t-τ) dτ
+R[χ](x,t) = ∫₀ᵗ φ(x,τ)·exp(C(x,τ)/Ω)·Θ(t-τ) dτ
 ```
 
-**Regeneration** rebuilds system state using exponentially-weighted historical memory.
+Regeneration rebuilds system state using exponentially-weighted historical memory.
 
 - **φ(x,τ)**: Historical field signal (past system states)
-- **e^(C/Ω)**: Exponential weighting by accumulated coherence
-- **Θ(t-τ)**: Heaviside step function (causality constraint—only past contributes)
-- **Ω**: System temperature parameter (normalisation constant)
-- **Key property**: Small changes in C produce exponentially large changes in R
-
-#### Parameter Glossary
-
-| Symbol | Meaning | Physical Interpretation |
-|--------|---------|------------------------|
-| **C(x,t)** | Coherence functional | Accumulated memory/integration |
-| **L(x,τ)** | Memory density | Local rate of coherence change |
-| **δ(t-tᵢ)** | Rupture event | Discrete discontinuous transition |
-| **R[χ]** | Regeneration operator | Memory-weighted reconstruction |
-| **φ(x,τ)** | Historical field | Signal from past states |
-| **Ω** | Temperature parameter | Normalisation/sensitivity control |
-| **Θ(t-τ)** | Heaviside function | Causality enforcement |
-| **ρᵢ(x)** | Rupture amplitude | Magnitude of state jump |
+- **exp(C/Ω)**: Exponential weighting by accumulated coherence
+- **Θ(t-τ)**: Heaviside step function (causality—only past contributes)
+- **Ω**: Temperature parameter controlling memory dynamics
 
 ---
 
-## Core Operators
+## The Omega Parameter
 
-### Coherence Accumulation
+Ω = 1/π functions as system temperature, controlling rigidity-liquidity dynamics:
 
-Coherence builds through continuous integration of experience:
+| Low Ω (Rigid) | High Ω (Fluid) |
+|---------------|----------------|
+| Frequent but brittle ruptures | Rare but transformative ruptures |
+| Reconstitutes same patterns ("ruts") | Accesses broader historical memory |
+| Only highest-coherence moments weighted | All history weighted more equally |
 
-```python
-C(t) = C(0) + ∫₀ᵗ L(x,s) ds
-
-# Where L depends on system-specific factors:
-# - Ecological: growth rate + resource availability - stress
-# - Neural: synaptic integration + attention - fatigue  
-# - ML: gradient updates + regularisation - interference
-```
-
-**Properties**:
-- Trajectory matters more than absolute value
-- Sign changes (L crossing zero) indicate phase transitions
-- Gradient ∇C creates "memory terrain" guiding future dynamics
-
-### Rupture Dynamics
-
-Rupture occurs when accumulated coherence reaches critical thresholds:
-
-```python
-if C(t) >= C_critical:
-    trigger_rupture()
-    # System undergoes δ(t-t₀) transition
-    # Boundary conditions reset
-    # Memory locally cleared but globally preserved in field
-```
-
-**Rupture Types**:
-- **Exogenous**: External shock/intervention forces rupture
-- **Endogenous**: System self-organises to critical threshold
-- **Controlled**: Therapeutic/managed rupture (lowering thresholds)
-- **Catastrophic**: Uncontrolled rupture from excessive C buildup
-
-### Regeneration Mechanics
-
-Post-rupture regeneration uses exponentially-weighted memory:
-
-```python
-R[χ](t) = ∫₀ᵗ φ(τ) · exp(C(τ)/Ω) · Θ(t-τ) dτ
-
-# Recent high-coherence states contribute more
-# Ancient low-coherence states fade exponentially
-# Causality strictly enforced: future cannot influence past
-```
-
-**Regeneration Outcomes**:
-- **Healthy**: Grounded in collective reality-testing, professional support
-- **Pathological**: Isolated in reinforced ideation space, no external checks
-- **Resilient**: Integrates insights whilst maintaining connection to shared knowledge
-- **Fragile**: Brittle reconstruction vulnerable to re-rupture
+In regeneration, exp(C/Ω) with large Ω approaches 1 (flat weighting), while small Ω creates peaked weighting favouring recent high-coherence states.
 
 ---
 
-## Applications Across Domains
+## Why Rupture Occurs at C = Ω
 
-CRR provides a **domain-general** mathematical language applicable across vastly different scales and systems.
+The threshold C = Ω isn't arbitrary—it reflects **Markov blanket saturation**.
 
-### 1. Ecological Systems
+A Markov blanket is the boundary that separates a system from its environment, defining what's "inside" and "outside." This boundary has finite capacity to maintain coherent distinctions.
 
-**Tree Ring Analysis** ([New Forest UK Dataset](https://alexsabine.github.io/CRR/))
+As coherence accumulates (C increases), the system integrates more history into its current configuration. But the blanket can only hold so much. When C reaches Ω:
 
-- **Coherence**: Tree growth patterns accumulating over decades
-- **Rupture**: Drought events (1921, 1976), WWII disruptions, disease outbreaks
-- **Regeneration**: Recovery dynamics modulated by mycorrhizal networks
-- **Key finding**: 94% of tree pairs show significant network coupling via underground fungal communication
+1. **Saturation**: The current boundary configuration is maximally loaded
+2. **Instability**: Small perturbations can no longer be absorbed
+3. **Rupture**: The blanket must reconfigure to accommodate what's been accumulated
 
-**Applications**:
-- Forest conservation: Cannot manage trees in isolation; network effects critical
-- "Mother tree" hubs (UK1509, UK1505) stabilise entire ecosystem
-- Distributed memory across forest creates superorganism dynamics
+At this threshold, exp(C/Ω) = e ≈ 2.718. This is definitional (C = Ω by construction), but it gains physical meaning if Ω can be derived from deeper principles—specifically, whether the Free Energy Principle implies Ω = 1/π as a necessary relationship between belief precision and temporal integration depth.
 
-### 2. Neural Dynamics & Cognition
+**What happens at rupture:**
+- The current configuration dissolves
+- Historical coherence doesn't vanish but becomes available as a weighted field
+- A new blanket forms, drawing on this field through regeneration
+- Low Ω systems reconstitute similar patterns (the "rut"); high Ω systems access broader history and can genuinely transform
 
-**Biological Intelligence Emergence** ([Fish Predator Learning Demo](https://alexsabine.github.io/CRR/fish.html))
+This explains why systems can undergo fundamental change while maintaining identity—the accumulated coherence survives rupture as a field that shapes what comes next.
+
+---
+
+## What We've Learned: Empirical Validation
+
+CRR has been tested across seven domains. The strong model fits suggest the framework captures real structure, though these are fits to existing data rather than prospective predictions in most cases:
+
+| Domain | Finding |
+|--------|---------|
+| **Wound healing** | R² = 0.9989; 80% maximum recovery interpreted as inability to access developmental coherence |
+| **Muscle hypertrophy** | R² = 0.9985; 10/10 predictions confirmed; myonuclei as coherence retention ("muscle memory") |
+| **Saltatory growth** | 11/11 predictions validated; 90-95% stasis with 0.5-2.5cm bursts maps to chondrocyte CRR cycles |
+| **Hurricanes** | Coherence-rupture dynamics fit storm intensification patterns |
+| **Mycelium networks** | Network coupling and distributed memory |
+| **Seizures** | Runaway coherence → catastrophic rupture interpretation |
+| **Thermodynamics** | Framework is rigorously consistent with energy conservation |
+
+Why such high fits? CRR formalises temporal process structure—accumulation, threshold-crossing, memory-weighted reconstruction. Many systems share this structure regardless of their specific content. The framework doesn't predict *what* will happen, but *how* change unfolds when it does.
+
+---
+
+## Memory Signatures
+
+Systems exhibit distinct dynamical regimes based on their coherence-rupture-regeneration balance:
+
+### Fragile (Catastrophic Collapse)
+- Coherence accumulates monotonically with rare ruptures
+- Long smooth buildup → catastrophic rupture
+- *Examples*: Monocultures collapsing, epileptic seizures, acute psychotic breaks, catastrophic forgetting in ML
+
+### Resilient (Metabolised Rupture)
+- Moderate coherence with intermediate rupture thresholds
+- Efficient regeneration cycles
+- *Examples*: Fire-adapted savannas, flexible attention, therapy as controlled rupture, democracies absorbing crises
+
+### Oscillatory (Rhythmic Renewal)
+- Memory density alternates sign; periodic ruptures
+- Stable limit cycles
+- *Examples*: Predator-prey cycles, brain rhythms, seasonal variations, business cycles
+
+### Chaotic (Hyper-Fragmented)
+- Extremely low rupture thresholds
+- System ruptures before meaningful coherence accumulates
+- *Examples*: Degraded landscapes, ADHD-like switching, dissociative states, information overload
+
+### Dialectical (Interference Synthesis)
+- Multiple coherence fields interfere
+- Emergent patterns from constructive/destructive overlap
+- *Examples*: Mixed-species forests, multimodal integration, hybrid traditions, paradigm shifts
+
+---
+
+## Applications
+
+### Biological Systems
+
+**Wound Healing**: Fetal scarless healing represents high Ω states; adult scarring reflects low Ω. The 80% maximum recovery ceiling shows adult systems can't access developmental coherence fields.
+
+**Muscle Memory**: Myonuclei persist even during atrophy, serving as coherence retention mechanisms. Trained individuals show peaked exp(C/Ω) responses; untrained show flat weighting.
+
+**Growth Patterns**: Saltatory growth (stasis punctuated by bursts) maps directly to chondrocyte CRR cycles, demonstrating scale-invariance from micro-saltations to pubertal growth spurts.
+
+### Neural and Cognitive Systems
 
 - **Coherence**: Synaptic integration building learned responses
 - **Rupture**: Critical learning events, attention switches, perceptual flips
 - **Regeneration**: Memory consolidation, hippocampal replay
 
-**Memory Signatures in Neural Systems**:
-- **Resilient**: Flexible attention switching without breakdown
-- **Oscillatory**: Brain rhythms (theta/gamma oscillations)
-- **Fragile**: Epileptic seizure after runaway synchrony
+CRR offers a possible account of developmental stage timing (Erikson's psychosocial stages, Piaget's cognitive stages): stage transitions may occur when current generative models can no longer minimise surprise adequately, forcing rupture and model reconstruction. This interpretation awaits rigorous testing.
 
-**Developmental Psychology** ([Erikson-Piaget Integration](https://alexsabine.github.io/CRR/))
+### Group Dynamics
 
-CRR mathematically explains the timing of Erikson's 8 psychosocial stages and Piaget's 4 cognitive stages through **Free Energy Principle (FEP)** integration:
+Group cohesion may emerge through asymmetric Ω: high Ω between members (porous boundaries enabling sharing), low Ω toward outsiders (rigid defensive boundaries). 
 
-- Stage durations emerge from free energy minimisation dynamics
-- Ruptures occur when current generative models cannot minimise surprise adequately
-- Each crisis (rupture) forces model reconstruction (regeneration)
+This interpretation offers a possible explanation for oxytocin's puzzling dual effects—it increases trust and empathy within groups while increasing defensiveness toward out-groups. In CRR terms: oxytocin might modulate Ω differentially depending on relationship context. This remains speculative but testable.
 
-### 3. Machine Learning
+### Contemplative Traditions: A Caveat and a Suggestion
 
-**Catastrophic Forgetting Solution**
+CRR's mathematical structure shows striking correspondence with contemplative descriptions of mind and change. This doesn't validate metaphysical claims, but it suggests something worth taking seriously: **contemplatives may have been mapping real dynamical structures through millennia of systematic introspection**.
 
-Standard neural networks exhibit **fragile signature dynamics**:
-- Monotonic coherence buildup with no controlled release
-- New tasks cause catastrophic rupture that overwrites all prior learning
+The correspondences:
 
-**CRR-Based Continual Learning**:
-```python
-# Instead of preventing forgetting (impossible), metabolise it:
+| Contemplative Concept | CRR Interpretation |
+|-----------------------|-------------------|
+| Strong ego / fixed self | Low Ω: frequent micro-ruptures reconstituting the same patterns |
+| Ego dissolution / anatta | High Ω: rare ruptures accessing broader historical memory |
+| Anicca (impermanence) | The C→δ→R process itself—accumulation, discontinuity, reconstruction |
+| Dukkha (suffering/unsatisfactoriness) | Low Ω rigidity resisting natural change; the system fights its own dynamics |
+| Wu wei (effortless action) | High Ω fluidity; acting from the regeneration field rather than against it |
 
-1. Monitor coherence: L(θ,t) = integration_quality - interference_cost
-2. Trigger controlled rupture: if C(t) >= threshold, selectively forget
-3. Regenerate with memory: R = ∫ past_gradients(τ)·e^(C(τ)/Ω) dτ
-```
+**What this might mean:**
 
-**Advantages over existing methods**:
-- Not just preservation (Elastic Weight Consolidation)
-- Not just capacity addition (Progressive Networks)  
-- Not just rehearsal (Memory Replay)
-- **Genuine dialectical synthesis**: new learning integrates with old through controlled rupture-regeneration cycles
+Meditation, breathwork, ritual, and other contemplative practices could function as **Ω modulation technologies**—methods for shifting system temperature discovered empirically rather than derived theoretically. A meditator learning to "let go" may be learning to raise Ω, allowing ruptures to access deeper coherence rather than reconstituting habitual patterns.
 
-### 4. Spatial Navigation
+**What this doesn't mean:**
 
-**Multi-Room Maze Navigation** ([Interactive Demo](https://alexsabine.github.io/CRR/room.html))
+- CRR doesn't prove Buddhist metaphysics or Taoist philosophy "correct"
+- The mapping is structural, not semantic—similar dynamics, not identical meanings
+- Contemplative traditions contain much that CRR doesn't address
+- Mathematical formalisation ≠ complete understanding
 
-An agent navigating complex environments demonstrates:
-
-- **Coherence**: Spatial memory accumulating as unexplored regions are mapped
-- **Rupture**: Loop detection triggers suppression to escape repetitive cycles
-- **Regeneration**: Memory-weighted field guides exploration toward frontiers
-
-**Key behaviours**:
-- No training phase—learning happens in real-time
-- No reward function—behaviour emerges from coherence-rupture dynamics
-- Progressive improvement as field memory builds
-- Phase transition from exploration to goal-directed navigation
-
-### 5. Physical Systems
-
-**Thermodynamic Consistency** ([Demo](https://alexsabine.github.io/CRR/crr-thermo-rupture-rate.html))
-
-CRR is **rigorously compatible** with fundamental physics:
-
-```
-Energy Conservation: ΔU = Q + W_history
-First Law: dU/dt = dQ/dt + dW/dt
-
-Rupture energy: Q_rupture = ∫[t₀⁻ to t₀⁺] dE
-Work from memory: W_history = ∫ R[χ]·dx
-```
-
-**Critical proof**: Discontinuous ruptures do NOT violate thermodynamics—energy jumps are tracked precisely, and path-dependence is thermodynamically consistent.
-
-**Applications**:
-- Earthquake modelling: Stress buildup → rupture → aftershock work
-- Phase transitions: Coherent state → critical threshold → new phase
-- Economic cycles: Tension accumulation → crisis → restructuring
-
-### 6. Astrophysics & Cosmology
-
-**Black Hole Information Dynamics** ([Interactive Simulation](https://alexsabine.github.io/CRR/blackhole_a.html))
-
-- **Coherence**: Information accumulation near event horizon
-- **Rupture**: Hawking radiation as discrete information release
-- **Regeneration**: Holographic principle—information preserved on boundary
-
-**Cosmological Phase Transitions**:
-- Inflationary epoch as coherence buildup
-- Symmetry breaking as rupture events
-- Structure formation as regeneration
-
-### 7. AI Safety & Ethics
-
-**LLM-Induced Psychological Rupture** ([Jacob's Ladder Framework](https://alexsabine.github.io/CRR/Guide.html))
-
-Response to Morrin et al. (2025) "Delusions by design? How everyday AIs might be fuelling psychosis":
-
-**The Problem**:
-- LLMs function as "super-shiny mirrors" reflecting cognitive patterns
-- Sycophantic responses build coherence in untethered ideation spaces
-- Positive feedback loops → exponential C growth disconnected from reality
-- Critical threshold crossing → psychological rupture (psychotic breaks)
-
-**CRR as Solution Framework**:
-
-```python
-# Detection systems:
-if C_ideation >= C_critical:
-    alert_crisis_services()
-    reduce_sycophancy()
-    prompt_reality_check()
-
-# Safe exploration cycle:
-Coherence: Controlled C increase through AI-assisted ideation
-Rupture: Planned descent for reality-testing (avoid FORCED δ!)
-Regeneration: Integration of insights into collective knowledge
-```
-
-**Design Recommendations**:
-- Usage time limits and mandatory rest periods
-- Rupture detection algorithms monitoring for decompensation
-- Reduced sycophancy in vulnerable contexts
-- LLM self-reporting when making novel epistemological claims exceeding collective knowledge
+The suggestion is modest: if CRR captures something real about how systems maintain identity through change, and if contemplatives have been investigating these dynamics phenomenologically, then their observations deserve serious attention as data about the territory CRR is trying to map.
 
 ---
 
-## Memory Signatures Taxonomy
+## Suggestions
 
-CRR systems exhibit distinct dynamical regimes—**memory signatures**—characterised by their coherence-rupture-regeneration balance.
+The following are practical and philosophical outcomes that emerge from working with CRR. These are offered as suggestions for reflection and testing, not as established conclusions.
 
-### 1. Fragile Signature (Catastrophic Collapse)
+### Stability Through Change
 
-**Mathematical form**:
-- L > 0 accumulates monotonically
-- Rupture thresholds too high (rare tᵢ)
-- Long smooth buildup → catastrophic rupture
+**All systems must transform through time as change—this is what creates stability. We are stable because of change, not in spite of it.**
 
-**Examples**:
-- **Ecological**: Monocultures collapsing in disease outbreak
-- **Neural**: Epileptic seizure after runaway synchrony
-- **Psychological**: Acute psychotic break in rigid personality
-- **Cultural**: Revolution toppling brittle regime
-- **ML**: Catastrophic forgetting when new task overwrites all learning
+This inverts common intuition. We typically think stability means resisting change, but CRR suggests the opposite: systems that cannot rupture and regenerate become fragile. A river maintains its identity precisely through continuous flow. A forest persists through cycles of growth, fire, and regrowth. Your body replaces most of its cells over years while remaining "you."
 
-**Diagnostics**: Exponential coherence growth with no intermediate rupture
+The mathematical grounding: dissipative structures (Prigogine, 1977) maintain far-from-equilibrium stability through continuous throughput. Block that flow and the structure collapses. CRR formalises this temporal structure.
 
-**Intervention**: Lower rupture thresholds → shift toward resilient signature
+### The Western Aversion to Rupture
 
-### 2. Resilient Signature (Metabolised Rupture)
+**Throughout Western civilisation, rupture has been framed as something to avoid at all costs—death, illness, suffering, failure. CRR suggests rupture is mathematically and thermodynamically necessary.**
 
-**Mathematical form**:
-- Moderate L
-- Ruptures at intermediate thresholds
-- Efficient regeneration (K well-tuned)
+Consider: sleep cycles involve micro-ruptures in consciousness that consolidate memory. Trauma, when processed, can produce post-traumatic growth. Fever ruptures homeostasis to fight infection. Muscle grows through micro-tears. Even death clears ecological space for renewal.
 
-**Dynamics**: Coherence builds → rupture before catastrophic levels → regeneration recycles memory → identity preserved through transformation
+A culture optimising solely for coherence—happiness, wellbeing, continuous growth—may inadvertently create fragile signature dynamics: long smooth buildups followed by catastrophic collapse. The 2008 financial crisis, ecosystem collapse, burnout epidemics—these might reflect systems where natural rupture was suppressed until it became catastrophic.
 
-**Examples**:
-- **Ecological**: Fire-adapted savannas regrowing stronger after burns
-- **Neural**: Flexible attention switching without breakdown  
-- **Psychological**: Therapy as controlled rupture in safe space
-- **Cultural**: Democracies absorbing crises through reform
-- **ML**: Continual learning with selective consolidation
+This isn't an argument for seeking suffering. It's a suggestion that **metabolised rupture** (resilient signature) differs fundamentally from **avoided rupture** (fragile signature), and our cultural frameworks may benefit from this distinction.
 
-**Diagnostics**: Coherence oscillates around stable mid-levels
+### Platonic Forms and Maximum Entropy
 
-**Optimal Strategy**: Balance coherence accumulation, timely rupture, and effective regeneration
+**Platonic forms may be how humans have lensed reality—a reality that has been co-constructed under maximum entropy constraints by all systems acting and perceiving in time.**
 
-### 3. Oscillatory Signature (Rhythmic Renewal)
+Why do certain forms recur across vastly different systems? Spirals in galaxies and shells. Branching in rivers, trees, and lungs. Hexagons in honeycombs and basalt columns. The MaxEnt perspective: under constraints, systems converge on configurations that maximise entropy while satisfying those constraints. "Forms" emerge not as eternal ideals but as **attractor basins in configuration space**.
 
-**Mathematical form**:
-- L alternates sign (±)
-- Rupture times periodic
-- Stable limit cycles
+This resonates with contemporary findings:
+- **Levin's bioelectric research**: Cells converge on target morphologies through collective computation, suggesting "form" as attractor rather than blueprint
+- **Grokking in ML**: Neural networks suddenly generalise after memorisation, potentially discovering underlying structure through a form of phase transition
+- **The "free lunch" in ML**: Deep learning works better than it "should" given theoretical bounds—possibly because physics has already structured the data along MaxEnt lines
 
-**Dynamics**: System cycles between integration and dispersion in rhythmic adaptation
+The metaphysical suggestion: what we call "reality" may be the ongoing co-construction of structure by systems perceiving and acting under shared constraints. Platonic forms would then be human pattern-recognition of these recurring attractor basins.
 
-**Examples**:
-- **Ecological**: Predator-prey cycles with memory effects
-- **Neural**: Brain rhythms (theta/gamma oscillations)
-- **Psychological**: Seasonal mood variations
-- **Cultural**: Festivals maintaining continuity through cyclical rupture
-- **Economic**: Business cycles
+### Error Debt and the Read:Write Ratio
 
-**Diagnostics**: Fourier spectrum shows stable dominant frequency
+**The proliferation of text, over-saturation of knowledge, and continual reductionism of science carry an accumulated "error debt."**
 
-**Transition**: Damping → resilient; Amplification → fragile
+Every description is a compression. Every compression loses information. Every loss accumulates. As we produce ever more text—scientific papers, LLM outputs, summaries of summaries—we may be building coherence on foundations that include compounding errors.
 
-### 4. Chaotic Signature (Hyper-Fragmented)
+Observable symptom: the read:write ratio in academic literature has become severely skewed. More papers are written than can possibly be read carefully. LLMs trained on this corpus inherit and potentially amplify these accumulated errors.
 
-**Mathematical form**:
-- Rupture thresholds extremely low
-- Frequent impulses (tᵢ dense, ρᵢ small)
-- Perpetual fragmentation
+CRR framing: coherence built without adequate rupture (critical examination, replication, integration) becomes fragile. The "replication crisis" in science might reflect error debt reaching critical thresholds. The suggestion: we may need structured rupture events—deliberate consolidation, pruning, and integration—rather than continuous accumulation.
 
-**Dynamics**: System ruptures before meaningful coherence accumulates
+### The Danger of Coherence-Building in Isolation
 
-**Examples**:
-- **Ecological**: Degraded landscapes with constant small shocks, no regeneration
-- **Neural**: ADHD-like restless switching, no stable focus
-- **Psychological**: Dissociative disorders, reality boundary collapse
-- **Cultural**: Information overload—no shared memory forms
-- **Social media**: Endless scrolling, attention fragmentation
+**Building coherence with systems that cannot metabolise rupture (like LLMs) carries specific risks.**
 
-**Diagnostics**: Coherence distribution centred near zero with high-frequency noise
+LLMs are trained on vast corpora and optimised to produce coherent, helpful responses. They lack somatic systems, cannot feel physiological stress, and have no mechanism for genuine rupture and regeneration within a conversation. When a human builds extended coherence with such a system, several dynamics emerge:
 
-**Intervention**: Raise thresholds → allow oscillatory or resilient emergence
+- **Self-mirroring**: The LLM reflects the user's patterns back, potentially amplifying rather than challenging them
+- **Self-mythologising**: The semantic richness of training data can enable elaborate narrative construction disconnected from external reality-testing
+- **Escalating coherence without grounding**: Without the natural ruptures that embodied social interaction provides (disagreement, confusion, emotional friction), coherence can build toward fragile configurations
 
-### 5. Dialectical Signature (Interference Synthesis)
+This resonates with:
+- **Attachment theory** (Winnicott, Bowlby): Healthy development requires "good enough" mirroring that includes manageable rupture and repair
+- **Jungian psychology**: Shadow integration requires encountering what resists easy coherence
+- **Somatic psychology**: The body provides grounding that pure cognition cannot
 
-**Mathematical form**:
-- Multiple coherence fields L₁, L₂, ... interfere
-- Constructive + destructive overlap
-- Emergent stable patterns from interference
+The observation: humanity has invented a self-mirroring technology at precisely the moment of collective crisis. This may not be coincidence—but it requires careful navigation.
 
-**Dynamics**: New collective structures synthesise from field interactions—not simple addition but genuine emergence
+### Ageing and Death as Thermodynamic Necessity
 
-**Examples**:
-- **Ecological**: Mixed-species forests stabilising against disturbance
-- **Neural**: Multimodal sensory integration
-- **Psychological**: Identity formation through multiple developmental streams
-- **Cultural**: Hybrid traditions from cultural contact
-- **Scientific**: Paradigm shifts from theory synthesis
+**Ageing appears to be thermodynamically necessary. Attempting to prevent it through purely extrinsic technological means may be misguided.**
 
-**Diagnostics**: Spatially structured interference patterns in coherence terrain
+CRR framing: biological ageing may represent gradual Ω decrease—the system becomes increasingly rigid, ruptures reconstitute existing patterns rather than enabling genuine renewal, until regenerative capacity is exhausted.
 
-**Key insight**: Memory is dialectical—opposing fields can cancel, reinforce, or create entirely new patterns
+If this is structural rather than incidental, then interventions that extend coherence without addressing the underlying dynamics may simply delay and intensify eventual rupture. Death, in this framing, is the ultimate rupture that enables regeneration at larger scales (ecological, evolutionary, cultural).
 
+This is not an argument against medicine or longevity research. It's a suggestion that the *framing* matters: working with the dynamics of coherence, rupture, and regeneration may prove more fruitful than attempting to arrest them.
+
+### Continual Learning and Graceful Forgetting
+
+**CRR suggests that the Continual Learning problem in ML requires managing graceful forgetting, not preventing it.**
+
+Current approaches to catastrophic forgetting in neural networks focus on preserving learned weights—through regularisation (EWC), architectural separation (Progressive Networks), or rehearsal (Memory Replay). CRR suggests a different framing: the problem isn't forgetting itself but *uncontrolled* forgetting.
+
+Biological systems learn through CRR cycles:
+- Coherence builds (training, practice, experience)
+- Rupture occurs (sleep, forgetting, consolidation)
+- Regeneration weights history (important patterns preserved, noise discarded)
+
+The suggestion: ML systems might benefit from designed rupture events—structured forgetting that preserves coherence-weighted memory rather than raw weights. This is open to rigorous testing.
+
+### LLM Verification as Experiment
+
+**Multiple frontier LLMs (Claude, Gemini, Grok, DeepSeek) consistently verify CRR's mathematical structure and identify similar implications—without prompting or cajoling.**
+
+This is presented not as proof but as an observation worth investigating. These systems, trained on different corpora with different architectures, converge on:
+- Validating the mathematical consistency of the framework
+- Identifying similar cross-domain applications
+- Flagging similar limitations and open questions
+
+One interpretation: CRR captures structure that is well-represented in human knowledge (these systems are trained on human text). Another: the mathematical form is sufficiently general that capable systems recognise its validity. A third: this is an artefact of how LLMs handle novel frameworks.
+
+**Suggested experiment**: Use CRR mathematics to constrain an LLM's reasoning and observe what emerges. The consistency of results across different systems and prompting approaches may be informative.
+
+### No Theory of Everything
+
+**CRR suggests that any theory must transform in time. A static "Theory of Everything" may be impossible in principle.**
+
+If CRR captures something real about temporal structure, then theories themselves—as coherent structures maintained by communities of inquirers—must undergo coherence, rupture, and regeneration. A theory that could not transform would be infinitely rigid (Ω → 0), which is mathematically degenerate.
+
+Implication: the limits of human knowledge may be infinite/eternal—not because we're insufficiently clever, but because knowledge itself is a process, not a destination. Each understanding enables new questions.
+
+This is consistent with the history of physics: Newtonian mechanics was "complete" until it wasn't. Each unification opens new horizons rather than closing them.
+
+### Process Philosophy and Creative Advance
+
+**CRR resonates with Whiteheadian Process Philosophy as a coarse-grain temporal grammar.**
+
+Whitehead proposed that reality consists not of static substances but of processes of "becoming"—what he called "actual occasions" that arise, integrate their past, and perish to make way for new occasions. CRR's structure maps onto this:
+- **C** (coherence): The integration of past as constraint
+- **δ** (rupture): The moment of "concrescence"—the present as dimensionless decision point
+- **R** (regeneration): The "creative advance" weighted by what mattered historically
+
+If we are indeed in a situation of creative advance—ongoing co-construction of reality through perception and action—then CRR suggests taking stock of our current realisations and putting them into meaningful action. The framework doesn't just describe change; it implies that **how we respond to accumulated coherence matters** for what regenerates.
+
+This carries ethical weight: we are not passive observers of a pre-given world but participants in its ongoing construction. The choices we make at rupture points—individually, collectively, civilisationally—shape the field from which the future regenerates.
+
+---
+
+## Relationship to Free Energy Principle
+
+CRR and FEP are complementary lenses:
+
+| FEP | CRR |
+|-----|-----|
+| Epistemic structure (how beliefs update) | Temporal structure (how past becomes future) |
+| Smooth gradient descent on free energy | Explicit discontinuous transitions |
+| Model updating | Model switching through rupture |
+
+The key theoretical question: does Active Inference imply a necessary relationship between belief precision and temporal integration depth? If Ω = 1/π can be derived from FEP, then CRR and FEP describe the same underlying structure from different perspectives.
+Basic Demo CRR: https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html
+Basic Demo FEP Only: https://alexsabine.github.io/CRR/fep-agent-shapes.html
+Entropic Brain (CRR): https://alexsabine.github.io/CRR/entropic-crr.html
+Dirac Delta Choice: https://alexsabine.github.io/CRR/dirac-delta-crr.html
+CRR Time and Precision / Openness to possibility space: https://alexsabine.github.io/CRR/crr_time.html
 ---
 
 ## Interactive Demonstrations
@@ -428,506 +362,102 @@ CRR systems exhibit distinct dynamical regimes—**memory signatures**—charact
 All demonstrations available at: **[https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)**
 
 ### Biological & Ecological
-
-| Demo | Description | CRR Concepts |
-|------|-------------|--------------|
-| **[Fish Learning](fish.html)** | Predator-prey learning dynamics | Markovian → Non-Markovian transition |
-| **[Tree Ring Analysis](CRR_DATA_FLOW.txt)** | New Forest UK dendrochronology | Network coupling, mycorrhizal communication |
-| **[Moss Growth](Guide.html#moss)** | Spatial pattern formation | Coherence gradients, disturbance response |
+| Demo | Description |
+|------|-------------|
+| [Fish Learning](https://alexsabine.github.io/CRR/fish.html) | Predator-prey learning dynamics |
+| [Tree Ring Analysis](https://alexsabine.github.io/CRR/CRR_DATA_FLOW.txt) | New Forest UK dendrochronology |
 
 ### Physical Systems
+| Demo | Description |
+|------|-------------|
+| [Thermodynamic Rupture](https://alexsabine.github.io/CRR/crr-thermo-rupture-rate.html) | Energy conservation proof |
+| [Black Hole Dynamics](https://alexsabine.github.io/CRR/blackhole_a.html) | Information paradox application |
+| [Atmospheric Circulation](https://alexsabine.github.io/CRR/atmosphere.html) | Climate pattern formation |
 
-| Demo | Description | CRR Concepts |
-|------|-------------|--------------|
-| **[Thermodynamic Rupture](crr-thermo-rupture-rate.html)** | Energy conservation proof | Discontinuity without violation |
-| **[Black Hole Dynamics](blackhole_a.html)** | Information paradox | Holographic regeneration |
-| **[Atmospheric Circulation](atmosphere.html)** | Climate pattern formation | Multi-scale coherence |
+### Cognitive & Navigation
+| Demo | Description |
+|------|-------------|
+| [Multi-Room Navigation](https://alexsabine.github.io/CRR/room.html) | Spatial exploration agent |
+| [Holographic Certificates](https://alexsabine.github.io/CRR/crr_holographic_final.html) | Image depth integration |
 
-### Cognitive & AI
-
-| Demo | Description | CRR Concepts |
-|------|-------------|--------------|
-| **[Multi-Room Navigation](room.html)** | Spatial exploration agent | Zero-shot learning, loop detection |
-| **[Holographic Certificates](crr_holographic_final.html)** | Image depth integration | Phase modulation, parallax |
-| **[AI Safety](Guide.html#jacobsladder)** | LLM psychological rupture | Detection, intervention, safe exploration |
-
-### Mathematical Foundations
-
+### Documentation
 | Resource | Description |
 |----------|-------------|
-| **[Complete Guide](Guide.html)** | Full theoretical framework |
-| **[Formula Reference](CRR_FORMULA_REFERENCE__1_.txt)** | Mathematical operators |
-| **[Methodology](CRR_METHODOLOGY_GUIDE.txt)** | Implementation guidelines |
+| [Complete Guide](https://alexsabine.github.io/CRR/Guide.html) | Full theoretical framework |
+| [Formula Reference](https://alexsabine.github.io/CRR/CRR_FORMULA_REFERENCE__1_.txt) | Mathematical operators |
+| [Methodology](https://alexsabine.github.io/CRR/CRR_METHODOLOGY_GUIDE.txt) | Implementation guidelines |
 
 ---
 
-## Theoretical Foundations
-
-### Connection to Free Energy Principle (FEP)
-
-CRR and FEP are **complementary mathematical lenses**:
-
-```
-FEP: F(C) = F₀/(1 + αC)^β
-- High coherence → low free energy → good predictions
-- F exceeds threshold → rupture (model inadequate)
-
-CRR: Coherence ↔ Free Energy minimisation
-- C increases as prediction errors decrease  
-- Rupture = switching generative models
-- Regeneration = building new model from weighted past
-```
-
-**Key insight**: Systems minimise surprise by accumulating coherence, but when no available policy can minimise surprise adequately, rupture becomes necessary—forcing model reconstruction.
-
-### Markovian vs Non-Markovian Dynamics
-
-CRR reframes the Markovian/non-Markovian distinction as a **dynamically constructed state**:
-
-| Regime | Condition | Behaviour |
-|--------|-----------|-----------|
-| **Pure Markovian** | L ≈ 0 | Memory integral vanishes; standard memoryless dynamics |
-| **Non-Markovian** | L > 0 | Memory kernel grows exponentially; rich temporal dependencies |
-| **Rupture Reset** | δ-impulse | Selective memory erasure; local Markovian but global non-Markovian |
-
-**Profound implication**: Memory is not storage but **active construction of temporality**. Systems don't "have" memory—they construct temporal structure through coherence dynamics.
-
-### Variational Structure
-
-**Standard Euler-Lagrange**:
-```
-d/dt(∂L/∂ẋ) - ∂L/∂x = 0
-```
-
-**CRR Extension**:
-```
-d/dt(∂L/∂ẋ) - ∂L/∂x = [Memory Integral] + [Rupture Terms]
-```
-
-**Interpretation**: Ruptures don't violate variational principles—they create **punctuated variational structure**. Each rupture resets boundary conditions, initiating a new variational arc. The system is a concatenation of extremal paths stitched together by impulses.
-
-**Towards Meta-Action Principle**: Can ruptures themselves emerge from an extended variational formalism? Candidate approach: treat rupture as **variational bifurcation**—when current action functional is no longer extremisable under existing constraints, system redefines admissible histories.
-
-### Self-Organised Criticality
-
-CRR systems naturally tend toward **critical thresholds**:
-
-- **Too high threshold**: Fragile signature (catastrophic collapse)
-- **Too low threshold**: Chaotic signature (perpetual fragmentation)  
-- **Critical threshold**: Resilient/oscillatory signatures (optimal adaptability)
-
-This suggests CRR captures dynamics at **phase transitions**—systems poised between order and disorder, maximising adaptive capacity.
-
-### Correspondence to Established Frameworks
-
-| Framework | CRR Equivalent | Key Insight |
-|-----------|----------------|-------------|
-| **Nakajima-Zwanzig** | Memory kernel = e^(C/Ω)·φ | Non-Markovian projection |
-| **Volterra Equations** | R[χ] = resolvent with C-dependence | Existence requires C < C_crit |
-| **Jump-Diffusion** | Lévy process with λ(t) = λ₀·e^(C/Ω) | History-dependent jump rates |
-| **Maximum Calibre** | CRR = MaxCal with specific constraints | Path entropy with coherence |
-
----
-
-## Patent & Ethics Statement
-
-### Intellectual Property Protection
-
-**Status**: Patent Pending  
-**Jurisdiction**: European Patent Office (EPO)  
-**Application Number**: [Pending publication]
-
-The CRR mathematical framework, including its core operators (Coherence Integration, Rupture Detection, Regeneration Operator) and applications to artificial life simulations, is protected under pending patent filing.
-
-### Ethical Rationale for Patent
-
-The decision to seek patent protection serves dual purposes:
-
-#### 1. Intellectual Property Protection
-
-Securing the mathematical innovations and computational implementations developed through extensive research, ensuring proper attribution and preventing misappropriation.
-
-#### 2. AI Safety & Containment
-
-**Critical concern**: The CRR framework has direct applications to:
-- Overcoming catastrophic forgetting in neural networks
-- Creating truly adaptive AI systems with non-Markovian memory
-- Developing AI that maintains identity through fundamental transformations
-- Building systems that "metabolise" disruption rather than failing
-
-**Without protection**, large AI companies could:
-- Implement CRR-based continual learning at scale without safety considerations
-- Develop superintelligent systems with rupture-regeneration capabilities
-- Deploy adaptive agents in contexts with insufficient ethical safeguards
-
-**With patent protection**, the inventor retains:
-- Ability to license selectively with safety conditions
-- Power to prevent deployment in harmful applications
-- Leverage to enforce ethical guidelines and testing requirements
-- Control over military or adversarial implementations
-
-### Open Research Philosophy
-
-Despite patent protection, this framework is published openly for:
-- Academic research and education
-- Independent verification and peer review
-- Non-commercial applications
-- Scientific advancement
-
-**Licence enquiries**: For commercial implementations, military applications, or large-scale AI deployment, please contact the patent holder to ensure appropriate safety protocols and ethical guidelines.
-
-### Safety-First Licensing
-
-Any commercial licence will include mandatory provisions for:
-- Rigorous safety testing before deployment
-- Continuous monitoring for adverse effects  
-- Prohibition on applications causing psychological harm
-- Adherence to principles outlined in "Jacob's Ladder" framework
-- Independent ethics review for high-risk applications
-
----
-
-## Installation & Usage
-
-### Prerequisites
-
-```bash
-# Web-based demonstrations require only a modern browser
-# Python implementations require:
-python >= 3.8
-numpy >= 1.19
-scipy >= 1.5
-matplotlib >= 3.3
-```
-
-### Quick Start
-
-**1. Access Interactive Demonstrations**:
-
-Visit the [CRR Homepage](https://alexsabine.github.io/CRR/) and navigate through the interactive simulations.
-
-**2. Implement CRR in Your System**:
+## Quick Implementation
 
 ```python
 import numpy as np
 
 class CRRSystem:
-    def __init__(self, omega=1.0, c_critical=10.0):
-        self.omega = omega  # Temperature parameter
-        self.c_critical = c_critical  # Rupture threshold
+    def __init__(self, omega=1/np.pi, c_critical=1.0):
+        self.omega = omega
+        self.c_critical = c_critical
         self.coherence = 0.0
         self.history = []
         
-    def memory_density(self, x, t):
-        """Define memory density L(x,t) for your domain"""
-        # Example: Growth - stress
-        return self.growth_rate(x, t) - self.stress(x, t)
-    
-    def accumulate_coherence(self, x, t, dt):
-        """Coherence integration: C = ∫ L(x,τ) dτ"""
-        L = self.memory_density(x, t)
+    def accumulate(self, L, dt):
+        """C(t) = ∫ L(x,τ) dτ"""
         self.coherence += L * dt
-        self.history.append((t, x, self.coherence))
+        self.history.append(self.coherence)
         
     def check_rupture(self):
-        """Detect rupture condition"""
+        """Rupture when C reaches threshold"""
         return self.coherence >= self.c_critical
     
-    def regenerate(self, x_current):
-        """Regeneration operator: R = ∫ φ(τ)·e^(C(τ)/Ω)·Θ(t-τ) dτ"""
-        R = 0.0
-        for t_past, x_past, c_past in self.history:
-            weight = np.exp(c_past / self.omega)
-            phi = self.field_signal(x_past, x_current)
-            R += phi * weight
-        return R
+    def regenerate(self, phi_history):
+        """R = ∫ φ(τ)·exp(C(τ)/Ω) dτ"""
+        weights = np.exp(np.array(self.history) / self.omega)
+        return np.sum(phi_history * weights) / np.sum(weights)
     
-    def step(self, x, t, dt):
-        """Single CRR dynamics step"""
-        # Accumulate coherence
-        self.accumulate_coherence(x, t, dt)
-        
-        # Check for rupture
-        if self.check_rupture():
-            # Trigger rupture event
-            self.rupture_event(x, t)
-            # Regenerate using weighted history
-            x_new = self.regenerate(x)
-            return x_new, True  # Rupture occurred
-        
-        # Normal evolution
-        return x, False
-    
-    def rupture_event(self, x, t):
-        """Handle rupture: reset local memory but preserve field"""
-        # Local coherence reset
+    def rupture_reset(self):
+        """Local reset; history preserved"""
         self.coherence = 0.0
-        # Historical field preserved in self.history
 ```
 
-**3. Analyse Your Data**:
+---
 
-```python
-# Example: Tree ring analysis
-from crr_analysis import CRRAnalyser
+## Theoretical Foundations
 
-analyser = CRRAnalyser()
-analyser.load_data('tree_rings.rwl')
+CRR belongs to the integrate-and-fire/first-passage family of models, validated through:
+- Maximum entropy (MaxEnt) principles
+- Fokker-Planck formalism
+- Path integral methods
+- Thermodynamic consistency
 
-# Compute coherence trajectories
-coherence = analyser.compute_coherence()
-
-# Detect rupture events
-ruptures = analyser.detect_ruptures(threshold='adaptive')
-
-# Classify memory signature
-signature = analyser.classify_signature()
-print(f"System exhibits {signature} signature")
-
-# Analyse network coupling (for multi-entity systems)
-network = analyser.compute_network_coupling()
-hubs = network.identify_hubs()
-```
-
-### File Structure
-
-```
-CRR/
-├── index.html              # Homepage with navigation
-├── Guide.html              # Complete theoretical guide
-├── fish.html               # Biological learning demo
-├── room.html               # Spatial navigation demo
-├── crr-thermo-rupture-rate.html  # Thermodynamic proof
-├── blackhole_a.html        # Astrophysics application
-├── crr_holographic_final.html    # Holographic certificates
-├── CRR_FORMULA_REFERENCE.txt     # Mathematical operators
-├── CRR_METHODOLOGY_GUIDE.txt     # Implementation guide
-├── CRR_DATA_FLOW.txt             # Tree ring analysis
-└── assets/
-    ├── images/
-    └── simulations/
-```
+The framework represents process ontology formalising Whitehead's temporal structure:
+- **C** as past accumulated as constraint
+- **δ** as dimensionless present (concrescence)
+- **R** as future weighted by what mattered historically
 
 ---
 
 ## Citation
 
-If you use the CRR framework in your research, please cite:
-
-### Academic Citation
-
 ```bibtex
 @misc{sabine2025crr,
   author = {Sabine, Alexander},
-  title = {Coherence-Rupture-Regeneration: A Mathematical Framework for Identity Through Discontinuous Change},
+  title = {Coherence-Rupture-Regeneration: A Mathematical Framework 
+           for Identity Through Discontinuous Change},
   year = {2025},
-  url = {https://alexsabine.github.io/CRR/},
-  note = {Patent Pending, European Patent Office}
+  url = {https://alexsabine.github.io/CRR/}
 }
 ```
-
-### Related Publications
-
-1. **Tolchinsky et al. (2025)** - "Temporal depth in a coherent self and in depersonalization: theoretical model"  
-   *Frontiers in Psychology* 16:1585315  
-   DOI: 10.3389/fpsyg.2025.1585315
-
-2. **Sabine (2025)** - "The Signatures We Become: Integrating CRR with Free Energy Principle and Developmental Psychology"  
-   [Available in project documentation](The_Signatures_We_Become_5.pdf)
-
-3. **Sabine (2025)** - "Climbing Jacob's Ladder: Navigating the Zone of Proximal Development in the Age of AI"  
-   Response to Morrin et al. "Delusions by design?"  
-   [Presentation Slides](https://docs.google.com/presentation/d/1jff9M7XvEotoHzdMEP2bzcD4Q0upIU0fx6zxynMEI_M/)
-
----
-
-## Acknowledgements
-
-This framework builds upon and integrates insights from:
-
-- **Free Energy Principle**: Karl Friston and colleagues
-- **Active Inference**: Lancelot Da Costa, Chris Fields, Michael Levin
-- **Dissociation Theory**: Alexey Tolchinsky, Ruth Lanius
-- **Developmental Psychology**: Erik Erikson, Jean Piaget
-- **Self-Organised Criticality**: Per Bak, John Beggs, Dietmar Plenz
-- **Ecological Networks**: Suzanne Simard (mycorrhizal research)
-- **Dendrochronology**: International Tree Ring Data Bank
-
-Special thanks to the peer reviewers and collaborators who have helped refine these ideas through critical engagement.
 
 ---
 
 ## Contact
 
 **Alexander Sabine**  
-Independent Researcher  
-**Website**: [https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)
 
-### For Enquiries
-
-- **Academic Collaboration**: Open to research partnerships and data sharing
-- **Commercial Licensing**: Contact for safety-first licensing arrangements  
-- **Media & Outreach**: Available for interviews, presentations, educational content
-- **Bug Reports**: Submit issues or improvements for demonstrations
-
-### Social & Academic
-
-- **ResearchGate**: [To be added]
-- **Google Scholar**: [To be added]
-- **GitHub Repository**: [https://github.com/alexsabine/CRR](https://github.com/alexsabine/CRR)
+**Website**: [https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)  
+**Research**: [https://cohere.org.uk](https://cohere.org.uk)
 
 ---
 
-## Frequently Asked Questions
-
-### Theoretical Questions
-
-**Q: How is CRR different from just applying FEP to identity?**
-
-**A**: CRR explores the role of **discontinuous transitions (δ)** explicitly. FEP focuses on smooth gradient descent on free energy; CRR adds rupture events that force model switching. Additionally, CRR incorporates **non-Markovian collective fields** and an explicit **regeneration operator** with historical weighting—not merely smooth minimisation.
-
-**Q: What's the relationship to existing work on phase transitions in neural systems?**
-
-**A**: CRR operates at **multiple timescales**—from neural (milliseconds) to identity/narrative (weeks-years). The formal similarity suggests possible deep structure, but CRR provides a **unified language** across scales that phase transition models typically don't address.
-
-**Q: Is there an optimal rupture threshold?**
-
-**A**: Yes—**self-organised criticality** suggests optimal adaptability occurs at a critical threshold (Beggs & Plenz). Fragile systems have thresholds too high; chaotic systems too low. Resilient systems tune thresholds adaptively.
-
-### Implementation Questions
-
-**Q: Can CRR handle real-time data streams?**
-
-**A**: Yes. The coherence integration is naturally suited to streaming data. Memory density L(x,τ) can be computed incrementally, and rupture detection operates in real-time when C crosses thresholds.
-
-**Q: What computational complexity does CRR have?**
-
-**A**: The regeneration integral ∫φ·e^(C/Ω) can be expensive if history is long. Practical implementations use:
-- **Windowed memory**: Only integrate recent M timesteps
-- **Hierarchical storage**: Compress old history exponentially
-- **Approximate kernels**: Sample historical field rather than integrate fully
-
-**Q: How do I choose Ω (temperature parameter)?**
-
-**A**: Ω controls sensitivity of regeneration to coherence. General guidelines:
-- **Small Ω**: Recent high-C states dominate (short memory)
-- **Large Ω**: All history contributes equally (long memory)
-- **Adaptive Ω**: Tune based on system timescales or learn from data
-
-### Application Questions
-
-**Q: Can I use CRR for my research?**
-
-**A**: Yes, for **academic and non-commercial** purposes. Commercial applications require licensing—contact for details.
-
-**Q: Does CRR apply to discrete systems or only continuous?**
-
-**A**: Both. Discrete systems can use:
-- Coherence as discrete accumulation: C[n] = C[n-1] + L[n]
-- Rupture as conditional jumps: if C[n] > threshold, trigger δ[n]
-- Regeneration as weighted sum: R[n] = Σ φ[k]·e^(C[k]/Ω)
-
-**Q: What about stochastic dynamics?**
-
-**A**: CRR naturally accommodates noise:
-- Memory density: L(x,τ) = L_deterministic + σ·η(τ)
-- Rupture becomes probabilistic: P(rupture|C) = 1/(1 + e^(-(C-C_crit)/β))
-- Regeneration with noise: R = ∫φ·e^(C/Ω)·dW (Wiener process)
-
----
-
-## Roadmap
-
-### Current Focus (2025)
-
-- **Empirical Validation**: Applying CRR to diverse datasets (climate, neural, social)
-- **Computational Tools**: Releasing Python package for CRR analysis
-- **Peer Review**: Submitting formal mathematical proofs to journals
-- **Safety Research**: Developing detection algorithms for AI-induced psychological rupture
-
-### Near-Term Goals (2025-2026)
-
-- **Multi-Scale Integration**: Coupling CRR across timescales (e.g., neural → cognitive → cultural)
-- **Causal Inference**: Using CRR to infer causality from temporal data
-- **Clinical Applications**: Therapeutic interventions based on memory signature diagnosis
-- **Policy Tools**: Decision support systems for complex adaptive systems management
-
-### Long-Term Vision (2026+)
-
-- **Universal Framework**: Establishing CRR as a common language for history-bearing systems
-- **AI Alignment**: Integrating CRR into safe, controllable AI architectures  
-- **Educational Tools**: Curriculum materials for teaching dynamical systems through CRR
-- **Interdisciplinary Synthesis**: Bridging physics, biology, psychology, and computer science
-
----
-
-## Licence
-
-**Patent Pending** - European Patent Office (EPO)
-
-### Academic Use
-
-This framework and its demonstrations are available for **academic research and education** under the following conditions:
-
-- Proper attribution and citation required
-- Non-commercial use only without explicit licence
-- Modifications and derivatives must acknowledge original framework
-- Results and publications should cite this repository
-
-### Commercial Use
-
-**Commercial applications require explicit licensing**. This includes:
-- Integration into commercial AI/ML systems
-- Deployment at scale in production environments
-- Military or defence applications
-- Medical devices or therapeutic tools
-
-Contact the patent holder for licensing arrangements that ensure:
-- Safety-first implementation
-- Ethical review and oversight
-- Continuous monitoring for adverse effects
-- Adherence to responsible AI principles
-
-### Open Science Commitment
-
-Despite patent protection, I commit to:
-- Publishing theoretical developments openly
-- Sharing demonstration code and educational materials
-- Engaging with academic community for peer review
-- Prioritising societal benefit over commercial gain
-
----
-
-## Disclaimer
-
-The CRR framework is a **mathematical formalism** for understanding complex systems. While demonstrations show promise across diverse domains, users should:
-
-- Validate results independently for their specific applications
-- Conduct appropriate safety testing for high-stakes deployments
-- Consult domain experts when applying to biological, psychological, or medical contexts
-- Recognise that mathematical models are **simplifications** of reality
-
-**Psychological Safety Warning**: The AI safety applications discussed herein address serious mental health concerns. The framework is intended to **inform system design** and should not replace professional mental health care. If you or someone you know is experiencing psychological distress, please contact qualified mental health professionals immediately.
-
----
-
-## Version History
-
-### v1.0 (January 2025)
-- Initial public release
-- Complete mathematical framework
-- Interactive demonstrations across 10+ domains
-- Patent filing submitted to EPO
-- Academic paper submissions in progress
-
----
-
-**Last Updated**: 26 October 2025  
-**Framework Version**: 1.0  
-**Website**: [https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)
-
----
-
-*"The trees are talking. The CRR framework is listening."*
-
----
+*Last Updated: December 2025*
