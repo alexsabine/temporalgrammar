@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Inference in Action — An Agent Learns Its World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream: #faf8f4;
+            --bg-warm: #f4f1ea;
+            --bg-panel: #ffffff;
+            --bg-code: #2c2c2c;
+            --text-dark: #1a1a1a;
+            --text-body: #333333;
+            --text-muted: #666666;
+            --accent-piaget: #8b4513;
+            --accent-piaget-light: #f5ebe0;
+            --accent-fep: #234e70;
+            --accent-fep-light: #e8f0f5;
+            --border-color: #d4d0c8;
+            --surprise-color: #c62828;
+            --success-color: #2e7d32;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--bg-cream);
+            color: var(--text-body);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+        
+        header {
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-color);
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 400;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        .instruction-note {
+            display: inline-block;
+            margin-top: 1.25rem;
+            padding: 0.5rem 1.25rem;
+            background: var(--accent-fep-light);
+            border: 1px solid var(--accent-fep);
+            font-size: 0.9rem;
+            color: var(--accent-fep);
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stage-section {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        @media (max-width: 1000px) {
+            .stage-section { grid-template-columns: 1fr; }
+        }
+        
+        .stage-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+        }
+        
+        .stage-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stage-title { font-weight: 500; color: var(--text-dark); }
+        .stage-controls { display: flex; gap: 0.5rem; }
+        
+        .btn {
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 0.9rem;
+            padding: 0.5rem 1.25rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-panel);
+            color: var(--text-body);
+            cursor: pointer;
+        }
+        
+        .btn:hover { background: var(--bg-warm); }
+        
+        .btn-primary {
+            background: var(--accent-fep);
+            color: white;
+            border-color: var(--accent-fep);
+        }
+        
+        #canvas { 
+            display: block; 
+            width: 100%; 
+            height: 500px; 
+            cursor: pointer;
+        }
+        
+        .commentary-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .commentary-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-warm);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+        
+        .commentary-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-warm);
+            border: 1px solid var(--border-color);
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border-color);
+        }
+        
+        .status-dot.idle { background: var(--text-muted); }
+        .status-dot.exploring { background: #ff9800; animation: pulse 1s infinite; }
+        .status-dot.surprise { background: var(--surprise-color); animation: pulse 0.5s infinite; }
+        .status-dot.learning { background: var(--accent-fep); animation: pulse 0.8s infinite; }
+        .status-dot.success { background: var(--success-color); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        
+        .status-text { font-size: 0.9rem; color: var(--text-muted); font-style: italic; }
+        
+        .commentary-text {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1.25rem;
+            text-align: justify;
+        }
+        
+        .framework-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .framework-box {
+            padding: 0.85rem;
+            font-size: 0.95rem;
+            border-left: 3px solid;
+        }
+        
+        .framework-box.piaget { background: var(--accent-piaget-light); border-left-color: var(--accent-piaget); }
+        .framework-box.fep { background: var(--accent-fep-light); border-left-color: var(--accent-fep); }
+        
+        .framework-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+        
+        .piaget .framework-label { color: var(--accent-piaget); }
+        .fep .framework-label { color: var(--accent-fep); }
+        
+        .framework-term { font-weight: 600; font-size: 0.95rem; font-style: italic; }
+        .framework-desc { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+        
+        .math-note {
+            background: var(--bg-code);
+            color: #e0e0e0;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            font-style: italic;
+            margin-top: 1rem;
+            border-left: 3px solid #666;
+        }
+        
+        .math-note .label {
+            color: #aaa;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: block;
+            margin-bottom: 0.25rem;
+            font-style: normal;
+        }
+        
+        .model-display {
+            background: var(--bg-warm);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-top: 1.25rem;
+        }
+        
+        .model-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+        
+        .belief-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0.6rem;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        
+        .belief-item.updating { 
+            background: var(--accent-fep-light); 
+            border-color: var(--accent-fep); 
+            animation: updatePulse 0.5s ease-out;
+        }
+        
+        .belief-item.new { 
+            background: #e8f5e9; 
+            border-color: var(--success-color); 
+        }
+        
+        @keyframes updatePulse {
+            0% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .belief-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .belief-text { flex: 1; }
+        .belief-name { font-weight: 500; font-size: 0.85rem; }
+        .belief-details { font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
+        
+        .confidence-bar { width: 40px; height: 5px; background: var(--border-color); }
+        .confidence-fill { height: 100%; background: var(--success-color); transition: width 0.5s; }
+        
+        .prediction-display {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #fff8e1;
+            border: 1px solid #ffca28;
+            font-size: 0.85rem;
+        }
+        
+        .prediction-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #f57f17;
+            margin-bottom: 0.4rem;
+        }
+        
+        .error-display {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: #ffebee;
+            border: 1px solid var(--surprise-color);
+            font-size: 0.85rem;
+        }
+        
+        .error-display.low-error {
+            background: #e8f5e9;
+            border-color: var(--success-color);
+        }
+        
+        .error-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--surprise-color);
+            margin-bottom: 0.4rem;
+        }
+        
+        .error-display.low-error .error-title { color: var(--success-color); }
+        
+        .explanation-section { margin-top: 2.5rem; }
+        
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .explanation-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .card-number {
+            width: 26px;
+            height: 26px;
+            background: var(--accent-fep);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .card-title { font-size: 1.1rem; font-weight: 500; font-style: italic; }
+        .card-body { font-size: 0.95rem; }
+        .card-body p { margin-bottom: 0.85rem; text-align: justify; }
+        .card-body p:last-child { margin-bottom: 0; }
+        
+        .highlight { background: var(--accent-fep-light); padding: 0.1em 0.25em; }
+        .highlight-piaget { background: var(--accent-piaget-light); }
+        
+        .references-section {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .references-title { font-size: 1.2rem; font-weight: 400; margin-bottom: 1.25rem; }
+        
+        .references-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+        }
+        
+        .reference-category {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 1.15rem 1.35rem;
+        }
+        
+        .reference-category-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.85rem;
+        }
+        
+        .reference-item {
+            margin-bottom: 0.75rem;
+            padding-left: 1rem;
+            text-indent: -1rem;
+            font-size: 0.85rem;
+            line-height: 1.55;
+        }
+        
+        .reference-item .author { font-weight: 500; }
+        .reference-item .title { font-style: italic; }
+        .reference-item .source { color: var(--text-muted); }
+        
+        footer {
+            margin-top: 2rem;
+            padding: 1.25rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-warm);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Active Inference in Action</h1>
+        <p class="subtitle">Watch an agent learn through prediction and surprise</p>
+        <span class="instruction-note">Click any shape to have the agent explore it</span>
+    </header>
+    
+    <div class="main-container">
+        <div class="stage-section">
+            <div class="stage-container">
+                <div class="stage-header">
+                    <span class="stage-title">The Agent's World</span>
+                    <div class="stage-controls">
+                        <button class="btn" id="resetBtn">Reset World</button>
+                        <button class="btn btn-primary" id="randomBtn">Random Explore</button>
+                    </div>
+                </div>
+                <canvas id="canvas"></canvas>
+            </div>
+            
+            <div class="commentary-panel">
+                <div class="commentary-header">Understanding the Process</div>
+                <div class="commentary-content">
+                    <div class="status-indicator">
+                        <div class="status-dot idle" id="statusDot"></div>
+                        <span class="status-text" id="statusText">Agent awaiting instruction...</span>
+                    </div>
+                    
+                    <div id="commentaryText" class="commentary-text">
+                        This agent inhabits a world of abstract shapes. Like a child encountering objects for the first time, it must construct an internal model of what exists—predicting, being surprised, and updating its beliefs.
+                    </div>
+                    
+                    <div id="frameworkComparison" class="framework-comparison" style="display: none;">
+                        <div class="framework-box piaget">
+                            <div class="framework-label">Piaget</div>
+                            <div class="framework-term" id="piagetTerm">—</div>
+                            <div class="framework-desc" id="piagetDesc"></div>
+                        </div>
+                        <div class="framework-box fep">
+                            <div class="framework-label">Active Inference</div>
+                            <div class="framework-term" id="fepTerm">—</div>
+                            <div class="framework-desc" id="fepDesc"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="predictionDisplay" class="prediction-display" style="display: none;">
+                        <div class="prediction-title">Agent's Prediction</div>
+                        <div id="predictionContent"></div>
+                    </div>
+                    
+                    <div id="errorDisplay" class="error-display" style="display: none;">
+                        <div class="error-title">Prediction Error</div>
+                        <div id="errorContent"></div>
+                    </div>
+                    
+                    <div class="math-note" id="mathNote" style="display: none;">
+                        <span class="label">Formal notation</span>
+                        <span id="mathContent"></span>
+                    </div>
+                    
+                    <div class="model-display">
+                        <div class="model-title">Agent's Generative Model (Schemas)</div>
+                        <div id="beliefsList">
+                            <div class="belief-item" style="opacity: 0.5;">
+                                <div class="belief-icon">?</div>
+                                <div class="belief-text">
+                                    <div class="belief-name">No schemas yet</div>
+                                    <div class="belief-details">Click a shape to begin learning...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation-section">
+            <div class="explanation-grid">
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">I</div>
+                        <div class="card-title">Generative Models</div>
+                    </div>
+                    <div class="card-body">
+                        <p>The agent maintains a <span class="highlight">generative model</span>—an internal representation of how the world produces sensations. Initially empty, this model grows with experience.</p>
+                        <p>In Piaget's terms, these are <span class="highlight-piaget">schemas</span>: organised patterns of knowledge that guide interpretation and prediction.</p>
+                    </div>
+                </div>
+                
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">II</div>
+                        <div class="card-title">Prediction and Surprise</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Before encountering an object, the agent generates <span class="highlight">predictions</span> based on its model. The difference between prediction and reality is <em>prediction error</em>.</p>
+                        <p>High prediction error signals <span class="highlight-piaget">disequilibrium</span>—the uncomfortable state that drives learning.</p>
+                    </div>
+                </div>
+                
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">III</div>
+                        <div class="card-title">Assimilation</div>
+                    </div>
+                    <div class="card-body">
+                        <p>When a new experience matches an existing schema, <span class="highlight-piaget">assimilation</span> occurs. The prediction succeeds, free energy stays low, and the model remains stable.</p>
+                        <p>This is the default mode—organisms prefer to confirm rather than revise their models of the world.</p>
+                    </div>
+                </div>
+                
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">IV</div>
+                        <div class="card-title">Accommodation</div>
+                    </div>
+                    <div class="card-body">
+                        <p>When prediction fails significantly, the agent must <span class="highlight-piaget">accommodate</span>—restructure its generative model to reduce future surprise.</p>
+                        <p>In Active Inference, this means updating beliefs μ to minimise <span class="highlight">variational free energy</span> F(μ).</p>
+                    </div>
+                </div>
+                
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">V</div>
+                        <div class="card-title">Hierarchical Abstraction</div>
+                    </div>
+                    <div class="card-body">
+                        <p>As more objects are encountered, the agent forms <span class="highlight">abstract categories</span>—schemas that group objects by shared properties.</p>
+                        <p>This emergence of hierarchical structure mirrors how children develop increasingly sophisticated conceptual frameworks.</p>
+                    </div>
+                </div>
+                
+                <div class="explanation-card">
+                    <div class="card-header">
+                        <div class="card-number">VI</div>
+                        <div class="card-title">Active Inference</div>
+                    </div>
+                    <div class="card-body">
+                        <p>The agent doesn't passively receive sensations—it <span class="highlight">actively explores</span> to reduce uncertainty. Clicking shapes simulates the agent's curiosity-driven sampling of its environment.</p>
+                        <p>This is epistemic action: acting to gain information that refines the generative model.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="references-section">
+            <h2 class="references-title">Foundational References</h2>
+            <div class="references-grid">
+                <div class="reference-category">
+                    <div class="reference-category-title">Genetic Epistemology</div>
+                    <div class="reference-item"><span class="author">Piaget, J.</span> (1952). <span class="title">The Origins of Intelligence in Children.</span></div>
+                    <div class="reference-item"><span class="author">Piaget, J.</span> (1970). <span class="title">Genetic Epistemology.</span></div>
+                    <div class="reference-item"><span class="author">Piaget, J.</span> (1985). <span class="title">The Equilibration of Cognitive Structures.</span></div>
+                </div>
+                
+                <div class="reference-category">
+                    <div class="reference-category-title">Free Energy Principle</div>
+                    <div class="reference-item"><span class="author">Friston, K.</span> (2010). <span class="title">The free-energy principle: A unified brain theory?</span> <span class="source">Nature Reviews Neuroscience.</span></div>
+                    <div class="reference-item"><span class="author">Parr, T., Pezzulo, G., & Friston, K.</span> (2022). <span class="title">Active Inference: The Free Energy Principle in Mind, Brain, and Behavior.</span> <span class="source">MIT Press.</span></div>
+                </div>
+                
+                <div class="reference-category">
+                    <div class="reference-category-title">Bridging Perspectives</div>
+                    <div class="reference-item"><span class="author">Clark, A.</span> (2016). <span class="title">Surfing Uncertainty.</span> <span class="source">Oxford University Press.</span></div>
+                    <div class="reference-item"><span class="author">Hohwy, J.</span> (2013). <span class="title">The Predictive Mind.</span> <span class="source">Oxford University Press.</span></div>
+                    <div class="reference-item"><span class="author">Bruineberg, J., Kiverstein, J., & Rietveld, E.</span> (2018). <span class="title">The anticipating brain is not a scientist.</span> <span class="source">Synthese.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>An interactive demonstration of Active Inference and Piagetian learning</p>
+    </footer>
+    
+    <script>
+    // ============================================================================
+    // CANVAS SETUP
+    // ============================================================================
+    
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        W = rect.width;
+        H = rect.height;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        initializeShapes();
+    });
+    
+    // ============================================================================
+    // SHAPE DEFINITIONS
+    // ============================================================================
+    
+    const SHAPE_TYPES = {
+        circle: { name: 'Circle', sides: 0 },
+        triangle: { name: 'Triangle', sides: 3 },
+        square: { name: 'Square', sides: 4 },
+        pentagon: { name: 'Pentagon', sides: 5 },
+        hexagon: { name: 'Hexagon', sides: 6 },
+        star: { name: 'Star', sides: 5, star: true }
+    };
+    
+    const COLORS = {
+        red: { name: 'Red', hex: '#e53935', light: '#ffcdd2' },
+        blue: { name: 'Blue', hex: '#1e88e5', light: '#bbdefb' },
+        green: { name: 'Green', hex: '#43a047', light: '#c8e6c9' },
+        yellow: { name: 'Yellow', hex: '#fdd835', light: '#fff9c4' },
+        purple: { name: 'Purple', hex: '#8e24aa', light: '#e1bee7' },
+        orange: { name: 'Orange', hex: '#fb8c00', light: '#ffe0b2' }
+    };
+    
+    const SIZES = {
+        small: { name: 'Small', radius: 25, label: 'small' },
+        medium: { name: 'Medium', radius: 40, label: 'medium' },
+        large: { name: 'Large', radius: 55, label: 'large' }
+    };
+    
+    // ============================================================================
+    // WORLD STATE
+    // ============================================================================
+    
+    let shapes = [];
+    let agent = {
+        x: 100,
+        y: 250,
+        targetX: 100,
+        targetY: 250,
+        size: 20,
+        eyeDirection: 0,
+        state: 'idle', // idle, moving, examining, surprised, learning
+        phase: 0,
+        currentTarget: null,
+        breathePhase: 0
+    };
+    
+    // Agent's generative model (schemas)
+    let generativeModel = {
+        shapes: {},      // Known shape types
+        colors: {},      // Known colors
+        sizes: {},       // Known sizes
+        abstractions: [] // Higher-level categories
+    };
+    
+    let explorationLog = [];
+    let animationPhase = 0;
+    let time = 0;
+    
+    // ============================================================================
+    // SHAPE INITIALIZATION
+    // ============================================================================
+    
+    function initializeShapes() {
+        shapes = [];
+        
+        const configs = [
+            { type: 'circle', color: 'red', size: 'medium' },
+            { type: 'triangle', color: 'blue', size: 'large' },
+            { type: 'square', color: 'green', size: 'small' },
+            { type: 'pentagon', color: 'yellow', size: 'medium' },
+            { type: 'circle', color: 'purple', size: 'small' },
+            { type: 'star', color: 'orange', size: 'large' },
+            { type: 'hexagon', color: 'red', size: 'small' },
+            { type: 'triangle', color: 'green', size: 'medium' }
+        ];
+        
+        // Position shapes in a nice arrangement
+        const positions = [
+            { x: W * 0.65, y: H * 0.25 },
+            { x: W * 0.85, y: H * 0.45 },
+            { x: W * 0.5, y: H * 0.5 },
+            { x: W * 0.75, y: H * 0.7 },
+            { x: W * 0.35, y: H * 0.3 },
+            { x: W * 0.55, y: H * 0.75 },
+            { x: W * 0.4, y: H * 0.6 },
+            { x: W * 0.8, y: H * 0.2 }
+        ];
+        
+        configs.forEach((config, i) => {
+            shapes.push({
+                id: i,
+                type: config.type,
+                color: config.color,
+                size: config.size,
+                x: positions[i].x,
+                y: positions[i].y,
+                radius: SIZES[config.size].radius,
+                explored: false,
+                hovered: false,
+                pulsePhase: Math.random() * Math.PI * 2
+            });
+        });
+    }
+    
+    // ============================================================================
+    // DRAWING FUNCTIONS
+    // ============================================================================
+    
+    function drawBackground() {
+        // Soft gradient background
+        const grad = ctx.createRadialGradient(W * 0.3, H * 0.3, 0, W * 0.5, H * 0.5, W);
+        grad.addColorStop(0, '#f5f5f5');
+        grad.addColorStop(0.5, '#eeeeee');
+        grad.addColorStop(1, '#e0e0e0');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        
+        // Subtle grid pattern
+        ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 40) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        for (let y = 0; y < H; y += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+    }
+    
+    function drawShape(shape) {
+        ctx.save();
+        ctx.translate(shape.x, shape.y);
+        
+        const pulse = shape.hovered ? Math.sin(shape.pulsePhase) * 3 : 0;
+        const r = shape.radius + pulse;
+        
+        // Glow effect if hovered
+        if (shape.hovered) {
+            ctx.shadowColor = COLORS[shape.color].hex;
+            ctx.shadowBlur = 20;
+        }
+        
+        // Explored indicator
+        if (shape.explored) {
+            ctx.strokeStyle = 'rgba(46, 125, 50, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        ctx.fillStyle = COLORS[shape.color].hex;
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        
+        if (shape.type === 'circle') {
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+        } else if (SHAPE_TYPES[shape.type].star) {
+            drawStar(r, 5);
+        } else {
+            drawPolygon(r, SHAPE_TYPES[shape.type].sides);
+        }
+        
+        ctx.fill();
+        ctx.stroke();
+        
+        // Inner highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        if (shape.type === 'circle') {
+            ctx.arc(-r * 0.25, -r * 0.25, r * 0.4, 0, Math.PI * 2);
+        } else {
+            ctx.arc(0, -r * 0.2, r * 0.3, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    function drawPolygon(r, sides) {
+        ctx.moveTo(0, -r);
+        for (let i = 1; i <= sides; i++) {
+            const angle = (i * 2 * Math.PI / sides) - Math.PI / 2;
+            ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        }
+        ctx.closePath();
+    }
+    
+    function drawStar(r, points) {
+        const innerR = r * 0.4;
+        ctx.moveTo(0, -r);
+        for (let i = 0; i < points * 2; i++) {
+            const angle = (i * Math.PI / points) - Math.PI / 2;
+            const radius = i % 2 === 0 ? r : innerR;
+            ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        }
+        ctx.closePath();
+    }
+    
+    function drawAgent() {
+        ctx.save();
+        ctx.translate(agent.x, agent.y);
+        
+        const breathe = Math.sin(agent.breathePhase) * 2;
+        const size = agent.size + breathe;
+        
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath();
+        ctx.ellipse(0, size * 0.7, size * 0.8, size * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body glow based on state
+        let glowColor = 'rgba(100,100,100,0.3)';
+        if (agent.state === 'surprised') glowColor = 'rgba(198,40,40,0.5)';
+        else if (agent.state === 'learning') glowColor = 'rgba(35,78,112,0.5)';
+        else if (agent.state === 'examining') glowColor = 'rgba(255,152,0,0.4)';
+        
+        ctx.fillStyle = glowColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, size + 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Main body
+        const bodyGrad = ctx.createRadialGradient(-size * 0.3, -size * 0.3, 0, 0, 0, size);
+        bodyGrad.addColorStop(0, '#fafafa');
+        bodyGrad.addColorStop(0.5, '#e0e0e0');
+        bodyGrad.addColorStop(1, '#bdbdbd');
+        ctx.fillStyle = bodyGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Eyes
+        const eyeOffset = size * 0.35;
+        const eyeSize = size * 0.25;
+        
+        // Eye whites
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.ellipse(-eyeOffset, -size * 0.1, eyeSize, eyeSize * 1.2, 0, 0, Math.PI * 2);
+        ctx.ellipse(eyeOffset, -size * 0.1, eyeSize, eyeSize * 1.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Pupils - look toward target
+        let lookX = 0, lookY = 0;
+        if (agent.currentTarget) {
+            const dx = agent.currentTarget.x - agent.x;
+            const dy = agent.currentTarget.y - agent.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                lookX = (dx / dist) * eyeSize * 0.4;
+                lookY = (dy / dist) * eyeSize * 0.4;
+            }
+        }
+        
+        // Pupil size changes with state
+        let pupilSize = eyeSize * 0.5;
+        if (agent.state === 'surprised') pupilSize = eyeSize * 0.7;
+        else if (agent.state === 'examining') pupilSize = eyeSize * 0.4;
+        
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(-eyeOffset + lookX, -size * 0.1 + lookY, pupilSize, 0, Math.PI * 2);
+        ctx.arc(eyeOffset + lookX, -size * 0.1 + lookY, pupilSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eye shine
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(-eyeOffset + lookX - pupilSize * 0.3, -size * 0.1 + lookY - pupilSize * 0.3, pupilSize * 0.3, 0, Math.PI * 2);
+        ctx.arc(eyeOffset + lookX - pupilSize * 0.3, -size * 0.1 + lookY - pupilSize * 0.3, pupilSize * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Expression based on state
+        if (agent.state === 'surprised') {
+            // Open mouth
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.ellipse(0, size * 0.35, size * 0.2, size * 0.25, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (agent.state === 'learning') {
+            // Contemplative line
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.15, size * 0.35);
+            ctx.lineTo(size * 0.15, size * 0.35);
+            ctx.stroke();
+        } else {
+            // Neutral/happy curve
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(0, size * 0.25, size * 0.2, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+        }
+        
+        // Question mark or exclamation for states
+        if (agent.state === 'surprised') {
+            ctx.fillStyle = '#c62828';
+            ctx.font = `bold ${size * 0.8}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('!', 0, -size * 1.3);
+        } else if (agent.state === 'examining') {
+            ctx.fillStyle = '#ff9800';
+            ctx.font = `bold ${size * 0.7}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('?', 0, -size * 1.3);
+        } else if (agent.state === 'learning') {
+            ctx.fillStyle = '#234e70';
+            ctx.font = `bold ${size * 0.6}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('✓', 0, -size * 1.3);
+        }
+        
+        ctx.restore();
+    }
+    
+    function drawExplorationLine() {
+        if (agent.currentTarget && agent.state !== 'idle') {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(35,78,112,0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(agent.x, agent.y);
+            ctx.lineTo(agent.currentTarget.x, agent.currentTarget.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+    
+    // ============================================================================
+    // GENERATIVE MODEL / LEARNING
+    // ============================================================================
+    
+    function getPrediction(shape) {
+        const predictions = [];
+        let confidence = 0;
+        
+        // Check if we know this shape type
+        if (generativeModel.shapes[shape.type]) {
+            predictions.push(`Shape: ${SHAPE_TYPES[shape.type].name}`);
+            confidence += 0.3;
+        }
+        
+        // Check if we know this color
+        if (generativeModel.colors[shape.color]) {
+            predictions.push(`Color: ${COLORS[shape.color].name}`);
+            confidence += 0.3;
+        }
+        
+        // Check if we know this size
+        if (generativeModel.sizes[shape.size]) {
+            predictions.push(`Size: ${SIZES[shape.size].name}`);
+            confidence += 0.2;
+        }
+        
+        // Check abstractions
+        generativeModel.abstractions.forEach(abs => {
+            if (abs.members.some(m => m.type === shape.type || m.color === shape.color)) {
+                predictions.push(`Category: ${abs.name}`);
+                confidence += 0.1;
+            }
+        });
+        
+        return {
+            predictions,
+            confidence: Math.min(confidence, 0.9),
+            hasKnowledge: predictions.length > 0
+        };
+    }
+    
+    function calculatePredictionError(shape, prediction) {
+        if (!prediction.hasKnowledge) {
+            return { error: 1.0, message: "Complete novelty—no schema matches this object!" };
+        }
+        
+        let errors = [];
+        let errorSum = 0;
+        
+        // Shape type error
+        if (!generativeModel.shapes[shape.type]) {
+            errors.push(`Unknown shape type: ${SHAPE_TYPES[shape.type].name}`);
+            errorSum += 0.4;
+        }
+        
+        // Color error
+        if (!generativeModel.colors[shape.color]) {
+            errors.push(`Unknown color: ${COLORS[shape.color].name}`);
+            errorSum += 0.3;
+        }
+        
+        // Size error
+        if (!generativeModel.sizes[shape.size]) {
+            errors.push(`Unknown size: ${SIZES[shape.size].name}`);
+            errorSum += 0.2;
+        }
+        
+        if (errors.length === 0) {
+            return { 
+                error: 0.1, 
+                message: "Low surprise—this matches existing schemas well." 
+            };
+        }
+        
+        return {
+            error: errorSum,
+            message: errors.join('; '),
+            novelties: errors
+        };
+    }
+    
+    function updateGenerativeModel(shape) {
+        const updates = [];
+        
+        // Learn shape type
+        if (!generativeModel.shapes[shape.type]) {
+            generativeModel.shapes[shape.type] = {
+                name: SHAPE_TYPES[shape.type].name,
+                sides: SHAPE_TYPES[shape.type].sides,
+                encounters: 1,
+                confidence: 0.6
+            };
+            updates.push(`New shape schema: ${SHAPE_TYPES[shape.type].name}`);
+        } else {
+            generativeModel.shapes[shape.type].encounters++;
+            generativeModel.shapes[shape.type].confidence = Math.min(0.95, 
+                generativeModel.shapes[shape.type].confidence + 0.1);
+        }
+        
+        // Learn color
+        if (!generativeModel.colors[shape.color]) {
+            generativeModel.colors[shape.color] = {
+                name: COLORS[shape.color].name,
+                hex: COLORS[shape.color].hex,
+                encounters: 1,
+                confidence: 0.6
+            };
+            updates.push(`New color schema: ${COLORS[shape.color].name}`);
+        } else {
+            generativeModel.colors[shape.color].encounters++;
+            generativeModel.colors[shape.color].confidence = Math.min(0.95,
+                generativeModel.colors[shape.color].confidence + 0.1);
+        }
+        
+        // Learn size
+        if (!generativeModel.sizes[shape.size]) {
+            generativeModel.sizes[shape.size] = {
+                name: SIZES[shape.size].name,
+                radius: SIZES[shape.size].radius,
+                encounters: 1,
+                confidence: 0.6
+            };
+            updates.push(`New size schema: ${SIZES[shape.size].name}`);
+        } else {
+            generativeModel.sizes[shape.size].encounters++;
+            generativeModel.sizes[shape.size].confidence = Math.min(0.95,
+                generativeModel.sizes[shape.size].confidence + 0.1);
+        }
+        
+        // Check for abstraction opportunities
+        checkForAbstractions(shape);
+        
+        return updates;
+    }
+    
+    function checkForAbstractions() {
+        // Check if we can form "angular shapes" category
+        const angularShapes = Object.keys(generativeModel.shapes).filter(
+            s => SHAPE_TYPES[s].sides >= 3 && !SHAPE_TYPES[s].star
+        );
+        if (angularShapes.length >= 2) {
+            const existing = generativeModel.abstractions.find(a => a.name === 'Angular Shapes');
+            if (!existing) {
+                generativeModel.abstractions.push({
+                    name: 'Angular Shapes',
+                    type: 'shape-category',
+                    members: angularShapes.map(s => ({ type: s })),
+                    description: 'Shapes with straight edges'
+                });
+            }
+        }
+        
+        // Check for "round shapes" category
+        if (generativeModel.shapes.circle) {
+            const existing = generativeModel.abstractions.find(a => a.name === 'Round Shapes');
+            if (!existing) {
+                generativeModel.abstractions.push({
+                    name: 'Round Shapes',
+                    type: 'shape-category',
+                    members: [{ type: 'circle' }],
+                    description: 'Shapes without corners'
+                });
+            }
+        }
+        
+        // Check for color temperature categories
+        const warmColors = ['red', 'orange', 'yellow'].filter(c => generativeModel.colors[c]);
+        const coolColors = ['blue', 'green', 'purple'].filter(c => generativeModel.colors[c]);
+        
+        if (warmColors.length >= 2) {
+            const existing = generativeModel.abstractions.find(a => a.name === 'Warm Colors');
+            if (!existing) {
+                generativeModel.abstractions.push({
+                    name: 'Warm Colors',
+                    type: 'color-category',
+                    members: warmColors.map(c => ({ color: c })),
+                    description: 'Red, orange, yellow spectrum'
+                });
+            }
+        }
+        
+        if (coolColors.length >= 2) {
+            const existing = generativeModel.abstractions.find(a => a.name === 'Cool Colors');
+            if (!existing) {
+                generativeModel.abstractions.push({
+                    name: 'Cool Colors',
+                    type: 'color-category',
+                    members: coolColors.map(c => ({ color: c })),
+                    description: 'Blue, green, purple spectrum'
+                });
+            }
+        }
+    }
+    
+    // ============================================================================
+    // UI UPDATE FUNCTIONS
+    // ============================================================================
+    
+    function updateStatus(state, text) {
+        const dot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        dot.className = 'status-dot ' + state;
+        statusText.textContent = text;
+    }
+    
+    function updateCommentary(text, piaget, fep, math) {
+        document.getElementById('commentaryText').textContent = text;
+        
+        const comparison = document.getElementById('frameworkComparison');
+        if (piaget && fep) {
+            comparison.style.display = 'grid';
+            document.getElementById('piagetTerm').textContent = piaget.term;
+            document.getElementById('piagetDesc').textContent = piaget.desc;
+            document.getElementById('fepTerm').textContent = fep.term;
+            document.getElementById('fepDesc').textContent = fep.desc;
+        } else {
+            comparison.style.display = 'none';
+        }
+        
+        const mathNote = document.getElementById('mathNote');
+        if (math) {
+            mathNote.style.display = 'block';
+            document.getElementById('mathContent').textContent = math;
+        } else {
+            mathNote.style.display = 'none';
+        }
+    }
+    
+    function showPrediction(prediction) {
+        const display = document.getElementById('predictionDisplay');
+        const content = document.getElementById('predictionContent');
+        
+        if (prediction.hasKnowledge) {
+            display.style.display = 'block';
+            content.innerHTML = `
+                <div style="margin-bottom: 0.3rem;">
+                    <strong>Expected properties:</strong> ${prediction.predictions.join(', ')}
+                </div>
+                <div style="color: #666; font-size: 0.8rem;">
+                    Confidence: ${Math.round(prediction.confidence * 100)}%
+                </div>
+            `;
+        } else {
+            display.style.display = 'block';
+            content.innerHTML = `
+                <div><em>No prediction possible—object is entirely novel</em></div>
+                <div style="color: #666; font-size: 0.8rem;">Confidence: 0%</div>
+            `;
+        }
+    }
+    
+    function showError(errorResult) {
+        const display = document.getElementById('errorDisplay');
+        const content = document.getElementById('errorContent');
+        
+        display.style.display = 'block';
+        
+        if (errorResult.error < 0.2) {
+            display.className = 'error-display low-error';
+            content.innerHTML = `
+                <div>${errorResult.message}</div>
+                <div style="color: #2e7d32; font-size: 0.8rem; margin-top: 0.3rem;">
+                    ε ≈ ${errorResult.error.toFixed(2)} (minimal surprise)
+                </div>
+            `;
+        } else {
+            display.className = 'error-display';
+            content.innerHTML = `
+                <div>${errorResult.message}</div>
+                <div style="color: #c62828; font-size: 0.8rem; margin-top: 0.3rem;">
+                    ε ≈ ${errorResult.error.toFixed(2)} (high surprise!)
+                </div>
+            `;
+        }
+    }
+    
+    function hidePredictionAndError() {
+        document.getElementById('predictionDisplay').style.display = 'none';
+        document.getElementById('errorDisplay').style.display = 'none';
+    }
+    
+    function updateBeliefDisplay(highlight = null) {
+        const container = document.getElementById('beliefsList');
+        container.innerHTML = '';
+        
+        const hasAnyKnowledge = Object.keys(generativeModel.shapes).length > 0 ||
+                               Object.keys(generativeModel.colors).length > 0;
+        
+        if (!hasAnyKnowledge) {
+            container.innerHTML = `
+                <div class="belief-item" style="opacity: 0.5;">
+                    <div class="belief-icon">?</div>
+                    <div class="belief-text">
+                        <div class="belief-name">No schemas yet</div>
+                        <div class="belief-details">Click a shape to begin learning...</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Shape schemas
+        Object.entries(generativeModel.shapes).forEach(([key, schema]) => {
+            const isNew = highlight && highlight.includes(schema.name);
+            const item = document.createElement('div');
+            item.className = 'belief-item' + (isNew ? ' new' : '');
+            
+            // Shape icon
+            let icon = '○';
+            if (key === 'triangle') icon = '△';
+            else if (key === 'square') icon = '□';
+            else if (key === 'pentagon') icon = '⬠';
+            else if (key === 'hexagon') icon = '⬡';
+            else if (key === 'star') icon = '☆';
+            
+            item.innerHTML = `
+                <div class="belief-icon">${icon}</div>
+                <div class="belief-text">
+                    <div class="belief-name">${schema.name}</div>
+                    <div class="belief-details">Sides: ${schema.sides || 'none'} · Seen: ${schema.encounters}×</div>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${schema.confidence * 100}%"></div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+        
+        // Color schemas
+        Object.entries(generativeModel.colors).forEach(([key, schema]) => {
+            const isNew = highlight && highlight.includes(schema.name);
+            const item = document.createElement('div');
+            item.className = 'belief-item' + (isNew ? ' new' : '');
+            item.innerHTML = `
+                <div class="belief-icon" style="background: ${schema.hex}; border-radius: 4px;"></div>
+                <div class="belief-text">
+                    <div class="belief-name">${schema.name}</div>
+                    <div class="belief-details">Color property · Seen: ${schema.encounters}×</div>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${schema.confidence * 100}%"></div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+        
+        // Size schemas
+        Object.entries(generativeModel.sizes).forEach(([key, schema]) => {
+            const isNew = highlight && highlight.includes(schema.name);
+            const item = document.createElement('div');
+            item.className = 'belief-item' + (isNew ? ' new' : '');
+            item.innerHTML = `
+                <div class="belief-icon" style="font-size: ${key === 'small' ? '0.7rem' : key === 'large' ? '1.3rem' : '1rem'};">●</div>
+                <div class="belief-text">
+                    <div class="belief-name">${schema.name}</div>
+                    <div class="belief-details">Size property · Seen: ${schema.encounters}×</div>
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${schema.confidence * 100}%"></div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+        
+        // Abstractions
+        generativeModel.abstractions.forEach(abs => {
+            const item = document.createElement('div');
+            item.className = 'belief-item updating';
+            item.innerHTML = `
+                <div class="belief-icon" style="font-size: 0.8rem;">⟨ ⟩</div>
+                <div class="belief-text">
+                    <div class="belief-name">${abs.name}</div>
+                    <div class="belief-details">${abs.description}</div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+    
+    // ============================================================================
+    // EXPLORATION SEQUENCE
+    // ============================================================================
+    
+    async function exploreShape(shape) {
+        if (agent.state !== 'idle') return;
+        
+        agent.currentTarget = shape;
+        agent.state = 'moving';
+        agent.targetX = shape.x - shape.radius - 50;
+        agent.targetY = shape.y;
+        
+        updateStatus('exploring', `Moving toward ${SHAPE_TYPES[shape.type].name}...`);
+        updateCommentary(
+            `The agent notices a shape and moves toward it. Before arriving, it will generate predictions based on its existing generative model—what does it expect to find?`,
+            null, null, null
+        );
+        hidePredictionAndError();
+        
+        // Wait for movement
+        await waitForArrival();
+        
+        // Phase 2: Generate prediction
+        agent.state = 'examining';
+        const prediction = getPrediction(shape);
+        
+        updateStatus('exploring', 'Generating predictions...');
+        showPrediction(prediction);
+        
+        if (prediction.hasKnowledge) {
+            updateCommentary(
+                `The agent's generative model produces predictions: it expects certain properties based on previously learned schemas. Now it must compare these predictions against the actual sensory evidence.`,
+                { term: 'Assimilation Attempt', desc: 'Trying to fit new experience into existing schemas' },
+                { term: 'Prior Prediction', desc: 'Generative model produces expected sensations g(μ)' },
+                'g(μ) = predicted sensation from beliefs μ'
+            );
+        } else {
+            updateCommentary(
+                `The agent has no relevant schemas—this object is entirely novel. Without predictions, all incoming sensory information will be surprising. The agent enters a state of maximal uncertainty.`,
+                { term: 'No Applicable Schema', desc: 'Experience cannot be assimilated to any existing structure' },
+                { term: 'High Uncertainty', desc: 'No prior predictions available; entropy is maximal' },
+                'H[P(s)] = maximum — no constraints on expected sensations'
+            );
+        }
+        
+        await delay(2000);
+        
+        // Phase 3: Calculate prediction error
+        const errorResult = calculatePredictionError(shape, prediction);
+        
+        if (errorResult.error > 0.3) {
+            agent.state = 'surprised';
+            updateStatus('surprise', 'Prediction error detected!');
+        } else {
+            updateStatus('exploring', 'Comparing prediction to sensation...');
+        }
+        
+        showError(errorResult);
+        
+        if (errorResult.error > 0.3) {
+            updateCommentary(
+                `Surprise! The sensory evidence diverges significantly from predictions. The agent experiences prediction error—the fundamental signal that drives learning. This disequilibrium must be resolved.`,
+                { term: 'Disequilibrium', desc: 'Assimilation fails; existing schemas insufficient' },
+                { term: 'Prediction Error', desc: 'Discrepancy ε = s − g(μ) between sensation and prediction' },
+                'ε = s − g(μ) — large error signals need for model update'
+            );
+        } else {
+            updateCommentary(
+                `The prediction matches reality well—the existing generative model successfully anticipated this experience. Assimilation succeeds, and free energy remains low. The agent's model is confirmed.`,
+                { term: 'Successful Assimilation', desc: 'Experience fits existing schemas' },
+                { term: 'Low Free Energy', desc: 'Predictions matched; model confirmed' },
+                'F(μ) ≈ minimum — model accurately predicts sensations'
+            );
+        }
+        
+        await delay(2500);
+        
+        // Phase 4: Update model
+        agent.state = 'learning';
+        updateStatus('learning', 'Updating generative model...');
+        
+        const updates = updateGenerativeModel(shape);
+        shape.explored = true;
+        
+        if (updates.length > 0) {
+            updateCommentary(
+                `To reduce future surprise, the agent accommodates—it restructures its generative model by creating or refining schemas. New categories emerge: ${updates.join(', ')}. The model now better represents the world.`,
+                { term: 'Accommodation', desc: 'Creating/modifying schemas to incorporate new experience' },
+                { term: 'Model Update', desc: 'Adjusting beliefs μ to minimise variational free energy' },
+                'μ* = argmin F(μ) — optimal beliefs minimise surprise'
+            );
+        } else {
+            updateCommentary(
+                `The existing schemas successfully accommodated this experience. The agent's confidence in its model increases—repeated successful predictions strengthen schema structures.`,
+                { term: 'Schema Strengthening', desc: 'Existing schemas confirmed through use' },
+                { term: 'Precision Increase', desc: 'Successful prediction increases model confidence' },
+                'π(μ) ↑ — precision of beliefs increases with confirmation'
+            );
+        }
+        
+        updateBeliefDisplay(updates);
+        
+        await delay(2000);
+        
+        // Phase 5: Return to ready state
+        agent.state = 'idle';
+        agent.currentTarget = null;
+        updateStatus('idle', 'Agent ready—click another shape to continue learning');
+        hidePredictionAndError();
+        
+        // Check for new abstractions
+        const prevAbstractions = [...generativeModel.abstractions];
+        checkForAbstractions();
+        
+        if (generativeModel.abstractions.length > prevAbstractions.length) {
+            const newAbs = generativeModel.abstractions[generativeModel.abstractions.length - 1];
+            updateCommentary(
+                `A higher-order abstraction emerges! The agent recognises a pattern across multiple experiences and forms a new category: "${newAbs.name}". This hierarchical organisation allows more efficient prediction and generalisation.`,
+                { term: 'Reflective Abstraction', desc: 'Extracting patterns across schemas to form meta-categories' },
+                { term: 'Hierarchical Model', desc: 'Higher-level priors emerge from accumulated experience' },
+                'P(s|μ) = ∫P(s|z)P(z|μ)dz — hierarchical generative model'
+            );
+            updateBeliefDisplay();
+        }
+    }
+    
+    function waitForArrival() {
+        return new Promise(resolve => {
+            function check() {
+                const dx = agent.targetX - agent.x;
+                const dy = agent.targetY - agent.y;
+                if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            }
+            check();
+        });
+    }
+    
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // ============================================================================
+    // MAIN LOOP
+    // ============================================================================
+    
+    function update(dt) {
+        time += dt;
+        
+        // Agent movement
+        agent.x += (agent.targetX - agent.x) * 0.05;
+        agent.y += (agent.targetY - agent.y) * 0.05;
+        
+        // Agent breathing
+        agent.breathePhase += dt * 2;
+        
+        // Shape hover pulses
+        shapes.forEach(s => {
+            if (s.hovered) {
+                s.pulsePhase += dt * 5;
+            }
+        });
+    }
+    
+    function render() {
+        drawBackground();
+        drawExplorationLine();
+        
+        // Draw shapes
+        shapes.forEach(drawShape);
+        
+        // Draw agent
+        drawAgent();
+    }
+    
+    let lastTime = 0;
+    function animate(timestamp) {
+        const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+        lastTime = timestamp;
+        
+        update(dt);
+        render();
+        requestAnimationFrame(animate);
+    }
+    
+    // ============================================================================
+    // EVENT HANDLERS
+    // ============================================================================
+    
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    function getShapeAtPos(pos) {
+        for (let i = shapes.length - 1; i >= 0; i--) {
+            const s = shapes[i];
+            const dx = pos.x - s.x;
+            const dy = pos.y - s.y;
+            if (dx * dx + dy * dy < s.radius * s.radius) {
+                return s;
+            }
+        }
+        return null;
+    }
+    
+    canvas.addEventListener('mousemove', (e) => {
+        const pos = getMousePos(e);
+        shapes.forEach(s => s.hovered = false);
+        const shape = getShapeAtPos(pos);
+        if (shape) {
+            shape.hovered = true;
+            canvas.style.cursor = 'pointer';
+        } else {
+            canvas.style.cursor = 'default';
+        }
+    });
+    
+    canvas.addEventListener('click', (e) => {
+        const pos = getMousePos(e);
+        const shape = getShapeAtPos(pos);
+        if (shape && agent.state === 'idle') {
+            exploreShape(shape);
+        }
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        // Reset everything
+        generativeModel = {
+            shapes: {},
+            colors: {},
+            sizes: {},
+            abstractions: []
+        };
+        
+        shapes.forEach(s => s.explored = false);
+        
+        agent.state = 'idle';
+        agent.x = 100;
+        agent.y = 250;
+        agent.targetX = 100;
+        agent.targetY = 250;
+        agent.currentTarget = null;
+        
+        updateBeliefDisplay();
+        hidePredictionAndError();
+        updateStatus('idle', 'Agent awaiting instruction...');
+        updateCommentary(
+            'This agent inhabits a world of abstract shapes. Like a child encountering objects for the first time, it must construct an internal model of what exists—predicting, being surprised, and updating its beliefs.',
+            null, null, null
+        );
+    });
+    
+    document.getElementById('randomBtn').addEventListener('click', () => {
+        if (agent.state !== 'idle') return;
+        
+        // Find unexplored shapes first, then any shape
+        const unexplored = shapes.filter(s => !s.explored);
+        const target = unexplored.length > 0 
+            ? unexplored[Math.floor(Math.random() * unexplored.length)]
+            : shapes[Math.floor(Math.random() * shapes.length)];
+        
+        exploreShape(target);
+    });
+    
+    // ============================================================================
+    // INITIALIZE
+    // ============================================================================
+    
+    initializeShapes();
+    updateBeliefDisplay();
+    requestAnimationFrame(animate);
+    
+    </script>
+</body>
+</html>
