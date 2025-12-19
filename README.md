@@ -350,11 +350,12 @@ CRR and FEP are complementary lenses:
 | Model updating | Model switching through rupture |
 
 The key theoretical question: does Active Inference imply a necessary relationship between belief precision and temporal integration depth? If Ω = 1/π can be derived from FEP, then CRR and FEP describe the same underlying structure from different perspectives.
-Basic Demo CRR: https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html
+
+Basic Demo CRR: [https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html)
 Basic Demo FEP Only: https://alexsabine.github.io/CRR/fep-agent-shapes.html
 Entropic Brain (CRR): https://alexsabine.github.io/CRR/entropic-crr.html
 Dirac Delta Choice: https://alexsabine.github.io/CRR/dirac-delta-crr.html
-CRR Time and Precision / Openness to possibility space: https://alexsabine.github.io/CRR/crr_time.html
+CRR Time and Precision / Openness to possibility space: https://alexsabine.github.io/CRR/crr_time.htm
 ---
 
 ## Interactive Demonstrations
