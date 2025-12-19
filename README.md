@@ -105,6 +105,7 @@ As coherence accumulates (C increases), the system integrates more history into 
 At this threshold, exp(C/Ω) = e ≈ 2.718. This is definitional (C = Ω by construction), but it gains physical meaning if Ω can be derived from deeper principles—specifically, whether the Free Energy Principle implies Ω = 1/π as a necessary relationship between belief precision and temporal integration depth.
 
 **What happens at rupture:**
+
 - The current configuration dissolves
 - Historical coherence doesn't vanish but becomes available as a weighted field
 - A new blanket forms, drawing on this field through regeneration
@@ -137,26 +138,31 @@ Why such high fits? CRR formalises temporal process structure—accumulation, th
 Systems exhibit distinct dynamical regimes based on their coherence-rupture-regeneration balance:
 
 ### Fragile (Catastrophic Collapse)
+
 - Coherence accumulates monotonically with rare ruptures
 - Long smooth buildup → catastrophic rupture
 - *Examples*: Monocultures collapsing, epileptic seizures, acute psychotic breaks, catastrophic forgetting in ML
 
 ### Resilient (Metabolised Rupture)
+
 - Moderate coherence with intermediate rupture thresholds
 - Efficient regeneration cycles
 - *Examples*: Fire-adapted savannas, flexible attention, therapy as controlled rupture, democracies absorbing crises
 
 ### Oscillatory (Rhythmic Renewal)
+
 - Memory density alternates sign; periodic ruptures
 - Stable limit cycles
 - *Examples*: Predator-prey cycles, brain rhythms, seasonal variations, business cycles
 
 ### Chaotic (Hyper-Fragmented)
+
 - Extremely low rupture thresholds
 - System ruptures before meaningful coherence accumulates
 - *Examples*: Degraded landscapes, ADHD-like switching, dissociative states, information overload
 
 ### Dialectical (Interference Synthesis)
+
 - Multiple coherence fields interfere
 - Emergent patterns from constructive/destructive overlap
 - *Examples*: Mixed-species forests, multimodal integration, hybrid traditions, paradigm shifts
@@ -183,7 +189,7 @@ CRR offers a possible account of developmental stage timing (Erikson's psychosoc
 
 ### Group Dynamics
 
-Group cohesion may emerge through asymmetric Ω: high Ω between members (porous boundaries enabling sharing), low Ω toward outsiders (rigid defensive boundaries). 
+Group cohesion may emerge through asymmetric Ω: high Ω between members (porous boundaries enabling sharing), low Ω toward outsiders (rigid defensive boundaries).
 
 This interpretation offers a possible explanation for oxytocin's puzzling dual effects—it increases trust and empathy within groups while increasing defensiveness toward out-groups. In CRR terms: oxytocin might modulate Ω differentially depending on relationship context. This remains speculative but testable.
 
@@ -245,6 +251,7 @@ This isn't an argument for seeking suffering. It's a suggestion that **metabolis
 Why do certain forms recur across vastly different systems? Spirals in galaxies and shells. Branching in rivers, trees, and lungs. Hexagons in honeycombs and basalt columns. The MaxEnt perspective: under constraints, systems converge on configurations that maximise entropy while satisfying those constraints. "Forms" emerge not as eternal ideals but as **attractor basins in configuration space**.
 
 This resonates with contemporary findings:
+
 - **Levin's bioelectric research**: Cells converge on target morphologies through collective computation, suggesting "form" as attractor rather than blueprint
 - **Grokking in ML**: Neural networks suddenly generalise after memorisation, potentially discovering underlying structure through a form of phase transition
 - **The "free lunch" in ML**: Deep learning works better than it "should" given theoretical bounds—possibly because physics has already structured the data along MaxEnt lines
@@ -272,6 +279,7 @@ LLMs are trained on vast corpora and optimised to produce coherent, helpful resp
 - **Escalating coherence without grounding**: Without the natural ruptures that embodied social interaction provides (disagreement, confusion, emotional friction), coherence can build toward fragile configurations
 
 This resonates with:
+
 - **Attachment theory** (Winnicott, Bowlby): Healthy development requires "good enough" mirroring that includes manageable rupture and repair
 - **Jungian psychology**: Shadow integration requires encountering what resists easy coherence
 - **Somatic psychology**: The body provides grounding that pure cognition cannot
@@ -295,6 +303,7 @@ This is not an argument against medicine or longevity research. It's a suggestio
 Current approaches to catastrophic forgetting in neural networks focus on preserving learned weights—through regularisation (EWC), architectural separation (Progressive Networks), or rehearsal (Memory Replay). CRR suggests a different framing: the problem isn't forgetting itself but *uncontrolled* forgetting.
 
 Biological systems learn through CRR cycles:
+
 - Coherence builds (training, practice, experience)
 - Rupture occurs (sleep, forgetting, consolidation)
 - Regeneration weights history (important patterns preserved, noise discarded)
@@ -306,6 +315,7 @@ The suggestion: ML systems might benefit from designed rupture events—structur
 **Multiple frontier LLMs (Claude, Gemini, Grok, DeepSeek) consistently verify CRR's mathematical structure and identify similar implications—without prompting or cajoling.**
 
 This is presented not as proof but as an observation worth investigating. These systems, trained on different corpora with different architectures, converge on:
+
 - Validating the mathematical consistency of the framework
 - Identifying similar cross-domain applications
 - Flagging similar limitations and open questions
@@ -329,6 +339,7 @@ This is consistent with the history of physics: Newtonian mechanics was "complet
 **CRR resonates with Whiteheadian Process Philosophy as a coarse-grain temporal grammar.**
 
 Whitehead proposed that reality consists not of static substances but of processes of "becoming"—what he called "actual occasions" that arise, integrate their past, and perish to make way for new occasions. CRR's structure maps onto this:
+
 - **C** (coherence): The integration of past as constraint
 - **δ** (rupture): The moment of "concrescence"—the present as dimensionless decision point
 - **R** (regeneration): The "creative advance" weighted by what mattered historically
@@ -351,11 +362,14 @@ CRR and FEP are complementary lenses:
 
 The key theoretical question: does Active Inference imply a necessary relationship between belief precision and temporal integration depth? If Ω = 1/π can be derived from FEP, then CRR and FEP describe the same underlying structure from different perspectives.
 
-Basic Demo CRR: [https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html)
-Basic Demo FEP Only: https://alexsabine.github.io/CRR/fep-agent-shapes.html
-Entropic Brain (CRR): https://alexsabine.github.io/CRR/entropic-crr.html
-Dirac Delta Choice: https://alexsabine.github.io/CRR/dirac-delta-crr.html
-CRR Time and Precision / Openness to possibility space: https://alexsabine.github.io/CRR/crr_time.htm
+| Demo | Description |
+|------|-------------|
+| [Basic Demo CRR](https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html) | CRR and FEP integration |
+| [Basic Demo FEP Only](https://alexsabine.github.io/CRR/fep-agent-shapes.html) | Free Energy Principle agent |
+| [Entropic Brain (CRR)](https://alexsabine.github.io/CRR/entropic-crr.html) | Entropic brain dynamics |
+| [Dirac Delta Choice](https://alexsabine.github.io/CRR/dirac-delta-crr.html) | Rupture as choice-moment |
+| [CRR Time and Precision](https://alexsabine.github.io/CRR/crr_time.htm) | Openness to possibility space |
+
 ---
 
 ## Interactive Demonstrations
@@ -363,12 +377,14 @@ CRR Time and Precision / Openness to possibility space: https://alexsabine.githu
 All demonstrations available at: **[https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)**
 
 ### Biological & Ecological
+
 | Demo | Description |
 |------|-------------|
 | [Fish Learning](https://alexsabine.github.io/CRR/fish.html) | Predator-prey learning dynamics |
 | [Tree Ring Analysis](https://alexsabine.github.io/CRR/CRR_DATA_FLOW.txt) | New Forest UK dendrochronology |
 
 ### Physical Systems
+
 | Demo | Description |
 |------|-------------|
 | [Thermodynamic Rupture](https://alexsabine.github.io/CRR/crr-thermo-rupture-rate.html) | Energy conservation proof |
@@ -376,12 +392,14 @@ All demonstrations available at: **[https://alexsabine.github.io/CRR/](https://a
 | [Atmospheric Circulation](https://alexsabine.github.io/CRR/atmosphere.html) | Climate pattern formation |
 
 ### Cognitive & Navigation
+
 | Demo | Description |
 |------|-------------|
 | [Multi-Room Navigation](https://alexsabine.github.io/CRR/room.html) | Spatial exploration agent |
 | [Holographic Certificates](https://alexsabine.github.io/CRR/crr_holographic_final.html) | Image depth integration |
 
 ### Documentation
+
 | Resource | Description |
 |----------|-------------|
 | [Complete Guide](https://alexsabine.github.io/CRR/Guide.html) | Full theoretical framework |
@@ -426,12 +444,14 @@ class CRRSystem:
 ## Theoretical Foundations
 
 CRR belongs to the integrate-and-fire/first-passage family of models, validated through:
+
 - Maximum entropy (MaxEnt) principles
 - Fokker-Planck formalism
 - Path integral methods
 - Thermodynamic consistency
 
 The framework represents process ontology formalising Whitehead's temporal structure:
+
 - **C** as past accumulated as constraint
 - **δ** as dimensionless present (concrescence)
 - **R** as future weighted by what mattered historically
@@ -454,7 +474,7 @@ The framework represents process ontology formalising Whitehead's temporal struc
 
 ## Contact
 
-**Alexander Sabine**  
+**Alexander Sabine**
 
 **Website**: [https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)  
 **Research**: [https://cohere.org.uk](https://cohere.org.uk)
