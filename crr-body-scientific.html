@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Human Body | Scientific Visualization</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0c12;
+      --bg-secondary: #12151f;
+      --bg-tertiary: #1a1e2e;
+      --bg-panel: rgba(18, 21, 31, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(255, 255, 255, 0.15);
+      --text-primary: #e8eaed;
+      --text-secondary: rgba(232, 234, 237, 0.7);
+      --text-muted: rgba(232, 234, 237, 0.4);
+      --accent-red: #ff4757;
+      --accent-blue: #5c7cfa;
+      --accent-cyan: #22d3ee;
+      --accent-amber: #fbbf24;
+      --accent-green: #4ade80;
+      --accent-purple: #a78bfa;
+      --accent-orange: #fb923c;
+      --artery: #ef4444;
+      --vein: #3b82f6;
+      --motor: #f97316;
+      --sensory: #22c55e;
+      --autonomic: #06b6d4;
+      --omega: 0.31831;
+      --grid-pattern: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(255,255,255,0.02) 24px, rgba(255,255,255,0.02) 25px),
+                      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(255,255,255,0.02) 24px, rgba(255,255,255,0.02) 25px);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .header-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 2rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      color: var(--accent-cyan);
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-accent);
+      background: transparent;
+      color: var(--text-primary);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--accent-cyan);
+    }
+
+    .btn.active {
+      background: rgba(34, 211, 238, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .btn-icon {
+      font-size: 0.9rem;
+    }
+
+    /* Main Content */
+    .main-content {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel:last-child {
+      border-right: none;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .panel-section {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-section:last-child {
+      border-bottom: none;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .panel-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .panel-badge {
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* View Mode Selector */
+    .view-mode-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .view-mode-btn {
+      padding: 0.6rem 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .view-mode-btn:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .view-mode-btn.active {
+      background: rgba(34, 211, 238, 0.1);
+      border-color: var(--accent-cyan);
+    }
+
+    .view-mode-icon {
+      font-size: 1.2rem;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .view-mode-label {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+    }
+
+    /* Omega Control */
+    .omega-control {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .omega-display {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .omega-symbol {
+      font-size: 1.5rem;
+      color: var(--accent-amber);
+      font-weight: 300;
+    }
+
+    .omega-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--accent-amber);
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+    }
+
+    .omega-equation {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    .omega-slider-container {
+      position: relative;
+      padding: 0 0.5rem;
+    }
+
+    .omega-slider {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-amber), var(--accent-red));
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .omega-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--text-primary);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .omega-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+    }
+
+    /* Cardiac Stats */
+    .cardiac-monitor {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .cardiac-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .heart-indicator {
+      width: 24px;
+      height: 24px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .heart-indicator.beating {
+      transform: scale(1.2);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+    }
+
+    .cardiac-bpm {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--accent-red);
+    }
+
+    .cardiac-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .cardiac-waveform {
+      height: 50px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cardiac-waveform canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .cardiac-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .cardiac-stat {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .cardiac-stat-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .cardiac-stat-label {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 0.2rem;
+    }
+
+    /* Brain Regions */
+    .brain-regions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .brain-region-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+
+    .brain-region-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .brain-region-name {
+      flex: 1;
+    }
+
+    .brain-region-band {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      padding: 0.15rem 0.35rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .brain-region-activity {
+      width: 40px;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .brain-region-activity-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.1s ease;
+    }
+
+    /* Legend */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-line {
+      width: 20px;
+      height: 3px;
+      border-radius: 1.5px;
+    }
+
+    /* Main Visualization Area */
+    .visualization-area {
+      background: var(--bg-primary);
+      background-image: var(--grid-pattern);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .body-svg-container {
+      width: 100%;
+      max-width: 500px;
+      aspect-ratio: 1;
+      position: relative;
+    }
+
+    #bodySvg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.5));
+    }
+
+    /* Phase Space Mini Display */
+    .phase-space-overlay {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      width: 150px;
+      height: 150px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .phase-space-title {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.3rem;
+    }
+
+    .phase-space-canvas {
+      width: 100%;
+      height: calc(100% - 20px);
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    /* Time Display Overlay */
+    .time-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .time-label {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .time-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--accent-cyan);
+    }
+
+    /* Right Panel - Data Streams */
+    .equation-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .equation-line {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .equation-line:last-child {
+      border-bottom: none;
+    }
+
+    .eq-coherence { color: var(--accent-cyan); }
+    .eq-rupture { color: var(--accent-orange); }
+    .eq-regen { color: var(--accent-green); }
+    .eq-symbol { color: var(--text-muted); }
+
+    /* Waveform Displays */
+    .waveform-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .waveform-title {
+      font-size: 0.65rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .waveform-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .waveform-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+    }
+
+    .waveform-canvas {
+      width: 100%;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .metric-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 0.6rem;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .metric-label {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 0.2rem;
+    }
+
+    /* System Status */
+    .system-status {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      padding: 0.4rem 0.6rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-text {
+      flex: 1;
+      color: var(--text-secondary);
+    }
+
+    .status-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+    }
+
+    /* Coherence Graph */
+    .coherence-graph {
+      height: 80px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .coherence-threshold {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 1px dashed var(--accent-amber);
+      opacity: 0.5;
+    }
+
+    .coherence-label {
+      position: absolute;
+      right: 0.5rem;
+      font-size: 0.5rem;
+      color: var(--accent-amber);
+      transform: translateY(-50%);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-equation {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* Animations */
+    @keyframes flow {
+      0% { stroke-dashoffset: 20; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    .vessel-flow {
+      stroke-dasharray: 5, 5;
+      animation: flow 1s linear infinite;
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+      .main-content {
+        grid-template-columns: 240px 1fr 280px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .main-content {
+        grid-template-columns: 220px 1fr;
+      }
+      .panel:last-child {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <div class="header-logo">CRR</div>
+        <div>
+          <div class="header-title">CRR Human Body Dynamics</div>
+          <div class="header-subtitle">Coherence-Rupture-Regeneration Framework v2.1</div>
+        </div>
+      </div>
+      
+      <div class="header-stats">
+        <div class="stat-item">
+          <span class="stat-label">Base Ω</span>
+          <span class="stat-value" id="headerOmega">0.3183</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Ruptures</span>
+          <span class="stat-value" id="headerRuptures">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Vessels</span>
+          <span class="stat-value">28</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Pathways</span>
+          <span class="stat-value">12</span>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <button class="btn active" id="playBtn" onclick="toggleSimulation()">
+          <span class="btn-icon">▶</span>
+          <span id="playLabel">Running</span>
+        </button>
+        <button class="btn" onclick="resetSimulation()">
+          <span class="btn-icon">↺</span>
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Left Panel -->
+      <aside class="panel">
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">View Mode</span>
+          </div>
+          <div class="view-mode-grid">
+            <div class="view-mode-btn active" data-mode="both" onclick="setViewMode('both')">
+              <span class="view-mode-icon">🔬</span>
+              <span class="view-mode-label">Both</span>
+            </div>
+            <div class="view-mode-btn" data-mode="circulatory" onclick="setViewMode('circulatory')">
+              <span class="view-mode-icon">❤️</span>
+              <span class="view-mode-label">Blood</span>
+            </div>
+            <div class="view-mode-btn" data-mode="nervous" onclick="setViewMode('nervous')">
+              <span class="view-mode-icon">🧠</span>
+              <span class="view-mode-label">Neural</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">Ω Modulation</span>
+            <span class="panel-badge">= 1/π</span>
+          </div>
+          <div class="omega-control">
+            <div class="omega-display">
+              <span class="omega-symbol">Ω</span>
+              <span class="omega-value" id="omegaValue">0.3183</span>
+              <div class="omega-equation">Ω = 1/π ≈ 0.31831</div>
+            </div>
+            <div class="omega-slider-container">
+              <input type="range" class="omega-slider" id="omegaSlider" min="0.1" max="1.0" step="0.01" value="0.3183" oninput="updateOmega(this.value)">
+              <div class="omega-labels">
+                <span>Rigid (Low)</span>
+                <span>Fluid (High)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">Cardiac Monitor</span>
+            <span class="panel-badge" id="cardiacState">COHERENCE</span>
+          </div>
+          <div class="cardiac-monitor">
+            <div class="cardiac-header">
+              <div class="heart-indicator" id="heartIndicator">❤</div>
+              <div>
+                <div class="cardiac-bpm"><span id="bpmValue">72</span> <span style="font-size: 0.7rem; opacity: 0.6;">BPM</span></div>
+                <div class="cardiac-label">Heart Rate</div>
+              </div>
+            </div>
+            <div class="cardiac-waveform">
+              <canvas id="ecgCanvas"></canvas>
+            </div>
+            <div class="cardiac-stats-grid">
+              <div class="cardiac-stat">
+                <div class="cardiac-stat-value">120/<span style="font-size: 0.7rem;">80</span></div>
+                <div class="cardiac-stat-label">mmHg</div>
+              </div>
+              <div class="cardiac-stat">
+                <div class="cardiac-stat-value" id="cardiacCoherence">0.00</div>
+                <div class="cardiac-stat-label">C(t)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">Brain Regions</span>
+            <span class="panel-badge">8 Zones</span>
+          </div>
+          <div class="brain-regions-list" id="brainRegionsList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">Legend</span>
+          </div>
+          <div class="legend-grid">
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--artery)"></div>
+              <span>Arteries (O₂)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--vein)"></div>
+              <span>Veins (CO₂)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--motor)"></div>
+              <span>Motor</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--sensory)"></div>
+              <span>Sensory</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--autonomic)"></div>
+              <span>Autonomic</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line" style="background: var(--accent-amber)"></div>
+              <span>Spinal</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Visualization -->
+      <div class="visualization-area">
+        <div class="time-overlay">
+          <div class="time-label">Simulation Time</div>
+          <div class="time-value" id="timeDisplay">t = 0.00s</div>
+        </div>
+
+        <div class="body-svg-container">
+          <svg id="bodySvg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <radialGradient id="heartGlow">
+                <stop offset="0%" stop-color="#FF4757" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#FF4757" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="brainGlow">
+                <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="0.8" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+              <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <!-- Body Outline -->
+            <g id="bodyOutline" opacity="0.25" stroke="#3a5a8a" stroke-width="0.4" fill="none">
+              <ellipse cx="50" cy="10" rx="9" ry="11"/>
+              <rect x="46" y="20" width="8" height="5" rx="1"/>
+              <path d="M33 25 Q30 32 30 45 Q30 58 35 65 L45 68 L55 68 L65 65 Q70 58 70 45 Q70 32 67 25 Z"/>
+              <path d="M30 28 Q22 32 18 45 Q15 55 18 62" stroke-width="5" stroke-linecap="round"/>
+              <path d="M70 28 Q78 32 82 45 Q85 55 82 62" stroke-width="5" stroke-linecap="round"/>
+              <ellipse cx="18" cy="64" rx="4" ry="5"/>
+              <ellipse cx="82" cy="64" rx="4" ry="5"/>
+              <path d="M42 68 L40 80 L38 95" stroke-width="6" stroke-linecap="round"/>
+              <path d="M58 68 L60 80 L62 95" stroke-width="6" stroke-linecap="round"/>
+            </g>
+
+            <!-- Circulatory System Group -->
+            <g id="circulatorySystem">
+              <!-- Vessels will be drawn by JS -->
+            </g>
+
+            <!-- Nervous System Group -->
+            <g id="nervousSystem">
+              <!-- Neural pathways will be drawn by JS -->
+            </g>
+
+            <!-- Heart -->
+            <g id="heartGroup">
+              <circle id="heartGlowCircle" cx="50" cy="32" r="5" fill="url(#heartGlow)" opacity="0.3"/>
+              <circle id="heartCore" cx="50" cy="32" r="3.5" fill="#FF4757"/>
+              <text x="50" y="33" text-anchor="middle" font-size="2.5" fill="white">❤</text>
+            </g>
+
+            <!-- Blood Particles Group -->
+            <g id="bloodParticles"></g>
+
+            <!-- Neural Signals Group -->
+            <g id="neuralSignals"></g>
+
+            <!-- Brain Regions Group -->
+            <g id="brainRegions"></g>
+          </svg>
+        </div>
+
+        <!-- Phase Space Overlay -->
+        <div class="phase-space-overlay">
+          <div class="phase-space-title">Phase Space (C vs dC/dt)</div>
+          <canvas id="phaseSpaceCanvas" class="phase-space-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <aside class="panel">
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">CRR Framework</span>
+            <span class="panel-badge">Active</span>
+          </div>
+          <div class="equation-card">
+            <div class="equation-line">
+              <span class="eq-coherence">C(x,t)</span> <span class="eq-symbol">=</span> ∫L(x,τ)dτ
+            </div>
+            <div class="equation-line">
+              <span class="eq-rupture">δ(now)</span> <span class="eq-symbol">when</span> C ≥ Ω
+            </div>
+            <div class="equation-line">
+              <span class="eq-regen">R</span> <span class="eq-symbol">=</span> ∫φ·exp(C/Ω)·Θdτ
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">EEG Waveforms</span>
+          </div>
+          
+          <div class="waveform-container">
+            <div class="waveform-header">
+              <span class="waveform-title">
+                <span class="waveform-dot" style="background: #9C27B0"></span>
+                Prefrontal (θ)
+              </span>
+              <span class="waveform-value" style="color: #9C27B0" id="prefrontalValue">0.00</span>
+            </div>
+            <canvas id="prefrontalCanvas" class="waveform-canvas"></canvas>
+          </div>
+
+          <div class="waveform-container">
+            <div class="waveform-header">
+              <span class="waveform-title">
+                <span class="waveform-dot" style="background: #4CAF50"></span>
+                Sensory (α)
+              </span>
+              <span class="waveform-value" style="color: #4CAF50" id="sensoryValue">0.00</span>
+            </div>
+            <canvas id="sensoryCanvas" class="waveform-canvas"></canvas>
+          </div>
+
+          <div class="waveform-container">
+            <div class="waveform-header">
+              <span class="waveform-title">
+                <span class="waveform-dot" style="background: #00BCD4"></span>
+                Visual (γ)
+              </span>
+              <span class="waveform-value" style="color: #00BCD4" id="visualValue">0.00</span>
+            </div>
+            <canvas id="visualCanvas" class="waveform-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">Coherence Accumulation</span>
+          </div>
+          <div class="coherence-graph">
+            <canvas id="coherenceCanvas" style="width: 100%; height: 100%;"></canvas>
+            <div class="coherence-threshold" id="coherenceThreshold" style="top: 20%">
+              <span class="coherence-label">Ω</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">System Metrics</span>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-value" style="color: var(--accent-cyan)" id="avgCoherence">0.00</div>
+              <div class="metric-label">Avg C(t)</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value" style="color: var(--accent-orange)" id="ruptureRate">0.0</div>
+              <div class="metric-label">δ/min</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value" style="color: var(--accent-green)" id="regenIndex">1.00</div>
+              <div class="metric-label">R Index</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value" style="color: var(--accent-purple)" id="expWeight">2.72</div>
+              <div class="metric-label">exp(C/Ω)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-header">
+            <span class="panel-title">System Coupling</span>
+          </div>
+          <div class="system-status">
+            <div class="status-item">
+              <div class="status-indicator" style="background: var(--accent-red)"></div>
+              <span class="status-text">Heart → Pressure waves</span>
+              <span class="status-value" id="cardiacCoupling">100%</span>
+            </div>
+            <div class="status-item">
+              <div class="status-indicator" style="background: var(--accent-amber)"></div>
+              <span class="status-text">Brain → Motor commands</span>
+              <span class="status-value" id="motorCoupling">100%</span>
+            </div>
+            <div class="status-item">
+              <div class="status-indicator" style="background: var(--accent-cyan)"></div>
+              <span class="status-text">Vagus → HRV modulation</span>
+              <span class="status-value" id="vagusCoupling">100%</span>
+            </div>
+            <div class="status-item">
+              <div class="status-indicator" style="background: var(--accent-orange)"></div>
+              <span class="status-text">Sympathetic → Vascular</span>
+              <span class="status-value" id="sympatheticCoupling">100%</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-brand">
+        <span>Cohere Research</span>
+        <span style="opacity: 0.3">•</span>
+        <span>cohere.org.uk</span>
+      </div>
+      <div class="footer-equation">
+        C(x,t) → δ(now) → R(exp(C/Ω)) | All systems governed by Ω = 1/π
+      </div>
+      <div>
+        CRR Framework © 2025
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ===== CONSTANTS =====
+    const OMEGA_BASE = 1 / Math.PI;
+    let currentOmega = OMEGA_BASE;
+    let isRunning = true;
+    let simulationTime = 0;
+    let totalRuptures = 0;
+    let viewMode = 'both';
+
+    // ===== VESSEL DEFINITIONS =====
+    const VESSELS = {
+      // Heart (rendered separately)
+      // Major arteries
+      aorta: { type: 'artery', path: [[50, 32], [50, 35]], color: '#ef4444', diameter: 2.5 },
+      aortic_arch: { type: 'artery', path: [[50, 35], [48, 30], [46, 26]], color: '#ef4444', diameter: 2.2 },
+      descending_aorta: { type: 'artery', path: [[50, 35], [50, 40], [50, 45], [50, 50], [50, 55]], color: '#ef4444', diameter: 2.0 },
+      
+      // Head arteries
+      right_carotid: { type: 'artery', path: [[52, 28], [54, 22], [54, 16], [53, 12]], color: '#f87171', diameter: 0.8 },
+      left_carotid: { type: 'artery', path: [[48, 28], [46, 22], [46, 16], [47, 12]], color: '#f87171', diameter: 0.8 },
+      
+      // Arm arteries
+      right_subclavian: { type: 'artery', path: [[52, 28], [58, 28], [65, 30]], color: '#f87171', diameter: 1.0 },
+      left_subclavian: { type: 'artery', path: [[48, 28], [42, 28], [35, 30]], color: '#f87171', diameter: 1.0 },
+      right_brachial: { type: 'artery', path: [[65, 30], [70, 38], [74, 48]], color: '#fca5a5', diameter: 0.6 },
+      left_brachial: { type: 'artery', path: [[35, 30], [30, 38], [26, 48]], color: '#fca5a5', diameter: 0.6 },
+      right_radial: { type: 'artery', path: [[74, 48], [77, 54], [79, 60]], color: '#fecaca', diameter: 0.4 },
+      left_radial: { type: 'artery', path: [[26, 48], [23, 54], [21, 60]], color: '#fecaca', diameter: 0.4 },
+      
+      // Torso arteries
+      celiac: { type: 'artery', path: [[50, 40], [45, 42], [40, 43]], color: '#fca5a5', diameter: 0.8 },
+      renal_right: { type: 'artery', path: [[50, 44], [56, 45], [60, 45]], color: '#fca5a5', diameter: 0.6 },
+      renal_left: { type: 'artery', path: [[50, 44], [44, 45], [40, 45]], color: '#fca5a5', diameter: 0.6 },
+      
+      // Leg arteries
+      right_iliac: { type: 'artery', path: [[50, 55], [54, 58], [57, 62]], color: '#f87171', diameter: 1.0 },
+      left_iliac: { type: 'artery', path: [[50, 55], [46, 58], [43, 62]], color: '#f87171', diameter: 1.0 },
+      right_femoral: { type: 'artery', path: [[57, 62], [59, 70], [60, 78]], color: '#fca5a5', diameter: 0.8 },
+      left_femoral: { type: 'artery', path: [[43, 62], [41, 70], [40, 78]], color: '#fca5a5', diameter: 0.8 },
+      right_tibial: { type: 'artery', path: [[60, 78], [61, 86], [62, 94]], color: '#fecaca', diameter: 0.5 },
+      left_tibial: { type: 'artery', path: [[40, 78], [39, 86], [38, 94]], color: '#fecaca', diameter: 0.5 },
+      
+      // Pulmonary
+      pulmonary_artery: { type: 'artery', path: [[48, 32], [44, 28], [42, 26]], color: '#6366f1', diameter: 2.0, deoxygenated: true },
+      pulmonary_vein: { type: 'vein', path: [[42, 26], [44, 30], [48, 32]], color: '#f87171', diameter: 1.8, oxygenated: true },
+      
+      // Major veins
+      superior_vena_cava: { type: 'vein', path: [[52, 24], [52, 28], [52, 32]], color: '#3b82f6', diameter: 2.0 },
+      inferior_vena_cava: { type: 'vein', path: [[52, 55], [52, 48], [52, 40], [52, 32]], color: '#3b82f6', diameter: 2.5 },
+      
+      // Head veins
+      right_jugular: { type: 'vein', path: [[56, 12], [56, 18], [54, 24]], color: '#60a5fa', diameter: 0.8 },
+      left_jugular: { type: 'vein', path: [[44, 12], [44, 18], [46, 24]], color: '#60a5fa', diameter: 0.8 },
+      
+      // Arm veins
+      right_arm_vein: { type: 'vein', path: [[80, 60], [76, 50], [70, 40], [64, 32], [56, 28]], color: '#93c5fd', diameter: 0.5 },
+      left_arm_vein: { type: 'vein', path: [[20, 60], [24, 50], [30, 40], [36, 32], [44, 28]], color: '#93c5fd', diameter: 0.5 },
+      
+      // Leg veins
+      right_leg_vein: { type: 'vein', path: [[64, 94], [63, 85], [61, 75], [58, 65], [54, 58]], color: '#93c5fd', diameter: 0.6 },
+      left_leg_vein: { type: 'vein', path: [[36, 94], [37, 85], [39, 75], [42, 65], [46, 58]], color: '#93c5fd', diameter: 0.6 },
+    };
+
+    // ===== BRAIN REGIONS =====
+    const BRAIN_REGIONS = {
+      prefrontal: { pos: [50, 6], color: '#9C27B0', freq: 8, band: 'θ', label: 'Prefrontal' },
+      motor_left: { pos: [44, 8], color: '#F44336', freq: 20, band: 'β', label: 'Motor L' },
+      motor_right: { pos: [56, 8], color: '#F44336', freq: 20, band: 'β', label: 'Motor R' },
+      sensory_left: { pos: [43, 10], color: '#4CAF50', freq: 12, band: 'α', label: 'Sensory L' },
+      sensory_right: { pos: [57, 10], color: '#4CAF50', freq: 12, band: 'α', label: 'Sensory R' },
+      visual: { pos: [50, 14], color: '#00BCD4', freq: 40, band: 'γ', label: 'Visual' },
+      brainstem: { pos: [50, 18], color: '#FF9800', freq: 0.25, band: 'δ', label: 'Brainstem' },
+      cerebellum: { pos: [50, 16], color: '#E91E63', freq: 40, band: 'γ', label: 'Cerebellum' },
+    };
+
+    // ===== NEURAL PATHWAYS =====
+    const NEURAL_PATHWAYS = {
+      motor_right_arm: { 
+        type: 'motor', 
+        path: [[44, 8], [46, 14], [50, 20], [52, 24], [58, 28], [68, 38], [76, 52], [80, 62]],
+        color: '#f97316',
+        origin: 'motor_left'
+      },
+      motor_left_arm: { 
+        type: 'motor', 
+        path: [[56, 8], [54, 14], [50, 20], [48, 24], [42, 28], [32, 38], [24, 52], [20, 62]],
+        color: '#f97316',
+        origin: 'motor_right'
+      },
+      motor_right_leg: { 
+        type: 'motor', 
+        path: [[44, 8], [46, 14], [50, 22], [50, 35], [50, 48], [54, 58], [58, 72], [61, 88]],
+        color: '#f97316',
+        origin: 'motor_left'
+      },
+      motor_left_leg: { 
+        type: 'motor', 
+        path: [[56, 8], [54, 14], [50, 22], [50, 35], [50, 48], [46, 58], [42, 72], [39, 88]],
+        color: '#f97316',
+        origin: 'motor_right'
+      },
+      sensory_right_arm: { 
+        type: 'sensory', 
+        path: [[80, 62], [76, 52], [68, 38], [58, 28], [52, 24], [50, 20], [46, 14], [43, 10]],
+        color: '#22c55e',
+        origin: 'right_hand'
+      },
+      sensory_left_arm: { 
+        type: 'sensory', 
+        path: [[20, 62], [24, 52], [32, 38], [42, 28], [48, 24], [50, 20], [54, 14], [57, 10]],
+        color: '#22c55e',
+        origin: 'left_hand'
+      },
+      sensory_right_leg: { 
+        type: 'sensory', 
+        path: [[61, 88], [58, 72], [54, 58], [50, 48], [50, 35], [50, 22], [46, 14], [43, 10]],
+        color: '#22c55e',
+        origin: 'right_foot'
+      },
+      sensory_left_leg: { 
+        type: 'sensory', 
+        path: [[39, 88], [42, 72], [46, 58], [50, 48], [50, 35], [50, 22], [54, 14], [57, 10]],
+        color: '#22c55e',
+        origin: 'left_foot'
+      },
+      vagus_cardiac: { 
+        type: 'autonomic', 
+        path: [[50, 18], [50, 22], [50, 26], [50, 32]],
+        color: '#06b6d4',
+        origin: 'brainstem'
+      },
+      sympathetic_cardiac: { 
+        type: 'autonomic', 
+        path: [[50, 18], [48, 22], [46, 26], [48, 30], [50, 32]],
+        color: '#fb923c',
+        origin: 'brainstem'
+      },
+      respiratory: { 
+        type: 'autonomic', 
+        path: [[50, 18], [50, 24], [50, 28], [48, 30], [46, 32]],
+        color: '#06b6d4',
+        origin: 'brainstem'
+      },
+      vagus_digestive: { 
+        type: 'autonomic', 
+        path: [[50, 18], [50, 26], [50, 35], [48, 42], [45, 48]],
+        color: '#84cc16',
+        origin: 'brainstem'
+      },
+    };
+
+    // ===== CRR SYSTEM CLASS =====
+    class CRRSystem {
+      constructor(omega = OMEGA_BASE, freq = 1.0) {
+        this.omega = omega;
+        this.frequency = freq;
+        this.coherence = Math.random() * omega * 0.5;
+        this.coherenceHistory = [];
+        this.state = 'coherence';
+        this.phase = Math.random() * Math.PI * 2;
+        this.amplitude = 0;
+        this.ruptureCount = 0;
+        this.dCdt = 0;
+        this.lastCoherence = this.coherence;
+      }
+
+      update(dt, t, input = 0) {
+        const living = Math.sin(2 * Math.PI * this.frequency * t + this.phase) + input;
+        this.lastCoherence = this.coherence;
+        
+        if (this.state === 'coherence') {
+          this.coherence += (living + 1) * dt * 2;
+          this.coherence = Math.max(0, this.coherence);
+          if (this.coherence >= this.omega) {
+            this.state = 'rupture';
+            this.ruptureCount++;
+            totalRuptures++;
+            this.coherence = 0;
+          }
+        } else if (this.state === 'rupture') {
+          this.state = 'regeneration';
+        } else {
+          this.coherence += dt * 0.5;
+          if (this.coherence > this.omega * 0.3) {
+            this.state = 'coherence';
+          }
+        }
+        
+        this.dCdt = (this.coherence - this.lastCoherence) / dt;
+        this.coherenceHistory.push(this.coherence);
+        if (this.coherenceHistory.length > 200) this.coherenceHistory.shift();
+        
+        this.phase += 2 * Math.PI * this.frequency * dt;
+        this.amplitude = this.state === 'rupture' ? 1 : 
+                         Math.sin(this.phase) * (0.5 + 0.5 * (this.coherence / this.omega));
+        
+        return this;
+      }
+
+      setOmega(newOmega) {
+        this.omega = newOmega;
+      }
+    }
+
+    // ===== SIMULATION STATE =====
+    const systems = {
+      heart: new CRRSystem(OMEGA_BASE * 1.2, 1.2),
+      brain: {},
+      vessels: {},
+      pathways: {}
+    };
+
+    let bloodParticles = [];
+    let neuralSignals = [];
+    let brainStates = {};
+
+    // Waveform history
+    const waveformHistory = {
+      ecg: [],
+      prefrontal: [],
+      sensory: [],
+      visual: [],
+      coherence: [],
+      phaseSpace: []
+    };
+
+    // ===== INITIALIZATION =====
+    function init() {
+      // Initialize brain systems
+      Object.keys(BRAIN_REGIONS).forEach(key => {
+        const region = BRAIN_REGIONS[key];
+        systems.brain[key] = new CRRSystem(OMEGA_BASE * 2.0, region.freq);
+      });
+
+      // Initialize vessel systems
+      Object.keys(VESSELS).forEach(key => {
+        systems.vessels[key] = new CRRSystem(OMEGA_BASE, 1.0);
+      });
+
+      // Initialize pathway systems
+      Object.keys(NEURAL_PATHWAYS).forEach(key => {
+        systems.pathways[key] = new CRRSystem(OMEGA_BASE * 1.8, 10);
+      });
+
+      // Create blood particles
+      Object.keys(VESSELS).forEach(vessel => {
+        for (let i = 0; i < 3; i++) {
+          bloodParticles.push({
+            id: `${vessel}-${i}`,
+            vessel,
+            progress: Math.random(),
+            speed: 0.015 + Math.random() * 0.015,
+            isArtery: VESSELS[vessel].type === 'artery'
+          });
+        }
+      });
+
+      // Create neural signals
+      Object.keys(NEURAL_PATHWAYS).forEach(pathway => {
+        neuralSignals.push({
+          id: pathway,
+          pathway,
+          progress: Math.random(),
+          speed: 0.025 + Math.random() * 0.015,
+          active: true
+        });
+      });
+
+      // Draw static elements
+      drawVessels();
+      drawNeuralPathways();
+      drawBrainRegions();
+      populateBrainRegionsList();
+
+      // Setup canvases
+      setupCanvases();
+
+      // Start animation
+      requestAnimationFrame(animate);
+    }
+
+    // ===== CANVAS SETUP =====
+    function setupCanvases() {
+      const canvasIds = ['ecgCanvas', 'prefrontalCanvas', 'sensoryCanvas', 'visualCanvas', 'coherenceCanvas', 'phaseSpaceCanvas'];
+      canvasIds.forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          canvas.width = rect.width * 2;
+          canvas.height = rect.height * 2;
+          canvas.style.width = '100%';
+          canvas.style.height = '100%';
+        }
+      });
+    }
+
+    // ===== DRAWING FUNCTIONS =====
+    function drawVessels() {
+      const group = document.getElementById('circulatorySystem');
+      group.innerHTML = '';
+
+      // Lung indicators
+      const lungs = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      lungs.innerHTML = `
+        <ellipse cx="42" cy="28" rx="5" ry="4" fill="none" stroke="#93c5fd" stroke-width="0.3" stroke-dasharray="1,1" opacity="0.4"/>
+        <ellipse cx="58" cy="28" rx="5" ry="4" fill="none" stroke="#93c5fd" stroke-width="0.3" stroke-dasharray="1,1" opacity="0.4"/>
+        <text x="42" y="28.5" text-anchor="middle" font-size="2.5" fill="#93c5fd" opacity="0.6">🫁</text>
+        <text x="58" y="28.5" text-anchor="middle" font-size="2.5" fill="#93c5fd" opacity="0.6">🫁</text>
+      `;
+      group.appendChild(lungs);
+
+      Object.entries(VESSELS).forEach(([name, vessel]) => {
+        const pathD = vessel.path.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+        
+        // Glow
+        const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        glow.setAttribute('d', pathD);
+        glow.setAttribute('stroke', vessel.color);
+        glow.setAttribute('stroke-width', vessel.diameter * 1.8);
+        glow.setAttribute('fill', 'none');
+        glow.setAttribute('opacity', '0.15');
+        glow.setAttribute('stroke-linecap', 'round');
+        group.appendChild(glow);
+
+        // Main vessel
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('stroke', vessel.color);
+        path.setAttribute('stroke-width', vessel.diameter * 0.7);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('opacity', '0.8');
+        path.setAttribute('stroke-linecap', 'round');
+        group.appendChild(path);
+      });
+    }
+
+    function drawNeuralPathways() {
+      const group = document.getElementById('nervousSystem');
+      group.innerHTML = '';
+
+      // Brain glow
+      const brainGlow = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      brainGlow.setAttribute('cx', '50');
+      brainGlow.setAttribute('cy', '10');
+      brainGlow.setAttribute('rx', '11');
+      brainGlow.setAttribute('ry', '13');
+      brainGlow.setAttribute('fill', 'url(#brainGlow)');
+      brainGlow.setAttribute('opacity', '0.5');
+      group.appendChild(brainGlow);
+
+      // Spinal cord
+      const spinal = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      spinal.setAttribute('d', 'M50 20 L50 60');
+      spinal.setAttribute('stroke', '#fbbf24');
+      spinal.setAttribute('stroke-width', '1.2');
+      spinal.setAttribute('opacity', '0.5');
+      spinal.setAttribute('stroke-linecap', 'round');
+      group.appendChild(spinal);
+
+      Object.entries(NEURAL_PATHWAYS).forEach(([name, pathway]) => {
+        const pathD = pathway.path.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('stroke', pathway.color);
+        path.setAttribute('stroke-width', '0.5');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('opacity', '0.35');
+        path.setAttribute('stroke-linecap', 'round');
+        if (pathway.type === 'sensory') {
+          path.setAttribute('stroke-dasharray', '2,1');
+        }
+        group.appendChild(path);
+      });
+
+      // Nerve endings
+      [[80, 62], [20, 62], [62, 95], [38, 95]].forEach(pos => {
+        const outer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        outer.setAttribute('cx', pos[0]);
+        outer.setAttribute('cy', pos[1]);
+        outer.setAttribute('r', '1.5');
+        outer.setAttribute('fill', '#22c55e');
+        outer.setAttribute('opacity', '0.25');
+        group.appendChild(outer);
+
+        const inner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        inner.setAttribute('cx', pos[0]);
+        inner.setAttribute('cy', pos[1]);
+        inner.setAttribute('r', '0.8');
+        inner.setAttribute('fill', '#22c55e');
+        inner.setAttribute('opacity', '0.6');
+        group.appendChild(inner);
+      });
+    }
+
+    function drawBrainRegions() {
+      const group = document.getElementById('brainRegions');
+      group.innerHTML = '';
+
+      Object.entries(BRAIN_REGIONS).forEach(([key, region]) => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('id', `brain-${key}`);
+        
+        const outer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        outer.setAttribute('cx', region.pos[0]);
+        outer.setAttribute('cy', region.pos[1]);
+        outer.setAttribute('r', '2');
+        outer.setAttribute('fill', region.color);
+        outer.setAttribute('opacity', '0.2');
+        outer.setAttribute('class', 'brain-outer');
+        
+        const inner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        inner.setAttribute('cx', region.pos[0]);
+        inner.setAttribute('cy', region.pos[1]);
+        inner.setAttribute('r', '1');
+        inner.setAttribute('fill', region.color);
+        inner.setAttribute('opacity', '0.6');
+        inner.setAttribute('class', 'brain-inner');
+        
+        g.appendChild(outer);
+        g.appendChild(inner);
+        group.appendChild(g);
+      });
+    }
+
+    function populateBrainRegionsList() {
+      const list = document.getElementById('brainRegionsList');
+      list.innerHTML = '';
+
+      Object.entries(BRAIN_REGIONS).forEach(([key, region]) => {
+        const item = document.createElement('div');
+        item.className = 'brain-region-item';
+        item.id = `brain-list-${key}`;
+        item.innerHTML = `
+          <div class="brain-region-dot" style="background: ${region.color}"></div>
+          <span class="brain-region-name">${region.label}</span>
+          <span class="brain-region-band">${region.band}</span>
+          <div class="brain-region-activity">
+            <div class="brain-region-activity-bar" style="background: ${region.color}; width: 50%"></div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // ===== ANIMATION =====
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      if (!isRunning) {
+        requestAnimationFrame(animate);
+        return;
+      }
+
+      const deltaMs = currentTime - lastTime;
+      lastTime = currentTime;
+      const dt = deltaMs / 1000;
+      simulationTime += dt;
+
+      // Update heart
+      const heart = systems.heart.update(dt, simulationTime);
+      const isBeating = heart.state === 'rupture';
+      updateHeart(isBeating, heart);
+
+      // Update brain regions
+      Object.entries(systems.brain).forEach(([key, sys]) => {
+        sys.update(dt, simulationTime);
+        brainStates[key] = {
+          activity: Math.abs(sys.amplitude),
+          state: sys.state,
+          coherence: sys.coherence
+        };
+      });
+
+      // Update brain visuals
+      updateBrainVisuals();
+
+      // Update blood particles
+      updateBloodParticles(dt, isBeating);
+
+      // Update neural signals
+      updateNeuralSignals(dt);
+
+      // Update waveforms
+      updateWaveforms(dt);
+
+      // Update metrics
+      updateMetrics();
+
+      // Update time display
+      document.getElementById('timeDisplay').textContent = `t = ${simulationTime.toFixed(2)}s`;
+      document.getElementById('headerRuptures').textContent = totalRuptures;
+
+      requestAnimationFrame(animate);
+    }
+
+    function updateHeart(isBeating, heart) {
+      const indicator = document.getElementById('heartIndicator');
+      const glowCircle = document.getElementById('heartGlowCircle');
+      const heartCore = document.getElementById('heartCore');
+
+      if (isBeating) {
+        indicator.classList.add('beating');
+        glowCircle.setAttribute('r', '7');
+        glowCircle.setAttribute('opacity', '0.7');
+        heartCore.setAttribute('r', '4.5');
+      } else {
+        indicator.classList.remove('beating');
+        glowCircle.setAttribute('r', '5');
+        glowCircle.setAttribute('opacity', '0.3');
+        heartCore.setAttribute('r', '3.5');
+      }
+
+      const bpm = 72 + Math.sin(simulationTime * 0.1) * 8;
+      document.getElementById('bpmValue').textContent = bpm.toFixed(0);
+      document.getElementById('cardiacCoherence').textContent = heart.coherence.toFixed(3);
+      document.getElementById('cardiacState').textContent = heart.state.toUpperCase();
+
+      // ECG waveform
+      waveformHistory.ecg.push(isBeating ? 1 : Math.sin(simulationTime * 8) * 0.3 + 0.3);
+      if (waveformHistory.ecg.length > 100) waveformHistory.ecg.shift();
+    }
+
+    function updateBrainVisuals() {
+      Object.entries(brainStates).forEach(([key, state]) => {
+        const region = BRAIN_REGIONS[key];
+        const g = document.getElementById(`brain-${key}`);
+        if (!g) return;
+
+        const outer = g.querySelector('.brain-outer');
+        const inner = g.querySelector('.brain-inner');
+        
+        const activity = state.activity;
+        outer.setAttribute('r', 1.5 + activity * 1.5);
+        outer.setAttribute('opacity', 0.15 + activity * 0.25);
+        inner.setAttribute('opacity', 0.4 + activity * 0.6);
+
+        // Update list
+        const listItem = document.getElementById(`brain-list-${key}`);
+        if (listItem) {
+          const bar = listItem.querySelector('.brain-region-activity-bar');
+          bar.style.width = `${activity * 100}%`;
+        }
+      });
+    }
+
+    function updateBloodParticles(dt, heartBeating) {
+      const group = document.getElementById('bloodParticles');
+      group.innerHTML = '';
+
+      if (viewMode === 'nervous') return;
+
+      bloodParticles.forEach(p => {
+        p.progress += p.speed * (heartBeating ? 1.5 : 1);
+        if (p.progress >= 1) p.progress = 0;
+
+        const vessel = VESSELS[p.vessel];
+        if (!vessel) return;
+
+        const path = vessel.path;
+        const totalSegments = path.length - 1;
+        const segmentProgress = p.progress * totalSegments;
+        const segmentIndex = Math.min(Math.floor(segmentProgress), totalSegments - 1);
+        const localProgress = segmentProgress - segmentIndex;
+
+        const start = path[segmentIndex];
+        const end = path[Math.min(segmentIndex + 1, path.length - 1)];
+
+        const x = start[0] + (end[0] - start[0]) * localProgress;
+        const y = start[1] + (end[1] - start[1]) * localProgress;
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', '0.5');
+        circle.setAttribute('fill', p.isArtery ? '#fecaca' : '#bfdbfe');
+        circle.setAttribute('opacity', '0.85');
+        group.appendChild(circle);
+      });
+    }
+
+    function updateNeuralSignals(dt) {
+      const group = document.getElementById('neuralSignals');
+      group.innerHTML = '';
+
+      if (viewMode === 'circulatory') return;
+
+      neuralSignals.forEach(s => {
+        const pathway = NEURAL_PATHWAYS[s.pathway];
+        if (!pathway) return;
+
+        const originRegion = pathway.origin;
+        const brainActivity = brainStates[originRegion]?.activity || 0.5;
+
+        s.progress += s.speed * (0.5 + brainActivity);
+        s.active = brainActivity > 0.25;
+        if (s.progress >= 1) s.progress = 0;
+
+        if (!s.active) return;
+
+        const path = pathway.path;
+        const totalSegments = path.length - 1;
+        const segmentProgress = s.progress * totalSegments;
+        const segmentIndex = Math.min(Math.floor(segmentProgress), totalSegments - 1);
+        const localProgress = segmentProgress - segmentIndex;
+
+        const start = path[segmentIndex];
+        const end = path[Math.min(segmentIndex + 1, path.length - 1)];
+
+        const x = start[0] + (end[0] - start[0]) * localProgress;
+        const y = start[1] + (end[1] - start[1]) * localProgress;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        
+        const outer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        outer.setAttribute('cx', x);
+        outer.setAttribute('cy', y);
+        outer.setAttribute('r', '1.5');
+        outer.setAttribute('fill', pathway.color);
+        outer.setAttribute('opacity', '0.25');
+
+        const inner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        inner.setAttribute('cx', x);
+        inner.setAttribute('cy', y);
+        inner.setAttribute('r', '0.8');
+        inner.setAttribute('fill', pathway.color);
+        inner.setAttribute('opacity', '0.9');
+
+        g.appendChild(outer);
+        g.appendChild(inner);
+        group.appendChild(g);
+      });
+    }
+
+    function updateWaveforms() {
+      // Brain waveforms
+      const prefrontalActivity = brainStates.prefrontal?.activity || 0;
+      const sensoryActivity = (brainStates.sensory_left?.activity + brainStates.sensory_right?.activity) / 2 || 0;
+      const visualActivity = brainStates.visual?.activity || 0;
+
+      waveformHistory.prefrontal.push(prefrontalActivity);
+      waveformHistory.sensory.push(sensoryActivity);
+      waveformHistory.visual.push(visualActivity);
+
+      if (waveformHistory.prefrontal.length > 100) waveformHistory.prefrontal.shift();
+      if (waveformHistory.sensory.length > 100) waveformHistory.sensory.shift();
+      if (waveformHistory.visual.length > 100) waveformHistory.visual.shift();
+
+      // Coherence
+      waveformHistory.coherence.push(systems.heart.coherence);
+      if (waveformHistory.coherence.length > 100) waveformHistory.coherence.shift();
+
+      // Phase space
+      waveformHistory.phaseSpace.push({ c: systems.heart.coherence, dc: systems.heart.dCdt });
+      if (waveformHistory.phaseSpace.length > 200) waveformHistory.phaseSpace.shift();
+
+      // Draw waveforms
+      drawWaveform('ecgCanvas', waveformHistory.ecg, '#ef4444');
+      drawWaveform('prefrontalCanvas', waveformHistory.prefrontal, '#9C27B0');
+      drawWaveform('sensoryCanvas', waveformHistory.sensory, '#4CAF50');
+      drawWaveform('visualCanvas', waveformHistory.visual, '#00BCD4');
+      drawCoherenceGraph();
+      drawPhaseSpace();
+
+      // Update values
+      document.getElementById('prefrontalValue').textContent = prefrontalActivity.toFixed(2);
+      document.getElementById('sensoryValue').textContent = sensoryActivity.toFixed(2);
+      document.getElementById('visualValue').textContent = visualActivity.toFixed(2);
+    }
+
+    function drawWaveform(canvasId, data, color) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas || data.length < 2) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      data.forEach((val, i) => {
+        const x = (i / (data.length - 1)) * w;
+        const y = h - (val * h * 0.8) - h * 0.1;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+
+      // Glow effect
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawCoherenceGraph() {
+      const canvas = document.getElementById('coherenceCanvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Threshold line
+      const thresholdY = h * (1 - currentOmega / (OMEGA_BASE * 2));
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, thresholdY);
+      ctx.lineTo(w, thresholdY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Coherence line
+      if (waveformHistory.coherence.length < 2) return;
+
+      const maxC = OMEGA_BASE * 2;
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      waveformHistory.coherence.forEach((val, i) => {
+        const x = (i / (waveformHistory.coherence.length - 1)) * w;
+        const y = h * (1 - val / maxC);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+
+      // Fill under
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(34, 211, 238, 0.1)';
+      ctx.fill();
+    }
+
+    function drawPhaseSpace() {
+      const canvas = document.getElementById('phaseSpaceCanvas');
+      if (!canvas || waveformHistory.phaseSpace.length < 2) return;
+
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Axes
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(w/2, 0);
+      ctx.lineTo(w/2, h);
+      ctx.moveTo(0, h/2);
+      ctx.lineTo(w, h/2);
+      ctx.stroke();
+
+      // Phase trajectory
+      ctx.strokeStyle = '#a78bfa';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+
+      const maxC = OMEGA_BASE * 2;
+      const maxDC = 5;
+
+      waveformHistory.phaseSpace.forEach((point, i) => {
+        const x = (point.c / maxC) * w;
+        const y = h/2 - (point.dc / maxDC) * h/2;
+        
+        const alpha = i / waveformHistory.phaseSpace.length;
+        ctx.strokeStyle = `rgba(167, 139, 250, ${alpha})`;
+        
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+
+      // Current point
+      const last = waveformHistory.phaseSpace[waveformHistory.phaseSpace.length - 1];
+      if (last) {
+        const x = (last.c / maxC) * w;
+        const y = h/2 - (last.dc / maxDC) * h/2;
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#a78bfa';
+        ctx.fill();
+      }
+    }
+
+    function updateMetrics() {
+      const avgC = waveformHistory.coherence.length > 0 
+        ? waveformHistory.coherence.reduce((a, b) => a + b, 0) / waveformHistory.coherence.length 
+        : 0;
+
+      const ruptureRate = simulationTime > 0 ? (totalRuptures / simulationTime) * 60 : 0;
+      const regenIndex = 1 + (Math.random() * 0.3 - 0.15);
+      const expWeight = Math.exp(systems.heart.coherence / currentOmega);
+
+      document.getElementById('avgCoherence').textContent = avgC.toFixed(3);
+      document.getElementById('ruptureRate').textContent = ruptureRate.toFixed(1);
+      document.getElementById('regenIndex').textContent = regenIndex.toFixed(2);
+      document.getElementById('expWeight').textContent = Math.min(expWeight, 99.99).toFixed(2);
+
+      // Coupling
+      const couplingBase = 85 + Math.sin(simulationTime * 0.5) * 10;
+      document.getElementById('cardiacCoupling').textContent = `${couplingBase.toFixed(0)}%`;
+      document.getElementById('motorCoupling').textContent = `${(couplingBase + 5).toFixed(0)}%`;
+      document.getElementById('vagusCoupling').textContent = `${(couplingBase - 3).toFixed(0)}%`;
+      document.getElementById('sympatheticCoupling').textContent = `${(couplingBase + 2).toFixed(0)}%`;
+    }
+
+    // ===== CONTROLS =====
+    function toggleSimulation() {
+      isRunning = !isRunning;
+      const btn = document.getElementById('playBtn');
+      const label = document.getElementById('playLabel');
+
+      if (isRunning) {
+        btn.classList.add('active');
+        label.textContent = 'Running';
+        btn.querySelector('.btn-icon').textContent = '▶';
+        lastTime = performance.now();
+      } else {
+        btn.classList.remove('active');
+        label.textContent = 'Paused';
+        btn.querySelector('.btn-icon').textContent = '⏸';
+      }
+    }
+
+    function resetSimulation() {
+      simulationTime = 0;
+      totalRuptures = 0;
+      waveformHistory.ecg = [];
+      waveformHistory.prefrontal = [];
+      waveformHistory.sensory = [];
+      waveformHistory.visual = [];
+      waveformHistory.coherence = [];
+      waveformHistory.phaseSpace = [];
+
+      systems.heart = new CRRSystem(currentOmega * 1.2, 1.2);
+      Object.keys(BRAIN_REGIONS).forEach(key => {
+        const region = BRAIN_REGIONS[key];
+        systems.brain[key] = new CRRSystem(currentOmega * 2.0, region.freq);
+      });
+
+      bloodParticles.forEach(p => p.progress = Math.random());
+      neuralSignals.forEach(s => s.progress = Math.random());
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+
+      document.querySelectorAll('.view-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      const circulatory = document.getElementById('circulatorySystem');
+      const nervous = document.getElementById('nervousSystem');
+      const brainGroup = document.getElementById('brainRegions');
+      const heartGroup = document.getElementById('heartGroup');
+
+      if (mode === 'circulatory') {
+        circulatory.style.opacity = '1';
+        nervous.style.opacity = '0.15';
+        brainGroup.style.opacity = '0.15';
+        heartGroup.style.opacity = '1';
+      } else if (mode === 'nervous') {
+        circulatory.style.opacity = '0.15';
+        nervous.style.opacity = '1';
+        brainGroup.style.opacity = '1';
+        heartGroup.style.opacity = '0.3';
+      } else {
+        circulatory.style.opacity = '1';
+        nervous.style.opacity = '1';
+        brainGroup.style.opacity = '1';
+        heartGroup.style.opacity = '1';
+      }
+    }
+
+    function updateOmega(value) {
+      currentOmega = parseFloat(value);
+      
+      document.getElementById('omegaValue').textContent = currentOmega.toFixed(4);
+      document.getElementById('headerOmega').textContent = currentOmega.toFixed(4);
+
+      // Update all systems
+      systems.heart.setOmega(currentOmega * 1.2);
+      Object.values(systems.brain).forEach(sys => sys.setOmega(currentOmega * 2.0));
+      Object.values(systems.vessels).forEach(sys => sys.setOmega(currentOmega));
+      Object.values(systems.pathways).forEach(sys => sys.setOmega(currentOmega * 1.8));
+
+      // Update threshold display
+      const threshold = document.getElementById('coherenceThreshold');
+      const position = 100 - (currentOmega / (OMEGA_BASE * 3)) * 100;
+      threshold.style.top = `${Math.max(5, Math.min(95, position))}%`;
+    }
+
+    // Initialize on load
+    window.addEventListener('load', init);
+    window.addEventListener('resize', setupCanvases);
+  </script>
+</body>
+</html>
