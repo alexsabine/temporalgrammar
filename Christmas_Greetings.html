@@ -26,7 +26,7 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      transition: opacity 1.5s ease-out;
+      transition: opacity 0.8s ease-out;
     }
     .loading-screen.fade-out { opacity: 0; pointer-events: none; }
     .loading-screen.hidden { display: none; }
@@ -92,6 +92,26 @@
     .christmas-message.visible { opacity: 1; }
     .christmas-message h1 { font-size: 4rem; font-weight: 400; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
     .christmas-message p { font-size: 1.5rem; font-style: italic; opacity: 0.9; }
+    
+    /* Weather Indicator */
+    .weather-indicator {
+      position: fixed;
+      top: 20px; right: 20px;
+      padding: 10px 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease-in;
+      text-align: right;
+      backdrop-filter: blur(5px);
+    }
+    .weather-indicator.visible { opacity: 1; }
+    .weather-indicator .location { font-weight: 500; color: rgba(255, 255, 255, 0.9); }
+    .weather-indicator .conditions { font-style: italic; opacity: 0.8; margin-top: 3px; }
+    .weather-indicator .temp { font-size: 1.1rem; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -126,15 +146,22 @@
   <p>Peace on Earth, Goodwill to All</p>
 </div>
 
+<div class="weather-indicator" id="weatherIndicator">
+  <div class="location" id="weatherLocation">Detecting location...</div>
+  <div class="conditions" id="weatherConditions"></div>
+  <div class="temp" id="weatherTemp"></div>
+  <div class="moon-info" id="moonInfo" style="font-size: 10px; margin-top: 4px; opacity: 0.8;"></div>
+</div>
+
 <script>
 // ============================================================================
-// CRR WINTER FOREST - Final Version
+// CRR WINTER FOREST - Final Version with Real Weather & Moon Phases
 // ============================================================================
 
 const CONFIG = {
-  networkDepth: 7,
+  networkDepth: 6,
   branchCount: [2, 4],
-  starlingCount: 400,
+  starlingCount: 350,
   spatialCellSize: 60
 };
 
@@ -217,10 +244,39 @@ let predator = null, predatorCooldown = 15;
 
 const flockCRR = new CRRSystem(1 / Math.PI, 0.3);
 const mistCRR = new CRRSystem(0.5, 0.08);
+const weatherCRR = new CRRSystem(0.8, 0.02);
 
 let sleigh = null, sleighActive = false, sleighTriggered = false;
 
 let currentColors = null, lastColorUpdate = 0;
+
+// Forest lamps
+let forestLamps = [];
+
+// Path and Lowry figures
+let pathPoints = [];
+let lowryFigures = [];
+
+// Stars (persistent array for twinkling)
+let stars = [];
+
+// Moon phase (0 = new, 0.5 = full, 1 = new again)
+let moonPhase = 0;
+
+// Weather state
+let weatherState = {
+  snowIntensity: 1.0,
+  mistIntensity: 1.0,
+  windStrength: 1.0,
+  targetSnow: 1.0,
+  targetMist: 1.0,
+  targetWind: 1.0,
+  realWeatherEnabled: false,
+  realWeatherData: null,
+  locationName: '',
+  latitude: 51.5, // Default to London
+  longitude: -0.1
+};
 
 const TREE_COLORS = {
   silver: { base: { r: 140, g: 150, b: 175 }, bright: { r: 190, g: 200, b: 225 } },
@@ -230,10 +286,10 @@ const TREE_COLORS = {
 };
 
 const TREE_CONFIG = {
-  silver: { num: 12, height: 0.28, depth: 0, xOff: 0, yOff: 0, perch: true },
-  blue: { num: 14, height: 0.24, depth: -1, xOff: 0.025, yOff: -0.01, perch: false },
-  gold: { num: 15, height: 0.22, depth: 0, xOff: -0.02, yOff: -0.015, perch: false },
-  frost: { num: 16, height: 0.18, depth: -1, xOff: 0.015, yOff: -0.025, perch: false }
+  silver: { num: 10, height: 0.28, depth: 0, xOff: 0, yOff: 0, perch: true },
+  blue: { num: 12, height: 0.24, depth: -1, xOff: 0.025, yOff: -0.01, perch: false },
+  gold: { num: 12, height: 0.22, depth: 0, xOff: -0.02, yOff: -0.015, perch: false },
+  frost: { num: 14, height: 0.18, depth: -1, xOff: 0.015, yOff: -0.025, perch: false }
 };
 
 // ============================================================================
@@ -263,27 +319,631 @@ function getNearbyBirds(x, y) {
   const cx = floor(x / CONFIG.spatialCellSize), cy = floor(y / CONFIG.spatialCellSize);
   for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
-      const cell = spatialHash[((cx + dx) << 16) | ((cy + dy) & 0xFFFF)];
-      if (cell) nearby.push(...cell);
+      const key = ((cx + dx) << 16) | ((cy + dy) & 0xFFFF);
+      const cell = spatialHash[key];
+      if (cell) {
+        for (let i = 0, len = cell.length; i < len; i++) {
+          nearby.push(cell[i]);
+        }
+      }
     }
   }
   return nearby;
 }
 
 // ============================================================================
+// MOON PHASE CALCULATION
+// ============================================================================
+function calculateMoonPhase(date = new Date()) {
+  // Calculate moon phase using a simplified lunation algorithm
+  // Based on the synodic month (~29.53 days)
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  
+  // Calculate Julian date
+  let a = floor((14 - month) / 12);
+  let y = year + 4800 - a;
+  let m = month + 12 * a - 3;
+  let jd = day + floor((153 * m + 2) / 5) + 365 * y + floor(y / 4) - floor(y / 100) + floor(y / 400) - 32045;
+  
+  // Calculate days since known new moon (January 6, 2000 was a new moon)
+  const knownNewMoon = 2451550.1; // Julian date of Jan 6, 2000 new moon
+  const synodicMonth = 29.530588853; // Average length of lunar month in days
+  
+  const daysSinceNewMoon = jd - knownNewMoon;
+  const lunarAge = daysSinceNewMoon % synodicMonth;
+  
+  // Return phase as 0-1 (0 = new moon, 0.5 = full moon, 1 = new moon again)
+  return lunarAge / synodicMonth;
+}
+
+function getMoonIllumination(phase) {
+  // Convert phase to illumination percentage
+  // 0 or 1 = new moon (0% illuminated)
+  // 0.5 = full moon (100% illuminated)
+  return (1 - cos(phase * PI2)) / 2;
+}
+
+// ============================================================================
+// STARS
+// ============================================================================
+function initStars() {
+  stars = [];
+  const numStars = 150;
+  for (let i = 0; i < numStars; i++) {
+    stars.push({
+      x: random() * W,
+      y: random() * horizonY * 0.85,
+      size: 0.5 + random() * 1.2,
+      brightness: 0.3 + random() * 0.7,
+      twinklePhase: random() * PI2,
+      twinkleSpeed: 1.5 + random() * 3
+    });
+  }
+}
+
+function drawStars(ambient) {
+  // Stars only visible when dark (ambient < 0.4)
+  if (ambient > 0.45) return;
+  
+  const starVisibility = 1 - (ambient / 0.45);
+  
+  ctx.fillStyle = '#fff';
+  for (let i = 0; i < stars.length; i++) {
+    const s = stars[i];
+    const twinkle = 0.6 + sin(time * s.twinkleSpeed + s.twinklePhase) * 0.4;
+    const alpha = s.brightness * twinkle * starVisibility * 0.9;
+    
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, PI2);
+    ctx.fill();
+    
+    // Add subtle glow to brighter stars
+    if (s.brightness > 0.6) {
+      ctx.globalAlpha = alpha * 0.3;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * 2.5, 0, PI2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ============================================================================
+// FOREST LAMPS - Ornate Victorian Street Lamps
+// ============================================================================
+function initForestLamps() {
+  forestLamps = [];
+  
+  // Place ornate Victorian lamps along the path
+  const lampConfigs = [
+    { xRatio: 0.18, scale: 0.42, brightness: 0.85 },
+    { xRatio: 0.45, scale: 0.45, brightness: 0.9 },
+    { xRatio: 0.72, scale: 0.43, brightness: 0.82 },
+  ];
+  
+  const pathY = H * 0.79;
+  
+  lampConfigs.forEach((cfg, idx) => {
+    const waveY = sin(cfg.xRatio * W * 0.008) * 3 + sin(cfg.xRatio * W * 0.02 + 1) * 2;
+    forestLamps.push({
+      x: W * cfg.xRatio,
+      y: pathY - 2 + waveY, // Just above the path, following its contour
+      scale: cfg.scale,
+      brightness: cfg.brightness,
+      phase: random() * PI2,
+      crr: new CRRSystem(0.3 + random() * 0.2, 0.12 + random() * 0.08)
+    });
+  });
+}
+
+function drawForestLamps(ambient) {
+  if (ambient > 0.5) return;
+  if (!forestLamps || forestLamps.length === 0) return;
+  
+  const lampIntensity = 1 - (ambient / 0.5);
+  
+  forestLamps.forEach((lamp, idx) => {
+    lamp.crr.update(0.016, 0.8 + sin(time * 0.5 + idx) * 0.2);
+    
+    // Enhanced flicker - more variation
+    const baseFlicker = 0.82 + lamp.crr.amplitude * 0.18;
+    const microFlicker = 1 + sin(time * 15 + idx * 7) * 0.03 + sin(time * 23 + idx * 13) * 0.02;
+    const flicker = baseFlicker * microFlicker;
+    const intensity = lamp.brightness * flicker * lampIntensity;
+    
+    const x = lamp.x;
+    const baseY = lamp.y;
+    const s = lamp.scale;
+    const postHeight = 90 * s;
+    const topY = baseY - postHeight;
+    
+    const ironColor = `rgba(25, 22, 18, ${0.85 + ambient * 0.1})`;
+    const ironLight = `rgba(45, 40, 35, ${0.5 + ambient * 0.3})`;
+    
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // === SCENE ILLUMINATION (drawn first, behind lamp) ===
+    if (intensity > 0.1) {
+      const lanternY = topY + 4 * s;
+      
+      // Large scene illumination - affects ground and nearby area
+      const sceneGlow = ctx.createRadialGradient(x, lanternY, 0, x, lanternY, 120 * s);
+      sceneGlow.addColorStop(0, `rgba(255, 220, 160, ${intensity * 0.08})`);
+      sceneGlow.addColorStop(0.3, `rgba(255, 200, 130, ${intensity * 0.05})`);
+      sceneGlow.addColorStop(0.6, `rgba(255, 180, 100, ${intensity * 0.025})`);
+      sceneGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = sceneGlow;
+      ctx.beginPath();
+      ctx.arc(x, lanternY, 120 * s, 0, PI2);
+      ctx.fill();
+      
+      // Ground illumination pool - wider and softer
+      const groundGlow = ctx.createRadialGradient(x, baseY, 0, x, baseY, 60 * s);
+      groundGlow.addColorStop(0, `rgba(255, 215, 150, ${intensity * 0.2})`);
+      groundGlow.addColorStop(0.4, `rgba(255, 200, 130, ${intensity * 0.1})`);
+      groundGlow.addColorStop(0.7, `rgba(255, 180, 100, ${intensity * 0.04})`);
+      groundGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = groundGlow;
+      ctx.beginPath();
+      ctx.ellipse(x, baseY + 3, 60 * s, 20 * s, 0, 0, PI2);
+      ctx.fill();
+    }
+    
+    // === ORNATE BASE ===
+    ctx.fillStyle = ironColor;
+    // Base plinth
+    ctx.beginPath();
+    ctx.moveTo(x - 8 * s, baseY);
+    ctx.lineTo(x - 6 * s, baseY - 4 * s);
+    ctx.lineTo(x + 6 * s, baseY - 4 * s);
+    ctx.lineTo(x + 8 * s, baseY);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Decorative base collar
+    ctx.beginPath();
+    ctx.ellipse(x, baseY - 4 * s, 5 * s, 2 * s, 0, 0, PI2);
+    ctx.fill();
+    
+    // === MAIN POST with decorative elements ===
+    ctx.strokeStyle = ironColor;
+    ctx.lineWidth = 3 * s;
+    ctx.beginPath();
+    ctx.moveTo(x, baseY - 4 * s);
+    ctx.lineTo(x, topY + 20 * s);
+    ctx.stroke();
+    
+    // Post highlight
+    ctx.strokeStyle = ironLight;
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.moveTo(x + 1 * s, baseY - 4 * s);
+    ctx.lineTo(x + 1 * s, topY + 20 * s);
+    ctx.stroke();
+    
+    // Decorative rings on post
+    ctx.fillStyle = ironColor;
+    [0.25, 0.5, 0.75].forEach(t => {
+      const ringY = baseY - 4 * s - (postHeight - 24 * s) * t;
+      ctx.beginPath();
+      ctx.ellipse(x, ringY, 3.5 * s, 1.2 * s, 0, 0, PI2);
+      ctx.fill();
+    });
+    
+    // === ORNATE BRACKET ===
+    const bracketY = topY + 18 * s;
+    ctx.strokeStyle = ironColor;
+    ctx.lineWidth = 2 * s;
+    
+    // Main bracket curve
+    ctx.beginPath();
+    ctx.moveTo(x, bracketY);
+    ctx.quadraticCurveTo(x + 4 * s, bracketY - 8 * s, x, bracketY - 12 * s);
+    ctx.stroke();
+    
+    // Decorative scrollwork
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.moveTo(x - 2 * s, bracketY - 2 * s);
+    ctx.quadraticCurveTo(x - 6 * s, bracketY - 6 * s, x - 3 * s, bracketY - 10 * s);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 2 * s, bracketY - 2 * s);
+    ctx.quadraticCurveTo(x + 6 * s, bracketY - 6 * s, x + 3 * s, bracketY - 10 * s);
+    ctx.stroke();
+    
+    // Small decorative curls
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.arc(x - 5 * s, bracketY - 5 * s, 2 * s, 0, PI, false);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 5 * s, bracketY - 5 * s, 2 * s, 0, PI, false);
+    ctx.stroke();
+    
+    // === LANTERN HOUSING ===
+    const lanternY = topY + 4 * s;
+    const lanternW = 8 * s;
+    const lanternH = 14 * s;
+    
+    // Lantern top (crown)
+    ctx.fillStyle = ironColor;
+    ctx.beginPath();
+    ctx.moveTo(x - lanternW * 0.4, lanternY - lanternH * 0.3);
+    ctx.lineTo(x - lanternW * 0.2, lanternY - lanternH * 0.6);
+    ctx.lineTo(x, lanternY - lanternH * 0.7);
+    ctx.lineTo(x + lanternW * 0.2, lanternY - lanternH * 0.6);
+    ctx.lineTo(x + lanternW * 0.4, lanternY - lanternH * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Finial spike
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5 * s, lanternY - lanternH * 0.7);
+    ctx.lineTo(x, lanternY - lanternH * 0.7 - 6 * s);
+    ctx.lineTo(x + 1.5 * s, lanternY - lanternH * 0.7);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Lantern body frame
+    ctx.strokeStyle = ironColor;
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.moveTo(x - lanternW * 0.4, lanternY - lanternH * 0.3);
+    ctx.lineTo(x - lanternW * 0.4, lanternY + lanternH * 0.3);
+    ctx.lineTo(x - lanternW * 0.2, lanternY + lanternH * 0.45);
+    ctx.lineTo(x + lanternW * 0.2, lanternY + lanternH * 0.45);
+    ctx.lineTo(x + lanternW * 0.4, lanternY + lanternH * 0.3);
+    ctx.lineTo(x + lanternW * 0.4, lanternY - lanternH * 0.3);
+    ctx.stroke();
+    
+    // Vertical bars
+    ctx.lineWidth = 1 * s;
+    [-0.2, 0, 0.2].forEach(off => {
+      ctx.beginPath();
+      ctx.moveTo(x + lanternW * off, lanternY - lanternH * 0.5);
+      ctx.lineTo(x + lanternW * off * 0.6, lanternY + lanternH * 0.45);
+      ctx.stroke();
+    });
+    
+    // === LIGHT GLOW EFFECTS (enhanced) ===
+    if (intensity > 0.05) {
+      // Glass panel glow - brighter
+      ctx.fillStyle = `rgba(255, 245, 210, ${intensity * 0.65})`;
+      ctx.beginPath();
+      ctx.moveTo(x - lanternW * 0.35, lanternY - lanternH * 0.25);
+      ctx.lineTo(x - lanternW * 0.35, lanternY + lanternH * 0.25);
+      ctx.lineTo(x + lanternW * 0.35, lanternY + lanternH * 0.25);
+      ctx.lineTo(x + lanternW * 0.35, lanternY - lanternH * 0.25);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Inner flame core - bright flickering center
+      const flameGrad = ctx.createRadialGradient(x, lanternY, 0, x, lanternY, lanternW * 0.6);
+      flameGrad.addColorStop(0, `rgba(255, 255, 240, ${intensity * 0.95})`);
+      flameGrad.addColorStop(0.3, `rgba(255, 240, 200, ${intensity * 0.8})`);
+      flameGrad.addColorStop(0.6, `rgba(255, 210, 150, ${intensity * 0.5})`);
+      flameGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = flameGrad;
+      ctx.beginPath();
+      ctx.arc(x, lanternY, lanternW * 0.6, 0, PI2);
+      ctx.fill();
+      
+      // Inner warm glow - enhanced
+      const innerGlow = ctx.createRadialGradient(x, lanternY, 0, x, lanternY, 30 * s);
+      innerGlow.addColorStop(0, `rgba(255, 240, 200, ${intensity * 0.55})`);
+      innerGlow.addColorStop(0.4, `rgba(255, 220, 160, ${intensity * 0.3})`);
+      innerGlow.addColorStop(0.7, `rgba(255, 200, 130, ${intensity * 0.15})`);
+      innerGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = innerGlow;
+      ctx.beginPath();
+      ctx.arc(x, lanternY, 30 * s, 0, PI2);
+      ctx.fill();
+      
+      // Mid-range glow
+      const midGlow = ctx.createRadialGradient(x, lanternY, 15 * s, x, lanternY, 55 * s);
+      midGlow.addColorStop(0, `rgba(255, 215, 150, ${intensity * 0.2})`);
+      midGlow.addColorStop(0.5, `rgba(255, 200, 120, ${intensity * 0.1})`);
+      midGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = midGlow;
+      ctx.beginPath();
+      ctx.arc(x, lanternY, 55 * s, 0, PI2);
+      ctx.fill();
+      
+      // Outer atmospheric glow - larger
+      const outerGlow = ctx.createRadialGradient(x, lanternY, 30 * s, x, lanternY, 85 * s);
+      outerGlow.addColorStop(0, `rgba(255, 200, 130, ${intensity * 0.12})`);
+      outerGlow.addColorStop(0.6, `rgba(255, 180, 100, ${intensity * 0.05})`);
+      outerGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = outerGlow;
+      ctx.beginPath();
+      ctx.arc(x, lanternY, 85 * s, 0, PI2);
+      ctx.fill();
+    }
+  });
+}
+
+// ============================================================================
+// PATH & LOWRY FIGURES
+// ============================================================================
+
+function initPath() {
+  // Create a winding path through the forest
+  pathPoints = [];
+  const pathY = H * 0.79; // Base Y for path
+  
+  // Generate path control points
+  for (let i = 0; i <= 10; i++) {
+    pathPoints.push({
+      x: (i / 10) * W,
+      y: pathY + sin(i * 0.8) * H * 0.015 + sin(i * 1.7) * H * 0.008
+    });
+  }
+}
+
+function initLowryFigures() {
+  lowryFigures = [];
+  const numFigures = 12 + floor(random() * 6);
+  
+  for (let i = 0; i < numFigures; i++) {
+    const t = random(); // Position along path (0-1)
+    lowryFigures.push({
+      t: t,
+      speed: (0.003 + random() * 0.006) * (random() > 0.5 ? 1 : -1), // Direction
+      height: 12 + random() * 8, // Varying heights
+      phase: random() * PI2,
+      type: floor(random() * 6), // Different figure types
+      color: random() > 0.7 ? 'dark' : (random() > 0.5 ? 'grey' : 'muted'),
+      hasHat: random() > 0.6,
+      hasUmbrella: random() > 0.85,
+      isChild: random() > 0.88,
+      lean: (random() - 0.5) * 0.15, // Slight lean
+      armSwing: random() * 0.5 + 0.3
+    });
+  }
+  
+  // Sort by position for proper depth
+  lowryFigures.sort((a, b) => getPathY(a.t) - getPathY(b.t));
+}
+
+function getPathY(t) {
+  // Interpolate Y position along path
+  if (!pathPoints || pathPoints.length === 0) return H * 0.79;
+  if (pathPoints.length === 1) return pathPoints[0].y;
+  const idx = t * (pathPoints.length - 1);
+  const i = max(0, min(floor(idx), pathPoints.length - 2));
+  const frac = idx - floor(idx);
+  return lerp(pathPoints[i].y, pathPoints[i + 1].y, frac);
+}
+
+function getPathX(t) {
+  return t * W;
+}
+
+function updateLowryFigures(dt) {
+  if (!lowryFigures || lowryFigures.length === 0) return;
+  
+  lowryFigures.forEach(fig => {
+    fig.t += fig.speed * dt;
+    fig.phase += dt * 4;
+    
+    // Wrap around
+    if (fig.t > 1.1) fig.t = -0.1;
+    if (fig.t < -0.1) fig.t = 1.1;
+  });
+  
+  // Re-sort occasionally for depth
+  if (random() < 0.01) {
+    lowryFigures.sort((a, b) => getPathY(a.t) - getPathY(b.t));
+  }
+}
+
+function drawPath(colors) {
+  if (!colors || !colors.ground) return;
+  
+  const pathY = H * 0.79;
+  
+  // Path surface (subtle, worn)
+  ctx.fillStyle = `rgba(${colors.ground.r - 15 | 0}, ${colors.ground.g - 12 | 0}, ${colors.ground.b - 10 | 0}, 0.35)`;
+  ctx.beginPath();
+  ctx.moveTo(-10, pathY + H * 0.025);
+  
+  // Top edge of path
+  for (let i = 0; i <= W; i += 20) {
+    const wave = sin(i * 0.008) * 3 + sin(i * 0.02 + 1) * 2;
+    ctx.lineTo(i, pathY - H * 0.008 + wave);
+  }
+  
+  // Bottom edge
+  for (let i = W; i >= 0; i -= 20) {
+    const wave = sin(i * 0.008 + 2) * 3 + sin(i * 0.02) * 2;
+    ctx.lineTo(i, pathY + H * 0.025 + wave);
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Path edges (subtle darker lines)
+  ctx.strokeStyle = `rgba(${colors.ground.r - 30 | 0}, ${colors.ground.g - 25 | 0}, ${colors.ground.b - 20 | 0}, 0.2)`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, pathY - H * 0.006);
+  for (let i = 0; i <= W; i += 30) {
+    ctx.lineTo(i, pathY - H * 0.006 + sin(i * 0.01) * 2);
+  }
+  ctx.stroke();
+}
+
+function drawLowryFigures(ambient) {
+  if (!lowryFigures || lowryFigures.length === 0) return;
+  
+  const visibility = min(1, max(0.3, ambient + 0.2));
+  
+  lowryFigures.forEach(fig => {
+    if (fig.t < -0.05 || fig.t > 1.05) return;
+    
+    const x = getPathX(fig.t);
+    const baseY = getPathY(fig.t);
+    const h = fig.isChild ? fig.height * 0.6 : fig.height;
+    const walkCycle = sin(fig.phase) * fig.armSwing;
+    const direction = fig.speed > 0 ? 1 : -1;
+    
+    // Figure colors (muted, Lowry-esque)
+    let bodyColor, legColor;
+    if (fig.color === 'dark') {
+      bodyColor = `rgba(25, 25, 30, ${visibility * 0.85})`;
+      legColor = `rgba(20, 20, 25, ${visibility * 0.85})`;
+    } else if (fig.color === 'grey') {
+      bodyColor = `rgba(60, 58, 55, ${visibility * 0.8})`;
+      legColor = `rgba(40, 38, 35, ${visibility * 0.8})`;
+    } else {
+      bodyColor = `rgba(75, 65, 60, ${visibility * 0.75})`;
+      legColor = `rgba(50, 45, 42, ${visibility * 0.75})`;
+    }
+    
+    ctx.save();
+    ctx.translate(x, baseY);
+    ctx.scale(direction, 1);
+    ctx.rotate(fig.lean);
+    
+    // === LOWRY MATCHSTICK FIGURE ===
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // Legs (thin, walking motion)
+    ctx.strokeStyle = legColor;
+    ctx.lineWidth = h * 0.08;
+    
+    // Back leg
+    ctx.beginPath();
+    ctx.moveTo(0, -h * 0.4);
+    ctx.lineTo(-h * 0.08 - walkCycle * h * 0.12, 0);
+    ctx.stroke();
+    
+    // Front leg
+    ctx.beginPath();
+    ctx.moveTo(0, -h * 0.4);
+    ctx.lineTo(h * 0.08 + walkCycle * h * 0.12, 0);
+    ctx.stroke();
+    
+    // Body (slightly hunched, Lowry style)
+    ctx.strokeStyle = bodyColor;
+    ctx.lineWidth = h * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(0, -h * 0.4);
+    ctx.quadraticCurveTo(h * 0.03, -h * 0.6, h * 0.02, -h * 0.8);
+    ctx.stroke();
+    
+    // Arms (swinging)
+    ctx.lineWidth = h * 0.06;
+    
+    // Back arm
+    ctx.beginPath();
+    ctx.moveTo(h * 0.02, -h * 0.7);
+    ctx.lineTo(-h * 0.1 - walkCycle * h * 0.15, -h * 0.45);
+    ctx.stroke();
+    
+    // Front arm
+    ctx.beginPath();
+    ctx.moveTo(h * 0.02, -h * 0.7);
+    ctx.lineTo(h * 0.12 + walkCycle * h * 0.15, -h * 0.5);
+    ctx.stroke();
+    
+    // Head (small, round)
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.arc(h * 0.02, -h * 0.88, h * 0.1, 0, PI2);
+    ctx.fill();
+    
+    // Hat (if applicable)
+    if (fig.hasHat && !fig.isChild) {
+      ctx.fillStyle = legColor;
+      // Flat cap or bowler
+      if (fig.type % 2 === 0) {
+        // Flat cap
+        ctx.beginPath();
+        ctx.ellipse(h * 0.02, -h * 0.95, h * 0.12, h * 0.04, 0.1, 0, PI2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-h * 0.08, -h * 0.95);
+        ctx.quadraticCurveTo(h * 0.02, -h * 1.02, h * 0.12, -h * 0.95);
+        ctx.fill();
+      } else {
+        // Bowler
+        ctx.beginPath();
+        ctx.ellipse(h * 0.02, -h * 0.96, h * 0.13, h * 0.03, 0, 0, PI2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(h * 0.02, -h * 1.02, h * 0.08, 0, PI2);
+        ctx.fill();
+      }
+    }
+    
+    // Umbrella (if applicable)
+    if (fig.hasUmbrella) {
+      ctx.strokeStyle = legColor;
+      ctx.lineWidth = h * 0.04;
+      ctx.beginPath();
+      ctx.moveTo(h * 0.15, -h * 0.55);
+      ctx.lineTo(h * 0.25, -h * 0.9);
+      ctx.stroke();
+      // Umbrella handle
+      ctx.beginPath();
+      ctx.arc(h * 0.15, -h * 0.52, h * 0.03, 0, PI);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  });
+}
+
+function drawLowryFiguresShadows(ambient) {
+  if (ambient > 0.7) return;
+  if (!lowryFigures || lowryFigures.length === 0) return;
+  
+  const shadowAlpha = (1 - ambient) * 0.15;
+  
+  lowryFigures.forEach(fig => {
+    if (fig.t < -0.05 || fig.t > 1.05) return;
+    
+    const x = getPathX(fig.t);
+    const baseY = getPathY(fig.t);
+    const h = fig.isChild ? fig.height * 0.6 : fig.height;
+    
+    // Simple shadow blob
+    ctx.fillStyle = `rgba(20, 18, 15, ${shadowAlpha})`;
+    ctx.beginPath();
+    ctx.ellipse(x + h * 0.3, baseY + 2, h * 0.4, h * 0.1, 0.2, 0, PI2);
+    ctx.fill();
+  });
+}
+
+// ============================================================================
 // LOADING SYSTEM
 // ============================================================================
 async function loadAllAssets() {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      generateAllTrees();
-      createTexture();
-      initStarlings();
-      initMist();
-      initSnow();
-      resolve();
-    }, 100);
-  });
+  // Split initialization into chunks to allow UI updates
+  await new Promise(r => setTimeout(r, 10));
+  
+  // Generate trees in parallel-ish manner
+  generateAllTrees();
+  await new Promise(r => setTimeout(r, 5));
+  
+  // Lighter-weight texture
+  createTexture();
+  
+  // Initialize other systems
+  initStarlings();
+  initMist();
+  initSnow();
+  initStars();
+  initPath();
+  initForestLamps();
+  initLowryFigures();
+  moonPhase = calculateMoonPhase();
 }
 
 function hideLoadingScreen() {
@@ -296,7 +956,7 @@ function hideLoadingScreen() {
     loadingScreen.classList.add('hidden');
     calendarOverlay.classList.add('visible');
     isLoaded = true;
-  }, 1500);
+  }, 800);
 }
 
 // ============================================================================
@@ -356,18 +1016,52 @@ function renderBranchesToCanvas(branches, colors) {
   const layer = document.createElement('canvas');
   layer.width = W; layer.height = H;
   const lctx = layer.getContext('2d');
+  lctx.lineCap = 'round';
   
+  // Group branches by depth for batching
+  const byDepth = {};
   branches.forEach(b => {
-    const fade = Math.pow(0.75, b.depth);
-    const width = max(0.5, 2.2 * fade);
-    lctx.lineCap = 'round';
-    lctx.strokeStyle = rgba(colors.base, 0.12 * fade); lctx.lineWidth = width * 4;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
-    lctx.strokeStyle = rgba(colors.base, 0.5 * fade); lctx.lineWidth = width;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
-    lctx.strokeStyle = rgba(colors.bright, 0.3 * fade); lctx.lineWidth = width * 0.4;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
+    if (!byDepth[b.depth]) byDepth[b.depth] = [];
+    byDepth[b.depth].push(b);
   });
+  
+  // Render each depth level with batched paths
+  Object.keys(byDepth).forEach(depth => {
+    const depthBranches = byDepth[depth];
+    const fade = Math.pow(0.75, depth);
+    const width = max(0.5, 2.2 * fade);
+    
+    // Shadow pass
+    lctx.strokeStyle = rgba(colors.base, 0.12 * fade);
+    lctx.lineWidth = width * 4;
+    lctx.beginPath();
+    depthBranches.forEach(b => {
+      lctx.moveTo(b.x1, b.y1);
+      lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2);
+    });
+    lctx.stroke();
+    
+    // Main pass
+    lctx.strokeStyle = rgba(colors.base, 0.5 * fade);
+    lctx.lineWidth = width;
+    lctx.beginPath();
+    depthBranches.forEach(b => {
+      lctx.moveTo(b.x1, b.y1);
+      lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2);
+    });
+    lctx.stroke();
+    
+    // Highlight pass
+    lctx.strokeStyle = rgba(colors.bright, 0.3 * fade);
+    lctx.lineWidth = width * 0.4;
+    lctx.beginPath();
+    depthBranches.forEach(b => {
+      lctx.moveTo(b.x1, b.y1);
+      lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2);
+    });
+    lctx.stroke();
+  });
+  
   return layer;
 }
 
@@ -383,11 +1077,12 @@ function createTexture() {
   textureLayer = document.createElement('canvas');
   textureLayer.width = W; textureLayer.height = H;
   const lctx = textureLayer.getContext('2d');
-  lctx.globalAlpha = 0.03;
-  for (let i = 0; i < 5000; i++) {
+  lctx.globalAlpha = 0.035;
+  // Reduced from 5000 to 2000, slightly larger particles
+  for (let i = 0; i < 2000; i++) {
     const gray = 100 + random() * 80;
-    lctx.fillStyle = `rgb(${gray},${gray * 0.96},${gray * 0.92})`;
-    lctx.fillRect(random() * W, random() * H, 2 + random() * 4, 2 + random() * 4);
+    lctx.fillStyle = `rgb(${gray|0},${gray * 0.96|0},${gray * 0.92|0})`;
+    lctx.fillRect(random() * W, random() * H, 3 + random() * 5, 3 + random() * 5);
   }
 }
 
@@ -397,6 +1092,8 @@ function createTexture() {
 function updateDayTime() {
   const now = new Date();
   dayTime = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+  // Update moon phase once per day cycle
+  moonPhase = calculateMoonPhase(now);
 }
 
 function getTimeColors() {
@@ -446,6 +1143,202 @@ function initCanvas() {
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.scale(dpr, dpr);
   horizonY = H * 0.55; forestY = H * 0.75;
+}
+
+// ============================================================================
+// WEATHER SYSTEM
+// ============================================================================
+function getWeatherDescription(code) {
+  const descriptions = {
+    0: 'Clear sky',
+    1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+    45: 'Foggy', 48: 'Depositing rime fog',
+    51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+    61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+    71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow',
+    77: 'Snow grains',
+    80: 'Slight rain showers', 81: 'Moderate showers', 82: 'Violent showers',
+    85: 'Slight snow showers', 86: 'Heavy snow showers',
+    95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with heavy hail'
+  };
+  return descriptions[code] || 'Variable conditions';
+}
+
+function updateWeatherIndicator(w) {
+  const indicator = document.getElementById('weatherIndicator');
+  const locationEl = document.getElementById('weatherLocation');
+  const conditionsEl = document.getElementById('weatherConditions');
+  const tempEl = document.getElementById('weatherTemp');
+  const moonEl = document.getElementById('moonInfo');
+  
+  locationEl.textContent = weatherState.locationName || 'Your location';
+  conditionsEl.textContent = getWeatherDescription(w.weatherCode);
+  tempEl.textContent = `${w.temperature.toFixed(1)}°C · Wind ${w.windSpeed.toFixed(0)} km/h`;
+  
+  // Display moon phase info
+  const illumination = getMoonIllumination(moonPhase);
+  const phaseName = moonPhase < 0.03 ? 'New Moon' :
+                    moonPhase < 0.22 ? 'Waxing Crescent' :
+                    moonPhase < 0.28 ? 'First Quarter' :
+                    moonPhase < 0.47 ? 'Waxing Gibbous' :
+                    moonPhase < 0.53 ? 'Full Moon' :
+                    moonPhase < 0.72 ? 'Waning Gibbous' :
+                    moonPhase < 0.78 ? 'Last Quarter' :
+                    moonPhase < 0.97 ? 'Waning Crescent' : 'New Moon';
+  moonEl.textContent = `🌙 ${phaseName} (${(illumination * 100).toFixed(0)}% illuminated)`;
+  
+  indicator.classList.add('visible');
+}
+
+async function fetchRealWeather() {
+  try {
+    const position = await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        timeout: 10000,
+        maximumAge: 300000
+      });
+    });
+    
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    weatherState.latitude = lat;
+    weatherState.longitude = lon;
+    
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,rain,snowfall,cloud_cover,wind_speed_10m,visibility,weather_code&timezone=auto`;
+    
+    const response = await fetch(weatherUrl);
+    if (!response.ok) throw new Error('Weather fetch failed');
+    
+    const data = await response.json();
+    const current = data.current;
+    
+    let locationName = '';
+    try {
+      const geoUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      const geoResponse = await fetch(geoUrl, {
+        headers: { 'User-Agent': 'CRR-Winter-Forest/1.0' }
+      });
+      if (geoResponse.ok) {
+        const geoData = await geoResponse.json();
+        locationName = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || '';
+      }
+    } catch (e) { /* ignore */ }
+    
+    weatherState.realWeatherData = {
+      temperature: current.temperature_2m,
+      humidity: current.relative_humidity_2m,
+      precipitation: current.precipitation,
+      rain: current.rain,
+      snowfall: current.snowfall,
+      cloudCover: current.cloud_cover,
+      windSpeed: current.wind_speed_10m,
+      visibility: current.visibility,
+      weatherCode: current.weather_code
+    };
+    weatherState.locationName = locationName;
+    weatherState.realWeatherEnabled = true;
+    
+    applyRealWeather();
+    
+    console.log('Real weather loaded:', weatherState.realWeatherData, 'Location:', locationName);
+    
+  } catch (error) {
+    console.log('Could not fetch real weather, using simulated:', error.message);
+    weatherState.realWeatherEnabled = false;
+    
+    // Still show moon phase info even without weather
+    const indicator = document.getElementById('weatherIndicator');
+    const locationEl = document.getElementById('weatherLocation');
+    const moonEl = document.getElementById('moonInfo');
+    
+    locationEl.textContent = 'Weather unavailable';
+    
+    const illumination = getMoonIllumination(moonPhase);
+    const phaseName = moonPhase < 0.03 ? 'New Moon' :
+                      moonPhase < 0.22 ? 'Waxing Crescent' :
+                      moonPhase < 0.28 ? 'First Quarter' :
+                      moonPhase < 0.47 ? 'Waxing Gibbous' :
+                      moonPhase < 0.53 ? 'Full Moon' :
+                      moonPhase < 0.72 ? 'Waning Gibbous' :
+                      moonPhase < 0.78 ? 'Last Quarter' :
+                      moonPhase < 0.97 ? 'Waning Crescent' : 'New Moon';
+    moonEl.textContent = `🌙 ${phaseName} (${(illumination * 100).toFixed(0)}% illuminated)`;
+    
+    indicator.classList.add('visible');
+  }
+}
+
+function applyRealWeather() {
+  if (!weatherState.realWeatherData) return;
+  
+  const w = weatherState.realWeatherData;
+  updateWeatherIndicator(w);
+  
+  // Map real weather to simulation
+  let snowFactor = 0.6;
+  if (w.snowfall > 0) {
+    snowFactor = 0.8 + min(w.snowfall / 5, 0.8);
+  } else if (w.precipitation > 0 && w.temperature < 2) {
+    snowFactor = 0.7 + min(w.precipitation / 10, 0.5);
+  } else if (w.temperature < 0) {
+    snowFactor = 0.9;
+  }
+  weatherState.targetSnow = snowFactor;
+  
+  weatherState.targetWind = 0.3 + min(w.windSpeed / 30, 1.2);
+  
+  let mistFactor = 0.5;
+  if (w.visibility < 10000) {
+    mistFactor = 0.6 + (1 - w.visibility / 10000) * 0.8;
+  }
+  if (w.humidity > 80) {
+    mistFactor += (w.humidity - 80) / 100;
+  }
+  if (w.cloudCover > 70) {
+    mistFactor += 0.1;
+  }
+  weatherState.targetMist = min(mistFactor, 1.4);
+  
+  if (w.weatherCode >= 71 && w.weatherCode <= 77) {
+    weatherState.targetSnow = max(weatherState.targetSnow, 1.0 + (w.weatherCode - 71) * 0.1);
+  }
+  if (w.weatherCode >= 85 && w.weatherCode <= 86) {
+    weatherState.targetSnow = max(weatherState.targetSnow, 1.2);
+  }
+  if (w.weatherCode >= 45 && w.weatherCode <= 48) {
+    weatherState.targetMist = max(weatherState.targetMist, 1.3);
+  }
+}
+
+function updateWeather(dt) {
+  weatherCRR.update(dt, 0.5 + sin(time * 0.03) * 0.3);
+  
+  if (weatherState.realWeatherEnabled && floor(time / 600) !== floor((time - dt) / 600)) {
+    fetchRealWeather();
+  }
+  
+  const variationRate = weatherState.realWeatherEnabled ? 0.0002 : 0.001;
+  if (random() < variationRate) {
+    weatherState.targetSnow = max(0.4, weatherState.targetSnow + (random() - 0.5) * 0.3);
+  }
+  if (random() < variationRate * 0.8) {
+    weatherState.targetMist = max(0.4, weatherState.targetMist + (random() - 0.5) * 0.3);
+  }
+  if (random() < variationRate * 1.2) {
+    weatherState.targetWind = max(0.3, weatherState.targetWind + (random() - 0.5) * 0.3);
+  }
+  
+  weatherState.snowIntensity = lerp(weatherState.snowIntensity, weatherState.targetSnow, 0.002);
+  weatherState.mistIntensity = lerp(weatherState.mistIntensity, weatherState.targetMist, 0.001);
+  weatherState.windStrength = lerp(weatherState.windStrength, weatherState.targetWind, 0.003);
+  
+  const weatherPulse = weatherCRR.amplitude;
+  weatherState.snowIntensity += (weatherPulse - 0.5) * 0.02;
+  weatherState.snowIntensity = max(0.4, min(1.5, weatherState.snowIntensity));
 }
 
 // ============================================================================
@@ -698,17 +1591,28 @@ function initMist() {
 
 function drawMist(dt, colors) {
   mistCRR.update(dt);
-  const intensity = 0.7 + mistCRR.amplitude * 0.5;
-  const mc = lerpColor({ r: 230, g: 228, b: 225 }, colors.ground, 0.25);
+  const intensity = (0.7 + mistCRR.amplitude * 0.5) * weatherState.mistIntensity;
+  if (intensity < 0.01) return; // Skip if invisible
   
-  for (let i = 0; i < mistPatches.length; i++) {
+  const mc = lerpColor({ r: 230, g: 228, b: 225 }, colors.ground, 0.25);
+  const mcStr = `${mc.r|0},${mc.g|0},${mc.b|0}`;
+  const windStr = weatherState.windStrength;
+  const t = time * 0.2;
+  
+  for (let i = 0, len = mistPatches.length; i < len; i++) {
     const m = mistPatches[i];
-    m.x += m.speed * dt; if (m.x > W + m.width * 0.5) m.x = -m.width;
-    const cy = m.y + sin(time * 0.2 + m.phase) * H * 0.01 * m.vDrift;
+    m.x += m.speed * dt * windStr;
+    if (m.x > W + m.width * 0.5) m.x = -m.width;
+    
+    const cy = m.y + sin(t + m.phase) * H * 0.01 * m.vDrift;
     const op = m.baseOpacity * intensity;
-    const grad = ctx.createRadialGradient(m.x + m.width * 0.5, cy, 0, m.x + m.width * 0.5, cy, m.width * 0.5);
-    grad.addColorStop(0, `rgba(${mc.r|0},${mc.g|0},${mc.b|0},${op})`);
-    grad.addColorStop(0.5, `rgba(${mc.r|0},${mc.g|0},${mc.b|0},${op * 0.5})`);
+    if (op < 0.01) continue; // Skip nearly invisible patches
+    
+    const cx = m.x + m.width * 0.5;
+    const rad = m.width * 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grad.addColorStop(0, `rgba(${mcStr},${op})`);
+    grad.addColorStop(0.5, `rgba(${mcStr},${op * 0.5})`);
     grad.addColorStop(1, 'transparent');
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.ellipse(m.x + m.width * 0.5, cy, m.width * 0.5, m.height * 0.5, 0, 0, PI2); ctx.fill();
@@ -717,25 +1621,48 @@ function drawMist(dt, colors) {
 
 function initSnow() {
   snowflakes = [];
-  const count = floor((W * H) / 8000);
+  // Slightly fewer particles
+  const count = floor((W * H) / 6500);
   for (let i = 0; i < count; i++) {
-    snowflakes.push({ x: random() * W, y: random() * H, size: 0.5 + random() * 1.8,
-      speed: 10 + random() * 18, drift: (random() - 0.5) * 0.35,
-      opacity: 0.2 + random() * 0.35, phase: random() * PI2 });
+    snowflakes.push({ x: random() * W, y: random() * H, size: 0.5 + random() * 2.0,
+      speed: 10 + random() * 20, drift: (random() - 0.5) * 0.4,
+      opacity: 0.2 + random() * 0.4, phase: random() * PI2 });
   }
 }
 
 function drawSnow(dt, ambient) {
-  const alpha = 0.3 + ambient * 0.5;
+  const baseAlpha = (0.3 + ambient * 0.5) * weatherState.snowIntensity;
+  const windDrift = weatherState.windStrength * 0.6;
+  const snowIntensity = weatherState.snowIntensity;
+  const t = time * 0.15;
+  
   ctx.fillStyle = '#fff';
-  for (let i = 0; i < snowflakes.length; i++) {
+  
+  // Update and draw in single pass
+  for (let i = 0, len = snowflakes.length; i < len; i++) {
     const f = snowflakes[i];
-    f.y += f.speed * dt; f.x += sin(time * 0.15 + f.phase) * f.drift * dt * 35;
+    f.y += f.speed * dt * snowIntensity;
+    f.x += (sin(t + f.phase) * f.drift + windDrift * 0.5) * dt * 35;
+    
     if (f.y > H + 5) { f.y = -5; f.x = random() * W; }
-    if (f.x < -5) f.x = W + 5; if (f.x > W + 5) f.x = -5;
+    if (f.x < -5) f.x = W + 5;
+    else if (f.x > W + 5) f.x = -5;
+    
     const df = f.y < horizonY ? 0.35 : 1;
-    ctx.globalAlpha = f.opacity * df * alpha;
-    ctx.beginPath(); ctx.arc(f.x, f.y, f.size * df, 0, PI2); ctx.fill();
+    const finalAlpha = f.opacity * df * baseAlpha;
+    
+    if (finalAlpha > 0.02) {
+      ctx.globalAlpha = finalAlpha;
+      const size = f.size * df;
+      // Use fillRect for tiny particles (faster than arc)
+      if (size < 1.2) {
+        ctx.fillRect(f.x - size * 0.5, f.y - size * 0.5, size, size);
+      } else {
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, size, 0, PI2);
+        ctx.fill();
+      }
+    }
   }
   ctx.globalAlpha = 1;
 }
@@ -850,6 +1777,7 @@ function drawSky(colors, sun) {
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, horizonY + 20);
   
   if (sun.intensity > 0.1) {
+    // Daytime sun
     const g1 = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, H * 0.45);
     g1.addColorStop(0, `rgba(255, 248, 230, ${0.35 * sun.intensity})`); g1.addColorStop(0.3, `rgba(255, 240, 210, ${0.15 * sun.intensity})`); g1.addColorStop(1, 'transparent');
     ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
@@ -857,15 +1785,184 @@ function drawSky(colors, sun) {
     g2.addColorStop(0, `rgba(255, 255, 248, ${0.85 * sun.intensity})`); g2.addColorStop(0.5, `rgba(255, 250, 235, ${0.4 * sun.intensity})`); g2.addColorStop(1, 'transparent');
     ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
   } else {
-    const mx = W * 0.7, my = H * 0.18;
-    const mg = ctx.createRadialGradient(mx, my, 0, mx, my, H * 0.08); mg.addColorStop(0, 'rgba(220, 225, 235, 0.25)'); mg.addColorStop(1, 'transparent');
-    ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(235, 240, 250, 0.9)'; ctx.beginPath(); ctx.arc(mx, my, H * 0.022, 0, PI2); ctx.fill();
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * (1 - colors.ambient)})`;
-    for (let i = 0; i < 60; i++) { const sx = (sin(i * 127.1) * 0.5 + 0.5) * W, sy = (cos(i * 311.7) * 0.4 + 0.25) * horizonY;
-      ctx.globalAlpha = (sin(time * 2.5 + i * 1.7) * 0.3 + 0.7) * (1 - colors.ambient) * 0.6;
-      ctx.beginPath(); ctx.arc(sx, sy, 0.7, 0, PI2); ctx.fill(); }
+    // Nighttime - draw stars and moon
+    drawStars(colors.ambient);
+    
+    // === REALISTIC MOON (only illuminated portion visible) ===
+    const mx = W * 0.75, my = H * 0.14;
+    const moonRadius = H * 0.032;
+    const illumination = getMoonIllumination(moonPhase);
+    const isWaxing = moonPhase < 0.5;
+    const phaseAngle = moonPhase < 0.5 ? moonPhase * 2 : (1 - moonPhase) * 2;
+    
+    // Outer atmospheric glow (scales with illumination)
+    const outerGlowSize = moonRadius * (3 + illumination * 3);
+    const outerGlow = ctx.createRadialGradient(mx, my, moonRadius * 0.5, mx, my, outerGlowSize);
+    outerGlow.addColorStop(0, `rgba(210, 215, 235, ${0.06 + illumination * 0.14})`);
+    outerGlow.addColorStop(0.4, `rgba(190, 200, 225, ${0.03 + illumination * 0.07})`);
+    outerGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = outerGlow;
+    ctx.beginPath();
+    ctx.arc(mx, my, outerGlowSize, 0, PI2);
+    ctx.fill();
+    
+    // Create clipping path for the illuminated portion only
+    ctx.save();
+    ctx.beginPath();
+    
+    if (illumination > 0.99) {
+      // Full moon - show entire disc
+      ctx.arc(mx, my, moonRadius, 0, PI2);
+    } else if (illumination < 0.01) {
+      // New moon - show nothing (or very faint earthshine)
+      ctx.arc(mx, my, moonRadius * 0.1, 0, PI2); // Tiny clip for earthshine
+    } else {
+      // Partial phase - clip to illuminated crescent/gibbous
+      if (isWaxing) {
+        // Waxing: illuminated on right side
+        ctx.arc(mx, my, moonRadius, -PI/2, PI/2, false);
+        if (phaseAngle < 0.5) {
+          // Waxing crescent - close path via LEFT side of ellipse (counterclockwise)
+          ctx.ellipse(mx, my, moonRadius * (1 - phaseAngle * 2), moonRadius, 0, PI/2, -PI/2, true);
+        } else {
+          // Waxing gibbous - convex edge on left
+          ctx.ellipse(mx, my, moonRadius * (phaseAngle * 2 - 1), moonRadius, 0, PI/2, -PI/2, true);
+        }
+      } else {
+        // Waning: illuminated on left side
+        ctx.arc(mx, my, moonRadius, PI/2, -PI/2, false);
+        if (phaseAngle < 0.5) {
+          // Waning gibbous - convex edge on right (counterclockwise = right side)
+          ctx.ellipse(mx, my, moonRadius * (1 - phaseAngle * 2), moonRadius, 0, -PI/2, PI/2, true);
+        } else {
+          // Waning crescent - close path via RIGHT side of ellipse (clockwise)
+          ctx.ellipse(mx, my, moonRadius * (phaseAngle * 2 - 1), moonRadius, 0, -PI/2, PI/2, false);
+        }
+      }
+    }
+    ctx.clip();
+    
+    // Moon surface gradient (only in illuminated area)
+    const moonGrad = ctx.createRadialGradient(
+      mx + (isWaxing ? -moonRadius * 0.2 : moonRadius * 0.2), my - moonRadius * 0.2, 0,
+      mx, my, moonRadius * 1.1
+    );
+    moonGrad.addColorStop(0, 'rgba(252, 250, 248, 1)');
+    moonGrad.addColorStop(0.4, 'rgba(242, 240, 235, 1)');
+    moonGrad.addColorStop(0.7, 'rgba(228, 225, 220, 1)');
+    moonGrad.addColorStop(1, 'rgba(210, 208, 205, 1)');
+    ctx.fillStyle = moonGrad;
+    ctx.beginPath();
+    ctx.arc(mx, my, moonRadius, 0, PI2);
+    ctx.fill();
+    
+    // Maria (dark patches)
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = 'rgba(130, 125, 120, 1)';
+    
+    // Mare Imbrium
+    ctx.beginPath();
+    ctx.ellipse(mx - moonRadius * 0.25, my - moonRadius * 0.2, moonRadius * 0.3, moonRadius * 0.25, -0.3, 0, PI2);
+    ctx.fill();
+    
+    // Mare Serenitatis
+    ctx.beginPath();
+    ctx.ellipse(mx + moonRadius * 0.15, my - moonRadius * 0.25, moonRadius * 0.18, moonRadius * 0.15, 0.2, 0, PI2);
+    ctx.fill();
+    
+    // Mare Tranquillitatis
+    ctx.beginPath();
+    ctx.ellipse(mx + moonRadius * 0.28, my + moonRadius * 0.05, moonRadius * 0.2, moonRadius * 0.22, 0.4, 0, PI2);
+    ctx.fill();
+    
+    // Oceanus Procellarum
+    ctx.beginPath();
+    ctx.ellipse(mx - moonRadius * 0.38, my + moonRadius * 0.08, moonRadius * 0.22, moonRadius * 0.35, -0.2, 0, PI2);
+    ctx.fill();
+    
+    // Mare Nubium
+    ctx.beginPath();
+    ctx.ellipse(mx - moonRadius * 0.12, my + moonRadius * 0.38, moonRadius * 0.18, moonRadius * 0.1, 0.1, 0, PI2);
+    ctx.fill();
+    
     ctx.globalAlpha = 1;
+    
+    // Subtle crater details
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = 'rgba(170, 165, 160, 1)';
+    [[0.35, -0.35, 0.05], [-0.2, 0.45, 0.04], [0.45, 0.25, 0.035], [-0.5, -0.2, 0.04]].forEach(([ox, oy, r]) => {
+      ctx.beginPath();
+      ctx.arc(mx + ox * moonRadius, my + oy * moonRadius, r * moonRadius, 0, PI2);
+      ctx.fill();
+    });
+    
+    // Bright crater (Aristarchus)
+    ctx.fillStyle = 'rgba(255, 253, 250, 1)';
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.arc(mx - moonRadius * 0.52, my - moonRadius * 0.12, moonRadius * 0.03, 0, PI2);
+    ctx.fill();
+    
+    ctx.globalAlpha = 1;
+    
+    // Limb darkening
+    const limbGrad = ctx.createRadialGradient(mx, my, moonRadius * 0.5, mx, my, moonRadius);
+    limbGrad.addColorStop(0, 'transparent');
+    limbGrad.addColorStop(0.75, 'transparent');
+    limbGrad.addColorStop(1, 'rgba(100, 95, 90, 0.25)');
+    ctx.fillStyle = limbGrad;
+    ctx.beginPath();
+    ctx.arc(mx, my, moonRadius, 0, PI2);
+    ctx.fill();
+    
+    // Soft terminator edge (gradient at the shadow boundary)
+    if (illumination > 0.02 && illumination < 0.98) {
+      const termGrad = ctx.createLinearGradient(
+        isWaxing ? mx - moonRadius * 0.3 : mx + moonRadius * 0.3, my,
+        isWaxing ? mx + moonRadius * 0.1 : mx - moonRadius * 0.1, my
+      );
+      termGrad.addColorStop(0, 'rgba(180, 175, 170, 0.2)');
+      termGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = termGrad;
+      ctx.beginPath();
+      ctx.arc(mx, my, moonRadius, 0, PI2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+    
+    // Faint earthshine on unilluminated portion (only visible during crescent phases)
+    if (illumination > 0.05 && illumination < 0.4) {
+      ctx.save();
+      ctx.globalAlpha = (0.4 - illumination) * 0.12;
+      
+      // Clip to the dark side (opposite of lit side)
+      ctx.beginPath();
+      if (isWaxing) {
+        // Waxing: dark side is on LEFT
+        ctx.arc(mx, my, moonRadius * 0.98, PI/2, -PI/2, false);
+        if (phaseAngle < 0.5) {
+          // Close via RIGHT side of ellipse (clockwise)
+          ctx.ellipse(mx, my, moonRadius * (1 - phaseAngle * 2) * 0.98, moonRadius * 0.98, 0, -PI/2, PI/2, false);
+        }
+      } else {
+        // Waning: dark side is on RIGHT
+        ctx.arc(mx, my, moonRadius * 0.98, -PI/2, PI/2, false);
+        if (phaseAngle < 0.5) {
+          // Close via LEFT side of ellipse (counterclockwise)
+          ctx.ellipse(mx, my, moonRadius * (1 - phaseAngle * 2) * 0.98, moonRadius * 0.98, 0, PI/2, -PI/2, true);
+        }
+      }
+      ctx.clip();
+      
+      // Very faint blue-grey earthshine
+      ctx.fillStyle = 'rgba(140, 150, 170, 1)';
+      ctx.beginPath();
+      ctx.arc(mx, my, moonRadius, 0, PI2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
   }
 }
 
@@ -886,11 +1983,25 @@ function drawLandscape(colors) {
   ctx.fillStyle = `rgba(${colors.ground.r + 15 | 0}, ${colors.ground.g + 12 | 0}, ${colors.ground.b + 10 | 0}, 0.35)`; ctx.fill();
 }
 
+// Cache for vignette
+let vignetteCache = null;
+let vignetteCacheAmbient = -1;
+
 function drawVignette(ambient) {
-  const str = 0.12 + (1 - ambient) * 0.18;
-  const vg = ctx.createRadialGradient(W * 0.5, H * 0.4, H * 0.35, W * 0.5, H * 0.5, H * 0.95);
-  vg.addColorStop(0, 'transparent'); vg.addColorStop(0.65, `rgba(25, 22, 18, ${str * 0.4})`); vg.addColorStop(1, `rgba(8, 6, 4, ${str})`);
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  // Round ambient to avoid recreating gradient too often
+  const roundedAmbient = Math.round(ambient * 20) / 20;
+  
+  if (!vignetteCache || roundedAmbient !== vignetteCacheAmbient) {
+    const str = 0.12 + (1 - roundedAmbient) * 0.18;
+    vignetteCache = ctx.createRadialGradient(W * 0.5, H * 0.4, H * 0.35, W * 0.5, H * 0.5, H * 0.95);
+    vignetteCache.addColorStop(0, 'transparent');
+    vignetteCache.addColorStop(0.65, `rgba(25, 22, 18, ${str * 0.4})`);
+    vignetteCache.addColorStop(1, `rgba(8, 6, 4, ${str})`);
+    vignetteCacheAmbient = roundedAmbient;
+  }
+  
+  ctx.fillStyle = vignetteCache;
+  ctx.fillRect(0, 0, W, H);
 }
 
 // ============================================================================
@@ -909,17 +2020,24 @@ function animate(now) {
   if (floor(time) !== floor(time - dt)) updateDayTime();
   if (time - calendarTime > 1) { updateCalendar(); checkMidnight(); calendarTime = time; }
   
+  updateWeather(dt);
+  
   const colors = getTimeColors();
   const sun = getSunPosition();
   
   updateStarlings(dt);
   updatePredator(dt);
   updateSleigh(dt);
+  updateLowryFigures(dt);
   
   // RENDER
   drawSky(colors, sun);
   if (sleighActive) drawSleigh();
+  
   drawLandscape(colors);
+  
+  // Draw path through the forest
+  drawPath(colors);
   
   for (let i = 0; i < starlings.length; i++) { const b = starlings[i]; if (b.state === 'flying' && b.y < forestY - H * 0.05) drawStarling(b, colors.ambient); }
   
@@ -931,6 +2049,15 @@ function animate(now) {
   ctx.globalAlpha = baseAlpha * 0.65; ctx.drawImage(treeLayers.blue, 0, 0);
   ctx.globalAlpha = baseAlpha * 0.85; ctx.drawImage(treeLayers.silver, 0, 0);
   ctx.globalAlpha = 1;
+  
+  // Draw Lowry figure shadows first
+  drawLowryFiguresShadows(colors.ambient);
+  
+  // Draw forest lamps (after trees, before foreground birds)
+  drawForestLamps(colors.ambient);
+  
+  // Draw Lowry figures on the path
+  drawLowryFigures(colors.ambient);
   
   for (let i = 0; i < starlings.length; i++) { const b = starlings[i]; if (b.state !== 'flying' || b.y >= forestY - H * 0.05) drawStarling(b, colors.ambient); }
   
@@ -958,6 +2085,8 @@ async function init() {
   
   await loadAllAssets();
   
+  fetchRealWeather();
+  
   hideLoadingScreen();
 }
 
@@ -966,9 +2095,15 @@ document.addEventListener('keydown', () => audio.init(), { once: true });
 
 window.addEventListener('resize', () => {
   initCanvas();
+  vignetteCache = null; // Reset vignette cache
+  vignetteCacheAmbient = -1;
   generateAllTrees();
   createTexture();
   initSnow();
+  initStars();
+  initPath();
+  initForestLamps();
+  initLowryFigures();
 });
 
 init();
