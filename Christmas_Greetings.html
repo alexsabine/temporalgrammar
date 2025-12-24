@@ -14,17 +14,50 @@
       overflow: hidden;
       font-family: 'EB Garamond', Georgia, serif;
     }
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
+    canvas { display: block; width: 100vw; height: 100vh; }
+    
+    /* Loading Screen */
+    .loading-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(to bottom, #1a1d24 0%, #252830 50%, #2a2d35 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 1.5s ease-out;
+    }
+    .loading-screen.fade-out { opacity: 0; pointer-events: none; }
+    .loading-screen.hidden { display: none; }
+    
+    .loading-content { text-align: center; color: rgba(255, 255, 255, 0.85); }
+    .loading-title { font-size: 2.5rem; font-weight: 400; letter-spacing: 0.15em; margin-bottom: 0.5rem; color: rgba(255, 255, 255, 0.9); }
+    .loading-subtitle { font-size: 1.1rem; font-style: italic; opacity: 0.6; margin-bottom: 3rem; }
+    
+    .loading-indicator { display: flex; gap: 8px; justify-content: center; margin-bottom: 2rem; }
+    .snow-dot {
+      width: 6px; height: 6px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      animation: snowfall 1.5s ease-in-out infinite;
+    }
+    .snow-dot:nth-child(2) { animation-delay: 0.2s; }
+    .snow-dot:nth-child(3) { animation-delay: 0.4s; }
+    .snow-dot:nth-child(4) { animation-delay: 0.6s; }
+    .snow-dot:nth-child(5) { animation-delay: 0.8s; }
+    
+    @keyframes snowfall {
+      0%, 100% { transform: translateY(-10px); opacity: 0.3; }
+      50% { transform: translateY(10px); opacity: 1; }
     }
     
+    .loading-quote { font-size: 1rem; font-style: italic; opacity: 0.5; max-width: 400px; line-height: 1.6; }
+    
+    /* Calendar Overlay */
     .calendar-overlay {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       padding: 20px 30px;
       background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
       color: rgba(255, 255, 255, 0.85);
@@ -32,50 +65,29 @@
       justify-content: space-between;
       align-items: flex-end;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease-in;
     }
+    .calendar-overlay.visible { opacity: 1; }
     
     .datetime { text-align: left; }
-    .datetime .time {
-      font-size: 2.8rem;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    .datetime .date {
-      font-size: 1.1rem;
-      opacity: 0.8;
-      margin-top: 2px;
-      font-style: italic;
-    }
+    .datetime .time { font-size: 2.8rem; font-weight: 400; letter-spacing: 0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    .datetime .date { font-size: 1.1rem; opacity: 0.8; margin-top: 2px; font-style: italic; }
     
     .events { text-align: right; display: flex; gap: 35px; }
     .event { text-align: center; }
-    .event .countdown {
-      font-size: 1.6rem;
-      font-weight: 500;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    .event .label {
-      font-size: 0.85rem;
-      opacity: 0.75;
-      margin-top: 2px;
-      font-style: italic;
-    }
+    .event .countdown { font-size: 1.6rem; font-weight: 500; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    .event .label { font-size: 0.85rem; opacity: 0.75; margin-top: 2px; font-style: italic; }
     .event.imminent .countdown { color: #ffd700; }
     .event.past .countdown { color: rgba(255,255,255,0.5); }
     
     .christmas-message {
-      position: fixed;
-      top: 50%;
-      left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
-      color: #ffd700;
+      text-align: center; color: #ffd700;
       text-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.3);
-      opacity: 0;
-      transition: opacity 2s ease-in-out;
-      pointer-events: none;
-      z-index: 100;
+      opacity: 0; transition: opacity 2s ease-in-out;
+      pointer-events: none; z-index: 100;
     }
     .christmas-message.visible { opacity: 1; }
     .christmas-message h1 { font-size: 4rem; font-weight: 400; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
@@ -83,9 +95,25 @@
   </style>
 </head>
 <body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-content">
+    <h1 class="loading-title">Winter Forest</h1>
+    <p class="loading-subtitle">A Living Landscape</p>
+    <div class="loading-indicator">
+      <div class="snow-dot"></div>
+      <div class="snow-dot"></div>
+      <div class="snow-dot"></div>
+      <div class="snow-dot"></div>
+      <div class="snow-dot"></div>
+    </div>
+    <p class="loading-quote">"The snow fell softly through the winter air,<br>and all the world grew quiet, waiting there."</p>
+  </div>
+</div>
+
 <canvas id="canvas"></canvas>
 
-<div class="calendar-overlay">
+<div class="calendar-overlay" id="calendarOverlay">
   <div class="datetime">
     <div class="time" id="currentTime">00:00</div>
     <div class="date" id="currentDate">Loading...</div>
@@ -100,37 +128,31 @@
 
 <script>
 // ============================================================================
-// CRR WINTER FOREST - Optimized with Predator
+// CRR WINTER FOREST - Final Version
 // ============================================================================
 
 const CONFIG = {
   networkDepth: 7,
   branchCount: [2, 4],
   starlingCount: 400,
-  spatialCellSize: 60,
-  textureGrain: 0.03
+  spatialCellSize: 60
 };
 
 // ============================================================================
-// CRR CORE SYSTEM
+// CRR & AUDIO SYSTEMS
 // ============================================================================
 class CRRSystem {
   constructor(omega, rate = 0.1) {
-    this.omega = omega;
-    this.coherence = 0;
-    this.rate = rate;
-    this.state = 'coherence';
-    this.amplitude = 0;
+    this.omega = omega; this.coherence = 0; this.rate = rate;
+    this.state = 'coherence'; this.amplitude = 0;
   }
-  
   update(dt, inputSignal = 1) {
     if (this.state === 'coherence') {
       this.coherence += this.rate * inputSignal * dt;
       this.amplitude = this.coherence / this.omega;
       if (this.coherence >= this.omega) this.state = 'rupture';
     } else if (this.state === 'rupture') {
-      this.amplitude = 1;
-      this.state = 'regeneration';
+      this.amplitude = 1; this.state = 'regeneration';
     } else {
       this.coherence *= Math.exp(-2 * dt * Math.exp(Math.min(this.coherence / this.omega, 3)));
       this.amplitude = this.coherence / this.omega;
@@ -140,100 +162,64 @@ class CRRSystem {
   }
 }
 
-// ============================================================================
-// SLEIGH BELL AUDIO
-// ============================================================================
-class SleighBells {
-  constructor() { this.audioCtx = null; this.isPlaying = false; }
+class AudioSystem {
+  constructor() { this.ctx = null; this.isInit = false; }
   
   init() {
-    if (this.audioCtx) return;
-    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.isInit) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.isInit = true;
   }
   
-  playBell(time, pitch, volume) {
-    if (!this.audioCtx) return;
-    const osc1 = this.audioCtx.createOscillator();
-    const osc2 = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
-    const filter = this.audioCtx.createBiquadFilter();
-    
-    osc1.frequency.value = pitch;
-    osc2.frequency.value = pitch * 2.4;
-    osc1.type = osc2.type = 'sine';
-    filter.type = 'highpass';
-    filter.frequency.value = 800;
-    
-    const mix1 = this.audioCtx.createGain();
-    const mix2 = this.audioCtx.createGain();
-    mix1.gain.value = 0.5 * volume;
-    mix2.gain.value = 0.3 * volume;
-    
-    osc1.connect(mix1); osc2.connect(mix2);
-    mix1.connect(filter); mix2.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.audioCtx.destination);
-    
+  playBell(time, pitch, vol) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.frequency.value = pitch; osc.type = 'sine';
+    osc.connect(gain); gain.connect(this.ctx.destination);
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(0.15 * volume, time + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
-    
-    osc1.start(time); osc2.start(time);
-    osc1.stop(time + 0.5); osc2.stop(time + 0.5);
+    gain.gain.linearRampToValueAtTime(0.08 * vol, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+    osc.start(time); osc.stop(time + 0.4);
   }
   
   playJingle() {
-    if (!this.audioCtx || this.isPlaying) return;
-    this.isPlaying = true;
-    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
-    
-    const now = this.audioCtx.currentTime;
-    const pitches = [2400, 2600, 2800, 3000, 2200, 2500];
-    const pattern = [
-      [0, 0, 0.8], [0.15, 1, 0.5], [0.25, 2, 0.6], [0.4, 0, 0.7],
-      [0.55, 3, 0.5], [0.7, 1, 0.8], [0.85, 4, 0.4], [1.0, 2, 0.6]
-    ];
-    
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const now = this.ctx.currentTime;
+    const pitches = [2400, 2600, 2800, 3000];
     for (let r = 0; r < 20; r++) {
-      pattern.forEach(([t, p, v]) => {
-        this.playBell(now + r * 1.5 + t, pitches[p] * (0.98 + Math.random() * 0.04), v * 0.4);
+      [0, 0.15, 0.3, 0.45, 0.6, 0.75].forEach((t, i) => {
+        this.playBell(now + r * 1 + t, pitches[i % 4] * (0.98 + Math.random() * 0.04), 0.5);
       });
     }
-    setTimeout(() => { this.isPlaying = false; }, 30000);
   }
 }
 
+const audio = new AudioSystem();
+
 // ============================================================================
-// GLOBAL STATE
+// GLOBALS
 // ============================================================================
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { alpha: false });
 
-let W, H, horizonY, forestY, layersReady = false, time = 0, dayTime = 0;
+let W, H, horizonY, forestY, time = 0, dayTime = 0;
+let isLoaded = false;
 
-// Pre-rendered layers
-let silverLayer, blueLayer, goldLayer, frostLayer, textureLayer;
-let silverBranches = [], blueBranches = [], goldBranches = [], frostBranches = [];
+let treeLayers = { silver: null, blue: null, gold: null, frost: null };
+let textureLayer = null;
 
-// Object pools
 let perchSpots = [], starlings = [], snowflakes = [], mistPatches = [];
-
-// Spatial hash
 let spatialHash = {};
 
-// Predator
-let predator = null;
-let predatorCooldown = 0;
+let predator = null, predatorCooldown = 15;
 
-// CRR Systems
 const flockCRR = new CRRSystem(1 / Math.PI, 0.3);
 const mistCRR = new CRRSystem(0.5, 0.08);
 
-// Sleigh
 let sleigh = null, sleighActive = false, sleighTriggered = false;
-const sleighBells = new SleighBells();
 
-// Color cache
 let currentColors = null, lastColorUpdate = 0;
 
 const TREE_COLORS = {
@@ -243,21 +229,24 @@ const TREE_COLORS = {
   frost: { base: { r: 160, g: 140, b: 165 }, bright: { r: 200, g: 180, b: 210 } }
 };
 
+const TREE_CONFIG = {
+  silver: { num: 12, height: 0.28, depth: 0, xOff: 0, yOff: 0, perch: true },
+  blue: { num: 14, height: 0.24, depth: -1, xOff: 0.025, yOff: -0.01, perch: false },
+  gold: { num: 15, height: 0.22, depth: 0, xOff: -0.02, yOff: -0.015, perch: false },
+  frost: { num: 16, height: 0.18, depth: -1, xOff: 0.015, yOff: -0.025, perch: false }
+};
+
 // ============================================================================
-// OPTIMIZED UTILITIES
+// UTILITIES
 // ============================================================================
 const { sin, cos, sqrt, abs, min, max, floor, random, PI } = Math;
 const PI2 = PI * 2;
 
 function lerp(a, b, t) { return a + (b - a) * t; }
-function lerpColor(c1, c2, t) {
-  return { r: lerp(c1.r, c2.r, t), g: lerp(c1.g, c2.g, t), b: lerp(c1.b, c2.b, t) };
-}
+function lerpColor(c1, c2, t) { return { r: lerp(c1.r, c2.r, t), g: lerp(c1.g, c2.g, t), b: lerp(c1.b, c2.b, t) }; }
 function rgba(c, a) { return `rgba(${c.r|0},${c.g|0},${c.b|0},${a})`; }
 
-function getSpatialKey(x, y) {
-  return (floor(x / CONFIG.spatialCellSize) << 16) | (floor(y / CONFIG.spatialCellSize) & 0xFFFF);
-}
+function getSpatialKey(x, y) { return (floor(x / CONFIG.spatialCellSize) << 16) | (floor(y / CONFIG.spatialCellSize) & 0xFFFF); }
 
 function updateSpatialHash() {
   spatialHash = {};
@@ -271,13 +260,10 @@ function updateSpatialHash() {
 
 function getNearbyBirds(x, y) {
   const nearby = [];
-  const cx = floor(x / CONFIG.spatialCellSize);
-  const cy = floor(y / CONFIG.spatialCellSize);
-  
+  const cx = floor(x / CONFIG.spatialCellSize), cy = floor(y / CONFIG.spatialCellSize);
   for (let dx = -1; dx <= 1; dx++) {
     for (let dy = -1; dy <= 1; dy++) {
-      const key = ((cx + dx) << 16) | ((cy + dy) & 0xFFFF);
-      const cell = spatialHash[key];
+      const cell = spatialHash[((cx + dx) << 16) | ((cy + dy) & 0xFFFF)];
       if (cell) nearby.push(...cell);
     }
   }
@@ -285,156 +271,128 @@ function getNearbyBirds(x, y) {
 }
 
 // ============================================================================
-// PREDATOR SYSTEM
+// LOADING SYSTEM
 // ============================================================================
-function spawnPredator() {
-  const side = random() > 0.5;
-  predator = {
-    x: side ? -50 : W + 50,
-    y: horizonY - H * 0.1 + random() * H * 0.15,
-    vx: side ? 180 + random() * 60 : -180 - random() * 60,
-    vy: (random() - 0.5) * 40,
-    wingPhase: 0,
-    size: 3 + random() * 1.5
-  };
+async function loadAllAssets() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      generateAllTrees();
+      createTexture();
+      initStarlings();
+      initMist();
+      initSnow();
+      resolve();
+    }, 100);
+  });
 }
 
-function updatePredator(dt) {
-  predatorCooldown -= dt;
+function hideLoadingScreen() {
+  const loadingScreen = document.getElementById('loadingScreen');
+  const calendarOverlay = document.getElementById('calendarOverlay');
   
-  // Spawn predator occasionally
-  if (!predator && predatorCooldown <= 0 && random() < 0.001) {
-    spawnPredator();
-    predatorCooldown = 30 + random() * 60; // 30-90 seconds between predators
-  }
+  loadingScreen.classList.add('fade-out');
   
-  if (!predator) return;
+  setTimeout(() => {
+    loadingScreen.classList.add('hidden');
+    calendarOverlay.classList.add('visible');
+    isLoaded = true;
+  }, 1500);
+}
+
+// ============================================================================
+// TREE GENERATION
+// ============================================================================
+function generateBranchesForLayer(layerName) {
+  const cfg = TREE_CONFIG[layerName];
+  const branches = [];
   
-  predator.wingPhase += dt * 8;
-  
-  // Hunting behavior - chase nearest dense area of flock
-  let targetX = predator.x + predator.vx;
-  let targetY = predator.y;
-  let closestDist = Infinity;
-  
-  // Sample some birds to find flock center
-  for (let i = 0; i < starlings.length; i += 10) {
-    const b = starlings[i];
-    if (b.state !== 'flying') continue;
-    const d = sqrt((b.x - predator.x) ** 2 + (b.y - predator.y) ** 2);
-    if (d < closestDist && d > 50) {
-      closestDist = d;
-      targetX = b.x;
-      targetY = b.y;
+  function addBranch(x1, y1, x2, y2, depth, maxDepth) {
+    if (depth > maxDepth) return;
+    const midX = (x1 + x2) / 2 + (random() - 0.5) * H * 0.015;
+    const midY = (y1 + y2) / 2 + (random() - 0.5) * H * 0.015;
+    branches.push({ x1, y1, cx: midX, cy: midY, x2, y2, depth });
+    
+    if (cfg.perch && depth >= 2 && depth <= 5 && abs(Math.atan2(y2 - y1, x2 - x1) + PI/2) > 0.3) {
+      for (let t = 0.3; t <= 0.7; t += 0.2) {
+        const mt = 1 - t;
+        perchSpots.push({ x: mt*mt*x1 + 2*mt*t*midX + t*t*x2, y: mt*mt*y1 + 2*mt*t*midY + t*t*y2, occupied: false });
+      }
+    }
+    
+    if (depth < maxDepth) {
+      const num = CONFIG.branchCount[0] + floor(random() * (CONFIG.branchCount[1] - CONFIG.branchCount[0] + 1));
+      const len = sqrt((x2-x1)**2 + (y2-y1)**2) * (0.5 + random() * 0.3);
+      const base = Math.atan2(y2 - y1, x2 - x1);
+      for (let i = 0; i < num; i++) {
+        const a = base + (random() - 0.5) * 1.2;
+        addBranch(x2, y2, x2 + cos(a) * len, y2 + sin(a) * len, depth + 1, maxDepth);
+      }
     }
   }
   
-  // Steer toward target
-  const dx = targetX - predator.x;
-  const dy = targetY - predator.y;
-  const dist = sqrt(dx * dx + dy * dy);
-  
-  if (dist > 0) {
-    predator.vx += (dx / dist) * 50 * dt;
-    predator.vy += (dy / dist) * 30 * dt;
+  for (let t = 0; t < cfg.num; t++) {
+    const baseX = (W / (cfg.num + 1)) * (t + 1) + (random() - 0.5) * W * 0.05 + cfg.xOff * W;
+    const baseY = forestY + cfg.yOff * H + random() * H * 0.015;
+    const height = H * cfg.height * (0.7 + random() * 0.35);
+    const lean = (random() - 0.5) * height * 0.1;
+    
+    [[-0.1, 0.35], [0, 0.4], [0.1, 0.35]].forEach(([a, l]) => {
+      addBranch(baseX, baseY, baseX + lean + cos(-PI/2 + a) * height * l, baseY + sin(-PI/2 + a) * height * l, 0, CONFIG.networkDepth + cfg.depth);
+    });
+    
+    for (let i = 0; i < 4; i++) {
+      const by = baseY - height * (0.15 + i * 0.18);
+      const bx = baseX + lean * (i * 0.25);
+      const side = (i % 2 === 0) ? -1 : 1;
+      const bl = height * (0.1 + random() * 0.08);
+      const ang = -PI/2 + side * (0.4 + random() * 0.5);
+      addBranch(bx, by, bx + cos(ang) * bl, by + sin(ang) * bl, 1, CONFIG.networkDepth + cfg.depth - 1);
+    }
   }
-  
-  // Speed limits
-  const speed = sqrt(predator.vx ** 2 + predator.vy ** 2);
-  if (speed > 250) {
-    predator.vx = (predator.vx / speed) * 250;
-    predator.vy = (predator.vy / speed) * 250;
-  }
-  
-  predator.x += predator.vx * dt;
-  predator.y += predator.vy * dt;
-  
-  // Keep in bounds vertically
-  if (predator.y < H * 0.05) predator.vy += 100 * dt;
-  if (predator.y > horizonY) predator.vy -= 100 * dt;
-  
-  // Remove when off screen
-  if (predator.x < -100 || predator.x > W + 100) {
-    predator = null;
-  }
+  return branches;
 }
 
-function drawPredator(ambient) {
-  if (!predator) return;
+function renderBranchesToCanvas(branches, colors) {
+  const layer = document.createElement('canvas');
+  layer.width = W; layer.height = H;
+  const lctx = layer.getContext('2d');
   
-  const p = predator;
-  const angle = Math.atan2(p.vy, p.vx);
-  const wingFlap = sin(p.wingPhase) * 0.6;
-  
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(angle);
-  
-  ctx.fillStyle = `rgba(25, 20, 15, ${0.7 + ambient * 0.2})`;
-  
-  // Body
-  ctx.beginPath();
-  ctx.ellipse(0, 0, p.size * 2.5, p.size * 0.8, 0, 0, PI2);
-  ctx.fill();
-  
-  // Wings - longer, more angular than starlings
-  const wingSpan = p.size * 6;
-  ctx.beginPath();
-  // Top wing
-  ctx.moveTo(-p.size, 0);
-  ctx.quadraticCurveTo(-p.size * 0.5, -wingSpan * 0.4 * (1 + wingFlap), p.size * 0.5, -wingSpan * (0.7 + wingFlap * 0.2));
-  ctx.lineTo(p.size, -wingSpan * 0.3 * (1 + wingFlap));
-  ctx.quadraticCurveTo(p.size * 0.3, -wingSpan * 0.1, 0, 0);
-  // Bottom wing
-  ctx.moveTo(-p.size, 0);
-  ctx.quadraticCurveTo(-p.size * 0.5, wingSpan * 0.4 * (1 + wingFlap), p.size * 0.5, wingSpan * (0.7 + wingFlap * 0.2));
-  ctx.lineTo(p.size, wingSpan * 0.3 * (1 + wingFlap));
-  ctx.quadraticCurveTo(p.size * 0.3, wingSpan * 0.1, 0, 0);
-  ctx.fill();
-  
-  // Tail
-  ctx.beginPath();
-  ctx.moveTo(-p.size * 2.5, 0);
-  ctx.lineTo(-p.size * 4, -p.size * 0.6);
-  ctx.lineTo(-p.size * 4, p.size * 0.6);
-  ctx.closePath();
-  ctx.fill();
-  
-  // Head
-  ctx.beginPath();
-  ctx.arc(p.size * 2, 0, p.size * 0.7, 0, PI2);
-  ctx.fill();
-  
-  // Hooked beak
-  ctx.beginPath();
-  ctx.moveTo(p.size * 2.6, -p.size * 0.2);
-  ctx.lineTo(p.size * 3.5, 0);
-  ctx.lineTo(p.size * 3.2, p.size * 0.3);
-  ctx.lineTo(p.size * 2.6, p.size * 0.2);
-  ctx.fill();
-  
-  ctx.restore();
+  branches.forEach(b => {
+    const fade = Math.pow(0.75, b.depth);
+    const width = max(0.5, 2.2 * fade);
+    lctx.lineCap = 'round';
+    lctx.strokeStyle = rgba(colors.base, 0.12 * fade); lctx.lineWidth = width * 4;
+    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
+    lctx.strokeStyle = rgba(colors.base, 0.5 * fade); lctx.lineWidth = width;
+    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
+    lctx.strokeStyle = rgba(colors.bright, 0.3 * fade); lctx.lineWidth = width * 0.4;
+    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
+  });
+  return layer;
 }
 
-function getPredatorInfluence(birdX, birdY) {
-  if (!predator) return null;
-  
-  const dx = birdX - predator.x;
-  const dy = birdY - predator.y;
-  const dist = sqrt(dx * dx + dy * dy);
-  
-  if (dist < 200) {
-    const strength = (200 - dist) / 200;
-    return {
-      dx: dx / dist * strength * 80,
-      dy: dy / dist * strength * 80
-    };
+function generateAllTrees() {
+  perchSpots = [];
+  ['frost', 'gold', 'blue', 'silver'].forEach(name => {
+    const branches = generateBranchesForLayer(name);
+    treeLayers[name] = renderBranchesToCanvas(branches, TREE_COLORS[name]);
+  });
+}
+
+function createTexture() {
+  textureLayer = document.createElement('canvas');
+  textureLayer.width = W; textureLayer.height = H;
+  const lctx = textureLayer.getContext('2d');
+  lctx.globalAlpha = 0.03;
+  for (let i = 0; i < 5000; i++) {
+    const gray = 100 + random() * 80;
+    lctx.fillStyle = `rgb(${gray},${gray * 0.96},${gray * 0.92})`;
+    lctx.fillRect(random() * W, random() * H, 2 + random() * 4, 2 + random() * 4);
   }
-  return null;
 }
 
 // ============================================================================
-// TIME & COLOR SYSTEM
+// TIME & COLORS
 // ============================================================================
 function updateDayTime() {
   const now = new Date();
@@ -446,15 +404,10 @@ function getTimeColors() {
   lastColorUpdate = time;
   
   const sunrise = 7.5, sunset = 16.5;
-  
-  const night = { skyTop: { r: 15, g: 20, b: 35 }, skyMid: { r: 25, g: 30, b: 50 },
-    skyHorizon: { r: 35, g: 40, b: 60 }, ground: { r: 45, g: 50, b: 60 }, ambient: 0.15 };
-  const dawn = { skyTop: { r: 70, g: 80, b: 110 }, skyMid: { r: 180, g: 140, b: 120 },
-    skyHorizon: { r: 240, g: 180, b: 140 }, ground: { r: 160, g: 155, b: 150 }, ambient: 0.5 };
-  const day = { skyTop: { r: 168, g: 181, b: 196 }, skyMid: { r: 196, g: 197, b: 190 },
-    skyHorizon: { r: 240, g: 228, b: 208 }, ground: { r: 215, g: 212, b: 208 }, ambient: 1.0 };
-  const dusk = { skyTop: { r: 60, g: 70, b: 100 }, skyMid: { r: 160, g: 100, b: 90 },
-    skyHorizon: { r: 220, g: 140, b: 100 }, ground: { r: 140, g: 130, b: 125 }, ambient: 0.4 };
+  const night = { skyTop: { r: 15, g: 20, b: 35 }, skyMid: { r: 25, g: 30, b: 50 }, skyHorizon: { r: 35, g: 40, b: 60 }, ground: { r: 45, g: 50, b: 60 }, ambient: 0.15 };
+  const dawn = { skyTop: { r: 70, g: 80, b: 110 }, skyMid: { r: 180, g: 140, b: 120 }, skyHorizon: { r: 240, g: 180, b: 140 }, ground: { r: 160, g: 155, b: 150 }, ambient: 0.5 };
+  const day = { skyTop: { r: 168, g: 181, b: 196 }, skyMid: { r: 196, g: 197, b: 190 }, skyHorizon: { r: 240, g: 228, b: 208 }, ground: { r: 215, g: 212, b: 208 }, ambient: 1.0 };
+  const dusk = { skyTop: { r: 60, g: 70, b: 100 }, skyMid: { r: 160, g: 100, b: 90 }, skyHorizon: { r: 220, g: 140, b: 100 }, ground: { r: 140, g: 130, b: 125 }, ambient: 0.4 };
   
   let result;
   if (dayTime < sunrise - 1) result = night;
@@ -470,28 +423,21 @@ function getTimeColors() {
 }
 
 function blendPalettes(p1, p2, t) {
-  return {
-    skyTop: lerpColor(p1.skyTop, p2.skyTop, t),
-    skyMid: lerpColor(p1.skyMid, p2.skyMid, t),
-    skyHorizon: lerpColor(p1.skyHorizon, p2.skyHorizon, t),
-    ground: lerpColor(p1.ground, p2.ground, t),
-    ambient: lerp(p1.ambient, p2.ambient, t)
-  };
+  return { skyTop: lerpColor(p1.skyTop, p2.skyTop, t), skyMid: lerpColor(p1.skyMid, p2.skyMid, t),
+    skyHorizon: lerpColor(p1.skyHorizon, p2.skyHorizon, t), ground: lerpColor(p1.ground, p2.ground, t),
+    ambient: lerp(p1.ambient, p2.ambient, t) };
 }
 
 function getSunPosition() {
   const sunrise = 7.5, sunset = 16.5, noon = 12;
   if (dayTime < sunrise || dayTime > sunset) return { x: W * 0.5, y: horizonY + H * 0.3, intensity: 0 };
-  if (dayTime < noon) {
-    const p = (dayTime - sunrise) / (noon - sunrise);
-    return { x: W * 0.5, y: horizonY - H * 0.08 - sin(p * PI / 2) * H * 0.15, intensity: p };
-  }
+  if (dayTime < noon) { const p = (dayTime - sunrise) / (noon - sunrise); return { x: W * 0.5, y: horizonY - H * 0.08 - sin(p * PI / 2) * H * 0.15, intensity: p }; }
   const p = (dayTime - noon) / (sunset - noon);
   return { x: W * 0.5, y: horizonY - H * 0.08 - cos(p * PI / 2) * H * 0.15, intensity: 1 - p };
 }
 
 // ============================================================================
-// CANVAS & TREE SETUP
+// CANVAS SETUP
 // ============================================================================
 function initCanvas() {
   const dpr = min(window.devicePixelRatio || 1, 2);
@@ -499,156 +445,135 @@ function initCanvas() {
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.scale(dpr, dpr);
-  
   horizonY = H * 0.55; forestY = H * 0.75;
-  
-  [silverLayer, blueLayer, goldLayer, frostLayer, textureLayer] = 
-    Array(5).fill().map(() => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; });
-}
-
-function generateBranch(x1, y1, x2, y2, depth, maxDepth, branches, createPerches = false) {
-  if (depth > maxDepth) return;
-  
-  const midX = (x1 + x2) / 2 + (random() - 0.5) * H * 0.015;
-  const midY = (y1 + y2) / 2 + (random() - 0.5) * H * 0.015;
-  branches.push({ x1, y1, cx: midX, cy: midY, x2, y2, depth });
-  
-  if (createPerches && depth >= 2 && depth <= 5 && abs(Math.atan2(y2 - y1, x2 - x1) + PI/2) > 0.3) {
-    for (let t = 0.3; t <= 0.7; t += 0.2) {
-      const mt = 1 - t;
-      perchSpots.push({ x: mt*mt*x1 + 2*mt*t*midX + t*t*x2, y: mt*mt*y1 + 2*mt*t*midY + t*t*y2, occupied: false });
-    }
-  }
-  
-  if (depth < maxDepth) {
-    const num = CONFIG.branchCount[0] + floor(random() * (CONFIG.branchCount[1] - CONFIG.branchCount[0] + 1));
-    const len = sqrt((x2-x1)**2 + (y2-y1)**2) * (0.5 + random() * 0.3);
-    const base = Math.atan2(y2 - y1, x2 - x1);
-    for (let i = 0; i < num; i++) {
-      const a = base + (random() - 0.5) * 1.2;
-      generateBranch(x2, y2, x2 + cos(a) * len, y2 + sin(a) * len, depth + 1, maxDepth, branches, createPerches);
-    }
-  }
-}
-
-function generateTreeLayer(numTrees, heightMult, depthMod, xOff, yOff, branches, createPerches = false) {
-  for (let t = 0; t < numTrees; t++) {
-    const baseX = (W / (numTrees + 1)) * (t + 1) + (random() - 0.5) * W * 0.05 + xOff;
-    const baseY = forestY + yOff + random() * H * 0.015;
-    const height = H * heightMult * (0.7 + random() * 0.35);
-    const lean = (random() - 0.5) * height * 0.1;
-    
-    [[-0.1, 0.35], [0, 0.4], [0.1, 0.35]].forEach(([a, l]) => {
-      generateBranch(baseX, baseY, baseX + lean + cos(-PI/2 + a) * height * l, baseY + sin(-PI/2 + a) * height * l, 0, CONFIG.networkDepth + depthMod, branches, createPerches);
-    });
-    
-    for (let i = 0; i < 4; i++) {
-      const by = baseY - height * (0.15 + i * 0.18);
-      const bx = baseX + lean * (i * 0.25);
-      const side = (i % 2 === 0) ? -1 : 1;
-      const bl = height * (0.1 + random() * 0.08);
-      const a = -PI/2 + side * (0.4 + random() * 0.5);
-      generateBranch(bx, by, bx + cos(a) * bl, by + sin(a) * bl, 1, CONFIG.networkDepth + depthMod - 1, branches, createPerches);
-    }
-  }
-}
-
-function generateForest() {
-  silverBranches = []; blueBranches = []; goldBranches = []; frostBranches = []; perchSpots = [];
-  generateTreeLayer(12, 0.28, 0, 0, 0, silverBranches, true);
-  generateTreeLayer(14, 0.24, -1, W * 0.025, -H * 0.01, blueBranches);
-  generateTreeLayer(15, 0.22, 0, -W * 0.02, -H * 0.015, goldBranches);
-  generateTreeLayer(16, 0.18, -1, W * 0.015, -H * 0.025, frostBranches);
-}
-
-function renderTreeLayerToCanvas(layer, branches, colors) {
-  const lctx = layer.getContext('2d');
-  lctx.clearRect(0, 0, W, H);
-  
-  branches.forEach(b => {
-    const fade = Math.pow(0.75, b.depth);
-    const width = max(0.5, 2.2 * fade);
-    
-    lctx.lineCap = 'round';
-    lctx.strokeStyle = rgba(colors.base, 0.12 * fade); lctx.lineWidth = width * 4;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
-    
-    lctx.strokeStyle = rgba(colors.base, 0.5 * fade); lctx.lineWidth = width;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
-    
-    lctx.strokeStyle = rgba(colors.bright, 0.3 * fade); lctx.lineWidth = width * 0.4;
-    lctx.beginPath(); lctx.moveTo(b.x1, b.y1); lctx.quadraticCurveTo(b.cx, b.cy, b.x2, b.y2); lctx.stroke();
-  });
-}
-
-function renderAllTreeLayers() {
-  renderTreeLayerToCanvas(silverLayer, silverBranches, TREE_COLORS.silver);
-  renderTreeLayerToCanvas(blueLayer, blueBranches, TREE_COLORS.blue);
-  renderTreeLayerToCanvas(goldLayer, goldBranches, TREE_COLORS.gold);
-  renderTreeLayerToCanvas(frostLayer, frostBranches, TREE_COLORS.frost);
-}
-
-function renderTextureLayer() {
-  const lctx = textureLayer.getContext('2d');
-  const img = lctx.createImageData(W, H);
-  const d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    const n = (random() - 0.5) * 25;
-    d[i] = 135 + n; d[i+1] = 130 + n; d[i+2] = 125 + n; d[i+3] = CONFIG.textureGrain * 255;
-  }
-  lctx.putImageData(img, 0, 0);
 }
 
 // ============================================================================
-// STARLING SYSTEM
+// PREDATOR
+// ============================================================================
+function spawnPredator() {
+  const side = random() > 0.5;
+  predator = { x: side ? -50 : W + 50, y: horizonY - H * 0.1 + random() * H * 0.15,
+    vx: side ? 180 + random() * 60 : -180 - random() * 60, vy: (random() - 0.5) * 40,
+    wingPhase: 0, size: 3 + random() * 1.5 };
+}
+
+function updatePredator(dt) {
+  predatorCooldown -= dt;
+  if (!predator && predatorCooldown <= 0 && random() < 0.002) {
+    spawnPredator();
+    predatorCooldown = 30 + random() * 60;
+  }
+  if (!predator) return;
+  
+  predator.wingPhase += dt * 8;
+  let targetX = predator.x + predator.vx, targetY = predator.y, closestDist = Infinity;
+  for (let i = 0; i < starlings.length; i += 10) {
+    const b = starlings[i];
+    if (b.state !== 'flying') continue;
+    const d = sqrt((b.x - predator.x) ** 2 + (b.y - predator.y) ** 2);
+    if (d < closestDist && d > 50) { closestDist = d; targetX = b.x; targetY = b.y; }
+  }
+  
+  const dx = targetX - predator.x, dy = targetY - predator.y, dist = sqrt(dx * dx + dy * dy);
+  if (dist > 0) { predator.vx += (dx / dist) * 50 * dt; predator.vy += (dy / dist) * 30 * dt; }
+  
+  const speed = sqrt(predator.vx ** 2 + predator.vy ** 2);
+  if (speed > 250) { predator.vx = (predator.vx / speed) * 250; predator.vy = (predator.vy / speed) * 250; }
+  
+  predator.x += predator.vx * dt; predator.y += predator.vy * dt;
+  if (predator.y < H * 0.05) predator.vy += 100 * dt;
+  if (predator.y > horizonY) predator.vy -= 100 * dt;
+  if (predator.x < -100 || predator.x > W + 100) predator = null;
+}
+
+function drawPredator(ambient) {
+  if (!predator) return;
+  const p = predator, angle = Math.atan2(p.vy, p.vx), wf = sin(p.wingPhase) * 0.6;
+  
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(angle);
+  ctx.fillStyle = `rgba(25, 20, 15, ${0.7 + ambient * 0.2})`;
+  
+  ctx.beginPath(); ctx.ellipse(0, 0, p.size * 2.5, p.size * 0.8, 0, 0, PI2); ctx.fill();
+  
+  const ws = p.size * 6;
+  ctx.beginPath();
+  ctx.moveTo(-p.size, 0);
+  ctx.quadraticCurveTo(-p.size * 0.5, -ws * 0.4 * (1 + wf), p.size * 0.5, -ws * (0.7 + wf * 0.2));
+  ctx.lineTo(p.size, -ws * 0.3 * (1 + wf));
+  ctx.quadraticCurveTo(p.size * 0.3, -ws * 0.1, 0, 0);
+  ctx.moveTo(-p.size, 0);
+  ctx.quadraticCurveTo(-p.size * 0.5, ws * 0.4 * (1 + wf), p.size * 0.5, ws * (0.7 + wf * 0.2));
+  ctx.lineTo(p.size, ws * 0.3 * (1 + wf));
+  ctx.quadraticCurveTo(p.size * 0.3, ws * 0.1, 0, 0);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(-p.size * 2.5, 0);
+  ctx.lineTo(-p.size * 4, -p.size * 0.6);
+  ctx.lineTo(-p.size * 4, p.size * 0.6);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.beginPath(); ctx.arc(p.size * 2, 0, p.size * 0.7, 0, PI2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(p.size * 2.6, -p.size * 0.2);
+  ctx.lineTo(p.size * 3.5, 0);
+  ctx.lineTo(p.size * 3.2, p.size * 0.3);
+  ctx.lineTo(p.size * 2.6, p.size * 0.2);
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+function getPredatorInfluence(bx, by) {
+  if (!predator) return null;
+  const dx = bx - predator.x, dy = by - predator.y, dist = sqrt(dx * dx + dy * dy);
+  if (dist < 200) { const s = (200 - dist) / 200; return { dx: dx / dist * s * 80, dy: dy / dist * s * 80 }; }
+  return null;
+}
+
+// ============================================================================
+// STARLINGS
 // ============================================================================
 function initStarlings() {
   starlings = [];
   const cx = W * 0.5, cy = horizonY - H * 0.18;
   for (let i = 0; i < CONFIG.starlingCount; i++) {
     const a = random() * PI2, d = random() * W * 0.1;
-    starlings.push({
-      x: cx + cos(a) * d, y: cy + sin(a) * d * 0.4,
-      vx: (random() - 0.5) * 50, vy: (random() - 0.5) * 30,
-      size: 1.2 + random() * 0.8, state: 'flying',
-      perchSpot: null, perchTime: 0, stateTimer: 0,
-      wingPhase: random() * PI2, wingSpeed: 15 + random() * 5
-    });
+    starlings.push({ x: cx + cos(a) * d, y: cy + sin(a) * d * 0.4, vx: (random() - 0.5) * 50, vy: (random() - 0.5) * 30,
+      size: 1.2 + random() * 0.8, state: 'flying', perchSpot: null, perchTime: 0, stateTimer: 0,
+      wingPhase: random() * PI2, wingSpeed: 15 + random() * 5 });
   }
 }
 
 function updateStarlings(dt) {
   flockCRR.update(dt, 1 + sin(time * 0.1) * 0.3);
-  const fc = flockCRR.amplitude;
-  const isRupturing = flockCRR.state === 'rupture';
+  const fc = flockCRR.amplitude, isRup = flockCRR.state === 'rupture';
   
   const bf = 0.12 + fc * 0.08;
   const ax = W * 0.5 + sin(time * bf) * W * 0.22 + sin(time * bf * 1.6 + 1) * W * 0.1;
   const ay = horizonY - H * 0.16 + sin(time * bf * 0.7) * H * 0.07;
-  const ss = isRupturing ? 1.5 : 0.8;
-  const a2x = ax + sin(time * 0.35) * W * 0.12 * ss;
-  const a2y = ay + cos(time * 0.28) * H * 0.06 * ss;
+  const ss = isRup ? 1.5 : 0.8;
+  const a2x = ax + sin(time * 0.35) * W * 0.12 * ss, a2y = ay + cos(time * 0.28) * H * 0.06 * ss;
   
-  const scare = random() < (isRupturing ? 0.01 : 0.0003);
+  const scare = random() < (isRup ? 0.01 : 0.0003);
   const sx = scare ? random() * W : 0, sy = scare ? random() * horizonY * 0.5 : 0;
-  
   const perched = starlings.filter(b => b.state === 'perched').length;
-  const launch = (perched > CONFIG.starlingCount * 0.35 && random() < 0.003) || isRupturing;
+  const launch = (perched > CONFIG.starlingCount * 0.35 && random() < 0.003) || isRup;
   
   updateSpatialHash();
   
   for (let i = 0; i < starlings.length; i++) {
     const b = starlings[i];
-    b.stateTimer += dt;
-    b.wingPhase += b.wingSpeed * dt;
+    b.stateTimer += dt; b.wingPhase += b.wingSpeed * dt;
     
     if (b.state === 'perched') {
       b.perchTime += dt;
       if (random() < (b.perchTime > 4 ? 0.008 : 0.001) || launch || scare || predator) {
-        b.state = 'takeoff'; b.stateTimer = 0;
-        b.vy = -40 - random() * 25; b.vx = (random() - 0.5) * 50;
-        if (b.perchSpot) b.perchSpot.occupied = false;
-        b.perchSpot = null;
+        b.state = 'takeoff'; b.stateTimer = 0; b.vy = -40 - random() * 25; b.vx = (random() - 0.5) * 50;
+        if (b.perchSpot) b.perchSpot.occupied = false; b.perchSpot = null;
       }
       continue;
     }
@@ -660,86 +585,55 @@ function updateStarlings(dt) {
     }
     
     if (b.state === 'landing') {
-      const spot = b.perchSpot;
-      const dx = spot.x - b.x, dy = spot.y - b.y;
-      const dist = sqrt(dx * dx + dy * dy);
-      if (dist < 2) {
-        b.state = 'perched'; b.x = spot.x; b.y = spot.y;
-        b.perchTime = 0; b.vx = 0; b.vy = 0;
-      } else {
-        b.vx = dx * 4; b.vy = dy * 4;
-        b.x += b.vx * dt; b.y += b.vy * dt;
-      }
+      const spot = b.perchSpot, dx = spot.x - b.x, dy = spot.y - b.y, dist = sqrt(dx * dx + dy * dy);
+      if (dist < 2) { b.state = 'perched'; b.x = spot.x; b.y = spot.y; b.perchTime = 0; b.vx = 0; b.vy = 0; }
+      else { b.vx = dx * 4; b.vy = dy * 4; b.x += b.vx * dt; b.y += b.vy * dt; }
       continue;
     }
     
-    // FLYING - optimized boids
     let sepX = 0, sepY = 0, alignX = 0, alignY = 0, cohX = 0, cohY = 0, nc = 0;
     const nearby = getNearbyBirds(b.x, b.y);
     
     for (let j = 0; j < nearby.length; j++) {
-      const idx = nearby[j];
-      if (idx === i) continue;
-      const o = starlings[idx];
-      if (o.state !== 'flying') continue;
-      
-      const dx = o.x - b.x, dy = o.y - b.y;
-      const distSq = dx * dx + dy * dy;
+      const idx = nearby[j]; if (idx === i) continue;
+      const o = starlings[idx]; if (o.state !== 'flying') continue;
+      const dx = o.x - b.x, dy = o.y - b.y, distSq = dx * dx + dy * dy;
       if (distSq > 3600) continue;
-      
       const dist = sqrt(distSq);
-      if (dist < 20 && dist > 0) {
-        const f = (20 - dist) / 20;
-        sepX -= (dx / dist) * f; sepY -= (dy / dist) * f;
-      }
-      if (dist < 60) {
-        alignX += o.vx; alignY += o.vy;
-        cohX += o.x; cohY += o.y; nc++;
-      }
+      if (dist < 20 && dist > 0) { const f = (20 - dist) / 20; sepX -= (dx / dist) * f; sepY -= (dy / dist) * f; }
+      if (dist < 60) { alignX += o.vx; alignY += o.vy; cohX += o.x; cohY += o.y; nc++; }
     }
     
     if (nc > 0) {
       b.vx += sepX * 2.5; b.vy += sepY * 2.5;
-      b.vx += (alignX / nc - b.vx) * (0.06 + fc * 0.04);
-      b.vy += (alignY / nc - b.vy) * (0.06 + fc * 0.04);
-      b.vx += (cohX / nc - b.x) * (0.008 + fc * 0.012);
-      b.vy += (cohY / nc - b.y) * (0.008 + fc * 0.012);
+      b.vx += (alignX / nc - b.vx) * (0.06 + fc * 0.04); b.vy += (alignY / nc - b.vy) * (0.06 + fc * 0.04);
+      b.vx += (cohX / nc - b.x) * (0.008 + fc * 0.012); b.vy += (cohY / nc - b.y) * (0.008 + fc * 0.012);
     }
     
-    // Attractors
     const t1x = ax - b.x, t1y = ay - b.y, d1 = sqrt(t1x*t1x + t1y*t1y);
     const t2x = a2x - b.x, t2y = a2y - b.y, d2 = sqrt(t2x*t2x + t2y*t2y);
     if (d1 < d2 || random() > 0.3) { b.vx += (t1x / max(d1, 1)) * 0.5; b.vy += (t1y / max(d1, 1)) * 0.5; }
     else { b.vx += (t2x / max(d2, 1)) * 0.4; b.vy += (t2y / max(d2, 1)) * 0.4; }
     
-    // Predator avoidance
     const pred = getPredatorInfluence(b.x, b.y);
     if (pred) { b.vx += pred.dx; b.vy += pred.dy; }
     
-    // Scare
-    if (scare) {
-      const sdx = b.x - sx, sdy = b.y - sy;
-      const sd = sqrt(sdx*sdx + sdy*sdy);
-      if (sd < W * 0.35 && sd > 0) { b.vx += (sdx / sd) * 40; b.vy += (sdy / sd) * 40; }
-    }
+    if (scare) { const sdx = b.x - sx, sdy = b.y - sy, sd = sqrt(sdx*sdx + sdy*sdy);
+      if (sd < W * 0.35 && sd > 0) { b.vx += (sdx / sd) * 40; b.vy += (sdy / sd) * 40; } }
     
-    // Bounds
     if (b.x < W * 0.03) b.vx += 4; if (b.x > W * 0.97) b.vx -= 4;
     if (b.y < H * 0.06) b.vy += 3; if (b.y > forestY - H * 0.03) b.vy -= 3;
     
-    // Speed
     const spd = sqrt(b.vx * b.vx + b.vy * b.vy);
     if (spd > 100) { b.vx = (b.vx / spd) * 100; b.vy = (b.vy / spd) * 100; }
     else if (spd < 25 && spd > 0) { b.vx = (b.vx / spd) * 25; b.vy = (b.vy / spd) * 25; }
     
     b.x += b.vx * dt; b.y += b.vy * dt;
     
-    // Landing (not when predator nearby)
-    if (!predator && b.y > forestY - H * 0.12 && spd < 55 && random() < 0.004) {
+    if (!predator && b.y > forestY - H * 0.12 && spd < 55 && random() < 0.004 && perchSpots.length > 0) {
       let best = null, bestD = Infinity;
       for (let p = 0; p < perchSpots.length; p++) {
-        const spot = perchSpots[p];
-        if (spot.occupied) continue;
+        const spot = perchSpots[p]; if (spot.occupied) continue;
         const d = sqrt((b.x - spot.x)**2 + (b.y - spot.y)**2);
         if (d < H * 0.12 && d < bestD) { bestD = d; best = spot; }
       }
@@ -754,19 +648,14 @@ function drawStarling(b, ambient) {
   if (b.y > forestY - H * 0.08) mist = max(0.3, 1 - (b.y - (forestY - H * 0.08)) / (H * 0.1));
   
   ctx.fillStyle = `rgba(35, 40, 50, ${(0.6 + ambient * 0.25) * mist})`;
-  ctx.save();
-  ctx.translate(b.x, b.y);
+  ctx.save(); ctx.translate(b.x, b.y);
   
   if (flying) {
     ctx.rotate(Math.atan2(b.vy, b.vx));
-    const spd = sqrt(b.vx * b.vx + b.vy * b.vy);
-    const stretch = min(spd / 50, 1.8);
-    const flap = sin(b.wingPhase) * (0.4 + spd / 200);
-    const ws = b.size * 3;
+    const spd = sqrt(b.vx * b.vx + b.vy * b.vy), stretch = min(spd / 50, 1.8);
+    const flap = sin(b.wingPhase) * (0.4 + spd / 200), ws = b.size * 3;
     
-    ctx.beginPath();
-    ctx.ellipse(0, 0, b.size * stretch, b.size * 0.45, 0, 0, PI2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, b.size * stretch, b.size * 0.45, 0, 0, PI2); ctx.fill();
     
     ctx.beginPath();
     ctx.moveTo(-b.size * 0.3, 0);
@@ -781,8 +670,7 @@ function drawStarling(b, ambient) {
     ctx.moveTo(-b.size * stretch, 0);
     ctx.lineTo(-b.size * stretch - b.size * 0.8, -b.size * 0.3);
     ctx.lineTo(-b.size * stretch - b.size * 0.8, b.size * 0.3);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
   } else {
     ctx.beginPath(); ctx.ellipse(0, 0, b.size * 0.9, b.size * 1.1, 0, 0, PI2); ctx.fill();
     ctx.beginPath(); ctx.arc(0, -b.size * 0.9, b.size * 0.5, 0, PI2); ctx.fill();
@@ -790,8 +678,7 @@ function drawStarling(b, ambient) {
     ctx.moveTo(b.size * 0.4, -b.size * 0.9);
     ctx.lineTo(b.size * 0.9, -b.size * 0.85);
     ctx.lineTo(b.size * 0.4, -b.size * 0.75);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
   }
   ctx.restore();
 }
@@ -802,12 +689,10 @@ function drawStarling(b, ambient) {
 function initMist() {
   mistPatches = [];
   for (let i = 0; i < 18; i++) {
-    mistPatches.push({
-      x: random() * W * 1.4 - W * 0.2, y: forestY + random() * H * 0.1 - H * 0.03,
+    mistPatches.push({ x: random() * W * 1.4 - W * 0.2, y: forestY + random() * H * 0.1 - H * 0.03,
       width: W * (0.2 + random() * 0.3), height: H * (0.05 + random() * 0.06),
       speed: 2 + random() * 5, baseOpacity: 0.08 + random() * 0.1,
-      phase: random() * PI2, vDrift: 0.3 + random() * 0.5
-    });
+      phase: random() * PI2, vDrift: 0.3 + random() * 0.5 });
   }
 }
 
@@ -818,20 +703,15 @@ function drawMist(dt, colors) {
   
   for (let i = 0; i < mistPatches.length; i++) {
     const m = mistPatches[i];
-    m.x += m.speed * dt;
-    if (m.x > W + m.width * 0.5) m.x = -m.width;
-    
+    m.x += m.speed * dt; if (m.x > W + m.width * 0.5) m.x = -m.width;
     const cy = m.y + sin(time * 0.2 + m.phase) * H * 0.01 * m.vDrift;
     const op = m.baseOpacity * intensity;
-    
     const grad = ctx.createRadialGradient(m.x + m.width * 0.5, cy, 0, m.x + m.width * 0.5, cy, m.width * 0.5);
     grad.addColorStop(0, `rgba(${mc.r|0},${mc.g|0},${mc.b|0},${op})`);
     grad.addColorStop(0.5, `rgba(${mc.r|0},${mc.g|0},${mc.b|0},${op * 0.5})`);
     grad.addColorStop(1, 'transparent');
     ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.ellipse(m.x + m.width * 0.5, cy, m.width * 0.5, m.height * 0.5, 0, 0, PI2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(m.x + m.width * 0.5, cy, m.width * 0.5, m.height * 0.5, 0, 0, PI2); ctx.fill();
   }
 }
 
@@ -839,11 +719,9 @@ function initSnow() {
   snowflakes = [];
   const count = floor((W * H) / 8000);
   for (let i = 0; i < count; i++) {
-    snowflakes.push({
-      x: random() * W, y: random() * H, size: 0.5 + random() * 1.8,
+    snowflakes.push({ x: random() * W, y: random() * H, size: 0.5 + random() * 1.8,
       speed: 10 + random() * 18, drift: (random() - 0.5) * 0.35,
-      opacity: 0.2 + random() * 0.35, phase: random() * PI2
-    });
+      opacity: 0.2 + random() * 0.35, phase: random() * PI2 });
   }
 }
 
@@ -852,173 +730,76 @@ function drawSnow(dt, ambient) {
   ctx.fillStyle = '#fff';
   for (let i = 0; i < snowflakes.length; i++) {
     const f = snowflakes[i];
-    f.y += f.speed * dt;
-    f.x += sin(time * 0.15 + f.phase) * f.drift * dt * 35;
+    f.y += f.speed * dt; f.x += sin(time * 0.15 + f.phase) * f.drift * dt * 35;
     if (f.y > H + 5) { f.y = -5; f.x = random() * W; }
-    if (f.x < -5) f.x = W + 5;
-    if (f.x > W + 5) f.x = -5;
-    
+    if (f.x < -5) f.x = W + 5; if (f.x > W + 5) f.x = -5;
     const df = f.y < horizonY ? 0.35 : 1;
     ctx.globalAlpha = f.opacity * df * alpha;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.size * df, 0, PI2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.size * df, 0, PI2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
 
 // ============================================================================
-// SLEIGH SYSTEM
+// SLEIGH
 // ============================================================================
 function initSleigh() {
   sleigh = { x: -W * 0.2, y: H * 0.15, speed: W * 0.06, bobPhase: 0, scale: H * 0.001, trail: [] };
-  sleighActive = true;
-  sleighBells.init();
-  sleighBells.playJingle();
+  sleighActive = true; audio.init(); audio.playJingle();
   document.getElementById('christmasMessage').classList.add('visible');
   setTimeout(() => document.getElementById('christmasMessage').classList.remove('visible'), 8000);
 }
 
 function updateSleigh(dt) {
   if (!sleighActive || !sleigh) return;
-  sleigh.x += sleigh.speed * dt;
-  sleigh.bobPhase += dt * 2;
+  sleigh.x += sleigh.speed * dt; sleigh.bobPhase += dt * 2;
   sleigh.y = H * 0.15 + sin(sleigh.bobPhase) * H * 0.02 + sin(sleigh.bobPhase * 0.7) * H * 0.01;
-  
   if (random() < 0.4) sleigh.trail.push({ x: sleigh.x - 20 + random() * 40, y: sleigh.y + random() * 20, life: 1, size: 1 + random() * 2, vx: -20 - random() * 30, vy: (random() - 0.5) * 20 });
-  
-  for (let i = sleigh.trail.length - 1; i >= 0; i--) {
-    const p = sleigh.trail[i];
-    p.life -= dt * 0.8; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 15 * dt;
-    if (p.life <= 0) sleigh.trail.splice(i, 1);
-  }
-  
+  for (let i = sleigh.trail.length - 1; i >= 0; i--) { const p = sleigh.trail[i]; p.life -= dt * 0.8; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 15 * dt; if (p.life <= 0) sleigh.trail.splice(i, 1); }
   if (sleigh.x > W * 1.3) { sleighActive = false; sleigh = null; }
 }
 
 function drawSleigh() {
   if (!sleighActive || !sleigh) return;
   const s = sleigh.scale, x = sleigh.x, y = sleigh.y;
-  
   ctx.save();
-  sleigh.trail.forEach(p => {
-    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-    grad.addColorStop(0, `rgba(255, 223, 100, ${p.life * 0.8})`);
-    grad.addColorStop(0.5, `rgba(255, 200, 50, ${p.life * 0.4})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 3, 0, PI2); ctx.fill();
-  });
+  sleigh.trail.forEach(p => { const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+    grad.addColorStop(0, `rgba(255, 223, 100, ${p.life * 0.8})`); grad.addColorStop(0.5, `rgba(255, 200, 50, ${p.life * 0.4})`); grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 3, 0, PI2); ctx.fill(); });
   
-  ctx.fillStyle = 'rgba(20, 25, 35, 0.9)';
-  ctx.strokeStyle = 'rgba(20, 25, 35, 0.9)';
-  
+  ctx.fillStyle = 'rgba(20, 25, 35, 0.9)'; ctx.strokeStyle = 'rgba(20, 25, 35, 0.9)';
   const rs = s * 35;
-  for (let i = 0; i < 8; i++) {
-    const row = floor(i / 2), col = i % 2;
-    const rx = x - 80 - row * rs;
-    const ry = y + (col === 0 ? -12 : 12) * s + sin(sleigh.bobPhase * 3 + i) * 3;
-    drawReindeer(rx, ry, s, sleigh.bobPhase + i * 0.3, i === 0);
-  }
+  for (let i = 0; i < 8; i++) { const row = floor(i / 2), col = i % 2;
+    const rx = x - 80 - row * rs, ry = y + (col === 0 ? -12 : 12) * s + sin(sleigh.bobPhase * 3 + i) * 3;
+    ctx.save(); ctx.translate(rx, ry); const leg = sin((sleigh.bobPhase + i * 0.3) * 4);
+    ctx.beginPath(); ctx.ellipse(0, 0, 18 * s, 10 * s, 0, 0, PI2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(15 * s, -5 * s); ctx.quadraticCurveTo(22 * s, -12 * s, 28 * s, -10 * s); ctx.quadraticCurveTo(35 * s, -8 * s, 32 * s, -5 * s); ctx.quadraticCurveTo(28 * s, -2 * s, 20 * s, 0); ctx.fill();
+    ctx.lineWidth = 2 * s; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(26 * s, -12 * s); ctx.lineTo(22 * s, -22 * s); ctx.moveTo(24 * s, -17 * s); ctx.lineTo(20 * s, -20 * s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(30 * s, -12 * s); ctx.lineTo(34 * s, -22 * s); ctx.moveTo(32 * s, -17 * s); ctx.lineTo(36 * s, -20 * s); ctx.stroke();
+    ctx.lineWidth = 3 * s;
+    ctx.beginPath(); ctx.moveTo(10 * s, 8 * s); ctx.lineTo(12 * s + leg * 4 * s, 22 * s); ctx.moveTo(6 * s, 8 * s); ctx.lineTo(4 * s - leg * 4 * s, 22 * s); ctx.moveTo(-10 * s, 8 * s); ctx.lineTo(-8 * s - leg * 4 * s, 22 * s); ctx.moveTo(-14 * s, 8 * s); ctx.lineTo(-16 * s + leg * 4 * s, 22 * s); ctx.stroke();
+    if (i === 0) { ctx.fillStyle = 'rgba(200, 50, 50, 0.9)'; ctx.beginPath(); ctx.arc(34 * s, -6 * s, 3 * s, 0, PI2); ctx.fill();
+      const ng = ctx.createRadialGradient(34 * s, -6 * s, 0, 34 * s, -6 * s, 15 * s); ng.addColorStop(0, 'rgba(255, 100, 100, 0.4)'); ng.addColorStop(1, 'transparent'); ctx.fillStyle = ng; ctx.beginPath(); ctx.arc(34 * s, -6 * s, 15 * s, 0, PI2); ctx.fill(); ctx.fillStyle = 'rgba(20, 25, 35, 0.9)'; }
+    ctx.restore(); }
   
-  ctx.strokeStyle = 'rgba(40, 35, 30, 0.7)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(x - 30, y);
-  for (let i = 0; i < 8; i++) {
-    const row = floor(i / 2), col = i % 2;
-    ctx.lineTo(x - 80 - row * rs + 15 * s, y + (col === 0 ? -12 : 12) * s + sin(sleigh.bobPhase * 3 + i) * 3);
-  }
-  ctx.stroke();
+  ctx.strokeStyle = 'rgba(40, 35, 30, 0.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - 30, y);
+  for (let i = 0; i < 8; i++) { const row = floor(i / 2), col = i % 2; ctx.lineTo(x - 80 - row * rs + 15 * s, y + (col === 0 ? -12 : 12) * s + sin(sleigh.bobPhase * 3 + i) * 3); } ctx.stroke();
   
   ctx.fillStyle = 'rgba(25, 20, 30, 0.95)';
-  ctx.beginPath();
-  ctx.moveTo(x - 25, y + 15);
-  ctx.quadraticCurveTo(x - 35, y + 25, x - 20, y + 30);
-  ctx.lineTo(x + 50, y + 30);
-  ctx.quadraticCurveTo(x + 65, y + 25, x + 60, y + 10);
-  ctx.quadraticCurveTo(x + 55, y - 5, x + 40, y - 10);
-  ctx.lineTo(x - 15, y - 10);
-  ctx.quadraticCurveTo(x - 30, y - 5, x - 25, y + 15);
-  ctx.fill();
-  
-  ctx.beginPath();
-  ctx.moveTo(x - 30, y + 32);
-  ctx.quadraticCurveTo(x - 40, y + 38, x - 35, y + 40);
-  ctx.lineTo(x + 55, y + 40);
-  ctx.quadraticCurveTo(x + 70, y + 38, x + 65, y + 32);
-  ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x - 25, y + 15); ctx.quadraticCurveTo(x - 35, y + 25, x - 20, y + 30); ctx.lineTo(x + 50, y + 30); ctx.quadraticCurveTo(x + 65, y + 25, x + 60, y + 10); ctx.quadraticCurveTo(x + 55, y - 5, x + 40, y - 10); ctx.lineTo(x - 15, y - 10); ctx.quadraticCurveTo(x - 30, y - 5, x - 25, y + 15); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 30, y + 32); ctx.quadraticCurveTo(x - 40, y + 38, x - 35, y + 40); ctx.lineTo(x + 55, y + 40); ctx.quadraticCurveTo(x + 70, y + 38, x + 65, y + 32); ctx.lineWidth = 3; ctx.stroke();
   
   ctx.fillStyle = 'rgba(20, 15, 25, 0.95)';
   ctx.beginPath(); ctx.ellipse(x + 15, y + 5, 18, 15, 0, 0, PI2); ctx.fill();
   ctx.beginPath(); ctx.arc(x + 15, y - 18, 12, 0, PI2); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(x + 3, y - 22); ctx.lineTo(x + 10, y - 45);
-  ctx.quadraticCurveTo(x + 25, y - 42, x + 28, y - 25); ctx.lineTo(x + 27, y - 22); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x + 3, y - 22); ctx.lineTo(x + 10, y - 45); ctx.quadraticCurveTo(x + 25, y - 42, x + 28, y - 25); ctx.lineTo(x + 27, y - 22); ctx.fill();
   ctx.beginPath(); ctx.arc(x + 12, y - 46, 4, 0, PI2); ctx.fill();
-  
-  ctx.save();
-  ctx.translate(x + 25, y - 5);
-  ctx.rotate(-0.5 + sin(sleigh.bobPhase * 2) * 0.3);
-  ctx.fillRect(0, -3, 20, 6);
-  ctx.beginPath(); ctx.arc(20, 0, 5, 0, PI2); ctx.fill();
-  ctx.restore();
-  
-  ctx.fillStyle = 'rgba(30, 20, 25, 0.9)';
-  ctx.beginPath(); ctx.ellipse(x + 42, y + 5, 12, 18, 0.2, 0, PI2); ctx.fill();
-  
-  const gi = 0.3 + sin(sleigh.bobPhase * 4) * 0.1;
-  const glow = ctx.createRadialGradient(x + 15, y, 0, x + 15, y, 100);
-  glow.addColorStop(0, `rgba(255, 230, 150, ${gi * 0.3})`);
-  glow.addColorStop(0.5, `rgba(255, 210, 100, ${gi * 0.1})`);
-  glow.addColorStop(1, 'transparent');
-  ctx.fillStyle = glow;
-  ctx.fillRect(x - 100, y - 80, 230, 160);
-  
-  ctx.restore();
-}
-
-function drawReindeer(x, y, s, phase, isRudolph) {
-  ctx.save();
-  ctx.translate(x, y);
-  const leg = sin(phase * 4);
-  
-  ctx.beginPath(); ctx.ellipse(0, 0, 18 * s, 10 * s, 0, 0, PI2); ctx.fill();
-  
-  ctx.beginPath();
-  ctx.moveTo(15 * s, -5 * s);
-  ctx.quadraticCurveTo(22 * s, -12 * s, 28 * s, -10 * s);
-  ctx.quadraticCurveTo(35 * s, -8 * s, 32 * s, -5 * s);
-  ctx.quadraticCurveTo(28 * s, -2 * s, 20 * s, 0);
-  ctx.fill();
-  
-  ctx.lineWidth = 2 * s; ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(26 * s, -12 * s); ctx.lineTo(22 * s, -22 * s);
-  ctx.moveTo(24 * s, -17 * s); ctx.lineTo(20 * s, -20 * s);
-  ctx.moveTo(23 * s, -20 * s); ctx.lineTo(26 * s, -24 * s);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(30 * s, -12 * s); ctx.lineTo(34 * s, -22 * s);
-  ctx.moveTo(32 * s, -17 * s); ctx.lineTo(36 * s, -20 * s);
-  ctx.moveTo(33 * s, -20 * s); ctx.lineTo(30 * s, -24 * s);
-  ctx.stroke();
-  
-  ctx.lineWidth = 3 * s;
-  ctx.beginPath();
-  ctx.moveTo(10 * s, 8 * s); ctx.lineTo(12 * s + leg * 4 * s, 22 * s);
-  ctx.moveTo(6 * s, 8 * s); ctx.lineTo(4 * s - leg * 4 * s, 22 * s);
-  ctx.moveTo(-10 * s, 8 * s); ctx.lineTo(-8 * s - leg * 4 * s, 22 * s);
-  ctx.moveTo(-14 * s, 8 * s); ctx.lineTo(-16 * s + leg * 4 * s, 22 * s);
-  ctx.stroke();
-  
-  if (isRudolph) {
-    ctx.fillStyle = 'rgba(200, 50, 50, 0.9)';
-    ctx.beginPath(); ctx.arc(34 * s, -6 * s, 3 * s, 0, PI2); ctx.fill();
-    const ng = ctx.createRadialGradient(34 * s, -6 * s, 0, 34 * s, -6 * s, 15 * s);
-    ng.addColorStop(0, 'rgba(255, 100, 100, 0.4)');
-    ng.addColorStop(1, 'transparent');
-    ctx.fillStyle = ng;
-    ctx.beginPath(); ctx.arc(34 * s, -6 * s, 15 * s, 0, PI2); ctx.fill();
-  }
+  ctx.save(); ctx.translate(x + 25, y - 5); ctx.rotate(-0.5 + sin(sleigh.bobPhase * 2) * 0.3); ctx.fillRect(0, -3, 20, 6); ctx.beginPath(); ctx.arc(20, 0, 5, 0, PI2); ctx.fill(); ctx.restore();
+  ctx.fillStyle = 'rgba(30, 20, 25, 0.9)'; ctx.beginPath(); ctx.ellipse(x + 42, y + 5, 12, 18, 0.2, 0, PI2); ctx.fill();
+  const gi = 0.3 + sin(sleigh.bobPhase * 4) * 0.1; const glow = ctx.createRadialGradient(x + 15, y, 0, x + 15, y, 100);
+  glow.addColorStop(0, `rgba(255, 230, 150, ${gi * 0.3})`); glow.addColorStop(0.5, `rgba(255, 210, 100, ${gi * 0.1})`); glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow; ctx.fillRect(x - 100, y - 80, 230, 160);
   ctx.restore();
 }
 
@@ -1041,74 +822,49 @@ const EVENTS = [
 ];
 
 function updateCalendar() {
-  const now = new Date();
-  const h = now.getHours(), m = now.getMinutes();
+  const now = new Date(), h = now.getHours(), m = now.getMinutes();
   document.getElementById('currentTime').textContent = `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'pm' : 'am'}`;
   document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const cont = document.getElementById('events');
-  cont.innerHTML = '';
+  const cont = document.getElementById('events'); cont.innerHTML = '';
   let shown = 0;
-  for (const e of EVENTS) {
-    if (shown >= 3) break;
-    const diff = e.date - now;
-    const past = diff < 0;
+  for (const e of EVENTS) { if (shown >= 3) break;
+    const diff = e.date - now, past = diff < 0;
     if (past && abs(diff) > 86400000) continue;
-    
     const div = document.createElement('div');
     div.className = 'event' + (diff >= 0 && diff < 86400000 ? ' imminent' : '') + (past ? ' past' : '');
-    
-    let txt;
-    if (past) txt = 'Now!';
+    let txt; if (past) txt = 'Now!';
     else if (diff < 86400000) txt = `${floor(diff / 3600000)}h ${floor((diff % 3600000) / 60000)}m`;
     else { const d = floor(diff / 86400000); txt = `${d}d ${floor((diff % 86400000) / 3600000)}h`; }
-    
     div.innerHTML = `<div class="countdown">${txt}</div><div class="label">${e.name}</div>`;
-    cont.appendChild(div);
-    shown++;
+    cont.appendChild(div); shown++;
   }
 }
 
 // ============================================================================
-// LANDSCAPE DRAWING
+// LANDSCAPE
 // ============================================================================
 function drawSky(colors, sun) {
   const grad = ctx.createLinearGradient(0, 0, 0, horizonY);
-  grad.addColorStop(0, rgba(colors.skyTop, 1));
-  grad.addColorStop(0.5, rgba(colors.skyMid, 1));
-  grad.addColorStop(1, rgba(colors.skyHorizon, 1));
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, horizonY + 20);
+  grad.addColorStop(0, rgba(colors.skyTop, 1)); grad.addColorStop(0.5, rgba(colors.skyMid, 1)); grad.addColorStop(1, rgba(colors.skyHorizon, 1));
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, horizonY + 20);
   
   if (sun.intensity > 0.1) {
     const g1 = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, H * 0.45);
-    g1.addColorStop(0, `rgba(255, 248, 230, ${0.35 * sun.intensity})`);
-    g1.addColorStop(0.3, `rgba(255, 240, 210, ${0.15 * sun.intensity})`);
-    g1.addColorStop(1, 'transparent');
+    g1.addColorStop(0, `rgba(255, 248, 230, ${0.35 * sun.intensity})`); g1.addColorStop(0.3, `rgba(255, 240, 210, ${0.15 * sun.intensity})`); g1.addColorStop(1, 'transparent');
     ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
-    
     const g2 = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, H * 0.12);
-    g2.addColorStop(0, `rgba(255, 255, 248, ${0.85 * sun.intensity})`);
-    g2.addColorStop(0.5, `rgba(255, 250, 235, ${0.4 * sun.intensity})`);
-    g2.addColorStop(1, 'transparent');
+    g2.addColorStop(0, `rgba(255, 255, 248, ${0.85 * sun.intensity})`); g2.addColorStop(0.5, `rgba(255, 250, 235, ${0.4 * sun.intensity})`); g2.addColorStop(1, 'transparent');
     ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
   } else {
     const mx = W * 0.7, my = H * 0.18;
-    const mg = ctx.createRadialGradient(mx, my, 0, mx, my, H * 0.08);
-    mg.addColorStop(0, 'rgba(220, 225, 235, 0.25)');
-    mg.addColorStop(1, 'transparent');
+    const mg = ctx.createRadialGradient(mx, my, 0, mx, my, H * 0.08); mg.addColorStop(0, 'rgba(220, 225, 235, 0.25)'); mg.addColorStop(1, 'transparent');
     ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
-    
-    ctx.fillStyle = 'rgba(235, 240, 250, 0.9)';
-    ctx.beginPath(); ctx.arc(mx, my, H * 0.022, 0, PI2); ctx.fill();
-    
+    ctx.fillStyle = 'rgba(235, 240, 250, 0.9)'; ctx.beginPath(); ctx.arc(mx, my, H * 0.022, 0, PI2); ctx.fill();
     ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * (1 - colors.ambient)})`;
-    for (let i = 0; i < 60; i++) {
-      const sx = (sin(i * 127.1) * 0.5 + 0.5) * W;
-      const sy = (cos(i * 311.7) * 0.4 + 0.25) * horizonY;
+    for (let i = 0; i < 60; i++) { const sx = (sin(i * 127.1) * 0.5 + 0.5) * W, sy = (cos(i * 311.7) * 0.4 + 0.25) * horizonY;
       ctx.globalAlpha = (sin(time * 2.5 + i * 1.7) * 0.3 + 0.7) * (1 - colors.ambient) * 0.6;
-      ctx.beginPath(); ctx.arc(sx, sy, 0.7, 0, PI2); ctx.fill();
-    }
+      ctx.beginPath(); ctx.arc(sx, sy, 0.7, 0, PI2); ctx.fill(); }
     ctx.globalAlpha = 1;
   }
 }
@@ -1120,27 +876,21 @@ function drawLandscape(colors) {
   ctx.lineTo(W, horizonY + 15); ctx.lineTo(0, horizonY + 15); ctx.fill();
   
   const sg = ctx.createLinearGradient(0, horizonY, 0, H);
-  sg.addColorStop(0, rgba(colors.ground, 1));
-  sg.addColorStop(0.4, rgba(lerpColor(colors.ground, { r: 255, g: 255, b: 255 }, 0.08), 1));
+  sg.addColorStop(0, rgba(colors.ground, 1)); sg.addColorStop(0.4, rgba(lerpColor(colors.ground, { r: 255, g: 255, b: 255 }, 0.08), 1));
   sg.addColorStop(1, rgba(lerpColor(colors.ground, { r: 170, g: 165, b: 160 }, 0.15), 1));
-  ctx.fillStyle = sg;
-  ctx.fillRect(0, horizonY - 5, W, H - horizonY + 5);
+  ctx.fillStyle = sg; ctx.fillRect(0, horizonY - 5, W, H - horizonY + 5);
   
   ctx.beginPath(); ctx.moveTo(0, forestY + H * 0.07);
   for (let x = 0; x <= W; x += 35) ctx.lineTo(x, forestY + H * 0.07 + sin(x * 0.004) * 7 + sin(x * 0.01 + 1) * 4);
   ctx.lineTo(W, H); ctx.lineTo(0, H);
-  ctx.fillStyle = `rgba(${colors.ground.r + 15 | 0}, ${colors.ground.g + 12 | 0}, ${colors.ground.b + 10 | 0}, 0.35)`;
-  ctx.fill();
+  ctx.fillStyle = `rgba(${colors.ground.r + 15 | 0}, ${colors.ground.g + 12 | 0}, ${colors.ground.b + 10 | 0}, 0.35)`; ctx.fill();
 }
 
 function drawVignette(ambient) {
   const str = 0.12 + (1 - ambient) * 0.18;
   const vg = ctx.createRadialGradient(W * 0.5, H * 0.4, H * 0.35, W * 0.5, H * 0.5, H * 0.95);
-  vg.addColorStop(0, 'transparent');
-  vg.addColorStop(0.65, `rgba(25, 22, 18, ${str * 0.4})`);
-  vg.addColorStop(1, `rgba(8, 6, 4, ${str})`);
-  ctx.fillStyle = vg;
-  ctx.fillRect(0, 0, W, H);
+  vg.addColorStop(0, 'transparent'); vg.addColorStop(0.65, `rgba(25, 22, 18, ${str * 0.4})`); vg.addColorStop(1, `rgba(8, 6, 4, ${str})`);
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 }
 
 // ============================================================================
@@ -1150,11 +900,11 @@ let lastTime = performance.now(), calendarTime = 0;
 
 function animate(now) {
   requestAnimationFrame(animate);
-  if (!layersReady) return;
+  
+  if (!isLoaded) return;
   
   const dt = min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
-  time += dt;
+  lastTime = now; time += dt;
   
   if (floor(time) !== floor(time - dt)) updateDayTime();
   if (time - calendarTime > 1) { updateCalendar(); checkMidnight(); calendarTime = time; }
@@ -1166,32 +916,23 @@ function animate(now) {
   updatePredator(dt);
   updateSleigh(dt);
   
+  // RENDER
   drawSky(colors, sun);
   if (sleighActive) drawSleigh();
   drawLandscape(colors);
   
-  // Distant birds
-  for (let i = 0; i < starlings.length; i++) {
-    const b = starlings[i];
-    if (b.state === 'flying' && b.y < forestY - H * 0.05) drawStarling(b, colors.ambient);
-  }
+  for (let i = 0; i < starlings.length; i++) { const b = starlings[i]; if (b.state === 'flying' && b.y < forestY - H * 0.05) drawStarling(b, colors.ambient); }
   
-  // Predator
   drawPredator(colors.ambient);
   
-  // Trees
-  const ta = 0.45 + colors.ambient * 0.35;
-  ctx.globalAlpha = ta * 0.5; ctx.drawImage(frostLayer, 0, 0);
-  ctx.globalAlpha = ta * 0.6; ctx.drawImage(blueLayer, 0, 0);
-  ctx.globalAlpha = ta * 0.65; ctx.drawImage(goldLayer, 0, 0);
-  ctx.globalAlpha = ta * 0.85; ctx.drawImage(silverLayer, 0, 0);
+  const baseAlpha = 0.45 + colors.ambient * 0.35;
+  ctx.globalAlpha = baseAlpha * 0.5; ctx.drawImage(treeLayers.frost, 0, 0);
+  ctx.globalAlpha = baseAlpha * 0.6; ctx.drawImage(treeLayers.gold, 0, 0);
+  ctx.globalAlpha = baseAlpha * 0.65; ctx.drawImage(treeLayers.blue, 0, 0);
+  ctx.globalAlpha = baseAlpha * 0.85; ctx.drawImage(treeLayers.silver, 0, 0);
   ctx.globalAlpha = 1;
   
-  // Near birds
-  for (let i = 0; i < starlings.length; i++) {
-    const b = starlings[i];
-    if (b.state !== 'flying' || b.y >= forestY - H * 0.05) drawStarling(b, colors.ambient);
-  }
+  for (let i = 0; i < starlings.length; i++) { const b = starlings[i]; if (b.state !== 'flying' || b.y >= forestY - H * 0.05) drawStarling(b, colors.ambient); }
   
   drawMist(dt, colors);
   drawSnow(dt, colors.ambient);
@@ -1208,23 +949,29 @@ function animate(now) {
 // ============================================================================
 // INIT
 // ============================================================================
-function init() {
+async function init() {
   initCanvas();
-  generateForest();
-  renderAllTreeLayers();
-  renderTextureLayer();
-  initStarlings();
-  initMist();
-  initSnow();
   updateDayTime();
   updateCalendar();
-  layersReady = true;
+  
+  requestAnimationFrame(animate);
+  
+  await loadAllAssets();
+  
+  hideLoadingScreen();
 }
 
-document.addEventListener('click', () => sleighBells.init(), { once: true });
-window.addEventListener('resize', init);
+document.addEventListener('click', () => audio.init(), { once: true });
+document.addEventListener('keydown', () => audio.init(), { once: true });
+
+window.addEventListener('resize', () => {
+  initCanvas();
+  generateAllTrees();
+  createTexture();
+  initSnow();
+});
+
 init();
-requestAnimationFrame(animate);
 
 </script>
 </body>
