@@ -339,6 +339,13 @@
         </div>
         <input type="range" id="mistSlider" min="0" max="140" value="60">
       </div>
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Cloud Cover</span>
+          <span id="cloudDisplay">30%</span>
+        </div>
+        <input type="range" id="cloudSlider" min="0" max="100" value="30">
+      </div>
     </div>
     
     <div class="section">
@@ -609,6 +616,9 @@ let forestLamps = [], pathPoints = [], lowryFigures = [];
 // Ambient weather particles
 let breezeParticles = [], atmosphericMotes = [], lightShafts = [];
 
+// Cloud system
+let cloudLayers = [];
+
 // Spatial hashing
 let spatialHash = {};
 
@@ -626,14 +636,17 @@ const weatherState = {
   precipitationIntensity: 0.7,
   mistIntensity: 0.6,
   windStrength: 0.5,
+  cloudCover: 0.3,
   targetPrecipitation: 0.7,
   targetMist: 0.6,
   targetWind: 0.5,
+  targetCloudCover: 0.3,
   realWeatherEnabled: false,
   realWeatherData: null,
   locationName: '',
   latitude: null,
-  longitude: null
+  longitude: null,
+  isRaining: false
 };
 
 // ============================================================================
@@ -738,12 +751,14 @@ function initStars() {
 function drawStars(ambient) {
   if (ambient > 0.5) return;
   const visibility = 1 - ambient * 2;
+  // Reduce star visibility based on cloud cover
+  const cloudDim = 1 - weatherState.cloudCover * 0.8;
   
   ctx.fillStyle = '#fff';
   for (let i = 0, len = stars.length; i < len; i++) {
     const s = stars[i];
     const twinkle = 0.7 + sin(time * s.twinkleSpeed + s.twinklePhase) * 0.3;
-    const alpha = s.brightness * visibility * twinkle;
+    const alpha = s.brightness * visibility * twinkle * cloudDim;
     if (alpha < 0.05) continue;
     
     ctx.globalAlpha = alpha;
@@ -760,6 +775,143 @@ function drawStars(ambient) {
     }
   }
   ctx.globalAlpha = 1;
+}
+
+// ============================================================================
+// EFFICIENT CLOUD SYSTEM - Procedural with cached rendering
+// ============================================================================
+
+function initClouds() {
+  cloudLayers = [];
+  
+  // Generate cloud formations for each layer
+  const layerConfigs = [
+    { count: 4, yRange: [0.08, 0.2], sizeRange: [0.15, 0.25], speed: 8, opacity: 0.25 },  // High wisps
+    { count: 5, yRange: [0.2, 0.4], sizeRange: [0.12, 0.22], speed: 12, opacity: 0.4 },   // Mid clouds
+    { count: 6, yRange: [0.35, 0.55], sizeRange: [0.18, 0.35], speed: 18, opacity: 0.6 }  // Low cumulus
+  ];
+  
+  layerConfigs.forEach((config, layerIdx) => {
+    for (let i = 0; i < config.count; i++) {
+      const cloud = {
+        x: random() * W * 1.5 - W * 0.25,
+        y: horizonY * (config.yRange[0] + random() * (config.yRange[1] - config.yRange[0])),
+        width: W * (config.sizeRange[0] + random() * (config.sizeRange[1] - config.sizeRange[0])),
+        height: H * (0.03 + random() * 0.04),
+        speed: config.speed * (0.7 + random() * 0.6),
+        baseOpacity: config.opacity * (0.7 + random() * 0.3),
+        layer: layerIdx,
+        // Pre-generate puff positions for this cloud
+        puffs: []
+      };
+      
+      // Generate organic puff arrangement
+      const puffCount = 5 + floor(random() * 4);
+      for (let p = 0; p < puffCount; p++) {
+        cloud.puffs.push({
+          xOff: (p / puffCount) * 0.8 + (random() - 0.5) * 0.15,
+          yOff: (random() - 0.5) * 0.4,
+          size: 0.5 + random() * 0.5,
+          bright: random() > 0.5 // Top-lit vs shadow
+        });
+      }
+      
+      cloudLayers.push(cloud);
+    }
+  });
+  
+  // Sort by y position for proper layering
+  cloudLayers.sort((a, b) => a.y - b.y);
+}
+
+function updateClouds(dt) {
+  const windFactor = 0.3 + weatherState.windStrength * 0.7;
+  
+  for (let i = 0; i < cloudLayers.length; i++) {
+    const cloud = cloudLayers[i];
+    cloud.x += cloud.speed * windFactor * dt;
+    
+    // Wrap around
+    if (cloud.x > W + cloud.width * 0.5) {
+      cloud.x = -cloud.width;
+    }
+  }
+}
+
+function drawClouds(ambient) {
+  const coverage = weatherState.cloudCover;
+  if (coverage < 0.05) return;
+  
+  const isDay = ambient > 0.4;
+  const isGoldenHour = ambient > 0.3 && ambient < 0.6;
+  
+  ctx.save();
+  
+  for (let i = 0; i < cloudLayers.length; i++) {
+    const cloud = cloudLayers[i];
+    const opacity = cloud.baseOpacity * coverage;
+    if (opacity < 0.03) continue;
+    
+    // Base colors based on time of day
+    let baseR, baseG, baseB;
+    let shadowR, shadowG, shadowB;
+    
+    if (isDay) {
+      if (isGoldenHour) {
+        // Warm sunset/sunrise tones
+        const warmth = 1 - Math.abs(ambient - 0.45) / 0.15;
+        baseR = 255; baseG = 250 - warmth * 20; baseB = 245 - warmth * 50;
+        shadowR = 200 + warmth * 30; shadowG = 180; shadowB = 170 - warmth * 30;
+      } else {
+        // Normal daylight - white to light gray
+        baseR = 255; baseG = 255; baseB = 255;
+        shadowR = 190; shadowG = 195; shadowB = 205;
+      }
+    } else {
+      // Night - dark blue-gray
+      baseR = 70; baseG = 75; baseB = 90;
+      shadowR = 40; shadowG = 45; shadowB = 55;
+    }
+    
+    // Draw cloud puffs
+    for (let p = 0; p < cloud.puffs.length; p++) {
+      const puff = cloud.puffs[p];
+      const px = cloud.x + cloud.width * puff.xOff;
+      const py = cloud.y + cloud.height * puff.yOff * 5;
+      const ps = cloud.height * puff.size * 2.5;
+      
+      // Skip if off screen
+      if (px + ps < 0 || px - ps > W) continue;
+      
+      // Shadow/underside
+      ctx.fillStyle = `rgba(${shadowR}, ${shadowG}, ${shadowB}, ${opacity * 0.5})`;
+      ctx.beginPath();
+      ctx.ellipse(px + 2, py + ps * 0.2, ps * 1.1, ps * 0.6, 0, 0, PI2);
+      ctx.fill();
+      
+      // Main puff with gradient
+      const grad = ctx.createRadialGradient(px - ps * 0.2, py - ps * 0.2, 0, px, py, ps);
+      grad.addColorStop(0, `rgba(${baseR}, ${baseG}, ${baseB}, ${opacity})`);
+      grad.addColorStop(0.6, `rgba(${(baseR + shadowR) / 2 | 0}, ${(baseG + shadowG) / 2 | 0}, ${(baseB + shadowB) / 2 | 0}, ${opacity * 0.8})`);
+      grad.addColorStop(1, `rgba(${shadowR}, ${shadowG}, ${shadowB}, ${opacity * 0.3})`);
+      
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(px, py, ps, ps * 0.6, 0, 0, PI2);
+      ctx.fill();
+    }
+  }
+  
+  // Overcast haze at high coverage
+  if (coverage > 0.6) {
+    const hazeOpacity = (coverage - 0.6) * 0.25;
+    ctx.fillStyle = isDay 
+      ? `rgba(210, 215, 225, ${hazeOpacity})`
+      : `rgba(50, 55, 65, ${hazeOpacity * 0.6})`;
+    ctx.fillRect(0, 0, W, horizonY);
+  }
+  
+  ctx.restore();
 }
 
 // ============================================================================
@@ -1103,10 +1255,16 @@ function initLowryFigures() {
       type: floor(random() * 6), // Different figure types
       color: random() > 0.7 ? 'dark' : (random() > 0.5 ? 'grey' : 'muted'),
       hasHat: random() > 0.6,
-      hasUmbrella: random() > 0.85,
+      ownsUmbrella: random() > 0.5, // Whether they own an umbrella
+      umbrellaOpen: false, // Whether umbrella is currently open
       isChild: random() > 0.88,
       lean: (random() - 0.5) * 0.15, // Slight lean
-      armSwing: random() * 0.5 + 0.3
+      armSwing: random() * 0.5 + 0.3,
+      // Seasonal attire properties
+      hasScarf: random() > 0.5,
+      hasCoat: true, // Default, modified by season
+      coatColor: ['#2a2a35', '#3a3530', '#352a2a', '#2a3530'][floor(random() * 4)],
+      scarfColor: ['#8b3a3a', '#3a5a8b', '#5a8b3a', '#8b6a3a'][floor(random() * 4)]
     });
   }
   
@@ -1131,6 +1289,11 @@ function getPathX(t) {
 function updateLowryFigures(dt) {
   if (!lowryFigures || lowryFigures.length === 0) return;
   
+  // Determine if it's raining based on precipitation and season
+  const isRaining = weatherState.isRaining || 
+    (weatherState.precipitationIntensity > 0.5 && 
+     (currentSeason === 'spring' || currentSeason === 'autumn' || currentSeason === 'winter'));
+  
   lowryFigures.forEach(fig => {
     fig.t += fig.speed * dt;
     fig.phase += dt * 4;
@@ -1138,6 +1301,17 @@ function updateLowryFigures(dt) {
     // Wrap around
     if (fig.t > 1.1) fig.t = -0.1;
     if (fig.t < -0.1) fig.t = 1.1;
+    
+    // Update umbrella state based on rain
+    if (fig.ownsUmbrella) {
+      if (isRaining && !fig.umbrellaOpen) {
+        // Open umbrella when rain starts
+        fig.umbrellaOpen = true;
+      } else if (!isRaining && fig.umbrellaOpen && random() < 0.01) {
+        // Gradually close umbrellas after rain stops
+        fig.umbrellaOpen = false;
+      }
+    }
   });
   
   // Re-sort occasionally for depth
@@ -1185,6 +1359,9 @@ function drawLowryFigures(ambient) {
   if (!lowryFigures || lowryFigures.length === 0) return;
   
   const visibility = min(1, max(0.3, ambient + 0.2));
+  const isWinter = currentSeason === 'winter';
+  const isSummer = currentSeason === 'summer';
+  const isSpring = currentSeason === 'spring';
   
   lowryFigures.forEach(fig => {
     if (fig.t < -0.05 || fig.t > 1.05) return;
@@ -1213,7 +1390,7 @@ function drawLowryFigures(ambient) {
     ctx.scale(direction, 1);
     ctx.rotate(fig.lean);
     
-    // === LOWRY MATCHSTICK FIGURE ===
+    // === LOWRY MATCHSTICK FIGURE WITH SEASONAL ATTIRE ===
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
@@ -1234,27 +1411,65 @@ function drawLowryFigures(ambient) {
     ctx.stroke();
     
     // Body (slightly hunched, Lowry style)
-    ctx.strokeStyle = bodyColor;
-    ctx.lineWidth = h * 0.12;
+    // Winter: thicker coat
+    const bodyWidth = isWinter ? h * 0.16 : (isSummer ? h * 0.1 : h * 0.12);
+    ctx.strokeStyle = isWinter ? fig.coatColor : bodyColor;
+    ctx.globalAlpha = visibility * (isWinter ? 0.9 : 0.85);
+    ctx.lineWidth = bodyWidth;
     ctx.beginPath();
     ctx.moveTo(0, -h * 0.4);
     ctx.quadraticCurveTo(h * 0.03, -h * 0.6, h * 0.02, -h * 0.8);
     ctx.stroke();
+    ctx.globalAlpha = 1;
     
-    // Arms (swinging)
+    // Winter scarf
+    if (isWinter && fig.hasScarf && !fig.isChild) {
+      ctx.strokeStyle = fig.scarfColor;
+      ctx.lineWidth = h * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(-h * 0.06, -h * 0.78);
+      ctx.quadraticCurveTo(-h * 0.08, -h * 0.72, -h * 0.12, -h * 0.65);
+      ctx.lineTo(-h * 0.1, -h * 0.55);
+      ctx.stroke();
+      // Scarf around neck
+      ctx.lineWidth = h * 0.05;
+      ctx.beginPath();
+      ctx.arc(h * 0.02, -h * 0.77, h * 0.07, PI * 0.3, PI * 1.2);
+      ctx.stroke();
+    }
+    
+    // Arms (swinging) - modified for umbrella
+    ctx.strokeStyle = isWinter ? fig.coatColor : bodyColor;
+    ctx.globalAlpha = visibility * (isWinter ? 0.9 : 0.85);
     ctx.lineWidth = h * 0.06;
     
-    // Back arm
-    ctx.beginPath();
-    ctx.moveTo(h * 0.02, -h * 0.7);
-    ctx.lineTo(-h * 0.1 - walkCycle * h * 0.15, -h * 0.45);
-    ctx.stroke();
-    
-    // Front arm
-    ctx.beginPath();
-    ctx.moveTo(h * 0.02, -h * 0.7);
-    ctx.lineTo(h * 0.12 + walkCycle * h * 0.15, -h * 0.5);
-    ctx.stroke();
+    if (fig.umbrellaOpen) {
+      // Arm holding umbrella up
+      ctx.beginPath();
+      ctx.moveTo(h * 0.02, -h * 0.7);
+      ctx.lineTo(h * 0.15, -h * 0.85);
+      ctx.stroke();
+      
+      // Other arm slightly forward
+      ctx.beginPath();
+      ctx.moveTo(h * 0.02, -h * 0.7);
+      ctx.lineTo(-h * 0.08 - walkCycle * h * 0.1, -h * 0.5);
+      ctx.stroke();
+    } else {
+      // Normal arm swing
+      // Back arm
+      ctx.beginPath();
+      ctx.moveTo(h * 0.02, -h * 0.7);
+      ctx.lineTo(-h * 0.1 - walkCycle * h * 0.15, -h * 0.45);
+      ctx.stroke();
+      
+      // Front arm
+      ctx.beginPath();
+      ctx.moveTo(h * 0.02, -h * 0.7);
+      ctx.lineTo(h * 0.12 + walkCycle * h * 0.15, -h * 0.5);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     
     // Head (small, round)
     ctx.fillStyle = bodyColor;
@@ -1262,11 +1477,23 @@ function drawLowryFigures(ambient) {
     ctx.arc(h * 0.02, -h * 0.88, h * 0.1, 0, PI2);
     ctx.fill();
     
-    // Hat (if applicable)
+    // Hat (if applicable) - more prominent in winter
     if (fig.hasHat && !fig.isChild) {
       ctx.fillStyle = legColor;
-      // Flat cap or bowler
-      if (fig.type % 2 === 0) {
+      if (isWinter) {
+        // Winter cap with ear flaps suggestion
+        ctx.beginPath();
+        ctx.ellipse(h * 0.02, -h * 0.96, h * 0.13, h * 0.05, 0, 0, PI2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(h * 0.02, -h * 1.0, h * 0.1, 0, PI2);
+        ctx.fill();
+        // Pompom
+        ctx.fillStyle = fig.scarfColor || '#555';
+        ctx.beginPath();
+        ctx.arc(h * 0.02, -h * 1.08, h * 0.03, 0, PI2);
+        ctx.fill();
+      } else if (fig.type % 2 === 0) {
         // Flat cap
         ctx.beginPath();
         ctx.ellipse(h * 0.02, -h * 0.95, h * 0.12, h * 0.04, 0.1, 0, PI2);
@@ -1286,8 +1513,37 @@ function drawLowryFigures(ambient) {
       }
     }
     
-    // Umbrella (if applicable)
-    if (fig.hasUmbrella) {
+    // Open umbrella when raining
+    if (fig.umbrellaOpen) {
+      // Umbrella handle
+      ctx.strokeStyle = legColor;
+      ctx.lineWidth = h * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(h * 0.15, -h * 0.85);
+      ctx.lineTo(h * 0.18, -h * 1.35);
+      ctx.stroke();
+      
+      // Umbrella canopy
+      ctx.fillStyle = `rgba(30, 30, 35, ${visibility * 0.8})`;
+      ctx.beginPath();
+      ctx.moveTo(h * 0.18, -h * 1.35);
+      ctx.quadraticCurveTo(h * 0.45, -h * 1.25, h * 0.5, -h * 1.1);
+      ctx.quadraticCurveTo(h * 0.35, -h * 1.15, h * 0.18, -h * 1.1);
+      ctx.quadraticCurveTo(0, -h * 1.15, -h * 0.15, -h * 1.1);
+      ctx.quadraticCurveTo(-h * 0.1, -h * 1.25, h * 0.18, -h * 1.35);
+      ctx.fill();
+      
+      // Umbrella ribs
+      ctx.strokeStyle = `rgba(50, 50, 55, ${visibility * 0.5})`;
+      ctx.lineWidth = h * 0.015;
+      for (let r = -2; r <= 2; r++) {
+        ctx.beginPath();
+        ctx.moveTo(h * 0.18, -h * 1.35);
+        ctx.quadraticCurveTo(h * (0.18 + r * 0.12), -h * 1.22, h * (0.18 + r * 0.16), -h * 1.1);
+        ctx.stroke();
+      }
+    } else if (fig.ownsUmbrella && !fig.umbrellaOpen) {
+      // Closed umbrella carried
       ctx.strokeStyle = legColor;
       ctx.lineWidth = h * 0.04;
       ctx.beginPath();
@@ -1317,10 +1573,11 @@ function drawLowryFiguresShadows(ambient) {
     const baseY = getPathY(fig.t);
     const h = fig.isChild ? fig.height * 0.6 : fig.height;
     
-    // Simple shadow blob
+    // Simple shadow blob - larger if umbrella open
+    const shadowWidth = fig.umbrellaOpen ? h * 0.7 : h * 0.4;
     ctx.fillStyle = `rgba(20, 18, 15, ${shadowAlpha})`;
     ctx.beginPath();
-    ctx.ellipse(x + h * 0.3, baseY + 2, h * 0.4, h * 0.1, 0.2, 0, PI2);
+    ctx.ellipse(x + h * 0.3, baseY + 2, shadowWidth, h * 0.1, 0.2, 0, PI2);
     ctx.fill();
   });
 }
@@ -1344,6 +1601,7 @@ async function loadAllAssets() {
   initMist();
   initPrecipitation();
   initStars();
+  initClouds();
   initPath();
   initForestLamps();
   initLowryFigures();
@@ -1876,6 +2134,11 @@ function applyRealWeather() {
   const w = weatherState.realWeatherData;
   updateWeatherIndicator(w);
   
+  // Determine if it's actually raining
+  weatherState.isRaining = w.rain > 0 || w.precipitation > 0 || 
+    (w.weatherCode >= 51 && w.weatherCode <= 67) || 
+    (w.weatherCode >= 80 && w.weatherCode <= 82);
+  
   // Seasonal weather interpretation
   let precipFactor = 0.3;
   
@@ -1899,6 +2162,9 @@ function applyRealWeather() {
   
   weatherState.targetPrecipitation = precipFactor;
   weatherState.targetWind = 0.3 + min(w.windSpeed / 30, 1.2);
+  
+  // Cloud cover from real data
+  weatherState.targetCloudCover = w.cloudCover / 100;
   
   let mistFactor = 0.3;
   if (w.visibility < 10000) {
@@ -1927,14 +2193,24 @@ function updateWeather(dt) {
   if (random() < variationRate * 1.2) {
     weatherState.targetWind = max(0.2, weatherState.targetWind + (random() - 0.5) * 0.3);
   }
+  if (random() < variationRate * 0.5) {
+    weatherState.targetCloudCover = max(0, min(1, weatherState.targetCloudCover + (random() - 0.5) * 0.2));
+  }
   
   weatherState.precipitationIntensity = lerp(weatherState.precipitationIntensity, weatherState.targetPrecipitation, 0.002);
   weatherState.mistIntensity = lerp(weatherState.mistIntensity, weatherState.targetMist, 0.001);
   weatherState.windStrength = lerp(weatherState.windStrength, weatherState.targetWind, 0.003);
+  weatherState.cloudCover = lerp(weatherState.cloudCover, weatherState.targetCloudCover, 0.002);
   
   const weatherPulse = weatherCRR.amplitude;
   weatherState.precipitationIntensity += (weatherPulse - 0.5) * 0.02;
   weatherState.precipitationIntensity = max(0.2, min(1.5, weatherState.precipitationIntensity));
+  
+  // Update isRaining based on current precipitation intensity
+  if (!weatherState.realWeatherEnabled) {
+    weatherState.isRaining = weatherState.precipitationIntensity > 0.6 && 
+      (currentSeason !== 'summer');
+  }
 }
 
 // ============================================================================
@@ -2267,13 +2543,17 @@ function updateAmbientWeather(dt, ambient) {
     }
   }
   
-  // Update light shafts (only active during certain light conditions)
-  const lightShaftCondition = ambient > 0.4 && ambient < 0.85;
+  // Update light shafts (only active during certain light conditions and reduced by clouds)
+  const cloudDim = 1 - weatherState.cloudCover * 0.8;
+  const lightShaftCondition = ambient > 0.4 && ambient < 0.85 && cloudDim > 0.4;
   for (let i = 0; i < lightShafts.length; i++) {
     const shaft = lightShafts[i];
-    shaft.targetOpacity = lightShaftCondition ? (0.015 + sin(time * 0.1 + i * 2) * 0.01) : 0;
+    shaft.targetOpacity = lightShaftCondition ? (0.015 + sin(time * 0.1 + i * 2) * 0.01) * cloudDim : 0;
     shaft.opacity = lerp(shaft.opacity, shaft.targetOpacity, 0.01);
   }
+  
+  // Update clouds
+  updateClouds(dt);
 }
 
 function drawAmbientWeather(ambient, colors) {
@@ -2405,13 +2685,14 @@ function drawMist(dt, colors) {
 
 function initPrecipitation() {
   precipitationParticles = [];
-  const count = floor((W * H) / 6500);
+  // Increased particle count for more pronounced precipitation
+  const count = floor((W * H) / 4500);
   for (let i = 0; i < count; i++) {
-    precipitationParticles.push({ x: random() * W, y: random() * H, size: 0.5 + random() * 2.0,
-      speed: 10 + random() * 20, drift: (random() - 0.5) * 0.4,
-      opacity: 0.2 + random() * 0.4, phase: random() * PI2,
+    precipitationParticles.push({ x: random() * W, y: random() * H, size: 0.5 + random() * 2.5,
+      speed: 12 + random() * 25, drift: (random() - 0.5) * 0.5,
+      opacity: 0.25 + random() * 0.5, phase: random() * PI2,
       rotation: random() * PI2,
-      rotationSpeed: (random() - 0.5) * 2
+      rotationSpeed: (random() - 0.5) * 2.5
     });
   }
 }
@@ -2420,8 +2701,9 @@ function drawPrecipitation(dt, ambient) {
   const precipType = seasonalPalette.precipitation;
   if (precipType === 'none' && weatherState.precipitationIntensity < 0.4) return;
   
-  const baseAlpha = (0.3 + ambient * 0.5) * weatherState.precipitationIntensity;
-  const windDrift = weatherState.windStrength * 0.6;
+  // Enhanced base alpha for more visible precipitation
+  const baseAlpha = (0.4 + ambient * 0.5) * weatherState.precipitationIntensity;
+  const windDrift = weatherState.windStrength * 0.7;
   const intensity = weatherState.precipitationIntensity;
   const t = time * 0.15;
   
@@ -2432,31 +2714,31 @@ function drawPrecipitation(dt, ambient) {
     if (precipType === 'snow') {
       const wobble = sin(t + f.phase) * f.drift + sin(t * 1.7 + f.phase * 0.7) * f.drift * 0.3;
       f.y += f.speed * dt * intensity * (0.8 + sin(t * 0.5 + i) * 0.2);
-      f.x += (wobble + windDrift * 0.5) * dt * 35;
+      f.x += (wobble + windDrift * 0.5) * dt * 40;
       f.rotation += f.rotationSpeed * dt;
     } else if (precipType === 'leaves') {
       // Slow, gentle tumbling fall for autumn leaves
       const wobble = sin(t * 0.4 + f.phase) * 1.2 + cos(t * 0.6 + f.phase * 1.3) * 0.8;
       const flutter = sin(t * 2 + f.phase * 2) * 0.3; // Quick flutter
-      f.y += f.speed * dt * intensity * 0.25; // Much slower fall
-      f.x += (wobble + windDrift * 0.8 + flutter) * dt * 25;
+      f.y += f.speed * dt * intensity * 0.28; // Slightly faster fall
+      f.x += (wobble + windDrift * 0.9 + flutter) * dt * 28;
       f.rotation += f.rotationSpeed * dt * 0.8 + flutter * 0.5;
     } else if (precipType === 'blossoms') {
       const wobble = sin(t * 0.6 + f.phase) * 1.2 + cos(t * 0.9 + f.phase * 0.8) * 0.6;
-      f.y += f.speed * dt * intensity * 0.4;
-      f.x += (wobble + windDrift * 0.7) * dt * 45;
+      f.y += f.speed * dt * intensity * 0.45;
+      f.x += (wobble + windDrift * 0.8) * dt * 50;
       f.rotation += f.rotationSpeed * dt * 0.3;
     } else {
-      // Rain or default
-      f.y += f.speed * dt * intensity * 2.5;
-      f.x += windDrift * dt * 40;
+      // Rain or default - more pronounced
+      f.y += f.speed * dt * intensity * 3.0;
+      f.x += windDrift * dt * 50;
     }
     
     if (f.y > H + 5) { f.y = -5; f.x = random() * W; }
     if (f.x < -5) f.x = W + 5;
     else if (f.x > W + 5) f.x = -5;
     
-    const df = f.y < horizonY ? 0.35 : 1;
+    const df = f.y < horizonY ? 0.4 : 1;
     const finalAlpha = f.opacity * df * baseAlpha;
     
     if (finalAlpha > 0.02) {
@@ -2466,8 +2748,8 @@ function drawPrecipitation(dt, ambient) {
       if (precipType === 'snow') {
         ctx.fillStyle = '#fff';
         if (size > 1.5 && ambient > 0.5) {
-          ctx.globalAlpha = finalAlpha * 0.3;
-          ctx.beginPath(); ctx.arc(f.x, f.y, size * 2, 0, PI2); ctx.fill();
+          ctx.globalAlpha = finalAlpha * 0.35;
+          ctx.beginPath(); ctx.arc(f.x, f.y, size * 2.2, 0, PI2); ctx.fill();
           ctx.globalAlpha = finalAlpha;
         }
         if (size < 1.2) {
@@ -2486,7 +2768,7 @@ function drawPrecipitation(dt, ambient) {
           {r:180,g:140,b:60}, {r:200,g:60,b:30}
         ];
         const col = leafColors[i % leafColors.length];
-        const leafSize = size * 1.8 + 2;
+        const leafSize = size * 2.0 + 2.5;
         
         // Leaf shape with stem
         ctx.fillStyle = `rgba(${col.r}, ${col.g}, ${col.b}, ${finalAlpha})`;
@@ -2638,6 +2920,9 @@ function drawSky(colors, sun) {
   // Draw atmospheric haze (subtle)
   drawAtmosphericHaze(colors.ambient, colors);
   
+  // Draw clouds before sun/moon
+  drawClouds(colors.ambient);
+  
   if (sun.intensity > 0.1) {
     // Daytime sun
     const g1 = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, H * 0.45);
@@ -2656,6 +2941,11 @@ function drawSky(colors, sun) {
     const illumination = getMoonIllumination(moonPhase);
     const isWaxing = moonPhase < 0.5;
     
+    // Calculate terminator position (0 = new moon edge, 1 = full moon)
+    // For waxing: goes 0 -> 1 as moonPhase goes 0 -> 0.5
+    // For waning: goes 1 -> 0 as moonPhase goes 0.5 -> 1
+    const terminatorPos = isWaxing ? moonPhase * 2 : (1 - moonPhase) * 2;
+    
     // Outer atmospheric glow (scales with illumination)
     const outerGlowSize = moonRadius * (3 + illumination * 3);
     const outerGlow = ctx.createRadialGradient(mx, my, moonRadius * 0.5, mx, my, outerGlowSize);
@@ -2671,9 +2961,6 @@ function drawSky(colors, sun) {
     ctx.save();
     ctx.beginPath();
     
-    // Calculate phase angle for terminator position (used in multiple places)
-    const phaseAngle = moonPhase * PI * 2; // 0 at new, π at full, 2π at next new
-    
     if (illumination > 0.99) {
       // Full moon - show entire disc
       ctx.arc(mx, my, moonRadius, 0, PI2);
@@ -2681,41 +2968,43 @@ function drawSky(colors, sun) {
       // New moon - show nothing (or very faint earthshine)
       ctx.arc(mx, my, moonRadius * 0.1, 0, PI2);
     } else {
-      // CORRECT FORMULA: The terminator ellipse width follows cosine of phase angle
-      // This gives astronomically accurate moon phase appearance
-      const ellipseWidth = moonRadius * abs(cos(phaseAngle));
+      // The terminator is an ellipse whose width depends on phase
+      // At first/last quarter (terminatorPos = 0.5), width = 0 (straight line)
+      // At new/full moon (terminatorPos = 0 or 1), width = moonRadius
       
-      // Determine if gibbous (more than half lit) or crescent (less than half lit)
-      const isGibbous = illumination > 0.5;
+      const isGibbous = terminatorPos > 0.5;
+      // Ellipse width: 0 at quarter, moonRadius at new/full
+      const ellipseWidth = isGibbous 
+        ? moonRadius * (terminatorPos - 0.5) * 2  // 0 at quarter, moonRadius at full
+        : moonRadius * (0.5 - terminatorPos) * 2; // moonRadius at new, 0 at quarter
       
       if (isWaxing) {
-        // WAXING: illuminated on RIGHT side
-        // Outer boundary: right semicircle (top to bottom, clockwise)
+        // Waxing: illuminated on RIGHT side
+        // Draw right semicircle (from top, clockwise to bottom)
         ctx.arc(mx, my, moonRadius, -PI/2, PI/2, false);
         
         if (isGibbous) {
-          // Waxing gibbous: >50% lit, small dark sliver on left
-          // Include LEFT side of ellipse (counterclockwise from bottom to top)
+          // Waxing gibbous: terminator bulges LEFT (outward from center)
+          // Draw ellipse counterclockwise on left side (bulges left)
           ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, PI/2, -PI/2, true);
         } else {
-          // Waxing crescent: <50% lit, thin bright sliver on right
-          // Include RIGHT side of ellipse (clockwise from bottom to top)
-          // This creates thin crescent between moon's right edge and ellipse's right edge
+          // Waxing crescent: terminator bulges RIGHT (inward toward lit area)
+          // Draw ellipse clockwise on left side (bulges right) 
           ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, PI/2, -PI/2, false);
         }
       } else {
-        // WANING: illuminated on LEFT side
-        // Outer boundary: left semicircle (bottom to top, clockwise)
-        ctx.arc(mx, my, moonRadius, PI/2, -PI/2, false);
+        // Waning: illuminated on LEFT side
+        // Draw left semicircle (from top, counterclockwise to bottom)
+        ctx.arc(mx, my, moonRadius, -PI/2, PI/2, true);
         
         if (isGibbous) {
-          // Waning gibbous: >50% lit, small dark sliver on right
-          // Include LEFT side of ellipse (counterclockwise from top to bottom)
-          ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, -PI/2, PI/2, true);
+          // Waning gibbous: terminator bulges RIGHT (outward from center)
+          // Draw ellipse clockwise on right side (bulges right)
+          ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, PI/2, -PI/2, false);
         } else {
-          // Waning crescent: <50% lit, thin bright sliver on left
-          // Include RIGHT side of ellipse (clockwise from top to bottom)
-          ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, -PI/2, PI/2, false);
+          // Waning crescent: terminator bulges LEFT (inward toward lit area)
+          // Draw ellipse counterclockwise on right side (bulges left)
+          ctx.ellipse(mx, my, ellipseWidth, moonRadius, 0, PI/2, -PI/2, true);
         }
       }
     }
@@ -2995,6 +3284,8 @@ function initDemoPanel() {
   const windDisplay = document.getElementById('windDisplay');
   const mistSlider = document.getElementById('mistSlider');
   const mistDisplay = document.getElementById('mistDisplay');
+  const cloudSlider = document.getElementById('cloudSlider');
+  const cloudDisplay = document.getElementById('cloudDisplay');
   const autoTimeCheck = document.getElementById('autoTimeCheck');
   const autoSeasonCheck = document.getElementById('autoSeasonCheck');
   const seasonBtns = document.querySelectorAll('.season-btn');
@@ -3126,6 +3417,8 @@ function initDemoPanel() {
     precipDisplay.textContent = `${v}%`;
     weatherState.targetPrecipitation = v / 100;
     weatherState.precipitationIntensity = v / 100;
+    // Update isRaining state
+    weatherState.isRaining = v > 60 && currentSeason !== 'summer';
   });
   
   windSlider.addEventListener('input', (e) => {
@@ -3140,6 +3433,13 @@ function initDemoPanel() {
     mistDisplay.textContent = `${v}%`;
     weatherState.targetMist = v / 100;
     weatherState.mistIntensity = v / 100;
+  });
+  
+  cloudSlider.addEventListener('input', (e) => {
+    const v = parseInt(e.target.value);
+    cloudDisplay.textContent = `${v}%`;
+    weatherState.targetCloudCover = v / 100;
+    weatherState.cloudCover = v / 100;
   });
   
   // Auto-time checkbox
@@ -3236,6 +3536,7 @@ window.addEventListener('resize', () => {
   createTexture();
   initPrecipitation();
   initStars();
+  initClouds();
   initPath();
   initForestLamps();
   initLowryFigures();
