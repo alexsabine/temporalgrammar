@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CRR Living Forest | Season Preview Demo</title>
+  <title>CRR Living Forest | Mathematical CRR Implementation</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
     
@@ -252,6 +252,38 @@
       margin-top: 10px;
       line-height: 1.4;
     }
+  
+    /* CRR Debug Panel */
+    .crr-debug {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
+    }
+    .crr-debug.visible { opacity: 1; }
+    .crr-debug .title { 
+      font-weight: 600; 
+      color: #7dd3fc;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .crr-debug .row { display: flex; justify-content: space-between; gap: 20px; }
+    .crr-debug .label { color: rgba(255,255,255,0.5); }
+    .crr-debug .value { color: #fcd34d; font-weight: 500; }
+    .crr-debug .omega { color: #a78bfa; }
+    .crr-debug .phase { color: #34d399; }
+
   </style>
 </head>
 <body>
@@ -269,6 +301,17 @@
     </div>
     <p class="loading-quote" id="loadingQuote">"In every walk with nature, one receives far more than one seeks."</p>
   </div>
+</div>
+
+
+<div class="crr-debug" id="crrDebug">
+  <div class="title">CRR State (press 'c' to toggle)</div>
+  <div class="row"><span class="label">Ω (SO₂):</span><span class="value omega" id="crrOmega">0.159</span></div>
+  <div class="row"><span class="label">Phase:</span><span class="value phase" id="crrPhase">coherence</span></div>
+  <div class="row"><span class="label">Day/Night C:</span><span class="value" id="crrDayC">0.00</span></div>
+  <div class="row"><span class="label">Amplitude:</span><span class="value" id="crrAmplitude">0.00</span></div>
+  <div class="row"><span class="label">exp(C/Ω):</span><span class="value" id="crrMemory">1.00</span></div>
+  <div class="row"><span class="label">CV:</span><span class="value" id="crrCV">0.08</span></div>
 </div>
 
 <canvas id="canvas"></canvas>
@@ -358,10 +401,14 @@
         <input type="checkbox" id="autoSeasonCheck">
         <span>Auto-detect season</span>
       </label>
+      <label class="checkbox-group">
+        <input type="checkbox" id="rainbowCheck">
+        <span id="rainbowLabel">CRR Rainbow</span>
+      </label>
     </div>
     
     <div class="info-text">
-      Keys: 1-4 seasons, d/n/s/m times, h hide panel.<br>
+      Keys: 1-4 seasons, d/n/s/m times, h hide, r rainbow.<br>
       Set time to night to see moon phases clearly.
     </div>
   </div>
@@ -401,6 +448,237 @@ const CONFIG = {
   starlingCount: 350,
   spatialCellSize: 60
 };
+
+// ============================================================================
+// CRR RAINBOW SYSTEM - Using actual wavelength physics with CRR mathematics
+// ============================================================================
+
+// Rainbow state
+let rainbowEnabled = false;
+let rainbowIntensity = 0;
+let rainbowTargetIntensity = 0;
+let naturalRainbowActive = false;
+
+// CRR Rainbow Calculator
+// Uses C(λ) = ∫L(λ,τ)dτ where λ is wavelength
+// Ω_rainbow = 1/(2π) for the SO(2) symmetry of the circular arc
+// R(λ) = φ(λ) * exp(C(λ)/Ω) gives intensity weighting
+class CRRRainbow {
+  constructor() {
+    this.omega = 1 / (2 * Math.PI); // SO(2) symmetry for circular phenomena
+    this.coherence = 0;
+    this.phase = 0;
+  }
+  
+  // Calculate coherence for a given wavelength position (0-1 normalized)
+  // C(λ) represents accumulated "light coherence" at that wavelength
+  getCoherence(normalizedWavelength) {
+    // Coherence accumulates as we move through the spectrum
+    // Peak coherence at center (green-yellow), tapering at edges
+    const center = 0.5;
+    const spread = 0.4;
+    const gaussian = Math.exp(-Math.pow(normalizedWavelength - center, 2) / (2 * spread * spread));
+    return gaussian * 0.8 + 0.2; // Base coherence + gaussian peak
+  }
+  
+  // CRR memory weighting: exp(C/Ω)
+  // This creates the characteristic intensity distribution
+  getMemoryWeight(normalizedWavelength) {
+    const C = this.getCoherence(normalizedWavelength);
+    // Clamp to prevent overflow
+    return Math.exp(Math.min(C / this.omega, 5));
+  }
+  
+  // Convert wavelength (nm) to RGB using CRR-weighted intensity
+  wavelengthToRGB(wavelength, baseIntensity = 1.0) {
+    // Normalize wavelength to 0-1 range (380nm to 700nm)
+    const normalized = (wavelength - 380) / (700 - 380);
+    
+    // Get CRR memory weight for this wavelength
+    const memoryWeight = this.getMemoryWeight(normalized);
+    
+    // Base color calculation using spectral physics
+    let r, g, b;
+    
+    if (wavelength >= 380 && wavelength < 440) {
+      r = -(wavelength - 440) / (440 - 380);
+      g = 0;
+      b = 1;
+    } else if (wavelength >= 440 && wavelength < 490) {
+      r = 0;
+      g = (wavelength - 440) / (490 - 440);
+      b = 1;
+    } else if (wavelength >= 490 && wavelength < 510) {
+      r = 0;
+      g = 1;
+      b = -(wavelength - 510) / (510 - 490);
+    } else if (wavelength >= 510 && wavelength < 580) {
+      r = (wavelength - 510) / (580 - 510);
+      g = 1;
+      b = 0;
+    } else if (wavelength >= 580 && wavelength < 645) {
+      r = 1;
+      g = -(wavelength - 645) / (645 - 580);
+      b = 0;
+    } else if (wavelength >= 645 && wavelength <= 700) {
+      r = 1;
+      g = 0;
+      b = 0;
+    } else {
+      r = 0; g = 0; b = 0;
+    }
+    
+    // Apply intensity falloff at spectrum edges (atmospheric absorption)
+    let factor;
+    if (wavelength >= 380 && wavelength < 420) {
+      factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+    } else if (wavelength >= 420 && wavelength < 645) {
+      factor = 1.0;
+    } else if (wavelength >= 645 && wavelength <= 700) {
+      factor = 0.3 + 0.7 * (700 - wavelength) / (700 - 645);
+    } else {
+      factor = 0;
+    }
+    
+    // Apply CRR memory weighting (normalized to reasonable range)
+    const crrFactor = (memoryWeight - 1) / (Math.exp(5) - 1); // Normalize to 0-1
+    const combinedFactor = factor * (0.7 + 0.3 * crrFactor);
+    
+    // Final intensity with base intensity
+    const intensity = baseIntensity * combinedFactor;
+    
+    return {
+      r: Math.round(r * 255 * intensity),
+      g: Math.round(g * 255 * intensity),
+      b: Math.round(b * 255 * intensity),
+      a: intensity * 0.6 // Subtle alpha for the ethereal look
+    };
+  }
+}
+
+const crrRainbow = new CRRRainbow();
+
+// Draw CRR Rainbow arc
+function drawCRRRainbow(colors, sun) {
+  // Check for natural rainbow conditions: sun visible AND rain/precipitation
+  const sunVisible = sun.intensity > 0.3;
+  const isRaining = weatherState.isRaining || weatherState.precipitationIntensity > 0.5;
+  const naturalRainbow = sunVisible && isRaining && weatherState.realWeatherEnabled;
+  
+  // Track natural rainbow state for UI
+  if (naturalRainbow !== naturalRainbowActive) {
+    naturalRainbowActive = naturalRainbow;
+    const label = document.getElementById('rainbowLabel');
+    if (label) {
+      label.textContent = naturalRainbow ? 'CRR Rainbow ✨' : 'CRR Rainbow';
+      label.style.color = naturalRainbow ? '#ffd700' : '';
+    }
+  }
+  
+  // Rainbow can appear from manual toggle OR natural weather conditions
+  const shouldShow = rainbowEnabled || naturalRainbow;
+  
+  if (!shouldShow && rainbowIntensity < 0.01) return;
+  
+  // Smooth intensity transition
+  rainbowTargetIntensity = shouldShow ? 1 : 0;
+  rainbowIntensity += (rainbowTargetIntensity - rainbowIntensity) * 0.02;
+  
+  if (rainbowIntensity < 0.01) return;
+  
+  const ambient = colors.ambient;
+  
+  // Intensity modifier based on conditions
+  const intensityMod = naturalRainbow ? (sun.intensity * 0.8) : (rainbowEnabled ? 1.0 : 0);
+  
+  if (intensityMod < 0.01) return;
+  
+  // Rainbow geometry - raised high in sky, well above the trees
+  const centerX = W * 0.5;
+  const centerY = H * 0.65; // Raised higher (was 0.85)
+  
+  // Primary rainbow radius - larger to create higher arc
+  const primaryRadius = H * 0.55;
+  const bandWidth = H * 0.06; // Width of the rainbow band
+  
+  // Number of color bands for smooth gradient
+  const numBands = 64;
+  
+  ctx.save();
+  
+  // Arc angles adjusted for higher position
+  const startAngle = Math.PI * 1.05;
+  const endAngle = Math.PI * 1.95;
+  
+  // Draw rainbow bands from outer (red) to inner (violet)
+  for (let i = 0; i < numBands; i++) {
+    const t = i / (numBands - 1);
+    
+    // Wavelength from red (700nm) to violet (380nm)
+    const wavelength = 700 - t * (700 - 380);
+    
+    // Get CRR-calculated color - increased visibility
+    const color = crrRainbow.wavelengthToRGB(wavelength, rainbowIntensity * intensityMod * 0.55);
+    
+    // Band radius (outer to inner)
+    const radius = primaryRadius - t * bandWidth;
+    const nextRadius = primaryRadius - (t + 1/numBands) * bandWidth;
+    
+    // Create arc for this band
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.arc(centerX, centerY, nextRadius, endAngle, startAngle, true);
+    ctx.closePath();
+    
+    // Apply subtle glow effect - increased alpha
+    const alpha = color.a * ambient * 0.85;
+    ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+    ctx.fill();
+  }
+  
+  // Secondary rainbow (fainter, reversed colors, at ~51°)
+  if (rainbowIntensity > 0.5) {
+    const secondaryRadius = primaryRadius * 1.15;
+    const secondaryBandWidth = bandWidth * 0.6;
+    
+    for (let i = 0; i < numBands; i++) {
+      const t = i / (numBands - 1);
+      
+      // Reversed: violet (380nm) to red (700nm) for secondary
+      const wavelength = 380 + t * (700 - 380);
+      
+      const color = crrRainbow.wavelengthToRGB(wavelength, rainbowIntensity * intensityMod * 0.15);
+      
+      const radius = secondaryRadius - t * secondaryBandWidth;
+      const nextRadius = secondaryRadius - (t + 1/numBands) * secondaryBandWidth;
+      
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.arc(centerX, centerY, nextRadius, endAngle, startAngle, true);
+      ctx.closePath();
+      
+      const alpha = color.a * ambient * 0.3;
+      ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+      ctx.fill();
+    }
+  }
+  
+  // Alexander's dark band (very subtle darker sky between primary and secondary)
+  if (rainbowIntensity > 0.5) {
+    const darkBandInner = primaryRadius + bandWidth * 0.1;
+    const darkBandOuter = primaryRadius * 1.12;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, darkBandOuter, startAngle, endAngle);
+    ctx.arc(centerX, centerY, darkBandInner, endAngle, startAngle, true);
+    ctx.closePath();
+    
+    ctx.fillStyle = `rgba(0, 0, 20, ${rainbowIntensity * 0.02 * ambient})`;
+    ctx.fill();
+  }
+  
+  ctx.restore();
+}
 
 // ============================================================================
 // SEASONAL SYSTEM & MULTICULTURAL CALENDAR
@@ -450,6 +728,31 @@ const SEASONAL_PALETTES = {
     precipitation: 'snow'
   }
 };
+
+
+function getSeasonallyBlendedPalette() {
+  const now = new Date();
+  const seasonState = seasonalCRR.getSeasonalBlend(now, SEASONAL_PALETTES);
+  
+  if (!seasonState.inTransition) {
+    return SEASONAL_PALETTES[seasonState.season];
+  }
+  
+  // CRR-modulated seasonal transition
+  const from = SEASONAL_PALETTES[seasonState.fromSeason];
+  const to = SEASONAL_PALETTES[seasonState.toSeason];
+  const blend = seasonState.crrBlend; // CRR-modulated blend factor
+  
+  return {
+    ground: {
+      day: lerpColor(from.ground.day, to.ground.day, blend),
+      night: lerpColor(from.ground.night, to.ground.night, blend)
+    },
+    sunArcHeight: lerp(from.sunArcHeight, to.sunArcHeight, blend),
+    precipitation: blend > 0.5 ? to.precipitation : from.precipitation
+  };
+}
+
 
 let currentSeason = 'winter';
 let currentHemisphere = 'northern';
@@ -532,29 +835,349 @@ function updateSeasonalState() {
   document.getElementById('loadingScreen').style.background = bgColors[currentSeason];
 }
 
+
 // ============================================================================
-// CRR & AUDIO SYSTEMS
+// CRR MATHEMATICAL FRAMEWORK
+// Coherence-Rupture-Regeneration as developed by Alexander Sabine
+// 
+// Core equations:
+//   C(x,t) = ∫L(x,τ)dτ           - Coherence accumulation  
+//   δ(now)                        - Rupture as scale-invariant moment
+//   R = ∫φ(x,τ)exp(C/Ω)Θ(...)dτ  - Regeneration with memory weighting
+//
+// For SO(2) systems (full rotation): Ω = 1/(2π)
+// For Z₂ systems (half rotation):    Ω = 1/π
 // ============================================================================
+
+const CRR_CONSTANTS = {
+  // SO(2) symmetry (full cycle) - used for day/night and seasonal cycles
+  OMEGA_SO2: 1 / (2 * Math.PI),  // ≈ 0.159
+  
+  // Z₂ symmetry (half cycle) - used for systems with binary state changes
+  OMEGA_Z2: 1 / Math.PI,         // ≈ 0.318
+  
+  // Coefficient of variation CV = Ω/2
+  CV_SO2: 1 / (4 * Math.PI),     // ≈ 0.08
+  CV_Z2: 1 / (2 * Math.PI),      // ≈ 0.16
+};
+
 class CRRSystem {
-  constructor(omega, rate = 0.1) {
-    this.omega = omega; this.coherence = 0; this.rate = rate;
-    this.state = 'coherence'; this.amplitude = 0;
+  /**
+   * Mathematical CRR system implementing the coherence-rupture-regeneration cycle
+   * @param {number} omega - The Ω parameter (1/2π for SO(2), 1/π for Z₂)
+   * @param {number} learningRate - Rate of coherence accumulation L(x,τ)
+   * @param {string} symmetry - 'SO2' for full rotation, 'Z2' for half rotation
+   */
+  constructor(omega = CRR_CONSTANTS.OMEGA_SO2, learningRate = 0.1, symmetry = 'SO2') {
+    this.omega = omega;
+    this.learningRate = learningRate;
+    this.symmetry = symmetry;
+    
+    // State tracking
+    this.coherence = 0;           // C(x,t) - accumulated coherence
+    this.state = 'coherence';     // Current phase: coherence, rupture, regeneration
+    this.amplitude = 0;           // Output amplitude
+    
+    // Memory buffer for exp(C/Ω) weighted integration
+    this.coherenceHistory = [];   // Tracks C(x,τ) over time for memory weighting
+    this.maxHistoryLength = 100;  // Discretized history buffer
+    
+    // Rupture tracking
+    this.lastRuptureTime = 0;
+    this.timeSinceRupture = 0;
+    
+    // Regeneration resources φ(x,τ)
+    this.phi = 1.0;               // Reconstruction resource availability
   }
-  update(dt, inputSignal = 1) {
+  
+  /**
+   * The core CRR update implementing the three phases
+   * @param {number} dt - Time delta
+   * @param {number} attention - L(x,τ) input signal (attention/learning)
+   * @param {number} globalTime - Global simulation time
+   * @returns {number} Current amplitude
+   */
+  update(dt, attention = 1, globalTime = 0) {
+    this.timeSinceRupture += dt;
+    
     if (this.state === 'coherence') {
-      this.coherence += this.rate * inputSignal * dt;
-      this.amplitude = this.coherence / this.omega;
-      if (this.coherence >= this.omega) this.state = 'rupture';
+      // COHERENCE PHASE: C(x,t) = ∫L(x,τ)dτ
+      // Accumulate coherence based on attention/learning signal
+      const dC = this.learningRate * attention * dt;
+      this.coherence += dC;
+      
+      // Store coherence history for memory-weighted regeneration
+      this.coherenceHistory.push({ t: globalTime, C: this.coherence });
+      if (this.coherenceHistory.length > this.maxHistoryLength) {
+        this.coherenceHistory.shift();
+      }
+      
+      // Amplitude builds toward threshold
+      this.amplitude = Math.min(1, this.coherence / this.omega);
+      
+      // Check for rupture threshold: when C ≥ Ω
+      if (this.coherence >= this.omega) {
+        this.state = 'rupture';
+        this.lastRuptureTime = globalTime;
+      }
+      
     } else if (this.state === 'rupture') {
-      this.amplitude = 1; this.state = 'regeneration';
+      // RUPTURE PHASE: δ(now) - the scale-invariant choice moment
+      // This is instantaneous - a punctuation in continuous flow
+      this.amplitude = 1.0;
+      this.state = 'regeneration';
+      
     } else {
-      this.coherence *= Math.exp(-2 * dt * Math.exp(Math.min(this.coherence / this.omega, 3)));
+      // REGENERATION PHASE: R = ∫φ(x,τ)exp(C/Ω)Θ(...)dτ
+      // The exp(C/Ω) term creates differential memory weighting
+      
+      // Calculate memory-weighted regeneration
+      const memoryWeight = this.calculateMemoryWeight();
+      
+      // φ(x,τ) - reconstruction resources (recover over time)
+      this.phi = Math.min(1, this.phi + dt * 0.5);
+      
+      // Regeneration with exponential memory decay modulated by exp(C/Ω)
+      // Large Ω → exp(C/Ω) ≈ 1 → all history weighted equally
+      // Small Ω → exp(C/Ω) peaked → only high coherence moments accessible
+      const decayRate = 2 * Math.exp(-memoryWeight);
+      this.coherence *= Math.exp(-decayRate * dt);
       this.amplitude = this.coherence / this.omega;
-      if (this.coherence < 0.01) { this.coherence = 0; this.state = 'coherence'; }
+      
+      // Return to coherence phase when sufficiently decayed
+      if (this.coherence < 0.01 * this.omega) {
+        this.coherence = 0;
+        this.state = 'coherence';
+        this.coherenceHistory = [];
+      }
     }
+    
     return this.amplitude;
   }
+  
+  /**
+   * Calculate exp(C/Ω) memory weighting
+   * This is the key CRR insight: memory access is weighted by coherence
+   */
+  calculateMemoryWeight() {
+    if (this.coherenceHistory.length === 0) return 1;
+    
+    // Compute exp(C/Ω) for current coherence
+    // Capped to prevent numerical overflow
+    const exponent = Math.min(this.coherence / this.omega, 5);
+    return Math.exp(exponent);
+  }
+  
+  /**
+   * Get the coefficient of variation for this system
+   */
+  getCV() {
+    return this.omega / 2;
+  }
+  
+  /**
+   * Get precision (inverse variance) - connects to FEP
+   */
+  getPrecision() {
+    // For CRR-FEP unification: precision = 1/σ² = 1/Ω
+    return 1 / this.omega;
+  }
 }
+
+// ============================================================================
+// CRR-DRIVEN DAY/NIGHT CYCLE
+// The diurnal cycle is an SO(2) system (full rotation)
+// ============================================================================
+
+class CRRDayNightCycle {
+  constructor() {
+    // Day/night is SO(2) symmetric (full 24-hour rotation)
+    this.omega = CRR_CONSTANTS.OMEGA_SO2;
+    
+    // Separate CRR systems for dawn and dusk transitions
+    this.dawnCRR = new CRRSystem(this.omega, 0.08, 'SO2');
+    this.duskCRR = new CRRSystem(this.omega, 0.08, 'SO2');
+    
+    // State tracking
+    this.lastPhase = 'night';  // night, dawn, day, dusk
+    this.transitionProgress = 0;
+    this.coherenceField = 0;   // Accumulated "dayness" or "nightness"
+  }
+  
+  /**
+   * Update the day/night cycle with CRR dynamics
+   * @param {number} dayTime - Hour of day (0-24)
+   * @param {number} dt - Time delta
+   * @returns {object} CRR-modulated transition parameters
+   */
+  update(dayTime, dt, sunTimes) {
+    const { rise, set } = sunTimes;
+    
+    // Determine current phase and distance to transitions
+    let phase, transitionType = null, transitionProgress = 0;
+    
+    if (dayTime < rise - 1) {
+      phase = 'night';
+    } else if (dayTime < rise + 1.5) {
+      phase = 'dawn';
+      transitionType = 'dawn';
+      transitionProgress = (dayTime - (rise - 1)) / 2.5;
+    } else if (dayTime < set - 1) {
+      phase = 'day';
+    } else if (dayTime < set + 1.5) {
+      phase = 'dusk';
+      transitionType = 'dusk';
+      transitionProgress = (dayTime - (set - 1)) / 2.5;
+    } else {
+      phase = 'night';
+    }
+    
+    // Update CRR systems based on phase
+    let crrModulation = 1.0;
+    
+    if (transitionType === 'dawn') {
+      // During dawn, coherence builds in night→day transition
+      const attention = 1 + Math.sin(transitionProgress * Math.PI);
+      this.dawnCRR.update(dt, attention, dayTime);
+      
+      // exp(C/Ω) modulates the transition sharpness
+      const memoryWeight = this.dawnCRR.calculateMemoryWeight();
+      crrModulation = Math.tanh(memoryWeight * transitionProgress);
+      
+      // Rupture creates the "moment" of dawn
+      if (this.dawnCRR.state === 'rupture') {
+        crrModulation = 1.0; // Full transition at rupture
+      }
+    } else if (transitionType === 'dusk') {
+      const attention = 1 + Math.sin(transitionProgress * Math.PI);
+      this.duskCRR.update(dt, attention, dayTime);
+      
+      const memoryWeight = this.duskCRR.calculateMemoryWeight();
+      crrModulation = Math.tanh(memoryWeight * transitionProgress);
+      
+      if (this.duskCRR.state === 'rupture') {
+        crrModulation = 1.0;
+      }
+    } else {
+      // Reset CRR systems during stable phases
+      if (phase === 'day' && this.lastPhase !== 'day') {
+        this.dawnCRR = new CRRSystem(this.omega, 0.08, 'SO2');
+      }
+      if (phase === 'night' && this.lastPhase !== 'night') {
+        this.duskCRR = new CRRSystem(this.omega, 0.08, 'SO2');
+      }
+    }
+    
+    this.lastPhase = phase;
+    this.transitionProgress = transitionProgress;
+    
+    return {
+      phase,
+      transitionType,
+      transitionProgress,
+      crrModulation,
+      dawnAmplitude: this.dawnCRR.amplitude,
+      duskAmplitude: this.duskCRR.amplitude,
+      omega: this.omega,
+      cv: this.omega / 2
+    };
+  }
+}
+
+// ============================================================================
+// CRR-DRIVEN SEASONAL CYCLE  
+// Annual cycle is also SO(2) symmetric
+// ============================================================================
+
+class CRRSeasonalCycle {
+  constructor() {
+    this.omega = CRR_CONSTANTS.OMEGA_SO2;
+    
+    // CRR systems for each seasonal transition
+    this.transitions = {
+      winterToSpring: new CRRSystem(this.omega, 0.02, 'SO2'),
+      springToSummer: new CRRSystem(this.omega, 0.02, 'SO2'),
+      summerToAutumn: new CRRSystem(this.omega, 0.02, 'SO2'),
+      autumnToWinter: new CRRSystem(this.omega, 0.02, 'SO2')
+    };
+    
+    this.currentSeason = 'winter';
+    this.seasonCoherence = 0;
+  }
+  
+  /**
+   * Get seasonal palette with CRR-modulated transitions
+   */
+  getSeasonalBlend(date, basePalettes) {
+    const month = date.getMonth();
+    const day = date.getDate();
+    const yearProgress = (month * 30 + day) / 365;
+    
+    // Determine which transition we're in (if any)
+    let fromSeason, toSeason, transitionKey, transitionProgress;
+    
+    // Transition windows around equinoxes/solstices
+    if (month === 2 && day >= 10 || month === 3 && day <= 10) {
+      // Around March equinox
+      fromSeason = 'winter'; toSeason = 'spring';
+      transitionKey = 'winterToSpring';
+      transitionProgress = (month === 2) ? (day - 10) / 30 : (20 + day) / 30;
+    } else if (month === 5 && day >= 11 || month === 6 && day <= 10) {
+      // Around June solstice  
+      fromSeason = 'spring'; toSeason = 'summer';
+      transitionKey = 'springToSummer';
+      transitionProgress = (month === 5) ? (day - 11) / 30 : (20 + day) / 30;
+    } else if (month === 8 && day >= 12 || month === 9 && day <= 12) {
+      // Around September equinox
+      fromSeason = 'summer'; toSeason = 'autumn';
+      transitionKey = 'summerToAutumn';
+      transitionProgress = (month === 8) ? (day - 12) / 30 : (19 + day) / 30;
+    } else if (month === 11 && day >= 11 || month === 0 && day <= 10) {
+      // Around December solstice
+      fromSeason = 'autumn'; toSeason = 'winter';
+      transitionKey = 'autumnToWinter';
+      transitionProgress = (month === 11) ? (day - 11) / 30 : (20 + day) / 30;
+    } else {
+      // Not in transition - return current season
+      return { 
+        inTransition: false,
+        season: this.getCurrentSeason(month),
+        blendFactor: 0
+      };
+    }
+    
+    // Update CRR for this transition
+    const crr = this.transitions[transitionKey];
+    const attention = 1 + 0.5 * Math.sin(transitionProgress * Math.PI);
+    crr.update(0.001, attention, yearProgress);
+    
+    // CRR modulates the blend curve
+    const memoryWeight = crr.calculateMemoryWeight();
+    const crrBlend = Math.tanh(memoryWeight * transitionProgress);
+    
+    return {
+      inTransition: true,
+      fromSeason,
+      toSeason,
+      transitionProgress,
+      crrBlend,
+      crrAmplitude: crr.amplitude,
+      omega: this.omega
+    };
+  }
+  
+  getCurrentSeason(month) {
+    if (month >= 2 && month <= 4) return 'spring';
+    if (month >= 5 && month <= 7) return 'summer';
+    if (month >= 8 && month <= 10) return 'autumn';
+    return 'winter';
+  }
+}
+
+// Global CRR cycle controllers
+const dayNightCRR = new CRRDayNightCycle();
+const seasonalCRR = new CRRSeasonalCycle();
+
 
 class AudioSystem {
   constructor() { this.ctx = null; this.isInit = false; }
@@ -1930,6 +2553,18 @@ function getTimeColors() {
   
   const t = dayTime;
   
+  // Get seasonal sunrise/sunset times
+  const sunTimes = {
+    spring: { rise: 6.5, set: 19.5 },
+    summer: { rise: 5.5, set: 21.0 },
+    autumn: { rise: 7.0, set: 18.0 },
+    winter: { rise: 7.5, set: 16.5 }
+  };
+  const st = sunTimes[currentSeason];
+  
+  // Update CRR day/night cycle
+  const crrState = dayNightCRR.update(t, 0.016, st);
+  
   // Enhanced color palette with smoother transitions
   const times = [0, 5, 6.5, 8, 12, 16, 18, 19.5, 21, 24];
   const palettes = [
@@ -1958,7 +2593,21 @@ function getTimeColors() {
   let i = 0;
   while (i < times.length - 1 && t >= times[i + 1]) i++;
   const blend = (t - times[i]) / (times[i + 1] - times[i]);
-  const smoothBlend = blend * blend * (3 - 2 * blend); // Smoothstep
+  
+  // CRR-MODULATED SMOOTHSTEP
+  // Instead of simple smoothstep, use CRR memory weighting
+  // During transitions (dawn/dusk), the crrModulation shapes the curve
+  let smoothBlend;
+  if (crrState.transitionType) {
+    // During dawn/dusk transitions, CRR modulates the blend
+    // exp(C/Ω) creates the characteristic CRR transition shape
+    const baseSmooth = blend * blend * (3 - 2 * blend);
+    smoothBlend = lerp(baseSmooth, crrState.crrModulation, crrState.transitionProgress);
+  } else {
+    // Outside transitions, use standard smoothstep
+    smoothBlend = blend * blend * (3 - 2 * blend);
+  }
+  
   const p1 = palettes[i], p2 = palettes[min(i + 1, palettes.length - 1)];
   
   currentColors = {
@@ -1966,7 +2615,9 @@ function getTimeColors() {
     skyMid: lerpColor(p1.skyMid, p2.skyMid, smoothBlend),
     skyHorizon: lerpColor(p1.skyHorizon, p2.skyHorizon, smoothBlend),
     ground: lerpColor(p1.ground, p2.ground, smoothBlend),
-    ambient: lerp(p1.ambient, p2.ambient, smoothBlend)
+    ambient: lerp(p1.ambient, p2.ambient, smoothBlend),
+    // Expose CRR state for debugging/visualization
+    crrState: crrState
   };
   
   return currentColors;
@@ -3132,6 +3783,9 @@ function drawSky(colors, sun) {
       ctx.restore();
     }
   }
+  
+  // Draw CRR Rainbow (after sun/moon, before landscape)
+  drawCRRRainbow(colors, sun);
 }
 
 function drawLandscape(colors) {
@@ -3243,6 +3897,7 @@ function animate(now) {
   ctx.globalAlpha = 1;
   
   drawVignette(colors.ambient);
+  updateCRRDebug(colors.crrState);
 }
 
 // ============================================================================
@@ -3369,6 +4024,13 @@ function initDemoPanel() {
       panel.classList.toggle('collapsed');
       toggleBtn.textContent = panel.classList.contains('collapsed') ? '🎨 Show Controls' : 'Hide';
     }
+    
+    // Toggle rainbow with 'r' key
+    if (e.key === 'r') {
+      rainbowEnabled = !rainbowEnabled;
+      const rainbowCheck = document.getElementById('rainbowCheck');
+      if (rainbowCheck) rainbowCheck.checked = rainbowEnabled;
+    }
   });
   
   // Time slider
@@ -3466,6 +4128,12 @@ function initDemoPanel() {
     }
   });
   
+  // Rainbow checkbox
+  const rainbowCheck = document.getElementById('rainbowCheck');
+  rainbowCheck.addEventListener('change', (e) => {
+    rainbowEnabled = e.target.checked;
+  });
+  
   // Set initial season button state
   seasonBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.season === currentSeason);
@@ -3524,6 +4192,30 @@ updateDayTime = function() {
     timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   }
 };
+
+
+// CRR Debug panel toggle
+let crrDebugVisible = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'c' && !e.ctrlKey && !e.metaKey && e.target.tagName !== 'INPUT') {
+    crrDebugVisible = !crrDebugVisible;
+    document.getElementById('crrDebug').classList.toggle('visible', crrDebugVisible);
+  }
+});
+
+function updateCRRDebug(crrState) {
+  if (!crrDebugVisible || !crrState) return;
+  
+  document.getElementById('crrOmega').textContent = crrState.omega?.toFixed(4) || '0.159';
+  document.getElementById('crrPhase').textContent = crrState.phase || 'stable';
+  document.getElementById('crrDayC').textContent = crrState.dawnAmplitude?.toFixed(3) || '0.00';
+  document.getElementById('crrAmplitude').textContent = 
+    ((crrState.dawnAmplitude || 0) + (crrState.duskAmplitude || 0)).toFixed(3);
+  document.getElementById('crrMemory').textContent = 
+    Math.exp(Math.min((crrState.dawnAmplitude || 0) / (crrState.omega || 0.159), 5)).toFixed(2);
+  document.getElementById('crrCV').textContent = crrState.cv?.toFixed(4) || '0.08';
+}
+
 
 document.addEventListener('click', () => audio.init(), { once: true });
 document.addEventListener('keydown', () => audio.init(), { once: true });
