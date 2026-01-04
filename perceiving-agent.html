@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Perceiving Agent — Active Inference in Action</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f5f6f8 100%);
+      color: #2c2c2c;
+      min-height: 100vh;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+    
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.3)); }
+      50% { filter: drop-shadow(0 0 16px rgba(124, 58, 237, 0.6)); }
+    }
+    
+    @keyframes speechAppear {
+      0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    @keyframes surpriseShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    
+    .speech-bubble {
+      animation: speechAppear 0.3s ease-out;
+    }
+    
+    .agent-surprised {
+      animation: surpriseShake 0.15s ease-in-out 3;
+    }
+    
+    .stimulus-glow {
+      animation: glow 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useRef, useCallback } = React;
+
+    // ============================================================
+    // COLORS
+    // ============================================================
+    const COLORS = {
+      prior: "#D97706",
+      sensory: "#2563EB", 
+      posterior: "#10B981",
+      energy: "#7C3AED",
+      text: "#2c2c2c",
+      textMuted: "#495057",
+      textDim: "#6c757d",
+      bg: "#f8f9fa",
+      panel: "#ffffff",
+      border: "#e9ecef"
+    };
+
+    // ============================================================
+    // MATHEMATICAL FUNCTIONS (THE ENGINE)
+    // ============================================================
+    const gaussianPDF = (x, mu, sigma) => {
+      if (sigma <= 0) return 0;
+      return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2));
+    };
+
+    const klDivergence = (mu_q, sigma_q, mu_p, sigma_p) => {
+      if (sigma_q <= 0 || sigma_p <= 0) return Infinity;
+      return Math.log(sigma_p / sigma_q) + (sigma_q * sigma_q + Math.pow(mu_q - mu_p, 2)) / (2 * sigma_p * sigma_p) - 0.5;
+    };
+
+    const negLogLikelihood = (o, mu_q, sigma_q, sigma_o) => {
+      if (sigma_o <= 0) return Infinity;
+      return 0.5 * Math.log(2 * Math.PI) + Math.log(sigma_o) + (sigma_q * sigma_q + Math.pow(mu_q - o, 2)) / (2 * sigma_o * sigma_o);
+    };
+
+    const computeOptimalPosterior = (o, mu_p, pi_p, pi_o) => {
+      const pi_q = pi_p + pi_o;
+      const mu_q = (pi_p * mu_p + pi_o * o) / pi_q;
+      const sigma_q = 1 / Math.sqrt(pi_q);
+      return { mu_q, sigma_q, pi_q };
+    };
+
+    const computeSurprise = (o, mu_p, sigma_p, sigma_o) => {
+      const totalVariance = sigma_p * sigma_p + sigma_o * sigma_o;
+      return 0.5 * Math.log(2 * Math.PI * totalVariance) + Math.pow(o - mu_p, 2) / (2 * totalVariance);
+    };
+
+    const computeAllMetrics = (o, mu_p, pi_p, pi_o) => {
+      const sigma_p = 1 / Math.sqrt(pi_p);
+      const sigma_o = 1 / Math.sqrt(pi_o);
+      const optimal = computeOptimalPosterior(o, mu_p, pi_p, pi_o);
+      const { mu_q, sigma_q, pi_q } = optimal;
+      const complexity = klDivergence(mu_q, sigma_q, mu_p, sigma_p);
+      const negAccuracy = negLogLikelihood(o, mu_q, sigma_q, sigma_o);
+      const freeEnergy = complexity + negAccuracy;
+      const surprise = computeSurprise(o, mu_p, sigma_p, sigma_o);
+      const predictionError = o - mu_p;
+      const priorWeight = pi_p / pi_q;
+      const sensoryWeight = pi_o / pi_q;
+      const beliefShift = mu_q - mu_p;
+      
+      return {
+        o, mu_p, pi_p, pi_o,
+        sigma_p, sigma_o, sigma_q,
+        mu_q, pi_q,
+        complexity, negAccuracy, freeEnergy, surprise,
+        predictionError, priorWeight, sensoryWeight, beliefShift,
+        gap: freeEnergy - surprise
+      };
+    };
+
+    // ============================================================
+    // WORLD STIMULI
+    // ============================================================
+    const STIMULI = [
+      { id: 'apple', emoji: '🍎', name: 'Apple', expectedSize: 3.0, description: 'A familiar red apple', category: 'fruit' },
+      { id: 'orange', emoji: '🍊', name: 'Orange', expectedSize: 3.2, description: 'A round orange', category: 'fruit' },
+      { id: 'grape', emoji: '🍇', name: 'Grape', expectedSize: 1.0, description: 'A bunch of grapes', category: 'fruit' },
+      { id: 'watermelon', emoji: '🍉', name: 'Watermelon', expectedSize: 8.0, description: 'A large watermelon', category: 'fruit' },
+      { id: 'cherry', emoji: '🍒', name: 'Cherry', expectedSize: 0.8, description: 'Small red cherries', category: 'fruit' },
+      { id: 'pineapple', emoji: '🍍', name: 'Pineapple', expectedSize: 5.5, description: 'A spiky pineapple', category: 'fruit' },
+      { id: 'mouse', emoji: '🐭', name: 'Mouse', expectedSize: 0.5, description: 'A tiny mouse', category: 'animal' },
+      { id: 'cat', emoji: '🐱', name: 'Cat', expectedSize: 2.5, description: 'A household cat', category: 'animal' },
+      { id: 'dog', emoji: '🐕', name: 'Dog', expectedSize: 4.0, description: 'A medium-sized dog', category: 'animal' },
+      { id: 'elephant', emoji: '🐘', name: 'Elephant', expectedSize: 9.5, description: 'A massive elephant', category: 'animal' },
+      { id: 'bird', emoji: '🐦', name: 'Bird', expectedSize: 0.3, description: 'A small songbird', category: 'animal' },
+      { id: 'butterfly', emoji: '🦋', name: 'Butterfly', expectedSize: 0.1, description: 'A delicate butterfly', category: 'animal' },
+    ];
+
+    // ============================================================
+    // AGENT NARRATIVES
+    // ============================================================
+    const narratives = {
+      approaching: (stimulus) => [
+        `Hmm, what's this? A ${stimulus.name}...`,
+        `I see something ahead... looks like a ${stimulus.name}.`,
+        `Oh! A ${stimulus.name} appears before me.`,
+        `Let me investigate this ${stimulus.name}...`
+      ],
+      
+      priorExpectation: (mu_p, category) => [
+        `Based on my experience with ${category}s, I expect this to be around size ${mu_p.toFixed(1)}.`,
+        `My prior belief: things like this are typically size ${mu_p.toFixed(1)}.`,
+        `I'm predicting size ${mu_p.toFixed(1)} based on what I know.`,
+        `My generative model expects approximately ${mu_p.toFixed(1)}.`
+      ],
+      
+      sensing: (o) => [
+        `The sensory data suggests size ${o.toFixed(1)}...`,
+        `My senses are telling me: ${o.toFixed(1)}.`,
+        `Incoming observation: ${o.toFixed(1)}.`,
+        `I'm perceiving this as ${o.toFixed(1)}.`
+      ],
+      
+      highSurprise: (error) => [
+        `Whoa! That's ${Math.abs(error).toFixed(1)} units off from my expectation!`,
+        `Big surprise! My prediction was way off by ${Math.abs(error).toFixed(1)}.`,
+        `Unexpected! High prediction error: ${Math.abs(error).toFixed(1)}.`,
+        `My model didn't see this coming — error of ${Math.abs(error).toFixed(1)}!`
+      ],
+      
+      lowSurprise: (error) => [
+        `Just as I thought — only ${Math.abs(error).toFixed(1)} off.`,
+        `My prediction was close! Error: ${Math.abs(error).toFixed(1)}.`,
+        `Minimal surprise here. Difference of ${Math.abs(error).toFixed(1)}.`,
+        `This matches my expectations well.`
+      ],
+      
+      precisionWeighting: (priorW, sensoryW, priorStrong) => priorStrong ? [
+        `My prior is quite confident (${(priorW*100).toFixed(0)}%), so I'll weight my expectations heavily.`,
+        `I trust my experience here — ${(priorW*100).toFixed(0)}% weight to prior beliefs.`,
+        `Prior precision dominates: ${(priorW*100).toFixed(0)}% prior, ${(sensoryW*100).toFixed(0)}% sensory.`
+      ] : [
+        `The sensory evidence is strong (${(sensoryW*100).toFixed(0)}%), so I'll trust my senses more.`,
+        `Clear sensory signal! Giving ${(sensoryW*100).toFixed(0)}% weight to what I see.`,
+        `Sensory precision wins: ${(sensoryW*100).toFixed(0)}% sensory, ${(priorW*100).toFixed(0)}% prior.`
+      ],
+      
+      posteriorBelief: (mu_q, shift) => [
+        `After combining prior and likelihood, I believe: size ${mu_q.toFixed(2)}.`,
+        `My updated belief settles at ${mu_q.toFixed(2)} — a shift of ${shift >= 0 ? '+' : ''}${shift.toFixed(2)}.`,
+        `Posterior mean: ${mu_q.toFixed(2)}. That's my best estimate now.`,
+        `I've updated my belief to ${mu_q.toFixed(2)}.`
+      ],
+      
+      freeEnergyResult: (F, low) => low ? [
+        `Free energy minimised! F = ${F.toFixed(3)} — nice and low.`,
+        `My model fits well. Free energy: ${F.toFixed(3)}.`,
+        `Low surprise, low free energy: ${F.toFixed(3)}. All good!`
+      ] : [
+        `Free energy is ${F.toFixed(3)} — there's still some model-world mismatch.`,
+        `F = ${F.toFixed(3)}. My model could fit better, but this observation was unusual.`,
+        `Higher free energy (${F.toFixed(3)}) reflects the surprise I experienced.`
+      ],
+      
+      learning: [
+        `I'll remember this for next time...`,
+        `Updating my generative model slightly...`,
+        `This experience will refine my future predictions.`,
+        `My world model just got a tiny bit better.`
+      ]
+    };
+
+    const getRandomNarrative = (category, ...args) => {
+      const options = typeof narratives[category] === 'function' 
+        ? narratives[category](...args) 
+        : narratives[category];
+      return options[Math.floor(Math.random() * options.length)];
+    };
+
+    // ============================================================
+    // MAIN COMPONENT
+    // ============================================================
+    function PerceivingAgent() {
+      // World state
+      const [worldStimuli, setWorldStimuli] = useState([]);
+      const [currentStimulus, setCurrentStimulus] = useState(null);
+      const [inferencePhase, setInferencePhase] = useState('idle'); // idle, approaching, prior, sensing, error, updating, result
+      const [narrativeText, setNarrativeText] = useState("Hello! I'm an Active Inference agent. I perceive the world by minimising free energy — combining my prior beliefs with sensory evidence. Click 'New Encounter' to watch me in action!");
+      const [showUnderHood, setShowUnderHood] = useState(false);
+      
+      // Agent's internal model (learnable priors per category)
+      const [categoryPriors, setCategoryPriors] = useState({
+        fruit: { mu: 3.5, precision: 1.0 },
+        animal: { mu: 3.0, precision: 0.8 }
+      });
+      const [sensoryPrecision, setSensoryPrecision] = useState(2.0);
+      
+      // Current inference state
+      const [metrics, setMetrics] = useState(null);
+      const [observation, setObservation] = useState(null);
+      
+      // Animation
+      const canvasRef = useRef(null);
+      const agentRef = useRef({ x: 100, y: 200, targetX: 100, targetY: 200, breathe: 0, state: 'idle' });
+      const stimulusRef = useRef({ x: 500, y: 200, scale: 1, glow: 0 });
+      const animationRef = useRef(null);
+      
+      // History for deep dive
+      const [encounterHistory, setEncounterHistory] = useState([]);
+
+      // Generate new encounter
+      const generateEncounter = useCallback(() => {
+        const stimulus = STIMULI[Math.floor(Math.random() * STIMULI.length)];
+        // Add some noise to the "true" observation
+        const noise = (Math.random() - 0.5) * 2; // ±1 unit noise
+        const observedSize = Math.max(0.1, stimulus.expectedSize + noise);
+        
+        setCurrentStimulus(stimulus);
+        setObservation(observedSize);
+        stimulusRef.current = { x: 500, y: 200, scale: 0, glow: 0 };
+        
+        // Start inference sequence
+        runInferenceSequence(stimulus, observedSize);
+      }, [categoryPriors, sensoryPrecision]);
+
+      const runInferenceSequence = async (stimulus, observedSize) => {
+        const prior = categoryPriors[stimulus.category];
+        const o = observedSize;
+        const mu_p = prior.mu;
+        const pi_p = prior.precision;
+        const pi_o = sensoryPrecision;
+        
+        // Compute all metrics
+        const m = computeAllMetrics(o, mu_p, pi_p, pi_o);
+        setMetrics(m);
+        
+        const isHighSurprise = Math.abs(m.predictionError) > 2;
+        const isPriorDominant = m.priorWeight > 0.55;
+        
+        // Phase 1: Approaching
+        setInferencePhase('approaching');
+        agentRef.current.state = 'curious';
+        agentRef.current.targetX = 280;
+        setNarrativeText(getRandomNarrative('approaching', stimulus));
+        await delay(2000);
+        
+        // Phase 2: Prior expectation
+        setInferencePhase('prior');
+        agentRef.current.state = 'thinking';
+        setNarrativeText(getRandomNarrative('priorExpectation', mu_p, stimulus.category));
+        await delay(2500);
+        
+        // Phase 3: Sensing
+        setInferencePhase('sensing');
+        agentRef.current.state = 'sensing';
+        stimulusRef.current.glow = 1;
+        setNarrativeText(getRandomNarrative('sensing', o));
+        await delay(2000);
+        
+        // Phase 4: Prediction error
+        setInferencePhase('error');
+        if (isHighSurprise) {
+          agentRef.current.state = 'surprised';
+          setNarrativeText(getRandomNarrative('highSurprise', m.predictionError));
+        } else {
+          agentRef.current.state = 'confirming';
+          setNarrativeText(getRandomNarrative('lowSurprise', m.predictionError));
+        }
+        await delay(2500);
+        
+        // Phase 5: Precision weighting
+        setInferencePhase('updating');
+        agentRef.current.state = 'computing';
+        setNarrativeText(getRandomNarrative('precisionWeighting', m.priorWeight, m.sensoryWeight, isPriorDominant));
+        await delay(2500);
+        
+        // Phase 6: Posterior belief
+        setInferencePhase('posterior');
+        agentRef.current.state = 'understanding';
+        setNarrativeText(getRandomNarrative('posteriorBelief', m.mu_q, m.beliefShift));
+        await delay(2500);
+        
+        // Phase 7: Free energy result
+        setInferencePhase('result');
+        const isLowF = m.freeEnergy < 1.5;
+        agentRef.current.state = isLowF ? 'happy' : 'thoughtful';
+        setNarrativeText(getRandomNarrative('freeEnergyResult', m.freeEnergy, isLowF));
+        await delay(2500);
+        
+        // Phase 8: Learning
+        setInferencePhase('learning');
+        agentRef.current.state = 'learning';
+        setNarrativeText(getRandomNarrative('learning'));
+        
+        // Actually update the prior slightly (simple learning rule)
+        const learningRate = 0.1;
+        setCategoryPriors(prev => ({
+          ...prev,
+          [stimulus.category]: {
+            mu: prev[stimulus.category].mu + learningRate * (o - prev[stimulus.category].mu),
+            precision: prev[stimulus.category].precision // keep precision fixed for simplicity
+          }
+        }));
+        
+        // Save to history
+        setEncounterHistory(prev => [...prev, {
+          stimulus,
+          observation: o,
+          metrics: m,
+          timestamp: Date.now()
+        }].slice(-10));
+        
+        await delay(2000);
+        
+        // Return to idle
+        setInferencePhase('idle');
+        agentRef.current.state = 'idle';
+        agentRef.current.targetX = 100;
+        setNarrativeText(`That was a ${stimulus.name}! I observed size ${o.toFixed(1)} and updated my belief to ${m.mu_q.toFixed(2)}. Free energy: ${m.freeEnergy.toFixed(3)}. Ready for another encounter!`);
+      };
+
+      const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+      // Canvas animation
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        const W = rect.width;
+        const H = rect.height;
+        
+        let time = 0;
+        
+        const drawScene = () => {
+          // Sky gradient
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+          skyGrad.addColorStop(0, '#87CEEB');
+          skyGrad.addColorStop(0.6, '#E0F4FF');
+          skyGrad.addColorStop(1, '#98D8AA');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, W, H);
+          
+          // Ground
+          ctx.fillStyle = '#7CB342';
+          ctx.fillRect(0, H * 0.7, W, H * 0.3);
+          
+          // Grass texture
+          ctx.strokeStyle = '#558B2F';
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 60; i++) {
+            const x = (i / 60) * W + Math.sin(time + i) * 2;
+            const h = 8 + Math.sin(i * 0.5) * 4;
+            ctx.beginPath();
+            ctx.moveTo(x, H * 0.7);
+            ctx.quadraticCurveTo(x + 2, H * 0.7 - h/2, x, H * 0.7 - h);
+            ctx.stroke();
+          }
+          
+          // Sun
+          ctx.fillStyle = '#FFD93D';
+          ctx.beginPath();
+          ctx.arc(W - 60, 50, 30, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 217, 61, 0.3)';
+          ctx.beginPath();
+          ctx.arc(W - 60, 50, 45, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Clouds
+          const drawCloud = (x, y, scale) => {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(x, y, 20 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 25 * scale, y - 5, 25 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 50 * scale, y, 20 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 25 * scale, y + 10, 15 * scale, 0, Math.PI * 2);
+            ctx.fill();
+          };
+          drawCloud(80 + Math.sin(time * 0.2) * 10, 60, 0.8);
+          drawCloud(300 + Math.sin(time * 0.15) * 15, 40, 1);
+          drawCloud(500 + Math.sin(time * 0.25) * 8, 70, 0.6);
+        };
+        
+        const drawStimulus = () => {
+          if (!currentStimulus) return;
+          
+          const s = stimulusRef.current;
+          // Animate appearance
+          s.scale = Math.min(1, s.scale + 0.03);
+          
+          const x = s.x;
+          const y = H * 0.55;
+          const size = 60 * s.scale;
+          
+          // Glow effect when being sensed
+          if (s.glow > 0) {
+            ctx.fillStyle = `rgba(37, 99, 235, ${s.glow * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size + 20 + Math.sin(time * 3) * 5, 0, Math.PI * 2);
+            ctx.fill();
+            s.glow = Math.max(0, s.glow - 0.01);
+          }
+          
+          // Shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.2)';
+          ctx.beginPath();
+          ctx.ellipse(x, H * 0.7 - 5, size * 0.6, size * 0.15, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Emoji
+          ctx.font = `${size}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(currentStimulus.emoji, x, y);
+          
+          // Label
+          if (inferencePhase !== 'idle') {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.font = '14px Georgia, serif';
+            ctx.fillText(currentStimulus.name, x, y + size/2 + 20);
+            
+            // Show observation value when sensing
+            if (inferencePhase === 'sensing' || inferencePhase === 'error') {
+              ctx.fillStyle = COLORS.sensory;
+              ctx.font = 'bold 12px Georgia, serif';
+              ctx.fillText(`o = ${observation?.toFixed(1)}`, x, y + size/2 + 38);
+            }
+          }
+        };
+        
+        const drawAgent = () => {
+          const agent = agentRef.current;
+          agent.breathe += 0.05;
+          
+          // Smooth movement
+          agent.x += (agent.targetX - agent.x) * 0.04;
+          agent.y += (agent.targetY - agent.y) * 0.04;
+          
+          const x = agent.x;
+          const y = H * 0.55;
+          const breathe = Math.sin(agent.breathe) * 3;
+          const size = 35 + breathe;
+          
+          // Shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.beginPath();
+          ctx.ellipse(x, H * 0.7 - 5, size * 0.7, size * 0.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Glow based on state
+          const glowColors = {
+            idle: 'rgba(100,100,100,0.2)',
+            curious: 'rgba(217,119,6,0.3)',
+            thinking: 'rgba(217,119,6,0.4)',
+            sensing: 'rgba(37,99,235,0.4)',
+            surprised: 'rgba(220,38,38,0.5)',
+            confirming: 'rgba(16,185,129,0.4)',
+            computing: 'rgba(124,58,237,0.4)',
+            understanding: 'rgba(16,185,129,0.4)',
+            happy: 'rgba(16,185,129,0.5)',
+            thoughtful: 'rgba(124,58,237,0.3)',
+            learning: 'rgba(217,119,6,0.4)'
+          };
+          
+          ctx.fillStyle = glowColors[agent.state] || glowColors.idle;
+          ctx.beginPath();
+          ctx.arc(x, y, size + 12, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Body
+          const bodyGrad = ctx.createRadialGradient(x - size * 0.3, y - size * 0.3, 0, x, y, size);
+          bodyGrad.addColorStop(0, '#fafafa');
+          bodyGrad.addColorStop(0.5, '#e0e0e0');
+          bodyGrad.addColorStop(1, '#bdbdbd');
+          ctx.fillStyle = bodyGrad;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Eyes
+          const eyeOffset = size * 0.35;
+          const eyeSize = size * 0.28;
+          
+          // Look toward stimulus
+          let lookX = 0;
+          if (currentStimulus && agent.state !== 'idle') {
+            lookX = eyeSize * 0.4;
+          }
+          
+          ctx.fillStyle = 'white';
+          ctx.beginPath();
+          ctx.ellipse(x - eyeOffset, y - size * 0.1, eyeSize, eyeSize * 1.2, 0, 0, Math.PI * 2);
+          ctx.ellipse(x + eyeOffset, y - size * 0.1, eyeSize, eyeSize * 1.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          // Pupils
+          let pupilSize = eyeSize * 0.5;
+          if (agent.state === 'surprised') pupilSize = eyeSize * 0.7;
+          if (agent.state === 'sensing') pupilSize = eyeSize * 0.6;
+          
+          ctx.fillStyle = '#333';
+          ctx.beginPath();
+          ctx.arc(x - eyeOffset + lookX, y - size * 0.1, pupilSize, 0, Math.PI * 2);
+          ctx.arc(x + eyeOffset + lookX, y - size * 0.1, pupilSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Eye highlights
+          ctx.fillStyle = 'white';
+          ctx.beginPath();
+          ctx.arc(x - eyeOffset + lookX - 2, y - size * 0.1 - 2, 2.5, 0, Math.PI * 2);
+          ctx.arc(x + eyeOffset + lookX - 2, y - size * 0.1 - 2, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Mouth based on state
+          ctx.strokeStyle = '#555';
+          ctx.lineWidth = 2.5;
+          ctx.lineCap = 'round';
+          
+          if (agent.state === 'surprised') {
+            ctx.fillStyle = '#555';
+            ctx.beginPath();
+            ctx.ellipse(x, y + size * 0.35, size * 0.15, size * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (agent.state === 'happy' || agent.state === 'understanding') {
+            ctx.beginPath();
+            ctx.arc(x, y + size * 0.2, size * 0.25, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+          } else if (agent.state === 'thinking' || agent.state === 'computing') {
+            ctx.beginPath();
+            ctx.moveTo(x - size * 0.15, y + size * 0.35);
+            ctx.lineTo(x + size * 0.15, y + size * 0.35);
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(x, y + size * 0.25, size * 0.18, 0.1, Math.PI - 0.1);
+            ctx.stroke();
+          }
+          
+          // Thought bubble when thinking/computing
+          if (['thinking', 'computing', 'learning'].includes(agent.state)) {
+            const symbols = { thinking: '?', computing: '∑', learning: '💡' };
+            ctx.fillStyle = COLORS.energy;
+            ctx.font = `bold ${size * 0.6}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(symbols[agent.state], x, y - size * 1.5);
+          }
+          
+          // Sparkles when happy
+          if (agent.state === 'happy') {
+            ctx.fillStyle = '#FFD700';
+            for (let i = 0; i < 5; i++) {
+              const angle = (i / 5) * Math.PI * 2 + time * 2;
+              const dist = size + 20 + Math.sin(time * 3 + i) * 5;
+              const sx = x + Math.cos(angle) * dist;
+              const sy = y + Math.sin(angle) * dist;
+              ctx.beginPath();
+              ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        };
+        
+        const animate = () => {
+          time += 0.016;
+          drawScene();
+          drawStimulus();
+          drawAgent();
+          animationRef.current = requestAnimationFrame(animate);
+        };
+        
+        animate();
+        
+        return () => {
+          if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
+      }, [currentStimulus, inferencePhase, observation]);
+
+      // Phase indicator
+      const phaseLabels = {
+        idle: '💭 Waiting',
+        approaching: '👀 Approaching',
+        prior: '🧠 Prior Belief',
+        sensing: '👁️ Sensing',
+        error: '⚡ Prediction Error',
+        updating: '⚖️ Precision Weighting',
+        posterior: '🎯 Posterior Belief',
+        result: '📊 Free Energy',
+        learning: '📚 Learning'
+      };
+
+      return (
+        <div className="min-h-screen p-4" style={{ fontFamily: 'Georgia, serif' }}>
+          <div className="max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-4">
+              <h1 className="text-2xl font-normal mb-1">The Perceiving Agent</h1>
+              <p className="text-sm italic" style={{ color: COLORS.textMuted }}>
+                Watch Active Inference in action — combining prior beliefs with sensory evidence to minimise free energy
+              </p>
+            </div>
+
+            {/* Main Stage */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden border" style={{ borderColor: '#d4d0c8' }}>
+              {/* Control bar */}
+              <div className="px-4 py-3 border-b flex justify-between items-center" style={{ backgroundColor: '#f4f1ea', borderColor: '#d4d0c8' }}>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={generateEncounter}
+                    disabled={inferencePhase !== 'idle'}
+                    className="px-4 py-2 rounded-lg font-medium text-white transition-all"
+                    style={{ 
+                      backgroundColor: inferencePhase === 'idle' ? COLORS.energy : '#999',
+                      cursor: inferencePhase === 'idle' ? 'pointer' : 'not-allowed',
+                      opacity: inferencePhase === 'idle' ? 1 : 0.6
+                    }}
+                  >
+                    {inferencePhase === 'idle' ? '✨ New Encounter' : '⏳ Processing...'}
+                  </button>
+                  <span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: '#fff', border: '1px solid #d4d0c8' }}>
+                    {phaseLabels[inferencePhase]}
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: COLORS.textDim }}>
+                  Encounters: {encounterHistory.length}
+                </div>
+              </div>
+              
+              {/* Canvas */}
+              <div className="relative">
+                <canvas 
+                  ref={canvasRef}
+                  style={{ width: '100%', height: '320px', display: 'block' }}
+                />
+              </div>
+              
+              {/* Narrative panel */}
+              <div className="px-6 py-4 border-t" style={{ backgroundColor: '#fafafa', borderColor: '#e9ecef' }}>
+                <div className="flex items-start gap-4">
+                  <div className="text-3xl">🤖</div>
+                  <div className="flex-1">
+                    <div className="speech-bubble text-lg leading-relaxed" style={{ color: COLORS.text }}>
+                      "{narrativeText}"
+                    </div>
+                    
+                    {/* Quick metrics when active */}
+                    {metrics && inferencePhase !== 'idle' && (
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                        <span className="px-2 py-1 rounded" style={{ backgroundColor: `${COLORS.prior}20`, color: COLORS.prior }}>
+                          Prior μ_p = {metrics.mu_p.toFixed(1)}
+                        </span>
+                        <span className="px-2 py-1 rounded" style={{ backgroundColor: `${COLORS.sensory}20`, color: COLORS.sensory }}>
+                          Obs o = {metrics.o.toFixed(1)}
+                        </span>
+                        {(inferencePhase === 'posterior' || inferencePhase === 'result' || inferencePhase === 'learning') && (
+                          <span className="px-2 py-1 rounded" style={{ backgroundColor: `${COLORS.posterior}20`, color: COLORS.posterior }}>
+                            Posterior μ_q = {metrics.mu_q.toFixed(2)}
+                          </span>
+                        )}
+                        {(inferencePhase === 'result' || inferencePhase === 'learning') && (
+                          <span className="px-2 py-1 rounded" style={{ backgroundColor: `${COLORS.energy}20`, color: COLORS.energy }}>
+                            F = {metrics.freeEnergy.toFixed(3)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Under the Hood Toggle */}
+            <div className="mt-6">
+              <button
+                onClick={() => setShowUnderHood(!showUnderHood)}
+                className="w-full py-3 px-4 rounded-lg border flex items-center justify-between transition-all hover:shadow-md"
+                style={{ backgroundColor: '#fff', borderColor: '#d4d0c8' }}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-xl">⚙️</span>
+                  <span className="font-medium">Under the Hood — The Mathematics</span>
+                </span>
+                <span className="text-xl transition-transform" style={{ transform: showUnderHood ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  ▼
+                </span>
+              </button>
+              
+              {showUnderHood && (
+                <div className="mt-2 bg-white rounded-lg border p-6 space-y-6" style={{ borderColor: '#d4d0c8' }}>
+                  {/* Current metrics */}
+                  {metrics && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <span style={{ color: COLORS.energy }}>📊</span>
+                        Current Inference State
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <MetricCard label="Prior Mean" value={metrics.mu_p} unit="μ_p" color={COLORS.prior} />
+                        <MetricCard label="Prior Precision" value={metrics.pi_p} unit="π_p" color={COLORS.prior} />
+                        <MetricCard label="Observation" value={metrics.o} unit="o" color={COLORS.sensory} />
+                        <MetricCard label="Sensory Precision" value={metrics.pi_o} unit="π_o" color={COLORS.sensory} />
+                        <MetricCard label="Posterior Mean" value={metrics.mu_q} unit="μ_q" color={COLORS.posterior} />
+                        <MetricCard label="Posterior Precision" value={metrics.pi_q} unit="π_q" color={COLORS.posterior} />
+                        <MetricCard label="Free Energy" value={metrics.freeEnergy} unit="F" color={COLORS.energy} />
+                        <MetricCard label="Surprise" value={metrics.surprise} unit="-log P(o)" color={COLORS.textDim} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Free Energy Decomposition */}
+                  {metrics && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <span style={{ color: COLORS.energy }}>🧮</span>
+                        Free Energy Decomposition
+                      </h3>
+                      <div className="rounded-lg p-4" style={{ backgroundColor: '#fafafa' }}>
+                        <div className="flex items-center justify-center gap-4 flex-wrap text-lg">
+                          <div className="text-center">
+                            <div className="text-xs" style={{ color: COLORS.prior }}>Complexity</div>
+                            <div className="font-mono font-bold" style={{ color: COLORS.prior }}>{metrics.complexity.toFixed(4)}</div>
+                          </div>
+                          <span className="text-2xl" style={{ color: COLORS.textDim }}>+</span>
+                          <div className="text-center">
+                            <div className="text-xs" style={{ color: COLORS.sensory }}>−Accuracy</div>
+                            <div className="font-mono font-bold" style={{ color: COLORS.sensory }}>{metrics.negAccuracy.toFixed(4)}</div>
+                          </div>
+                          <span className="text-2xl" style={{ color: COLORS.textDim }}>=</span>
+                          <div className="text-center">
+                            <div className="text-xs" style={{ color: COLORS.energy }}>Free Energy</div>
+                            <div className="font-mono font-bold text-xl" style={{ color: COLORS.energy }}>{metrics.freeEnergy.toFixed(4)}</div>
+                          </div>
+                          <span className="text-2xl" style={{ color: COLORS.textDim }}>≥</span>
+                          <div className="text-center">
+                            <div className="text-xs" style={{ color: COLORS.textDim }}>Surprise</div>
+                            <div className="font-mono font-bold" style={{ color: COLORS.textDim }}>{metrics.surprise.toFixed(4)}</div>
+                          </div>
+                        </div>
+                        <div className="mt-4 text-center text-sm" style={{ color: COLORS.textDim }}>
+                          Gap (F − Surprise) = <span className="font-mono" style={{ color: metrics.gap < 0.001 ? COLORS.posterior : COLORS.energy }}>{metrics.gap.toFixed(6)}</span>
+                          {metrics.gap < 0.001 ? ' ≈ 0 ✓ (optimal)' : ' > 0 (suboptimal)'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Precision Weighting */}
+                  {metrics && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <span>⚖️</span>
+                        Precision Weighting
+                      </h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="w-20 text-right text-sm" style={{ color: COLORS.prior }}>Prior</span>
+                          <div className="flex-1 h-6 rounded overflow-hidden" style={{ backgroundColor: '#e9ecef' }}>
+                            <div className="h-full flex items-center justify-end pr-2 text-xs text-white font-bold transition-all" 
+                                 style={{ width: `${metrics.priorWeight * 100}%`, backgroundColor: COLORS.prior }}>
+                              {(metrics.priorWeight * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-20 text-right text-sm" style={{ color: COLORS.sensory }}>Sensory</span>
+                          <div className="flex-1 h-6 rounded overflow-hidden" style={{ backgroundColor: '#e9ecef' }}>
+                            <div className="h-full flex items-center justify-end pr-2 text-xs text-white font-bold transition-all" 
+                                 style={{ width: `${metrics.sensoryWeight * 100}%`, backgroundColor: COLORS.sensory }}>
+                              {(metrics.sensoryWeight * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-sm p-3 rounded" style={{ backgroundColor: '#fafafa' }}>
+                        <strong>Bayesian Update:</strong> μ_q = (π_p × μ_p + π_o × o) / (π_p + π_o)<br/>
+                        = ({metrics.pi_p.toFixed(2)} × {metrics.mu_p.toFixed(2)} + {metrics.pi_o.toFixed(2)} × {metrics.o.toFixed(2)}) / {metrics.pi_q.toFixed(2)}<br/>
+                        = <span style={{ color: COLORS.posterior }}>{metrics.mu_q.toFixed(4)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Distribution Plot */}
+                  {metrics && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <span>📈</span>
+                        Probability Distributions
+                      </h3>
+                      <DistributionPlot metrics={metrics} />
+                    </div>
+                  )}
+
+                  {/* Adjustable Parameters */}
+                  <div>
+                    <h3 className="font-medium mb-3 flex items-center gap-2">
+                      <span>🎚️</span>
+                      Model Parameters
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="p-3 rounded" style={{ backgroundColor: '#fafafa' }}>
+                        <div className="text-sm font-medium mb-2" style={{ color: COLORS.prior }}>Prior Beliefs (Category Means)</div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Fruit:</span>
+                            <span className="font-mono">μ = {categoryPriors.fruit.mu.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Animal:</span>
+                            <span className="font-mono">μ = {categoryPriors.animal.mu.toFixed(2)}</span>
+                          </div>
+                          <div className="text-xs italic" style={{ color: COLORS.textDim }}>
+                            (Priors update slightly after each encounter)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 rounded" style={{ backgroundColor: '#fafafa' }}>
+                        <div className="text-sm font-medium mb-2" style={{ color: COLORS.sensory }}>Sensory Precision</div>
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="range" 
+                            min="0.5" 
+                            max="5" 
+                            step="0.1" 
+                            value={sensoryPrecision}
+                            onChange={(e) => setSensoryPrecision(parseFloat(e.target.value))}
+                            className="flex-1"
+                            style={{ accentColor: COLORS.sensory }}
+                          />
+                          <span className="font-mono w-12">{sensoryPrecision.toFixed(1)}</span>
+                        </div>
+                        <div className="text-xs italic mt-1" style={{ color: COLORS.textDim }}>
+                          Higher = more trust in sensory data
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Encounter History */}
+                  {encounterHistory.length > 0 && (
+                    <div>
+                      <h3 className="font-medium mb-3 flex items-center gap-2">
+                        <span>📜</span>
+                        Recent Encounters
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr style={{ backgroundColor: '#f4f1ea' }}>
+                              <th className="px-2 py-1 text-left">Stimulus</th>
+                              <th className="px-2 py-1 text-right">o</th>
+                              <th className="px-2 py-1 text-right">μ_p</th>
+                              <th className="px-2 py-1 text-right">μ_q</th>
+                              <th className="px-2 py-1 text-right">Error</th>
+                              <th className="px-2 py-1 text-right">F</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {encounterHistory.slice().reverse().map((enc, i) => (
+                              <tr key={i} className="border-t" style={{ borderColor: '#e9ecef' }}>
+                                <td className="px-2 py-1">{enc.stimulus.emoji} {enc.stimulus.name}</td>
+                                <td className="px-2 py-1 text-right font-mono" style={{ color: COLORS.sensory }}>{enc.observation.toFixed(2)}</td>
+                                <td className="px-2 py-1 text-right font-mono" style={{ color: COLORS.prior }}>{enc.metrics.mu_p.toFixed(2)}</td>
+                                <td className="px-2 py-1 text-right font-mono" style={{ color: COLORS.posterior }}>{enc.metrics.mu_q.toFixed(2)}</td>
+                                <td className="px-2 py-1 text-right font-mono">{enc.metrics.predictionError.toFixed(2)}</td>
+                                <td className="px-2 py-1 text-right font-mono" style={{ color: COLORS.energy }}>{enc.metrics.freeEnergy.toFixed(3)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Formula Reference */}
+                  <div>
+                    <h3 className="font-medium mb-3 flex items-center gap-2">
+                      <span>📐</span>
+                      Formula Reference
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <FormulaCard 
+                        title="Free Energy" 
+                        formula="F = D_KL[Q||P(s)] + E_Q[−log P(o|s)]"
+                        description="Complexity (divergence from prior) plus negative accuracy"
+                      />
+                      <FormulaCard 
+                        title="Optimal Posterior" 
+                        formula="μ_q = (π_p × μ_p + π_o × o) / (π_p + π_o)"
+                        description="Precision-weighted average of prior and observation"
+                      />
+                      <FormulaCard 
+                        title="KL Divergence" 
+                        formula="D_KL = log(σ_p/σ_q) + (σ_q² + (μ_q−μ_p)²)/(2σ_p²) − ½"
+                        description="Measures how far posterior deviates from prior"
+                      />
+                      <FormulaCard 
+                        title="Surprise Bound" 
+                        formula="F ≥ −log P(o)"
+                        description="Free energy upper bounds surprise"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 text-center text-sm" style={{ color: COLORS.textDim }}>
+              <p>This simulation demonstrates the Free Energy Principle in perception.</p>
+              <p className="mt-1">The agent maintains beliefs, receives observations, and updates via Bayesian inference.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Helper Components
+    const MetricCard = ({ label, value, unit, color }) => (
+      <div className="p-3 rounded" style={{ backgroundColor: '#fafafa', borderLeft: `3px solid ${color}` }}>
+        <div className="text-xs" style={{ color: COLORS.textDim }}>{label}</div>
+        <div className="font-mono font-bold" style={{ color }}>{value.toFixed(3)}</div>
+        <div className="text-xs font-mono" style={{ color: COLORS.textDim }}>{unit}</div>
+      </div>
+    );
+
+    const FormulaCard = ({ title, formula, description }) => (
+      <div className="p-3 rounded" style={{ backgroundColor: '#fafafa' }}>
+        <div className="font-medium text-sm mb-1">{title}</div>
+        <div className="font-mono text-sm p-2 rounded mb-1" style={{ backgroundColor: '#fff', border: '1px solid #e9ecef' }}>{formula}</div>
+        <div className="text-xs" style={{ color: COLORS.textDim }}>{description}</div>
+      </div>
+    );
+
+    const DistributionPlot = ({ metrics }) => {
+      const width = 500;
+      const height = 150;
+      const margin = { top: 10, right: 10, bottom: 25, left: 40 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      
+      const xMin = -2;
+      const xMax = 12;
+      const points = 100;
+      const step = (xMax - xMin) / points;
+      
+      // Generate distribution data
+      const priorData = [], likelihoodData = [], posteriorData = [];
+      let maxY = 0;
+      
+      for (let i = 0; i <= points; i++) {
+        const x = xMin + i * step;
+        const pY = gaussianPDF(x, metrics.mu_p, metrics.sigma_p);
+        const lY = gaussianPDF(x, metrics.o, metrics.sigma_o);
+        const qY = gaussianPDF(x, metrics.mu_q, metrics.sigma_q);
+        priorData.push({ x, y: pY });
+        likelihoodData.push({ x, y: lY });
+        posteriorData.push({ x, y: qY });
+        maxY = Math.max(maxY, pY, lY, qY);
+      }
+      maxY *= 1.1;
+      
+      const xScale = (x) => margin.left + (x - xMin) / (xMax - xMin) * innerWidth;
+      const yScale = (y) => margin.top + innerHeight - (y / maxY) * innerHeight;
+      
+      const pathFor = (data) => data.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${xScale(pt.x)} ${yScale(pt.y)}`).join(' ');
+      
+      return (
+        <svg width={width} height={height} style={{ backgroundColor: '#fafafa' }} className="rounded border">
+          {/* Axes */}
+          <line x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} stroke={COLORS.textDim} />
+          <line x1={margin.left} x2={margin.left} y1={margin.top} y2={height - margin.bottom} stroke={COLORS.textDim} />
+          
+          {/* X-axis labels */}
+          {[0, 2, 4, 6, 8, 10].map(v => (
+            <text key={v} x={xScale(v)} y={height - 8} textAnchor="middle" fontSize="10" fill={COLORS.textDim}>{v}</text>
+          ))}
+          <text x={width / 2} y={height - 2} textAnchor="middle" fontSize="10" fill={COLORS.textMuted}>hidden state s</text>
+          
+          {/* Distributions */}
+          <path d={`${pathFor(priorData)} L ${xScale(xMax)} ${yScale(0)} L ${xScale(xMin)} ${yScale(0)} Z`} fill={COLORS.prior} opacity={0.15} />
+          <path d={pathFor(priorData)} fill="none" stroke={COLORS.prior} strokeWidth="2" />
+          
+          <path d={`${pathFor(likelihoodData)} L ${xScale(xMax)} ${yScale(0)} L ${xScale(xMin)} ${yScale(0)} Z`} fill={COLORS.sensory} opacity={0.15} />
+          <path d={pathFor(likelihoodData)} fill="none" stroke={COLORS.sensory} strokeWidth="2" />
+          
+          <path d={`${pathFor(posteriorData)} L ${xScale(xMax)} ${yScale(0)} L ${xScale(xMin)} ${yScale(0)} Z`} fill={COLORS.posterior} opacity={0.15} />
+          <path d={pathFor(posteriorData)} fill="none" stroke={COLORS.posterior} strokeWidth="2.5" />
+          
+          {/* Mean lines */}
+          <line x1={xScale(metrics.mu_p)} x2={xScale(metrics.mu_p)} y1={yScale(0)} y2={yScale(gaussianPDF(metrics.mu_p, metrics.mu_p, metrics.sigma_p))} stroke={COLORS.prior} strokeWidth="1.5" strokeDasharray="4,3" />
+          <line x1={xScale(metrics.o)} x2={xScale(metrics.o)} y1={yScale(0)} y2={yScale(gaussianPDF(metrics.o, metrics.o, metrics.sigma_o))} stroke={COLORS.sensory} strokeWidth="1.5" strokeDasharray="4,3" />
+          <line x1={xScale(metrics.mu_q)} x2={xScale(metrics.mu_q)} y1={yScale(0)} y2={yScale(gaussianPDF(metrics.mu_q, metrics.mu_q, metrics.sigma_q))} stroke={COLORS.posterior} strokeWidth="2" strokeDasharray="4,3" />
+          
+          {/* Legend */}
+          <g transform={`translate(${margin.left + 5}, ${margin.top + 10})`}>
+            <line x1="0" x2="15" y1="0" y2="0" stroke={COLORS.prior} strokeWidth="2" />
+            <text x="20" y="3" fontSize="10" fill={COLORS.prior}>P(s) Prior</text>
+          </g>
+          <g transform={`translate(${margin.left + 5}, ${margin.top + 24})`}>
+            <line x1="0" x2="15" y1="0" y2="0" stroke={COLORS.sensory} strokeWidth="2" />
+            <text x="20" y="3" fontSize="10" fill={COLORS.sensory}>P(o|s) Likelihood</text>
+          </g>
+          <g transform={`translate(${margin.left + 5}, ${margin.top + 38})`}>
+            <line x1="0" x2="15" y1="0" y2="0" stroke={COLORS.posterior} strokeWidth="2.5" />
+            <text x="20" y="3" fontSize="10" fill={COLORS.posterior}>Q(s) Posterior</text>
+          </g>
+        </svg>
+      );
+    };
+
+    // Mount
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PerceivingAgent />);
+  </script>
+</body>
+</html>
