@@ -263,6 +263,7 @@
                 <button class="tab-button" onclick="showTab(6)">Cross-Domain</button>
                 <button class="tab-button" onclick="showTab(7)">AI Safety</button>
                 <button class="tab-button" onclick="showTab(8)">Imagination</button>
+                <button class="tab-button" onclick="showTab(9)">A Working Example</button>
             </div>
         </div>
         
@@ -1196,9 +1197,181 @@ Higher coherence = deeper temporal integration</div>
             </div>
         </div>
         
+        <!-- TAB 9: DRIVING SIMULATION - A WORKING EXAMPLE -->
+        <div class="tab-content">
+            <div class="content">
+                <h2>A Working Example: Driving from A to B</h2>
+                
+                <p>This simulation demonstrates CRR dynamics alongside the Free Energy Principle during a routine driving journey. <strong>Crucially</strong>, routine driving involves <em>continuous micro-updating</em> with small Ω values—not the full 16-nat threshold reserved for major "Aha" moments or model selection.</p>
+                
+                <div class="grammar-box">
+                    <h3>Ω Scales with Task Complexity</h3>
+                    <table style="margin: 0;">
+                        <tr><th>Task Level</th><th>Ω (nats)</th><th>Character</th></tr>
+                        <tr><td>Micro-adjustments (steering, throttle)</td><td>~2–4</td><td>Continuous, automatic</td></tr>
+                        <tr><td>Vehicle control (gear, speed)</td><td>~4–6</td><td>Semi-automatic</td></tr>
+                        <tr><td>Traffic decisions (lights, hazards)</td><td>~8–12</td><td>Requires attention</td></tr>
+                        <tr><td>Navigation decisions (route changes)</td><td>~12–16</td><td>Deliberate choice</td></tr>
+                        <tr><td>Model revision ("Aha" moments)</td><td>~16</td><td>Major reorganisation</td></tr>
+                    </table>
+                    <div class="citation" style="margin-top: 15px;">
+                        <strong>Note on Ω values:</strong> The specific nat values shown are <em>illustrative</em> rather than empirically derived. They demonstrate the principle from Drift Diffusion Models (DDM) that more complex decisions require higher evidence thresholds (Ratcliff & McKoon, 2008). The relative ordering (micro-adjustments < vehicle control < traffic < navigation) is theoretically motivated; absolute values would require empirical calibration for specific tasks. See Körding & Wolpert (2006) for Bayesian decision theory in sensorimotor control.
+                    </div>
+                </div>
+                
+                <div class="key-insight">
+                    <strong>The Key Insight:</strong> FEP tells us <em>what</em> the brain does (minimise prediction error). CRR tells us <em>when</em> and <em>how</em>: coherence accumulates until C = Ω, triggering rupture and regeneration. In routine driving, small Ω means frequent micro-ruptures—the system is continuously updating rather than accumulating toward major insights.
+                </div>
+                
+                <h2>Interactive Simulation</h2>
+                
+                <p>Watch the driver navigate from A to B. Multiple CRR channels operate simultaneously at different timescales. The FEP panel shows how free energy (prediction error) relates to coherence accumulation.</p>
+                
+                <div class="sim-container">
+                    <div class="sim-canvas-wrap">
+                        <canvas id="drive-canvas" class="sim-canvas" style="height: 320px;"></canvas>
+                    </div>
+                    
+                    <div class="sim-buttons">
+                        <button class="sim-btn" id="drive-start">Start Journey</button>
+                        <button class="sim-btn" id="drive-reset">Reset</button>
+                        <button class="sim-btn" id="drive-hazard">Traffic Light</button>
+                        <button class="sim-btn" id="drive-turn">Approaching Turn</button>
+                        <button class="sim-btn danger" id="drive-surprise">Unexpected Event</button>
+                    </div>
+                    
+                    <!-- CRR Channels Display -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;">
+                        <div class="metric-box" style="border-left: 3px solid #10b981;">
+                            <div class="metric-label">Steering (Ω=3)</div>
+                            <div style="background: #1e293b; height: 8px; border-radius: 4px; margin: 5px 0;">
+                                <div id="drive-bar-steer" style="background: #10b981; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s;"></div>
+                            </div>
+                            <div class="metric-value" id="drive-c-steer" style="font-size: 0.9rem;">0.00</div>
+                        </div>
+                        <div class="metric-box" style="border-left: 3px solid #3b82f6;">
+                            <div class="metric-label">Speed (Ω=4)</div>
+                            <div style="background: #1e293b; height: 8px; border-radius: 4px; margin: 5px 0;">
+                                <div id="drive-bar-speed" style="background: #3b82f6; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s;"></div>
+                            </div>
+                            <div class="metric-value" id="drive-c-speed" style="font-size: 0.9rem;">0.00</div>
+                        </div>
+                        <div class="metric-box" style="border-left: 3px solid #f59e0b;">
+                            <div class="metric-label">Traffic (Ω=10)</div>
+                            <div style="background: #1e293b; height: 8px; border-radius: 4px; margin: 5px 0;">
+                                <div id="drive-bar-traffic" style="background: #f59e0b; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s;"></div>
+                            </div>
+                            <div class="metric-value" id="drive-c-traffic" style="font-size: 0.9rem;">0.00</div>
+                        </div>
+                        <div class="metric-box" style="border-left: 3px solid #8b5cf6;">
+                            <div class="metric-label">Navigation (Ω=14)</div>
+                            <div style="background: #1e293b; height: 8px; border-radius: 4px; margin: 5px 0;">
+                                <div id="drive-bar-nav" style="background: #8b5cf6; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s;"></div>
+                            </div>
+                            <div class="metric-value" id="drive-c-nav" style="font-size: 0.9rem;">0.00</div>
+                        </div>
+                    </div>
+                    
+                    <!-- FEP Quantities Panel -->
+                    <div class="grammar-box" style="padding: 15px;">
+                        <h4 style="margin-bottom: 10px;">Free Energy Principle Quantities</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <div>
+                                <div style="font-size: 0.85rem; color: #666;">Prediction Error (ε)</div>
+                                <div style="font-family: 'Courier New', monospace; font-size: 1.2rem;" id="drive-pe">0.000</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.85rem; color: #666;">Free Energy (F)</div>
+                                <div style="font-family: 'Courier New', monospace; font-size: 1.2rem;" id="drive-fe">0.000</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.85rem; color: #666;">Precision (π = 1/Ω)</div>
+                                <div style="font-family: 'Courier New', monospace; font-size: 1.2rem;" id="drive-prec">0.000</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- State Display -->
+                    <div class="state-display">
+                        <h4>Current State</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0;">
+                            <div><span style="color: #666;">Position:</span> <span id="drive-pos">A</span></div>
+                            <div><span style="color: #666;">Speed:</span> <span id="drive-speed">0 mph</span></div>
+                            <div><span style="color: #666;">Steering:</span> <span id="drive-steer">0°</span></div>
+                        </div>
+                        <div class="state-narrative" id="drive-narrative">
+                            <strong>At rest:</strong> Vehicle stationary at A. All channels show C ≈ 0. Free energy minimal.
+                        </div>
+                    </div>
+                    
+                    <!-- Metrics Row -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px;">
+                        <div class="metric-box">
+                            <div class="metric-label">Total Ruptures</div>
+                            <div class="metric-value" id="drive-ruptures">0</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Journey Progress</div>
+                            <div class="metric-value" id="drive-progress">0%</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Mean exp(C/Ω)</div>
+                            <div class="metric-value" id="drive-expco">1.000</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Rupture Rate</div>
+                            <div class="metric-value"><span id="drive-rate">0</span>/min</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Event Log -->
+                    <div style="background: #1e293b; border-radius: 8px; padding: 15px; margin-top: 15px; max-height: 150px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85rem; color: #94a3b8;" id="drive-log">
+                        <div>System ready. Press "Start Journey" to begin.</div>
+                    </div>
+                </div>
+                
+                <h3>What This Demonstrates</h3>
+                
+                <div class="math-block">CRR-FEP Correspondence in Driving:
+
+Coherence C = ∫ L(x,τ) dτ     Evidence accumulation
+Threshold Ω = σ² (variance)    Decision boundary  
+Rupture δ = C reaching Ω       Action/update trigger
+Regeneration R = exp(C/Ω)      Memory-weighted reconstruction
+
+Free Energy F ≈ Σ (Ω - C)      Remaining uncertainty
+Prediction Error ε             Sensory surprise
+Precision π = 1/Ω              Confidence in predictions
+
+Key dynamics:
+  Small Ω (steering): ~10-20 ruptures per minute
+  Large Ω (navigation): ~0-2 ruptures per journey
+  Surprise event: Ω doubles → system deliberates</div>
+                
+                <h3>Why Small Ω ≠ Full Model Revision</h3>
+                
+                <p>The critical insight is that most cognitive activity involves <em>small</em> Ω values—continuous micro-adjustments that never approach the 16-nat threshold for full model revision. A driver making steering corrections isn't reconsidering their entire worldview; they're performing rapid, automatic updates within an established framework.</p>
+                
+                <p>This resolves the apparent paradox of how we can be simultaneously "always predicting" (FEP) yet rarely experiencing major insights. The answer: different processes have different Ω values, and most operate far below the consciousness-piercing threshold.</p>
+                
+                <h3>Skill Acquisition Through CRR</h3>
+                
+                <p>Novice drivers show higher effective Ω—they need more evidence before each action, leading to jerky, deliberate movements. As skill develops, Ω decreases and driving becomes "automatic."</p>
+                
+                <table>
+                    <tr><th>Skill Level</th><th>Steering Ω</th><th>Character</th><th>exp(C/Ω) at rupture</th></tr>
+                    <tr><td>Novice</td><td>~8-10</td><td>Deliberate, conscious</td><td>~2.7 (e¹)</td></tr>
+                    <tr><td>Competent</td><td>~4-6</td><td>Semi-automatic</td><td>~2.7</td></tr>
+                    <tr><td>Expert</td><td>~2-3</td><td>Fully automatic</td><td>~2.7</td></tr>
+                </table>
+                
+                <p>Note that exp(C/Ω) remains ~e at each rupture regardless of skill level—what changes is <em>how quickly</em> C accumulates to threshold, not the regeneration dynamics.</p>
+            </div>
+        </div>
+        
         <footer>
             <p><strong>CRR: A Mathematics of Becoming</strong> — <em>C → Ω → δ → R</em></p>
-            <p>Version 14.1 | Creativity & Imagination | January 2026 | <a href="https://cohere.org.uk">cohere.org.uk</a></p>
+            <p>Version 14.2 | A Working Example | January 2026 | <a href="https://cohere.org.uk">cohere.org.uk</a></p>
         </footer>
     </div>
     
@@ -2747,6 +2920,461 @@ Higher coherence = deeper temporal integration</div>
             drawInnerPhantasmScreen();
             requestAnimationFrame(innerAnimate);
         }
+        
+        // =============================================
+        // DRIVING SIMULATION (Tab 9) - A WORKING EXAMPLE
+        // =============================================
+        let driveInit = false, driveRunning = false, driveCanvas, driveCtx;
+        let driveState = {
+            position: 0,
+            speed: 0,
+            targetSpeed: 30,
+            steerAngle: 0,
+            laneOffset: 0,
+            channels: {
+                steering: { C: 0, Omega: 3, ruptures: 0, color: '#10b981', name: 'Steering' },
+                speed: { C: 0, Omega: 4, ruptures: 0, color: '#3b82f6', name: 'Speed' },
+                traffic: { C: 0, Omega: 10, ruptures: 0, color: '#f59e0b', name: 'Traffic' },
+                navigation: { C: 0, Omega: 14, ruptures: 0, color: '#8b5cf6', name: 'Navigation' }
+            },
+            predictionError: 0,
+            freeEnergy: 0,
+            precision: 1,
+            trafficLight: null,
+            turnAhead: false,
+            surpriseEvent: false,
+            surpriseTimer: 0,
+            totalRuptures: 0,
+            startTime: 0,
+            roadPoints: []
+        };
+        
+        function initDrive() {
+            driveCanvas = document.getElementById('drive-canvas');
+            if (!driveCanvas) return;
+            driveCanvas.width = driveCanvas.parentElement.clientWidth;
+            driveCanvas.height = 320;
+            driveCtx = driveCanvas.getContext('2d');
+            
+            generateRoad();
+            
+            document.getElementById('drive-start').onclick = () => {
+                driveRunning = !driveRunning;
+                document.getElementById('drive-start').textContent = driveRunning ? 'Pause' : 'Start Journey';
+                if (driveRunning) {
+                    if (driveState.startTime === 0) driveState.startTime = Date.now();
+                    driveLoop();
+                }
+            };
+            
+            document.getElementById('drive-reset').onclick = () => {
+                driveRunning = false;
+                document.getElementById('drive-start').textContent = 'Start Journey';
+                resetDriveState();
+                updateDriveUI();
+                renderDrive();
+            };
+            
+            document.getElementById('drive-hazard').onclick = () => {
+                if (driveState.trafficLight === null) {
+                    driveState.trafficLight = 'green';
+                    setTimeout(() => { if (driveState.trafficLight) driveState.trafficLight = 'yellow'; }, 2000);
+                    setTimeout(() => { if (driveState.trafficLight) driveState.trafficLight = 'red'; }, 3500);
+                    setTimeout(() => { driveState.trafficLight = null; }, 8000);
+                    addDriveLog('Traffic light ahead—C_traffic accumulating', '#f59e0b');
+                }
+            };
+            
+            document.getElementById('drive-turn').onclick = () => {
+                driveState.turnAhead = true;
+                driveState.channels.navigation.C += 5;
+                addDriveLog('Turn approaching—navigation channel activated', '#8b5cf6');
+                setTimeout(() => { driveState.turnAhead = false; }, 5000);
+            };
+            
+            document.getElementById('drive-surprise').onclick = () => {
+                driveState.surpriseEvent = true;
+                driveState.surpriseTimer = 60;
+                Object.values(driveState.channels).forEach(ch => { ch.Omega *= 2; });
+                driveState.targetSpeed = 0;
+                addDriveLog('⚠️ UNEXPECTED EVENT—Ω doubled, deliberation mode', '#dc2626');
+                setTimeout(() => {
+                    driveState.surpriseEvent = false;
+                    driveState.channels.steering.Omega = 3;
+                    driveState.channels.speed.Omega = 4;
+                    driveState.channels.traffic.Omega = 10;
+                    driveState.channels.navigation.Omega = 14;
+                    driveState.targetSpeed = 30;
+                    addDriveLog('Event resolved—returning to automatic mode', '#10b981');
+                }, 4000);
+            };
+            
+            driveInit = true;
+            updateDriveUI();
+            renderDrive();
+        }
+        
+        function addDriveLog(message, color = '#94a3b8') {
+            const log = document.getElementById('drive-log');
+            if (!log) return;
+            const entry = document.createElement('div');
+            entry.style.color = color;
+            entry.style.borderLeft = `2px solid ${color}`;
+            entry.style.paddingLeft = '8px';
+            entry.style.marginBottom = '4px';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 10) log.removeChild(log.lastChild);
+        }
+        
+        function generateRoad() {
+            driveState.roadPoints = [];
+            const w = driveCanvas.width;
+            for (let i = 0; i <= 100; i++) {
+                const t = i / 100;
+                const x = t * w;
+                const y = 160 + Math.sin(t * Math.PI * 3) * 30 + Math.sin(t * Math.PI * 7) * 15;
+                driveState.roadPoints.push({ x, y });
+            }
+        }
+        
+        function resetDriveState() {
+            driveState.position = 0;
+            driveState.speed = 0;
+            driveState.targetSpeed = 30;
+            driveState.steerAngle = 0;
+            driveState.laneOffset = 0;
+            driveState.predictionError = 0;
+            driveState.freeEnergy = 0;
+            driveState.precision = 1;
+            driveState.trafficLight = null;
+            driveState.turnAhead = false;
+            driveState.surpriseEvent = false;
+            driveState.totalRuptures = 0;
+            driveState.startTime = 0;
+            
+            Object.keys(driveState.channels).forEach(key => {
+                driveState.channels[key].C = 0;
+                driveState.channels[key].ruptures = 0;
+            });
+            driveState.channels.steering.Omega = 3;
+            driveState.channels.speed.Omega = 4;
+            driveState.channels.traffic.Omega = 10;
+            driveState.channels.navigation.Omega = 14;
+            
+            generateRoad();
+        }
+        
+        function driveLoop() {
+            if (!driveRunning) return;
+            
+            if (driveState.position < 1) {
+                driveState.position += driveState.speed * 0.0001;
+            }
+            
+            let effectiveTarget = driveState.targetSpeed;
+            if (driveState.trafficLight === 'red' || driveState.trafficLight === 'yellow') {
+                effectiveTarget = 0;
+            }
+            
+            const speedError = effectiveTarget - driveState.speed;
+            driveState.speed += speedError * 0.05;
+            driveState.speed = Math.max(0, Math.min(50, driveState.speed));
+            
+            driveState.laneOffset += (Math.random() - 0.5) * 0.8;
+            driveState.laneOffset *= 0.95;
+            
+            const steerCorrection = -driveState.laneOffset * 0.3;
+            driveState.steerAngle = steerCorrection + (Math.random() - 0.5) * 2;
+            
+            // CRR channel updates
+            const steerCoherence = Math.abs(driveState.laneOffset) * 0.5 + Math.abs(driveState.steerAngle) * 0.1;
+            driveState.channels.steering.C += steerCoherence * 0.1;
+            
+            const speedCoherence = Math.abs(speedError) * 0.1;
+            driveState.channels.speed.C += speedCoherence * 0.08;
+            
+            if (driveState.trafficLight) {
+                driveState.channels.traffic.C += 0.3;
+            }
+            
+            driveState.channels.navigation.C += 0.02;
+            if (driveState.turnAhead) {
+                driveState.channels.navigation.C += 0.2;
+            }
+            
+            // Check for ruptures
+            Object.entries(driveState.channels).forEach(([key, channel]) => {
+                if (channel.C >= channel.Omega) {
+                    channel.ruptures++;
+                    driveState.totalRuptures++;
+                    const expWeight = Math.exp(channel.C / channel.Omega);
+                    channel.C = (channel.C - channel.Omega) * 0.1;
+                    
+                    if (key === 'traffic' || key === 'navigation') {
+                        addDriveLog(`δ ${channel.name}: C=${channel.Omega.toFixed(1)} → R (exp=${expWeight.toFixed(2)})`, channel.color);
+                    }
+                }
+            });
+            
+            // FEP quantities
+            driveState.predictionError = 
+                Math.abs(driveState.laneOffset) * 0.4 +
+                Math.abs(speedError) * 0.02 +
+                (driveState.trafficLight ? 0.3 : 0);
+            
+            driveState.freeEnergy = Object.values(driveState.channels)
+                .reduce((sum, ch) => sum + Math.max(0, ch.Omega - ch.C), 0) / 4;
+            
+            driveState.precision = 4 / Object.values(driveState.channels)
+                .reduce((sum, ch) => sum + ch.Omega, 0) * 10;
+            
+            if (driveState.surpriseTimer > 0) driveState.surpriseTimer--;
+            
+            if (driveState.position >= 1) {
+                driveRunning = false;
+                document.getElementById('drive-start').textContent = 'Journey Complete';
+                addDriveLog('✓ Arrived at B. Total ruptures: ' + driveState.totalRuptures, '#10b981');
+            }
+            
+            updateDriveUI();
+            renderDrive();
+            requestAnimationFrame(driveLoop);
+        }
+        
+        function updateDriveUI() {
+            Object.entries(driveState.channels).forEach(([key, channel]) => {
+                const pct = Math.min(100, (channel.C / channel.Omega) * 100);
+                const barId = key === 'steering' ? 'steer' : key === 'navigation' ? 'nav' : key;
+                const bar = document.getElementById(`drive-bar-${barId}`);
+                const cVal = document.getElementById(`drive-c-${barId}`);
+                if (bar) bar.style.width = pct + '%';
+                if (cVal) cVal.textContent = channel.C.toFixed(2);
+            });
+            
+            const peEl = document.getElementById('drive-pe');
+            const feEl = document.getElementById('drive-fe');
+            const precEl = document.getElementById('drive-prec');
+            const rupEl = document.getElementById('drive-ruptures');
+            const progEl = document.getElementById('drive-progress');
+            const expEl = document.getElementById('drive-expco');
+            const posEl = document.getElementById('drive-pos');
+            const speedEl = document.getElementById('drive-speed');
+            const steerEl = document.getElementById('drive-steer');
+            const rateEl = document.getElementById('drive-rate');
+            const narrEl = document.getElementById('drive-narrative');
+            
+            if (peEl) peEl.textContent = driveState.predictionError.toFixed(3);
+            if (feEl) feEl.textContent = driveState.freeEnergy.toFixed(3);
+            if (precEl) precEl.textContent = driveState.precision.toFixed(3);
+            if (rupEl) rupEl.textContent = driveState.totalRuptures;
+            if (progEl) progEl.textContent = (driveState.position * 100).toFixed(0) + '%';
+            
+            const meanExp = Object.values(driveState.channels)
+                .reduce((sum, ch) => sum + Math.exp(ch.C / ch.Omega), 0) / 4;
+            if (expEl) expEl.textContent = meanExp.toFixed(3);
+            
+            if (posEl) posEl.textContent = driveState.position < 0.1 ? 'A' : driveState.position > 0.9 ? 'B' : (driveState.position * 100).toFixed(0) + '%';
+            if (speedEl) speedEl.textContent = driveState.speed.toFixed(0) + ' mph';
+            if (steerEl) steerEl.textContent = driveState.steerAngle.toFixed(1) + '°';
+            
+            const elapsed = (Date.now() - driveState.startTime) / 60000;
+            const rate = elapsed > 0 ? (driveState.totalRuptures / elapsed).toFixed(1) : '0';
+            if (rateEl) rateEl.textContent = rate;
+            
+            let narrative = '';
+            if (!driveRunning && driveState.position === 0) {
+                narrative = '<strong>At rest:</strong> Vehicle stationary at A. All channels show C ≈ 0. Free energy minimal.';
+            } else if (driveState.surpriseEvent) {
+                narrative = '<strong>SURPRISE:</strong> Unexpected event! Ω doubled across all channels—system shifts to deliberative mode.';
+            } else if (driveState.trafficLight === 'red') {
+                narrative = '<strong>Traffic stop:</strong> Red light. Speed channel accumulating C toward stop decision.';
+            } else if (driveState.trafficLight === 'yellow') {
+                narrative = '<strong>Decision point:</strong> Yellow light—traffic channel C approaching Ω. Stop or go?';
+            } else if (driveState.turnAhead) {
+                narrative = '<strong>Navigation active:</strong> Turn ahead. Navigation channel C rising toward Ω = 14.';
+            } else if (driveState.position >= 1) {
+                narrative = '<strong>Journey complete:</strong> Arrived at B. ' + driveState.totalRuptures + ' total CRR cycles.';
+            } else {
+                narrative = '<strong>Cruising:</strong> Steering and speed channels cycling rapidly (small Ω = automatic). Free energy low.';
+            }
+            if (narrEl) narrEl.innerHTML = narrative;
+        }
+        
+        function renderDrive() {
+            if (!driveCanvas || !driveCtx) return;
+            const w = driveCanvas.width, h = driveCanvas.height, ctx = driveCtx;
+            
+            // Background
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, '#1a1a2e');
+            skyGrad.addColorStop(1, '#16213e');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Ground
+            ctx.fillStyle = '#2d4a3e';
+            ctx.fillRect(0, h * 0.6, w, h * 0.4);
+            
+            // Road
+            ctx.beginPath();
+            ctx.moveTo(0, driveState.roadPoints[0].y + 40);
+            driveState.roadPoints.forEach(p => ctx.lineTo(p.x, p.y + 40));
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            ctx.fillStyle = '#2a2a3a';
+            ctx.fill();
+            
+            // Road surface
+            ctx.beginPath();
+            ctx.moveTo(0, driveState.roadPoints[0].y);
+            driveState.roadPoints.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.lineTo(w, driveState.roadPoints[100].y + 80);
+            ctx.lineTo(0, driveState.roadPoints[0].y + 80);
+            ctx.closePath();
+            ctx.fillStyle = '#3a3a4a';
+            ctx.fill();
+            
+            // Center line
+            ctx.beginPath();
+            ctx.setLineDash([20, 15]);
+            ctx.moveTo(0, driveState.roadPoints[0].y + 40);
+            driveState.roadPoints.forEach(p => ctx.lineTo(p.x, p.y + 40));
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // A and B markers
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 24px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('A', 30, driveState.roadPoints[0].y - 20);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText('B', w - 30, driveState.roadPoints[100].y - 20);
+            
+            // Traffic light
+            if (driveState.trafficLight) {
+                const lightX = Math.min(w - 100, driveState.position * w + 150);
+                const lightY = 50;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(lightX - 3, lightY, 6, 80);
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(lightX - 15, lightY - 50, 30, 50);
+                
+                const colors = { red: lightY - 40, yellow: lightY - 25, green: lightY - 10 };
+                Object.entries(colors).forEach(([color, y]) => {
+                    ctx.beginPath();
+                    ctx.arc(lightX, y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = driveState.trafficLight === color ? 
+                        (color === 'red' ? '#ef4444' : color === 'yellow' ? '#fbbf24' : '#22c55e') : '#333';
+                    ctx.fill();
+                });
+            }
+            
+            // Turn indicator
+            if (driveState.turnAhead) {
+                const turnX = Math.min(w - 80, driveState.position * w + 200);
+                ctx.fillStyle = '#8b5cf6';
+                ctx.font = 'bold 20px Georgia';
+                ctx.fillText('↱', turnX, 80);
+                ctx.font = '12px Georgia';
+                ctx.fillText('TURN', turnX, 95);
+            }
+            
+            // Surprise overlay
+            if (driveState.surpriseEvent) {
+                ctx.fillStyle = `rgba(220, 38, 38, ${0.3 + Math.sin(Date.now() * 0.01) * 0.2})`;
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 28px Georgia';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚠️ UNEXPECTED EVENT', w/2, h/2 - 80);
+                ctx.font = '14px Georgia';
+                ctx.fillText('Ω increased — deliberation mode', w/2, h/2 - 55);
+            }
+            
+            // Car
+            const carIndex = Math.floor(driveState.position * 99);
+            const carPoint = driveState.roadPoints[Math.min(carIndex, 99)];
+            const carX = carPoint.x;
+            const carY = carPoint.y + 40 + driveState.laneOffset * 3;
+            
+            // Car shadow
+            ctx.beginPath();
+            ctx.ellipse(carX, carY + 12, 25, 8, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fill();
+            
+            // Car body
+            ctx.fillStyle = driveState.surpriseEvent ? '#dc2626' : '#3b82f6';
+            ctx.beginPath();
+            ctx.roundRect(carX - 20, carY - 8, 40, 16, 4);
+            ctx.fill();
+            
+            // Car roof
+            ctx.fillStyle = driveState.surpriseEvent ? '#b91c1c' : '#2563eb';
+            ctx.beginPath();
+            ctx.roundRect(carX - 12, carY - 14, 24, 8, 3);
+            ctx.fill();
+            
+            // Headlights
+            if (driveState.speed > 0) {
+                ctx.fillStyle = '#fef3c7';
+                ctx.beginPath();
+                ctx.arc(carX + 18, carY - 2, 3, 0, Math.PI * 2);
+                ctx.arc(carX + 18, carY + 4, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // CRR channel indicators around car
+            const channels = Object.entries(driveState.channels);
+            channels.forEach(([key, ch], i) => {
+                const angle = (i / channels.length) * Math.PI * 2 - Math.PI / 2;
+                const dist = 45;
+                const cx = carX + Math.cos(angle) * dist;
+                const cy = carY + Math.sin(angle) * dist;
+                const ratio = ch.C / ch.Omega;
+                const radius = 5 + ratio * 10;
+                
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                const alpha = Math.floor(ratio * 200 + 55).toString(16).padStart(2, '0');
+                ctx.fillStyle = ch.color + alpha;
+                ctx.fill();
+                
+                if (ratio > 0.8) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, radius + 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = ch.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+            
+            // Progress bar
+            const barY = h - 15;
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(50, barY - 4, w - 100, 8);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(50, barY - 4, (w - 100) * driveState.position, 8);
+            ctx.fillStyle = '#10b981';
+            ctx.font = '12px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('A', 50, barY + 15);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText('B', w - 50, barY + 15);
+        }
+        
+        // Initialize driving simulation when tab 9 is shown
+        const originalShowTab = showTab;
+        showTab = function(i) {
+            originalShowTab(i);
+            if (i === 9 && !driveInit) {
+                setTimeout(initDrive, 100);
+            }
+        };
     </script>
 </body>
 </html>
