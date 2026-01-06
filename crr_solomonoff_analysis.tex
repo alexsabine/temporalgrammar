@@ -33,11 +33,10 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
-\newcommand{\C}{\mathcal{C}}
+\newcommand{\Sur}{\mathcal{S}}  % Surprisal/cost
 \newcommand{\M}{\mathcal{M}}
-\newcommand{\Sol}{\mathcal{S}}
+\newcommand{\Sol}{\mathcal{M}_{\text{Sol}}}
 \newcommand{\Kol}{K}
-\newcommand{\KP}{K_{\text{prefix}}}
 
 % Title
 \title{\textbf{Coherence-Rupture-Regeneration and Solomonoff Induction:\\
@@ -50,7 +49,7 @@ A Mathematical Comparison}}
 \maketitle
 
 \begin{abstract}
-This document presents a mathematical analysis comparing the Coherence-Rupture-Regeneration (CRR) framework with Solomonoff induction. We establish correspondence theorems between the two frameworks and identify what each provides. The main findings are: (1) CRR coherence corresponds to accumulated conditional Kolmogorov complexity; (2) CRR rupture implements MDL model switching; (3) CRR regeneration weights correspond to Solomonoff's universal prior under specific parameter choices; (4) the frameworks are compatible, with CRR providing operational details that Solomonoff leaves unspecified. We also note limitations and open questions for both frameworks.
+This document presents a mathematical analysis comparing the Coherence-Rupture-Regeneration (CRR) framework with Solomonoff induction. We establish correspondence theorems between the two frameworks and identify what each provides. The main findings are: (1) CRR surprisal corresponds to accumulated conditional Kolmogorov complexity; (2) CRR rupture implements MDL model switching; (3) CRR regeneration implements a soft MDL evidence-weighting mechanism related to, but distinct from, Solomonoff's universal prior; (4) the frameworks are compatible, with CRR providing operational details that Solomonoff leaves unspecified. We carefully distinguish the pairwise switching threshold from the global temperature parameter.
 \end{abstract}
 
 \tableofcontents
@@ -82,8 +81,8 @@ We address three questions:
 \begin{tcolorbox}[colback=gray!5,colframe=gray!75!black,title=Main Findings]
 \textbf{What Solomonoff Induction Provides:}
 \begin{itemize}
-    \item The optimal prior: $P(h) = 2^{-K(h)}$
-    \item The optimal posterior: $P(h|d) \propto P(d|h) \cdot 2^{-K(h)}$
+    \item The optimal prior over hypotheses: $P(h) = 2^{-K(h)}$
+    \item The optimal posterior: $P(h|y) \propto P(y|h) \cdot 2^{-K(h)}$
     \item Proof of optimality (dominates all computable predictors)
 \end{itemize}
 
@@ -92,23 +91,19 @@ We address three questions:
     \item When to act on accumulated evidence
     \item A computable implementation
     \item The mechanism of model change
-    \item A tunable parameter for different contexts
-    \item Discrete update structure
+    \item Tunable parameters for different contexts
 \end{itemize}
 
 \textbf{What CRR Adds:}
 \begin{itemize}
-    \item Decision rule: act when $\C \geq \Omega$
-    \item Computable approximation via temporal coherence accumulation
-    \item Regeneration operator specifying how models are reconstructed
-    \item Tunable rigidity parameter $\Omega$
-    \item Discrete rupture moments
+    \item Decision rule: switch when $\Sur_m - \Sur_{m'} > \Delta_{m,m'}$
+    \item Computable approximation via temporal surprisal accumulation
+    \item Regeneration operator with temperature parameter $\Omega$
+    \item Separation of switching threshold $\Delta$ from selection sharpness $\Omega$
 \end{itemize}
 \end{tcolorbox}
 
 \subsection{The Three-Framework Synthesis}
-
-CRR can be understood in relation to two other frameworks:
 
 \begin{center}
 \begin{tabular}{@{}lll@{}}
@@ -117,12 +112,10 @@ CRR can be understood in relation to two other frameworks:
 \midrule
 Solomonoff & What is optimal & $P(h) = 2^{-K(h)}$ \\
 Free Energy Principle & What to minimize & $F = \E[\log q] - \E[\log p]$ \\
-CRR & When and how & $\C \to \delta \to R$ with threshold $\Omega$ \\
+CRR & When and how & $\Sur \to \delta \to R$ with threshold $\Delta$, temperature $\Omega$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-
-These frameworks address different aspects of inference and are not mutually exclusive.
 
 %==============================================================================
 \section{Preliminaries}
@@ -155,24 +148,25 @@ For any two universal machines $U_1, U_2$, there exists a constant $c$ such that
 \subsection{Solomonoff Induction}
 
 \begin{definition}[Solomonoff Prior]
-The \emph{Solomonoff prior} over binary strings is:
+The \emph{Solomonoff prior} over hypotheses (programs) is:
 \begin{equation}
-\Sol(x) = \sum_{p: U(p) = x^*} 2^{-|p|}
+P_{\text{Sol}}(h) = 2^{-K(h)}
 \end{equation}
-where $x^*$ denotes strings beginning with $x$.
+This assigns higher probability to simpler hypotheses.
 \end{definition}
 
-\begin{definition}[Universal Prediction]
-Given observed sequence $x_{1:n}$, the Solomonoff predictor assigns:
+\begin{definition}[Solomonoff Posterior]
+Given data $y$, the posterior over hypotheses is:
 \begin{equation}
-P_{\Sol}(x_{n+1} | x_{1:n}) = \frac{\Sol(x_{1:n+1})}{\Sol(x_{1:n})}
+P_{\text{Sol}}(h | y) \propto P(y | h) \cdot 2^{-K(h)} = 2^{-K(y|h)} \cdot 2^{-K(h)} \approx 2^{-K(h,y)}
 \end{equation}
+where the approximation uses the chain rule $K(h,y) = K(h) + K(y|h) + O(\log n)$.
 \end{definition}
 
 \begin{theorem}[Solomonoff Convergence]
 Let $\mu$ be any computable measure. The expected total squared prediction error is bounded:
 \begin{equation}
-\E_\mu\left[\sum_{n=1}^{\infty} (P_{\Sol}(x_{n+1}|x_{1:n}) - \mu(x_{n+1}|x_{1:n}))^2\right] \leq K(\mu) \ln 2
+\E_\mu\left[\sum_{n=1}^{\infty} (P_{\text{Sol}}(x_{n+1}|x_{1:n}) - \mu(x_{n+1}|x_{1:n}))^2\right] \leq K(\mu) \ln 2
 \end{equation}
 \end{theorem}
 
@@ -183,229 +177,316 @@ Solomonoff induction is incomputable because computing $K(x)$ requires solving t
 \subsection{CRR Framework}
 
 \begin{definition}[CRR System]
-A \emph{CRR system} is a tuple $(\M, Y, \Pi, \Omega, \C, R)$ where:
+A \emph{CRR system} is a tuple $(\M, Y, \Pi, \Delta, \Omega, \Sur, R)$ where:
 \begin{itemize}
     \item $\M = \{m, m', \ldots\}$ is a set of generative models
     \item $Y = \R^d$ is the observation space
     \item $\Pi: \M \to \text{PD}(d)$ assigns precision matrices
-    \item $\Omega: \M \times \M \to \R$ is the rigidity function
-    \item $\C: \M \times \N \to \R_+$ is the coherence accumulator
+    \item $\Delta: \M \times \M \to \R$ is the \textbf{switching threshold} (pairwise, model-dependent)
+    \item $\Omega > 0$ is the \textbf{temperature/rigidity parameter} (global)
+    \item $\Sur: \M \times \N \to \R_+$ is the surprisal accumulator
     \item $R$ is the regeneration operator
 \end{itemize}
 \end{definition}
 
-\begin{definition}[CRR Operators]
-The three CRR operators are:
+\begin{remark}[Two Distinct Parameters]
+We explicitly separate:
+\begin{itemize}
+    \item $\Delta_{m,m'}$: The threshold for switching from model $m$ to $m'$, related to description-length overhead and prior odds
+    \item $\Omega$: A temperature-like parameter controlling how sharply regeneration weights historical states
+\end{itemize}
+These serve different functions and should not be conflated.
+\end{remark}
 
-\textbf{Coherence:}
-\begin{equation}
-\C_m(n) = \frac{1}{2}\sum_{i=1}^{n} (y_i - g_m(\mu_i))^\top \Pi_m (y_i - g_m(\mu_i))
+\begin{definition}[Dual Variables: Surprisal and Evidence]\label{def:dual-variables}
+We define two dual quantities that are negatives of each other:
+
+\textbf{Surprisal / Incoherence / Cost:}
+\begin{equation}\label{eq:surprisal}
+\Sur_m(n) := \sum_{i=1}^{n} -\log p(y_i | y_{<i}, m) \approx \frac{1}{2}\sum_{i=1}^{n} (y_i - g_m(\mu_i))^\top \Pi_m (y_i - g_m(\mu_i)) + \text{const}
 \end{equation}
+This is a \emph{cost}: higher values indicate worse model fit (more surprise).
 
-\textbf{Rupture:} Occurs when $\C_m(n) - \C_{m'}(n) > \Omega_{m,m'}$
-
-\textbf{Regeneration:}
-\begin{equation}
-R[\phi](t) = \frac{1}{Z}\int_0^t \phi(\tau) \cdot \exp\left(\frac{\C(\tau)}{\Omega}\right) \cdot \Theta(t-\tau) \, d\tau
+\textbf{Evidence / Coherence / Support:}
+\begin{equation}\label{eq:evidence}
+\mathcal{E}_m(n) := -\Sur_m(n) = \sum_{i=1}^{n} \log p(y_i | y_{<i}, m)
 \end{equation}
+This is a \emph{credit}: higher values indicate better model fit (more support).
+
+These are simply negatives of each other: $\mathcal{E} = -\Sur$.
 \end{definition}
+
+\begin{definition}[CRR Operators]\label{def:crr-operators}
+The three CRR operators, written in both conventions:
+
+\textbf{Rupture Condition} (equivalent forms):
+\begin{equation}\label{eq:rupture}
+\text{Switch } m \to m' \quad \text{when} \quad \Sur_m(n) - \Sur_{m'}(n) > \Delta_{m,m'}
+\end{equation}
+or equivalently:
+\begin{equation}
+\mathcal{E}_{m'}(n) - \mathcal{E}_m(n) > \Delta_{m,m'}
+\end{equation}
+(switch when the alternative has sufficiently more evidence)
+
+\textbf{Regeneration} (equivalent forms):
+\begin{equation}\label{eq:regeneration}
+R[\phi](t) = \frac{1}{Z}\int_0^t \phi(\tau) \cdot \exp\left(\frac{\mathcal{E}(\tau)}{\Omega}\right) \cdot \Theta(t-\tau) \, d\tau
+\end{equation}
+or equivalently:
+\begin{equation}
+R[\phi](t) = \frac{1}{Z}\int_0^t \phi(\tau) \cdot \exp\left(-\frac{\Sur(\tau)}{\Omega}\right) \cdot \Theta(t-\tau) \, d\tau
+\end{equation}
+States with more evidence (less surprisal) receive higher weight.
+\end{definition}
+
+\begin{remark}[Why Dual Variables?]
+Both forms are mathematically identical but serve different intuitions:
+\begin{itemize}
+    \item \textbf{Surprisal view} ($\Sur$): Accumulated prediction error / strain / cost. Rupture occurs when cost exceeds threshold. Regeneration penalizes high cost: $\exp(-\Sur/\Omega)$.
+    \item \textbf{Evidence view} ($\mathcal{E}$): Accumulated log-likelihood / support / credit. Rupture occurs when alternative has more support. Regeneration rewards high evidence: $\exp(\mathcal{E}/\Omega)$.
+\end{itemize}
+The Solomonoff correspondence is cleaner in the evidence view:
+\begin{equation}
+w(m) \propto p(y|m) = \exp(\mathcal{E}_m) \propto \exp(\mathcal{E}_m/\Omega) \quad \text{when } \Omega = 1
+\end{equation}
+\end{remark}
 
 %==============================================================================
 \section{Correspondence Theorems}
 %==============================================================================
 
-\subsection{Coherence and Kolmogorov Complexity}
+\subsection{Surprisal and Kolmogorov Complexity}
 
-\begin{theorem}[Coherence-Complexity Correspondence]\label{thm:coherence-complexity}
-Let $y_{1:n}$ be an observation sequence and $m$ a computable generative model. Define the \emph{algorithmic coherence}:
+\begin{theorem}[Surprisal-Complexity Correspondence]\label{thm:surprisal-complexity}
+Let $y_{1:n}$ be an observation sequence and $m$ a computable generative model. Define the \emph{algorithmic surprisal}:
 \begin{equation}
-\C^{\text{alg}}_m(n) = \sum_{i=1}^{n} K(y_i | y_{<i}, m)
+\Sur^{\text{alg}}_m(n) = \sum_{i=1}^{n} K(y_i | y_{<i}, m)
 \end{equation}
-Then for CRR coherence under Gaussian observations:
+Then for CRR surprisal under Gaussian observations:
 \begin{equation}
-\C_m(n) = \C^{\text{alg}}_m(n) + O(n)
+\Sur_m(n) = \Sur^{\text{alg}}_m(n) + O(n)
 \end{equation}
-where the $O(n)$ term accounts for the model's encoding overhead.
+where the $O(n)$ term accounts for encoding overhead.
 \end{theorem}
 
 \begin{proof}
-The proof proceeds in three steps.
-
 \textbf{Step 1:} By Levin's coding theorem, for any computable distribution $P$:
 \begin{equation}
 -\log P(x) = K(x) + O(K(P))
 \end{equation}
 
-\textbf{Step 2:} CRR coherence under Gaussian observations equals negative log-likelihood:
+\textbf{Step 2:} CRR surprisal under Gaussian observations equals negative log-likelihood:
 \begin{equation}
-\C_m(n) = -\log p(y_{1:n} | m) + \frac{n}{2}\log\det(2\pi\Sigma_m)
+\Sur_m(n) = -\log p(y_{1:n} | m) + \frac{n}{2}\log\det(2\pi\Sigma_m)
 \end{equation}
 
-\textbf{Step 3:} Combining these:
+\textbf{Step 3:} Combining:
 \begin{align}
-\C_m(n) &= \sum_{i=1}^{n} [-\log p(y_i | y_{<i}, m)] + O(n) \\
-&= \sum_{i=1}^{n} [K(y_i | y_{<i}, m) + O(1)] + O(n) \\
-&= \C^{\text{alg}}_m(n) + O(n)
+\Sur_m(n) &= \sum_{i=1}^{n} [-\log p(y_i | y_{<i}, m)] + O(n) \\
+&= \sum_{i=1}^{n} [K(y_i | y_{<i}, m) + O(1)] + O(n) = \Sur^{\text{alg}}_m(n) + O(n)
 \end{align}
 \end{proof}
 
 \begin{remark}[Temporal Survival as Complexity Proxy]
-A key operational insight: patterns that survive repeated validation under CRR \emph{behave as if} they have low Kolmogorov complexity, without ever computing $K$ directly. Low coherence accumulation over time indicates the model compresses observations well. This provides a computable proxy for the incomputable complexity measure.
+Models with low surprisal accumulation over time \emph{behave as if} they have low Kolmogorov complexity, without computing $K$ directly. This provides a computable proxy for the incomputable complexity measure.
 \end{remark}
 
 \subsection{Rupture and Minimum Description Length}
 
 \begin{theorem}[Rupture as MDL Model Switching]\label{thm:rupture-mdl}
-The CRR rupture condition is equivalent to the MDL model switching criterion:
+The CRR rupture condition implements MDL model switching. Specifically, the switching threshold corresponds to:
 \begin{equation}
-\text{Rupture } m \to m' \iff \C_m(n) > \C_{m'}(n) + \Omega_{m,m'}
+\Delta_{m,m'} = K(m') - K(m) + K(\text{switch})
 \end{equation}
-where $\Omega_{m,m'} = K(m') - K(m) + K(\text{switch})$ is the description length overhead.
+which is the description-length overhead for adopting model $m'$ over $m$.
 \end{theorem}
 
 \begin{proof}
-The MDL principle selects the model minimizing $K(m) + K(y_{1:n} | m)$.
+The MDL principle selects the model minimizing total description length:
+\begin{equation}
+m^* = \arg\min_m [K(m) + K(y_{1:n} | m)]
+\end{equation}
 
 Model $m'$ is preferred over $m$ when:
 \begin{equation}
 K(m') + K(y_{1:n} | m') < K(m) + K(y_{1:n} | m)
 \end{equation}
 
-Rearranging and substituting CRR variables via Theorem \ref{thm:coherence-complexity}:
+Rearranging:
 \begin{equation}
-\C_m(n) - \C_{m'}(n) > K(m') - K(m) = \Omega_{m,m'}
+K(y_{1:n} | m) - K(y_{1:n} | m') > K(m') - K(m)
+\end{equation}
+
+Substituting CRR variables via Theorem \ref{thm:surprisal-complexity}:
+\begin{equation}
+\Sur_m(n) - \Sur_{m'}(n) > \underbrace{K(m') - K(m)}_{\Delta_{m,m'}}
 \end{equation}
 \end{proof}
 
-\subsection{Regeneration and Universal Prior}
+\begin{remark}[Threshold is Model-Dependent]
+The switching threshold $\Delta_{m,m'}$ depends on the complexity difference between models. This is \emph{not} the same as the temperature parameter $\Omega$.
+\end{remark}
 
-\begin{theorem}[Regeneration-Prior Correspondence]\label{thm:regeneration-solomonoff}
-The CRR regeneration weighting $\exp(\C(\tau)/\Omega)$ corresponds to Solomonoff's universal prior under specific parameter identification.
+\subsection{Regeneration and Evidence Weighting}
+
+\begin{theorem}[Regeneration as MDL Evidence Weighting]\label{thm:regeneration-mdl}
+CRR regeneration implements a soft MDL evidence-weighting mechanism. For a hypothesis $h$ evaluated on data $y$:
+\begin{equation}
+w(h; y) \propto \exp\left(-\frac{\Sur_h(y)}{\Omega}\right) \approx \exp\left(-\frac{K(y|h)}{\Omega \ln 2}\right) = 2^{-K(y|h)/\Omega'}
+\end{equation}
+where $\Omega' = \Omega \ln 2$.
+
+This weights hypotheses by how well they compress the data (the \textbf{likelihood/evidence term}), not by the prior complexity of the hypothesis itself.
 \end{theorem}
 
 \begin{proof}
-The Solomonoff prior assigns $P(\phi) \propto 2^{-K(\phi)}$.
+From Definition \ref{def:crr-operators}, regeneration weights by $\exp(-\Sur/\Omega)$.
 
-The CRR regeneration weights by $w(\tau) \propto \exp(\C(\tau)/\Omega)$.
-
-Since $\C(\tau) \approx -\log p(y_{1:\tau} | \phi) \approx K(y_{1:\tau} | \phi)$ by Levin's theorem:
+By Theorem \ref{thm:surprisal-complexity}:
 \begin{equation}
-w(\phi) \propto \exp\left(\frac{-K(y | \phi)}{\Omega}\right) = 2^{-K(y|\phi)/(\Omega \ln 2)}
+\Sur_h(y) \approx K(y|h) + O(n)
 \end{equation}
 
-\textbf{Parameter identification:} For exact correspondence with Solomonoff, we require:
+Therefore:
 \begin{equation}
-\Omega = \frac{1}{\ln 2} \approx 1.443
+w(h; y) \propto \exp\left(-\frac{K(y|h) + O(n)}{\Omega}\right) \propto 2^{-K(y|h)/(\Omega \ln 2)}
 \end{equation}
-
-For other values of $\Omega$, the correspondence holds up to a scaling of the exponent. With $\Omega = 1/\pi \approx 0.318$ (as conjectured in CRR), the exponent is scaled by a factor of approximately $4.5$.
 \end{proof}
 
-\begin{remark}[Scaling Implications]
-The choice of $\Omega$ affects how aggressively complexity is weighted:
-\begin{itemize}
-    \item $\Omega = 1/\ln 2$: Exact Solomonoff correspondence
-    \item $\Omega < 1/\ln 2$: More aggressive complexity penalization
-    \item $\Omega > 1/\ln 2$: More lenient complexity penalization
-\end{itemize}
+\begin{remark}[Distinction from Solomonoff Prior]\label{rem:distinction}
+This is \textbf{not} the Solomonoff prior $2^{-K(h)}$ over hypotheses. The correspondence is:
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Solomonoff} & \textbf{CRR Regeneration} \\
+\midrule
+Prior: $P(h) \propto 2^{-K(h)}$ & Not directly represented \\
+Likelihood: $P(y|h) \propto 2^{-K(y|h)}$ & $w(h;y) \propto \exp(-\Sur_h(y)/\Omega)$ \\
+Posterior: $P(h|y) \propto 2^{-K(h,y)}$ & Would require adding prior term \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+CRR regeneration captures the \textbf{evidence/likelihood} component of Bayesian inference, weighting hypotheses by how well they explain the data. To recover the full Solomonoff posterior, one would need to additionally weight by a prior term proportional to $2^{-K(h)}$ or equivalently $\exp(-K(h)/\Omega')$.
+\end{remark}
+
+\begin{corollary}[Full Posterior Recovery]
+To recover Solomonoff-like posterior weighting, CRR would need:
+\begin{equation}
+w_{\text{full}}(h; y) \propto \underbrace{\exp\left(-\frac{K(h)}{\Omega'}\right)}_{\text{prior term}} \cdot \underbrace{\exp\left(-\frac{K(y|h)}{\Omega'}\right)}_{\text{CRR regeneration}} = \exp\left(-\frac{K(h,y)}{\Omega'}\right)
+\end{equation}
+where the prior term could be implemented via the model prior $p(m)$ in the CRR system.
+\end{corollary}
+
+\subsection{Parameter Identification}
+
+\begin{proposition}[Temperature-Complexity Scaling]\label{prop:temperature}
+For CRR regeneration weights to match Solomonoff likelihood weighting exactly:
+\begin{equation}
+\exp\left(-\frac{\Sur}{\Omega}\right) = 2^{-K(y|h)} \quad \Rightarrow \quad \Omega = \frac{1}{\ln 2} \approx 1.443 \text{ (in nats)}
+\end{equation}
+\end{proposition}
+
+\begin{remark}[The $\Omega = 1/\pi$ Conjecture]
+CRR documentation conjectures a universal value $\Omega = 1/\pi \approx 0.318$. This is \textbf{not} the same as the Solomonoff-matching value $1/\ln 2 \approx 1.443$.
+
+If $\Omega = 1/\pi$, then:
+\begin{equation}
+w(h;y) \propto 2^{-K(y|h) \cdot \pi / \ln 2} \approx 2^{-4.53 \cdot K(y|h)}
+\end{equation}
+This represents \emph{more aggressive} complexity penalization than standard Solomonoff weighting—a ``colder'' selection temperature.
+
+Whether $\Omega = 1/\pi$ has deeper significance remains an open question, but it is mathematically distinct from Solomonoff correspondence.
 \end{remark}
 
 %==============================================================================
-\section{What Solomonoff Provides}
+\section{What Each Framework Provides}
 %==============================================================================
 
-Solomonoff induction provides:
+\subsection{What Solomonoff Provides}
 
 \begin{enumerate}
-    \item \textbf{The optimal prior:} $P(h) = 2^{-K(h)}$ assigns higher probability to simpler hypotheses in an objective, machine-independent way (up to constants).
-
-    \item \textbf{The optimal posterior:} $P(h|d) \propto P(d|h) \cdot 2^{-K(h)}$ follows from Bayes' theorem.
-
-    \item \textbf{Optimality proof:} Solomonoff's convergence theorem shows this predictor dominates all computable predictors—total prediction error is bounded by the complexity of the true distribution.
+    \item \textbf{Optimal prior:} $P(h) = 2^{-K(h)}$ over hypotheses (programs)
+    \item \textbf{Optimal posterior:} $P(h|y) \propto 2^{-K(h)} \cdot 2^{-K(y|h)}$
+    \item \textbf{Convergence guarantee:} Total prediction error bounded by $K(\mu) \ln 2$
 \end{enumerate}
 
-%==============================================================================
-\section{What Solomonoff Does Not Provide}
-%==============================================================================
+\subsection{What Solomonoff Does Not Provide}
 
-\subsection{When to Update}
+\begin{enumerate}
+    \item \textbf{When to act:} No decision rule for committing to a model
+    \item \textbf{Computability:} $K(h)$ is uncomputable
+    \item \textbf{Model change mechanism:} How one model replaces another
+    \item \textbf{Parameter flexibility:} Prior is fixed by choice of universal machine
+\end{enumerate}
 
-Solomonoff induction is a ratio of probabilities. It does not specify when an agent should act on accumulated evidence or commit to a model. The posterior weights change continuously, but there is no threshold or decision rule.
+\subsection{What CRR Adds}
 
-\textbf{CRR adds:} The rupture condition $\C_m - \C_{m'} > \Omega$ provides an explicit decision rule. The rupture operator $\delta$ marks discrete decision moments.
+\begin{enumerate}
+    \item \textbf{Decision rule:} Switch when $\Sur_m - \Sur_{m'} > \Delta_{m,m'}$
 
-\subsection{Computability}
+    \item \textbf{Computable proxy:} Temporal surprisal accumulation approximates algorithmic complexity
 
-$K(h)$ is uncomputable—there is no algorithm to compute Kolmogorov complexity for arbitrary strings.
+    \item \textbf{Regeneration mechanism:} $R[\phi] = Z^{-1}\int \phi \cdot \exp(-\Sur/\Omega) \, d\tau$
 
-\textbf{CRR adds:} Temporal coherence accumulation as a proxy. Models that survive repeated validation (low $\C$ accumulation) behave as if they have low $K$, without computing $K$ directly. This is the operational insight—complexity is approximated through temporal survival.
-
-\subsection{Mechanism of Model Change}
-
-Solomonoff gives posteriors but not how one model replaces another in a physical system.
-
-\textbf{CRR adds:} The regeneration operator $R = \int\phi \cdot \exp(\C/\Omega) \cdot \Theta \, d\tau$ specifies that new models are reconstructed from memory weighted by coherence.
-
-\subsection{Tunable Parameter}
-
-Solomonoff's prior is fixed by the choice of universal machine. There is no parameter to adjust for different contexts.
-
-\textbf{CRR adds:} The rigidity parameter $\Omega$, which can potentially vary across:
-\begin{itemize}
-    \item Individuals (cognitive style)
-    \item Domains (expertise level)
-    \item States (arousal, attention)
-    \item Timescales (different $\Omega$ for different temporal scales)
-\end{itemize}
-
-\begin{remark}[Caution on $\Omega$ Variability]
-The variability of $\Omega$ is both a feature and a potential concern. If $\Omega$ can be freely adjusted, it risks becoming a free parameter that can fit any data. The CRR documentation partially addresses this with Kac's lemma ($\Omega = 1/\mu(A)$), which derives $\Omega$ from the measure of the coherent region. Whether a universal value exists remains an open question.
-\end{remark}
-
-\subsection{Discrete Update Structure}
-
-Solomonoff is typically presented as continuous updating—posterior weights change smoothly with each observation.
-
-\textbf{CRR adds:} Updates occur at discrete rupture moments—the $\delta$ that marks threshold crossings. This connects to process philosophy (Whitehead's ``actual occasions'') and stopping time theory in probability.
+    \item \textbf{Two tunable parameters:}
+    \begin{itemize}
+        \item $\Delta_{m,m'}$: Switching threshold (model-dependent)
+        \item $\Omega$: Selection temperature (global)
+    \end{itemize}
+\end{enumerate}
 
 %==============================================================================
 \section{Compatibility Analysis}
 %==============================================================================
 
 \begin{theorem}[Compatibility]\label{thm:compatibility}
-CRR and Solomonoff induction are mathematically compatible. CRR operationalizes Solomonoff for finite agents by replacing:
+CRR and Solomonoff induction are mathematically compatible. CRR operationalizes aspects of Solomonoff for finite agents:
+
 \begin{center}
 \begin{tabular}{@{}ll@{}}
 \toprule
-\textbf{Solomonoff (incomputable)} & \textbf{CRR (computable proxy)} \\
+\textbf{Solomonoff} & \textbf{CRR} \\
 \midrule
-Kolmogorov complexity $K$ & Accumulated coherence $\C$ \\
-Continuous updating & Discrete rupture at $\C = \Omega$ \\
-Abstract posterior & Concrete regeneration dynamics \\
-Fixed prior & Tunable rigidity $\Omega$ \\
+$K(y|h)$ (data complexity) & $\Sur_h(n)$ (accumulated surprisal) \\
+$K(m') - K(m)$ (model complexity diff) & $\Delta_{m,m'}$ (switching threshold) \\
+Likelihood weighting $2^{-K(y|h)}$ & Regeneration $\exp(-\Sur/\Omega)$ \\
+Continuous mixture & Discrete rupture at threshold \\
 \bottomrule
 \end{tabular}
 \end{center}
 \end{theorem}
 
-\begin{proof}
-Compatibility follows from Theorems \ref{thm:coherence-complexity}, \ref{thm:rupture-mdl}, and \ref{thm:regeneration-solomonoff}, which establish correspondences between:
+\begin{remark}[What CRR Does Not Capture]
+CRR regeneration captures evidence weighting but not the Solomonoff prior $2^{-K(h)}$ directly. The prior enters CRR through:
 \begin{itemize}
-    \item Coherence and conditional Kolmogorov complexity
-    \item Rupture and MDL model switching
-    \item Regeneration weights and the universal prior
+    \item The model set $\M$ (which models are considered)
+    \item The prior $p(m)$ (implicit in $\Delta_{m,m'} = \log(p(m)/p(m'))$ interpretation)
 \end{itemize}
-
-The discretization of continuous updating into threshold-triggered ruptures is analogous to the relationship between Bayesian updating and the Sequential Probability Ratio Test (SPRT). Both implement Bayesian inference; SPRT adds stopping rules.
-\end{proof}
+\end{remark}
 
 \begin{remark}[One-Sentence Summary]
-CRR describes how bounded agents can approximate theoretically optimal inference through temporal dynamics and threshold-triggered discrete updates.
+CRR describes how bounded agents can approximate Bayesian evidence weighting through temporal dynamics and threshold-triggered model switching, using surprisal accumulation as a computable proxy for algorithmic complexity.
 \end{remark}
 
 %==============================================================================
 \section{Comparison Tables}
 %==============================================================================
+
+\begin{table}[h!]
+\centering
+\caption{Parameter Roles}
+\label{tab:parameters}
+\begin{tabular}{@{}p{2.5cm}p{5cm}p{5cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Role} & \textbf{Solomonoff Analogue} \\
+\midrule
+$\Delta_{m,m'}$ & Switching threshold; when to change models & $K(m') - K(m)$ (complexity overhead) \\
+$\Omega$ & Temperature; how sharply to weight by fit & $1/\ln 2$ for exact correspondence \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[h!]
 \centering
@@ -415,31 +496,12 @@ CRR describes how bounded agents can approximate theoretically optimal inference
 \toprule
 \textbf{Feature} & \textbf{Solomonoff} & \textbf{CRR} \\
 \midrule
-Optimal prior & Yes & No (uses arbitrary $p(m)$) \\
+Prior over hypotheses $2^{-K(h)}$ & Yes & Indirect (via $p(m)$) \\
+Likelihood weighting $2^{-K(y|h)}$ & Yes & Yes ($\exp(-\Sur/\Omega)$) \\
 Optimal prediction guarantee & Yes & No \\
-Decision rule (when to act) & No & Yes ($\C \geq \Omega$) \\
+Decision rule (when to switch) & No & Yes ($\Sur_m - \Sur_{m'} > \Delta$) \\
 Computable & No & Yes (for finite $\M$) \\
-Model change mechanism & No & Yes (regeneration) \\
-Tunable parameter & No & Yes ($\Omega$) \\
-Multiscale structure & No & Yes \\
-Discrete update structure & No & Yes (rupture) \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h!]
-\centering
-\caption{Mathematical Correspondences}
-\label{tab:correspondence}
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Solomonoff Induction} & \textbf{CRR Framework} \\
-\midrule
-$K(y|m)$ & $\C_m(n) + O(n)$ \\
-$2^{-K(m)}$ & $p(m)$; $\Omega = \log(p(m)/p(m'))$ \\
-Posterior update & Rupture condition \\
-$2^{-K(\phi)}$ weighting & $\exp(\C/\Omega)$ weighting \\
-Incomputable & Computable \\
+Tunable parameters & No & Yes ($\Delta$, $\Omega$) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -448,57 +510,57 @@ Incomputable & Computable \\
 \section{Limitations and Open Questions}
 %==============================================================================
 
-\subsection{Limitations of CRR Relative to Solomonoff}
+\subsection{Limitations of CRR}
 
 \begin{enumerate}
-    \item \textbf{Model class restriction:} CRR requires specifying $\M$ in advance; Solomonoff considers all computable hypotheses.
+    \item \textbf{No universal prior:} CRR regeneration captures evidence weighting but not the Solomonoff prior directly
 
-    \item \textbf{No universal convergence:} Solomonoff guarantees convergence to any computable truth. CRR guarantees optimal switching within $\M$, but may fail if the truth is outside $\M$.
+    \item \textbf{Model class restriction:} Requires specifying $\M$ in advance
 
-    \item \textbf{Discretization error:} CRR's discrete ruptures may miss continuous optimality of Solomonoff's mixture.
+    \item \textbf{Parameter dependence:} Results depend on $\Delta$ and $\Omega$, which must be determined
 
-    \item \textbf{Parameter dependence:} CRR depends on $\Omega$, which may be difficult to determine.
+    \item \textbf{No convergence guarantee:} Unlike Solomonoff, no proof that CRR converges to truth
 \end{enumerate}
 
-\subsection{Limitations of Solomonoff Relative to CRR}
+\subsection{Limitations of Solomonoff}
 
 \begin{enumerate}
-    \item \textbf{Incomputability:} Solomonoff cannot be implemented; CRR can.
+    \item \textbf{Incomputable:} Cannot be implemented
 
-    \item \textbf{No decision rule:} Solomonoff provides probabilities but not when to act.
+    \item \textbf{No decision rule:} Provides probabilities but not when to act
 
-    \item \textbf{No temporal structure:} Solomonoff does not address discrete moments of change.
-
-    \item \textbf{No multiscale analysis:} Solomonoff operates at a single scale.
+    \item \textbf{No temporal structure:} Does not address discrete change
 \end{enumerate}
 
 \subsection{Open Questions}
 
 \begin{enumerate}
-    \item \textbf{Universal $\Omega$:} Can $\Omega = 1/\pi$ be derived from first principles? Neither framework provides such a derivation.
+    \item Can CRR be extended to include a proper Solomonoff-like prior term?
 
-    \item \textbf{Convergence rate:} How does CRR's approximation error scale as $|\M| \to \infty$?
+    \item Is there a principled derivation of $\Omega$ (independent of Solomonoff matching)?
 
-    \item \textbf{Continuous limit:} Does CRR with $\Omega \to 0$ converge to Solomonoff's mixture?
+    \item How should $\Delta_{m,m'}$ be set in practice?
 
-    \item \textbf{Empirical validation:} The claimed correspondence requires empirical testing across domains.
+    \item Does CRR with appropriate parameters converge to Solomonoff as $|\M| \to \infty$?
 \end{enumerate}
 
 %==============================================================================
 \section{Conclusion}
 %==============================================================================
 
-This analysis establishes the mathematical relationship between CRR and Solomonoff induction:
+This analysis establishes:
 
 \begin{enumerate}
-    \item \textbf{Compatibility:} The frameworks are compatible. CRR coherence corresponds to accumulated Kolmogorov complexity, rupture to MDL model switching, and regeneration to the universal prior (under parameter identification).
+    \item \textbf{Partial correspondence:} CRR surprisal corresponds to $K(y|h)$; regeneration implements likelihood/evidence weighting $2^{-K(y|h)}$, not the full Solomonoff posterior
 
-    \item \textbf{Complementarity:} Solomonoff specifies \emph{what} is optimal; CRR specifies \emph{when} and \emph{how}. Neither is a substitute for the other.
+    \item \textbf{Parameter separation:} The switching threshold $\Delta$ and temperature $\Omega$ serve distinct roles and should not be conflated
 
-    \item \textbf{Operationalization:} CRR provides a computable approximation to Solomonoff by using temporal coherence accumulation as a proxy for algorithmic complexity.
+    \item \textbf{Sign consistency:} Regeneration must use $\exp(-\Sur/\Omega)$ (negative exponent) for mathematical consistency
+
+    \item \textbf{Complementarity:} Solomonoff specifies \emph{what} is optimal; CRR specifies \emph{when} to switch and \emph{how} to weight evidence
 \end{enumerate}
 
-The relationship can be summarized as: \emph{CRR is to Solomonoff induction as SPRT is to Bayesian updating}—both pairs share theoretical foundations, but the former adds actionable stopping rules.
+The relationship: \emph{CRR implements the evidence-weighting component of Bayesian inference with explicit decision rules, using surprisal accumulation as a computable proxy for algorithmic complexity.}
 
 %==============================================================================
 \begin{thebibliography}{99}
@@ -510,7 +572,7 @@ Solomonoff, R.J. (1964). A formal theory of inductive inference. \textit{Informa
 Kolmogorov, A.N. (1965). Three approaches to the quantitative definition of information. \textit{Problems of Information Transmission}, 1(1), 1-7.
 
 \bibitem{levin1974}
-Levin, L.A. (1974). Laws of information conservation and aspects of the foundation of probability theory. \textit{Problems of Information Transmission}, 10(3), 206-210.
+Levin, L.A. (1974). Laws of information conservation. \textit{Problems of Information Transmission}, 10(3), 206-210.
 
 \bibitem{rissanen1978}
 Rissanen, J. (1978). Modeling by shortest data description. \textit{Automatica}, 14(5), 465-471.
@@ -524,14 +586,11 @@ Hutter, M. (2005). \textit{Universal Artificial Intelligence}. Springer.
 \bibitem{grunwald2007}
 Gr\"{u}nwald, P.D. (2007). \textit{The Minimum Description Length Principle}. MIT Press.
 
-\bibitem{liandvitanyi2008}
-Li, M. \& Vit\'{a}nyi, P. (2008). \textit{An Introduction to Kolmogorov Complexity and Its Applications}. Springer.
-
 \end{thebibliography}
 
 %==============================================================================
 \appendix
-\section{Technical Details}
+\section{Technical Notes}
 %==============================================================================
 
 \subsection{Levin's Coding Theorem}
@@ -546,22 +605,22 @@ For any computable probability distribution $P$ and string $x$:
 \subsection{Chain Rule for Kolmogorov Complexity}
 
 \begin{theorem}[Chain Rule]
-For strings $x, y$:
 \begin{equation}
 K(x, y) = K(x) + K(y|x^*) + O(\log K(x,y))
 \end{equation}
 where $x^*$ is the shortest program for $x$.
 \end{theorem}
 
-\subsection{SPRT Optimality}
+\subsection{Why the Negative Sign Matters}
 
-\begin{theorem}[Wald-Wolfowitz]
-Among all sequential tests with type I error $\leq \alpha$ and type II error $\leq \beta$, the SPRT minimizes the expected sample size under both hypotheses.
-\end{theorem}
+In the original CRR formulation, if coherence $C$ is defined as accumulated prediction error (a cost), then weighting by $\exp(+C/\Omega)$ would favor \emph{worse}-fitting states.
 
-CRR rupture is equivalent to SPRT when the log-likelihood ratio equals the coherence difference:
-\begin{equation}
-\Lambda_n = \log\frac{p(y_{1:n}|m')}{p(y_{1:n}|m)} = \C_m(n) - \C_{m'}(n)
-\end{equation}
+The correct form is either:
+\begin{itemize}
+    \item Define $C$ as negative surprisal (higher = better fit), weight by $\exp(+C/\Omega)$
+    \item Define $\Sur$ as surprisal/cost (higher = worse fit), weight by $\exp(-\Sur/\Omega)$
+\end{itemize}
+
+This document uses the second convention for clarity.
 
 \end{document}
