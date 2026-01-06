@@ -198,34 +198,58 @@ We explicitly separate:
 These serve different functions and should not be conflated.
 \end{remark}
 
-\begin{definition}[CRR Operators]\label{def:crr-operators}
-The three CRR operators are:
+\begin{definition}[Dual Variables: Surprisal and Evidence]\label{def:dual-variables}
+We define two dual quantities that are negatives of each other:
 
-\textbf{Surprisal (Cost) Accumulation:}
+\textbf{Surprisal / Incoherence / Cost:}
 \begin{equation}\label{eq:surprisal}
-\Sur_m(n) = \frac{1}{2}\sum_{i=1}^{n} (y_i - g_m(\mu_i))^\top \Pi_m (y_i - g_m(\mu_i))
+\Sur_m(n) := \sum_{i=1}^{n} -\log p(y_i | y_{<i}, m) \approx \frac{1}{2}\sum_{i=1}^{n} (y_i - g_m(\mu_i))^\top \Pi_m (y_i - g_m(\mu_i)) + \text{const}
 \end{equation}
-This is a \emph{cost}: higher values indicate worse model fit.
+This is a \emph{cost}: higher values indicate worse model fit (more surprise).
 
-\textbf{Rupture Condition:}
+\textbf{Evidence / Coherence / Support:}
+\begin{equation}\label{eq:evidence}
+\mathcal{E}_m(n) := -\Sur_m(n) = \sum_{i=1}^{n} \log p(y_i | y_{<i}, m)
+\end{equation}
+This is a \emph{credit}: higher values indicate better model fit (more support).
+
+These are simply negatives of each other: $\mathcal{E} = -\Sur$.
+\end{definition}
+
+\begin{definition}[CRR Operators]\label{def:crr-operators}
+The three CRR operators, written in both conventions:
+
+\textbf{Rupture Condition} (equivalent forms):
 \begin{equation}\label{eq:rupture}
 \text{Switch } m \to m' \quad \text{when} \quad \Sur_m(n) - \Sur_{m'}(n) > \Delta_{m,m'}
 \end{equation}
+or equivalently:
+\begin{equation}
+\mathcal{E}_{m'}(n) - \mathcal{E}_m(n) > \Delta_{m,m'}
+\end{equation}
+(switch when the alternative has sufficiently more evidence)
 
-\textbf{Regeneration:}
+\textbf{Regeneration} (equivalent forms):
 \begin{equation}\label{eq:regeneration}
+R[\phi](t) = \frac{1}{Z}\int_0^t \phi(\tau) \cdot \exp\left(\frac{\mathcal{E}(\tau)}{\Omega}\right) \cdot \Theta(t-\tau) \, d\tau
+\end{equation}
+or equivalently:
+\begin{equation}
 R[\phi](t) = \frac{1}{Z}\int_0^t \phi(\tau) \cdot \exp\left(-\frac{\Sur(\tau)}{\Omega}\right) \cdot \Theta(t-\tau) \, d\tau
 \end{equation}
-Note the \textbf{negative sign}: states with \emph{lower} surprisal (better fit) receive \emph{higher} weight.
+States with more evidence (less surprisal) receive higher weight.
 \end{definition}
 
-\begin{remark}[Sign Convention]
-The negative sign in the regeneration exponent is essential for consistency:
+\begin{remark}[Why Dual Variables?]
+Both forms are mathematically identical but serve different intuitions:
 \begin{itemize}
-    \item $\Sur$ is a cost (higher = worse fit, analogous to $-\log P$ or $K$)
-    \item $\exp(-\Sur/\Omega)$ gives higher weight to lower-cost states
-    \item This aligns with Boltzmann weighting $\exp(-E/kT)$ where low energy is favored
+    \item \textbf{Surprisal view} ($\Sur$): Accumulated prediction error / strain / cost. Rupture occurs when cost exceeds threshold. Regeneration penalizes high cost: $\exp(-\Sur/\Omega)$.
+    \item \textbf{Evidence view} ($\mathcal{E}$): Accumulated log-likelihood / support / credit. Rupture occurs when alternative has more support. Regeneration rewards high evidence: $\exp(\mathcal{E}/\Omega)$.
 \end{itemize}
+The Solomonoff correspondence is cleaner in the evidence view:
+\begin{equation}
+w(m) \propto p(y|m) = \exp(\mathcal{E}_m) \propto \exp(\mathcal{E}_m/\Omega) \quad \text{when } \Omega = 1
+\end{equation}
 \end{remark}
 
 %==============================================================================
