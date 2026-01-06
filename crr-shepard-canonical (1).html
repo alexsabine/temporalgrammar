@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canonical CRR Shepard Tone — Rupture at C=Ω</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --coherence: #c084fc;
+      --rupture: #f59e0b;
+      --regeneration: #22d3ee;
+      --euler: #4ade80;
+      --bg-deep: #030308;
+      --bg-mid: #0a0a18;
+      --text-dim: #6b7280;
+      --text-mid: #9ca3af;
+      --text-bright: #e5e7eb;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-deep);
+      color: var(--text-bright);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow-x: hidden;
+    }
+
+    .bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      min-height: 100vh;
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .title-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .coherence { color: var(--coherence); }
+    .rupture { color: var(--rupture); }
+    .regeneration { color: var(--regeneration); }
+    .arrow { color: var(--text-dim); font-size: 0.7em; margin: 0 8px; }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(192, 132, 252, 0.2));
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--euler);
+      margin-top: 12px;
+      letter-spacing: 0.1em;
+    }
+
+    .canonical-eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      margin-top: 8px;
+      padding: 8px 16px;
+      background: rgba(74, 222, 128, 0.1);
+      border-radius: 8px;
+      border-left: 3px solid var(--euler);
+    }
+
+    .viz-container {
+      position: relative;
+      margin: 20px 0;
+    }
+
+    #mainCanvas {
+      border-radius: 50%;
+      box-shadow: 
+        0 0 80px rgba(192, 132, 252, 0.15),
+        0 0 160px rgba(34, 211, 238, 0.1),
+        inset 0 0 120px rgba(0, 0, 0, 0.8);
+    }
+
+    .viz-labels {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.05em;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .label-c { top: 15px; left: 50%; transform: translateX(-50%); color: var(--coherence); }
+    .label-r { bottom: 15px; left: 50%; transform: translateX(-50%); color: var(--regeneration); }
+    .label-d { left: 15px; top: 50%; transform: translateY(-50%) rotate(-90deg); color: var(--rupture); }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      padding: 12px 28px;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 0.05em;
+      background: rgba(255,255,255,0.03);
+      color: var(--text-mid);
+    }
+
+    button:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-bright);
+    }
+
+    #playBtn.playing {
+      background: linear-gradient(135deg, rgba(192, 132, 252, 0.3), rgba(34, 211, 238, 0.2));
+      border-color: var(--coherence);
+      color: white;
+      box-shadow: 0 0 30px rgba(192, 132, 252, 0.3);
+    }
+
+    .sliders {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 24px;
+      max-width: 600px;
+      width: 100%;
+      margin: 16px 0;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slider-group label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--euler);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+    }
+
+    .slider-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-bright);
+    }
+
+    .omega-highlight {
+      color: var(--euler);
+      font-weight: bold;
+    }
+
+    .dynamics-panel {
+      background: rgba(10, 10, 24, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 750px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .metric.c-metric { border-color: rgba(192, 132, 252, 0.2); }
+    .metric.omega-metric { border-color: rgba(74, 222, 128, 0.2); }
+    .metric.delta-metric { border-color: rgba(245, 158, 11, 0.2); }
+    .metric.e-metric { border-color: rgba(34, 211, 238, 0.2); }
+
+    .metric-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 300;
+    }
+
+    .metric.c-metric .metric-value { color: var(--coherence); }
+    .metric.omega-metric .metric-value { color: var(--euler); }
+    .metric.delta-metric .metric-value { color: var(--rupture); }
+    .metric.e-metric .metric-value { color: var(--regeneration); }
+
+    .metric-sub {
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .threshold-indicator {
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 16px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .threshold-bar {
+      height: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .threshold-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.05s linear;
+      background: linear-gradient(90deg, var(--coherence), var(--rupture));
+    }
+
+    .threshold-marker {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: var(--euler);
+      box-shadow: 0 0 10px var(--euler);
+    }
+
+    #waveformCanvas {
+      width: 100%;
+      height: 100px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .equations {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      display: grid;
+      gap: 8px;
+    }
+
+    .equation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+
+    .eq-formula { font-weight: 400; }
+    .eq-description { color: var(--text-dim); font-size: 0.6rem; }
+
+    .eq-c .eq-formula { color: var(--coherence); }
+    .eq-omega .eq-formula { color: var(--euler); }
+    .eq-delta .eq-formula { color: var(--rupture); }
+    .eq-r .eq-formula { color: var(--regeneration); }
+
+    #envelopeCanvas {
+      width: 100%;
+      height: 150px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+    }
+
+    .explanation {
+      max-width: 600px;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+      margin: 24px 0;
+    }
+
+    .explanation strong { color: var(--coherence); font-weight: 500; }
+    .explanation em { color: var(--text-bright); font-style: italic; }
+    .explanation .euler { color: var(--euler); font-family: 'JetBrains Mono', monospace; }
+
+    .explanation .footnote {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    @media (max-width: 600px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      #mainCanvas { width: 300px !important; height: 300px !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="bg-canvas" id="bgCanvas"></canvas>
+  
+  <div class="container">
+    <header>
+      <h1>
+        <div class="title-line">
+          <span class="coherence">Coherence</span>
+          <span class="arrow">→</span>
+          <span class="rupture">Rupture</span>
+          <span class="arrow">→</span>
+          <span class="regeneration">Regeneration</span>
+        </div>
+      </h1>
+      <p class="subtitle">Canonical CRR — Rupture occurs when C = Ω</p>
+      <div class="badge">exp(C/Ω) = exp(1) = e AT RUPTURE</div>
+      <div class="canonical-eq">δ fires when C ≥ Ω &nbsp;|&nbsp; R = exp(C/Ω) · H(t-t_rupture)</div>
+    </header>
+
+    <div class="viz-container">
+      <canvas id="mainCanvas" width="450" height="450"></canvas>
+      <div class="viz-labels label-c">C accumulates</div>
+      <div class="viz-labels label-r">R = e at rupture</div>
+      <div class="viz-labels label-d">δ when C=Ω</div>
+    </div>
+
+    <div class="controls">
+      <button id="playBtn">▶ PLAY CANONICAL CRR</button>
+    </div>
+
+    <div class="sliders">
+      <div class="slider-group">
+        <label>Ω (RUPTURE THRESHOLD)</label>
+        <input type="range" id="omegaSlider" min="0.2" max="0.9" step="0.01" value="0.7">
+        <span class="slider-value"><span class="omega-highlight" id="omegaValue">0.70</span> — rupture at 70%</span>
+      </div>
+      <div class="slider-group">
+        <label>ACCUMULATION RATE</label>
+        <input type="range" id="rateSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+        <span class="slider-value" id="rateValue">1.0x</span>
+      </div>
+      <div class="slider-group">
+        <label>CYCLE SPEED</label>
+        <input type="range" id="speedSlider" min="0.008" max="0.035" step="0.001" value="0.018">
+        <span class="slider-value" id="speedValue">1.8</span>
+      </div>
+    </div>
+
+    <div class="dynamics-panel">
+      <div class="panel-title">CANONICAL CRR DYNAMICS — RUPTURE AT C = Ω</div>
+      
+      <div class="threshold-indicator">
+        <span>Coherence approaching threshold: <span id="approachPct">0%</span></span>
+        <div class="threshold-bar">
+          <div class="threshold-fill" id="thresholdFill" style="width: 0%"></div>
+          <div class="threshold-marker" id="thresholdMarker" style="left: 70%"></div>
+        </div>
+      </div>
+      
+      <div class="metrics-grid">
+        <div class="metric c-metric">
+          <div class="metric-label">COHERENCE C</div>
+          <div class="metric-value" id="cValue">0.000</div>
+          <div class="metric-sub">∫L(x,τ)dτ</div>
+        </div>
+        <div class="metric omega-metric">
+          <div class="metric-label">THRESHOLD Ω</div>
+          <div class="metric-value" id="omegaDisplay">0.700</div>
+          <div class="metric-sub">rupture point</div>
+        </div>
+        <div class="metric delta-metric">
+          <div class="metric-label">RUPTURE δ</div>
+          <div class="metric-value" id="deltaValue">0</div>
+          <div class="metric-sub">C ≥ Ω ?</div>
+        </div>
+        <div class="metric e-metric">
+          <div class="metric-label">exp(C/Ω)</div>
+          <div class="metric-value" id="expValue">1.000</div>
+          <div class="metric-sub">→ e at rupture</div>
+        </div>
+      </div>
+
+      <canvas id="waveformCanvas" width="700" height="100"></canvas>
+
+      <div class="equations">
+        <div class="equation eq-c">
+          <span class="eq-formula">C(t) = ∫₀ᵗ L(x,τ) dτ</span>
+          <span class="eq-description">coherence accumulates</span>
+        </div>
+        <div class="equation eq-omega">
+          <span class="eq-formula">δ fires when C ≥ Ω</span>
+          <span class="eq-description">Ω is the rupture threshold</span>
+        </div>
+        <div class="equation eq-delta">
+          <span class="eq-formula">At rupture: C = Ω → exp(C/Ω) = e</span>
+          <span class="eq-description">Euler's number emerges!</span>
+        </div>
+        <div class="equation eq-r">
+          <span class="eq-formula">R = exp(C/Ω) · H(t-t_rup)</span>
+          <span class="eq-description">regeneration feeds next cycle</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dynamics-panel">
+      <div class="panel-title">ENVELOPE: Ω CONTROLS RUPTURE POSITION</div>
+      <canvas id="envelopeCanvas" width="700" height="150"></canvas>
+    </div>
+
+    <div class="explanation">
+      <p>
+        In <strong>canonical CRR</strong>, rupture is not arbitrary—it occurs precisely when 
+        coherence <em>C</em> reaches threshold <em class="euler">Ω</em>.
+      </p>
+      <p>
+        At the moment of rupture: <span class="euler">C = Ω</span>, therefore 
+        <span class="euler">exp(C/Ω) = exp(1) = e ≈ 2.718</span>
+      </p>
+      <p>
+        <strong>Ω regulates Markov blanket porosity:</strong><br>
+        Higher Ω → more porous, faster cycling, liquid boundaries<br>
+        Lower Ω → more solid, slower, locked into priors
+      </p>
+      <p class="footnote">
+        The Shepard illusion emerges because amplitude peaks just before C hits Ω,<br>
+        then regeneration (weighted by e) seeds the next cycle seamlessly.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // ===========================================
+    // Configuration
+    // ===========================================
+    const NUM_TONES = 6;
+    const BASE_FREQ = 55;
+    
+    // State
+    let isPlaying = false;
+    let time = 0;
+    let cycleSpeed = 0.018;
+    let omega = 0.7;  // THE RUPTURE THRESHOLD
+    let accumulationRate = 1.0;
+    
+    // Audio
+    let audioContext = null;
+    let oscillators = [];
+    let gains = [];
+    let masterGain = null;
+    
+    // Canvases
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    const mainCanvas = document.getElementById('mainCanvas');
+    const mainCtx = mainCanvas.getContext('2d');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const waveformCtx = waveformCanvas.getContext('2d');
+    const envelopeCanvas = document.getElementById('envelopeCanvas');
+    const envelopeCtx = envelopeCanvas.getContext('2d');
+    
+    // DOM
+    const playBtn = document.getElementById('playBtn');
+    const omegaSlider = document.getElementById('omegaSlider');
+    const rateSlider = document.getElementById('rateSlider');
+    const speedSlider = document.getElementById('speedSlider');
+    const omegaValue = document.getElementById('omegaValue');
+    const rateValue = document.getElementById('rateValue');
+    const speedValue = document.getElementById('speedValue');
+    const cValueEl = document.getElementById('cValue');
+    const omegaDisplay = document.getElementById('omegaDisplay');
+    const deltaValue = document.getElementById('deltaValue');
+    const expValue = document.getElementById('expValue');
+    const approachPct = document.getElementById('approachPct');
+    const thresholdFill = document.getElementById('thresholdFill');
+    const thresholdMarker = document.getElementById('thresholdMarker');
+    
+    function resizeBg() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    resizeBg();
+    window.addEventListener('resize', resizeBg);
+    
+    // ===========================================
+    // CANONICAL CRR: Rupture at C = Ω
+    // ===========================================
+    
+    function canonicalCRR(phase) {
+      /*
+       * CANONICAL CRR:
+       * - C accumulates linearly with phase (simplified ∫L dτ)
+       * - Rupture (δ) fires when C >= Ω
+       * - At rupture: exp(C/Ω) = exp(Ω/Ω) = e
+       * 
+       * For Shepard mapping:
+       * - phase 0→1 represents one octave sweep
+       * - C = phase * accumulationRate (normalized so C reaches ~1 at phase=1)
+       * - Ω determines WHERE in the cycle rupture occurs
+       */
+      
+      // Coherence accumulates (linear model of ∫L dτ)
+      const C = phase * accumulationRate;
+      
+      // Rupture occurs when C >= Ω
+      const inRupture = C >= omega;
+      const delta = inRupture ? 1 : 0;
+      
+      // exp(C/Ω) - at rupture this equals e
+      const expCoverOmega = Math.exp(Math.min(C, omega) / omega);
+      
+      // AMPLITUDE ENVELOPE (derived from canonical CRR):
+      // - Amplitude builds as coherence accumulates
+      // - Amplitude peaks just BEFORE rupture (C approaching Ω)
+      // - Amplitude drops sharply AT and AFTER rupture
+      // - Regeneration provides soft tail
+      
+      // Pre-rupture: amplitude follows coherence buildup
+      const coherenceContribution = 1 - Math.exp(-C / (omega * 0.4));
+      
+      // Rupture suppression: sharp sigmoid at C = Ω
+      const ruptureSuppression = 1 / (1 + Math.exp(25 * (C - omega)));
+      
+      // Regeneration tail: soft decay after rupture
+      const postRupture = Math.max(0, C - omega);
+      const regenTail = Math.exp(-8 * postRupture);
+      
+      // Combined amplitude
+      let amplitude = coherenceContribution * ruptureSuppression;
+      amplitude = amplitude * (0.2 + 0.8 * regenTail);  // Soft tail
+      
+      // Regeneration weight (peaks at e when C = Ω)
+      const R = inRupture ? Math.E : expCoverOmega;
+      
+      return {
+        C: C,
+        omega: omega,
+        delta: delta,
+        expCoverOmega: expCoverOmega,
+        R: R,
+        amplitude: amplitude,
+        inRupture: inRupture
+      };
+    }
+    
+    // ===========================================
+    // Audio
+    // ===========================================
+    
+    function initAudio() {
+      if (audioContext) return;
+      
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.15;
+      masterGain.connect(audioContext.destination);
+      
+      for (let i = 0; i < NUM_TONES; i++) {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.value = BASE_FREQ * Math.pow(2, i);
+        gain.gain.value = 0;
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        
+        oscillators.push(osc);
+        gains.push(gain);
+      }
+    }
+    
+    function updateAudio() {
+      if (!audioContext || !isPlaying) return;
+      
+      const cyclePosition = (time * cycleSpeed) % 1;
+      
+      oscillators.forEach((osc, i) => {
+        const tonePhase = (cyclePosition + i / NUM_TONES) % 1;
+        const freqMultiplier = Math.pow(2, tonePhase);
+        osc.frequency.value = BASE_FREQ * Math.pow(2, i) * freqMultiplier;
+        
+        // CANONICAL CRR amplitude
+        const crr = canonicalCRR(tonePhase);
+        gains[i].gain.value = crr.amplitude;
+      });
+    }
+    
+    // ===========================================
+    // Visualization
+    // ===========================================
+    
+    function drawBackground() {
+      const w = bgCanvas.width;
+      const h = bgCanvas.height;
+      
+      bgCtx.fillStyle = '#030308';
+      bgCtx.fillRect(0, 0, w, h);
+      
+      // Grid
+      bgCtx.strokeStyle = 'rgba(74, 222, 128, 0.02)';
+      bgCtx.lineWidth = 1;
+      const gridSize = 60;
+      for (let x = 0; x < w; x += gridSize) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(x, 0);
+        bgCtx.lineTo(x, h);
+        bgCtx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(0, y);
+        bgCtx.lineTo(w, y);
+        bgCtx.stroke();
+      }
+    }
+    
+    function drawMain() {
+      const w = mainCanvas.width;
+      const h = mainCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const cyclePos = (time * cycleSpeed) % 1;
+      
+      // Background
+      const bgGrad = mainCtx.createRadialGradient(cx, cy, 0, cx, cy, w/2);
+      bgGrad.addColorStop(0, '#0a0a18');
+      bgGrad.addColorStop(0.5, '#050510');
+      bgGrad.addColorStop(1, '#030308');
+      mainCtx.fillStyle = bgGrad;
+      mainCtx.fillRect(0, 0, w, h);
+      
+      // Threshold ring (at Ω position)
+      const thresholdRadius = (w * 0.35) * (0.25 + omega * 0.75);
+      mainCtx.beginPath();
+      mainCtx.arc(cx, cy, thresholdRadius, 0, Math.PI * 2);
+      mainCtx.strokeStyle = 'rgba(74, 222, 128, 0.3)';
+      mainCtx.lineWidth = 3;
+      mainCtx.setLineDash([10, 5]);
+      mainCtx.stroke();
+      mainCtx.setLineDash([]);
+      
+      // Label the threshold
+      mainCtx.fillStyle = 'rgba(74, 222, 128, 0.6)';
+      mainCtx.font = '10px "JetBrains Mono", monospace';
+      mainCtx.textAlign = 'center';
+      mainCtx.fillText('C = Ω', cx, cy - thresholdRadius - 8);
+      
+      // Ripples
+      for (let r = 0; r < 12; r++) {
+        const baseRadius = (r / 12) * w * 0.42;
+        const ripplePhase = cyclePos * Math.PI * 2 + r * 0.4;
+        const offset = Math.sin(ripplePhase) * 5;
+        const radius = Math.max(1, baseRadius + offset);
+        
+        mainCtx.beginPath();
+        mainCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        
+        const isAtThreshold = Math.abs(radius - thresholdRadius) < 15;
+        if (isAtThreshold) {
+          mainCtx.strokeStyle = 'rgba(74, 222, 128, 0.2)';
+          mainCtx.lineWidth = 2;
+        } else {
+          mainCtx.strokeStyle = 'rgba(192, 132, 252, 0.08)';
+          mainCtx.lineWidth = 1;
+        }
+        mainCtx.stroke();
+      }
+      
+      // Tone spirals
+      const spiralRadius = Math.min(w, h) * 0.35;
+      
+      for (let i = 0; i < NUM_TONES; i++) {
+        const tonePhase = (cyclePos + i / NUM_TONES) % 1;
+        const crr = canonicalCRR(tonePhase);
+        
+        const angle = tonePhase * Math.PI * 2 - Math.PI / 2;
+        const r = spiralRadius * (0.25 + tonePhase * 0.75);
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        
+        // Trail
+        mainCtx.beginPath();
+        mainCtx.strokeStyle = `rgba(192, 132, 252, ${crr.amplitude * 0.3})`;
+        mainCtx.lineWidth = 1 + crr.amplitude * 2;
+        
+        for (let t = 0; t < 40; t++) {
+          const trailPhase = (tonePhase - t * 0.012 + 1) % 1;
+          const trailR = spiralRadius * (0.25 + trailPhase * 0.75);
+          const trailAngle = trailPhase * Math.PI * 2 - Math.PI / 2;
+          const trailX = cx + Math.cos(trailAngle) * trailR;
+          const trailY = cy + Math.sin(trailAngle) * trailR;
+          
+          if (t === 0) mainCtx.moveTo(trailX, trailY);
+          else mainCtx.lineTo(trailX, trailY);
+        }
+        mainCtx.stroke();
+        
+        // Particle
+        const particleSize = 3 + crr.amplitude * 12;
+        const grad = mainCtx.createRadialGradient(x, y, 0, x, y, particleSize * 2);
+        
+        if (crr.inRupture) {
+          // RUPTURE: gold/orange burst
+          grad.addColorStop(0, `rgba(245, 158, 11, ${crr.amplitude + 0.3})`);
+          grad.addColorStop(0.5, `rgba(234, 88, 12, ${crr.amplitude * 0.5})`);
+          grad.addColorStop(1, 'rgba(180, 60, 0, 0)');
+        } else if (crr.C / omega > 0.8) {
+          // Approaching threshold: green tint
+          grad.addColorStop(0, `rgba(74, 222, 128, ${crr.amplitude})`);
+          grad.addColorStop(0.5, `rgba(34, 197, 94, ${crr.amplitude * 0.5})`);
+          grad.addColorStop(1, 'rgba(20, 150, 80, 0)');
+        } else if (crr.C / omega < 0.2) {
+          // Regeneration zone: cyan
+          grad.addColorStop(0, `rgba(34, 211, 238, ${crr.amplitude})`);
+          grad.addColorStop(0.5, `rgba(6, 182, 212, ${crr.amplitude * 0.5})`);
+          grad.addColorStop(1, 'rgba(0, 150, 180, 0)');
+        } else {
+          // Building coherence: purple
+          grad.addColorStop(0, `rgba(192, 132, 252, ${crr.amplitude})`);
+          grad.addColorStop(0.5, `rgba(147, 51, 234, ${crr.amplitude * 0.5})`);
+          grad.addColorStop(1, 'rgba(100, 30, 180, 0)');
+        }
+        
+        mainCtx.fillStyle = grad;
+        mainCtx.beginPath();
+        mainCtx.arc(x, y, particleSize * 2, 0, Math.PI * 2);
+        mainCtx.fill();
+      }
+      
+      // Central display
+      const pulseIntensity = Math.pow(Math.sin((cyclePos * NUM_TONES) % 1 * Math.PI), 3);
+      
+      const singGrad = mainCtx.createRadialGradient(cx, cy, 0, cx, cy, 35);
+      singGrad.addColorStop(0, `rgba(255, 255, 255, ${0.8 + pulseIntensity * 0.2})`);
+      singGrad.addColorStop(0.3, `rgba(74, 222, 128, ${0.3 + pulseIntensity * 0.2})`);
+      singGrad.addColorStop(0.6, `rgba(192, 132, 252, ${0.15})`);
+      singGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      
+      mainCtx.fillStyle = singGrad;
+      mainCtx.beginPath();
+      mainCtx.arc(cx, cy, 35 + pulseIntensity * 8, 0, Math.PI * 2);
+      mainCtx.fill();
+      
+      mainCtx.fillStyle = `rgba(255, 255, 255, ${0.8})`;
+      mainCtx.font = '16px "JetBrains Mono", monospace';
+      mainCtx.textAlign = 'center';
+      mainCtx.textBaseline = 'middle';
+      mainCtx.fillText('C=Ω', cx, cy);
+    }
+    
+    function drawWaveform() {
+      const w = waveformCanvas.width;
+      const h = waveformCanvas.height;
+      const cyclePos = (time * cycleSpeed) % 1;
+      
+      waveformCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      waveformCtx.fillRect(0, 0, w, h);
+      
+      // Draw tones
+      for (let i = 0; i < NUM_TONES; i++) {
+        const tonePhase = (cyclePos + i / NUM_TONES) % 1;
+        const crr = canonicalCRR(tonePhase);
+        const freq = 1 + i * 0.7;
+        
+        waveformCtx.beginPath();
+        
+        let color;
+        if (crr.inRupture) {
+          color = `rgba(245, 158, 11, ${crr.amplitude * 0.8})`;
+        } else if (crr.C / omega > 0.8) {
+          color = `rgba(74, 222, 128, ${crr.amplitude * 0.8})`;
+        } else {
+          color = `rgba(192, 132, 252, ${crr.amplitude * 0.6})`;
+        }
+        waveformCtx.strokeStyle = color;
+        waveformCtx.lineWidth = 1.5;
+        
+        for (let x = 0; x < w; x++) {
+          const xNorm = x / w;
+          const y = h/2 + Math.sin(xNorm * Math.PI * 2 * freq + time * 0.08) * crr.amplitude * 20;
+          if (x === 0) waveformCtx.moveTo(x, y);
+          else waveformCtx.lineTo(x, y);
+        }
+        waveformCtx.stroke();
+      }
+      
+      // Composite
+      waveformCtx.beginPath();
+      waveformCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      waveformCtx.lineWidth = 2;
+      
+      for (let x = 0; x < w; x++) {
+        const xNorm = x / w;
+        let ySum = 0;
+        for (let i = 0; i < NUM_TONES; i++) {
+          const tonePhase = (cyclePos + i / NUM_TONES) % 1;
+          const crr = canonicalCRR(tonePhase);
+          const freq = 1 + i * 0.7;
+          ySum += Math.sin(xNorm * Math.PI * 2 * freq + time * 0.08) * crr.amplitude * 4;
+        }
+        const y = h/2 + ySum;
+        if (x === 0) waveformCtx.moveTo(x, y);
+        else waveformCtx.lineTo(x, y);
+      }
+      waveformCtx.stroke();
+    }
+    
+    function drawEnvelope() {
+      const w = envelopeCanvas.width;
+      const h = envelopeCanvas.height;
+      const cyclePos = (time * cycleSpeed) % 1;
+      
+      envelopeCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      envelopeCtx.fillRect(0, 0, w, h);
+      
+      const padding = 30;
+      const plotW = w - padding * 2;
+      const plotH = h - padding * 1.5;
+      
+      // Axes
+      envelopeCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+      envelopeCtx.beginPath();
+      envelopeCtx.moveTo(padding, h - padding/2);
+      envelopeCtx.lineTo(w - padding, h - padding/2);
+      envelopeCtx.stroke();
+      
+      // Threshold line
+      const thresholdX = padding + omega * plotW;
+      envelopeCtx.strokeStyle = 'rgba(74, 222, 128, 0.5)';
+      envelopeCtx.lineWidth = 2;
+      envelopeCtx.setLineDash([5, 5]);
+      envelopeCtx.beginPath();
+      envelopeCtx.moveTo(thresholdX, padding / 2);
+      envelopeCtx.lineTo(thresholdX, h - padding / 2);
+      envelopeCtx.stroke();
+      envelopeCtx.setLineDash([]);
+      
+      // Label
+      envelopeCtx.fillStyle = 'rgba(74, 222, 128, 0.8)';
+      envelopeCtx.font = '10px "JetBrains Mono", monospace';
+      envelopeCtx.textAlign = 'center';
+      envelopeCtx.fillText(`Ω=${omega.toFixed(2)}`, thresholdX, padding / 2 + 12);
+      
+      function plotLine(fn, color, lineWidth = 2) {
+        envelopeCtx.beginPath();
+        envelopeCtx.strokeStyle = color;
+        envelopeCtx.lineWidth = lineWidth;
+        
+        for (let i = 0; i <= plotW; i++) {
+          const phase = i / plotW;
+          const val = fn(phase);
+          const x = padding + i;
+          const y = (h - padding/2) - val * plotH;
+          
+          if (i === 0) envelopeCtx.moveTo(x, y);
+          else envelopeCtx.lineTo(x, y);
+        }
+        envelopeCtx.stroke();
+      }
+      
+      // C (coherence)
+      plotLine(p => canonicalCRR(p).C / accumulationRate, 'rgba(192, 132, 252, 0.5)', 1.5);
+      
+      // Amplitude
+      plotLine(p => canonicalCRR(p).amplitude, '#c084fc', 2.5);
+      
+      // exp(C/Ω) normalized
+      plotLine(p => {
+        const crr = canonicalCRR(p);
+        return (crr.expCoverOmega - 1) / (Math.E - 1);  // Normalize to 0-1
+      }, 'rgba(34, 211, 238, 0.5)', 1.5);
+      
+      // Current position
+      const markerX = padding + cyclePos * plotW;
+      envelopeCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+      envelopeCtx.lineWidth = 1;
+      envelopeCtx.beginPath();
+      envelopeCtx.moveTo(markerX, padding/2);
+      envelopeCtx.lineTo(markerX, h - padding/2);
+      envelopeCtx.stroke();
+      
+      // Labels
+      envelopeCtx.font = '9px "JetBrains Mono", monospace';
+      envelopeCtx.textAlign = 'left';
+      envelopeCtx.fillStyle = '#c084fc';
+      envelopeCtx.fillText('Amplitude', padding + 5, padding);
+      envelopeCtx.fillStyle = 'rgba(192, 132, 252, 0.5)';
+      envelopeCtx.fillText('C', padding + 80, padding);
+      envelopeCtx.fillStyle = 'rgba(34, 211, 238, 0.5)';
+      envelopeCtx.fillText('exp(C/Ω)', padding + 100, padding);
+    }
+    
+    function updateMetrics() {
+      const cyclePos = (time * cycleSpeed) % 1;
+      const crr = canonicalCRR(cyclePos);
+      
+      cValueEl.textContent = crr.C.toFixed(3);
+      omegaDisplay.textContent = omega.toFixed(3);
+      deltaValue.textContent = crr.delta;
+      expValue.textContent = crr.expCoverOmega.toFixed(3);
+      
+      // Threshold indicator
+      const pct = Math.min(100, (crr.C / omega) * 100);
+      approachPct.textContent = pct.toFixed(0) + '%';
+      thresholdFill.style.width = Math.min(100, pct) + '%';
+      thresholdMarker.style.left = (omega * 100) + '%';
+      
+      // Color the fill based on proximity
+      if (crr.inRupture) {
+        thresholdFill.style.background = 'linear-gradient(90deg, #c084fc, #f59e0b, #ef4444)';
+      } else if (pct > 80) {
+        thresholdFill.style.background = 'linear-gradient(90deg, #c084fc, #4ade80)';
+      } else {
+        thresholdFill.style.background = 'linear-gradient(90deg, #22d3ee, #c084fc)';
+      }
+    }
+    
+    // ===========================================
+    // Animation
+    // ===========================================
+    
+    function animate() {
+      time += 1;
+      
+      updateAudio();
+      drawBackground();
+      drawMain();
+      drawWaveform();
+      drawEnvelope();
+      updateMetrics();
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // ===========================================
+    // Events
+    // ===========================================
+    
+    playBtn.addEventListener('click', () => {
+      if (!isPlaying) {
+        initAudio();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        isPlaying = true;
+        playBtn.textContent = '⏸ PAUSE';
+        playBtn.classList.add('playing');
+      } else {
+        isPlaying = false;
+        gains.forEach(g => g.gain.value = 0);
+        playBtn.textContent = '▶ PLAY CANONICAL CRR';
+        playBtn.classList.remove('playing');
+      }
+    });
+    
+    omegaSlider.addEventListener('input', e => {
+      omega = parseFloat(e.target.value);
+      omegaValue.textContent = omega.toFixed(2);
+      document.querySelector('.slider-value').innerHTML = 
+        `<span class="omega-highlight">${omega.toFixed(2)}</span> — rupture at ${(omega*100).toFixed(0)}%`;
+    });
+    
+    rateSlider.addEventListener('input', e => {
+      accumulationRate = parseFloat(e.target.value);
+      rateValue.textContent = accumulationRate.toFixed(1) + 'x';
+    });
+    
+    speedSlider.addEventListener('input', e => {
+      cycleSpeed = parseFloat(e.target.value);
+      speedValue.textContent = (cycleSpeed * 100).toFixed(1);
+    });
+    
+    // Start
+    animate();
+  </script>
+</body>
+</html>
