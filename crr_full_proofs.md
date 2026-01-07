@@ -4,6 +4,8 @@
 
 This document presents three complete, rigorous proofs of the CRR framework from independent axiomatic foundations. Each proof is self-contained, with all assumptions stated explicitly, all steps justified, and all claims either proved or clearly marked as requiring external results.
 
+**Scope and rigor notes.** Some sections invoke standard results (e.g., Bonnet-Myers, Girsanov, Birkhoff) and therefore explicitly state the hypotheses needed to apply them. Where a CRR-specific identification is a modeling assumption (not a theorem), it is labeled as such. This ensures that secure results remain intact while the inferential gaps are made explicit.
+
 ---
 
 # Part I: Information Geometry
@@ -29,6 +31,11 @@ A *statistical manifold* is a triple (M, g, ∇) where:
 - M = {p_θ : θ ∈ Θ ⊂ ℝ^d} is a family of probability distributions
 - g is the Fisher-Rao metric
 - ∇ is a torsion-free affine connection
+
+**Standing geometric assumptions (for Part I).** Unless stated otherwise, we assume:
+- g is smooth and positive-definite on M.
+- (M, g) is geodesically complete.
+- When invoking length-minimizing properties or parallel transport isometries, ∇ is the Levi-Civita connection of g.
 
 ### Definition I.1.2 (Fisher-Rao Metric)
 The Fisher information metric at θ ∈ Θ is:
@@ -171,13 +178,13 @@ Let M be a statistical manifold with Ricci curvature bounded below:
 
 $$\text{Ric}(v,v) \geq (n-1)\kappa \|v\|^2, \quad \kappa > 0$$
 
-Let θ(t) be a geodesic belief trajectory (minimizing free energy). Then:
+Let θ(t) be a unit-speed geodesic belief trajectory. Then:
 
 **There exists a rupture time t* with:**
 
 $$\boxed{\mathcal{C}(t_*) \leq \frac{\pi}{\sqrt{\kappa}} =: \Omega}$$
 
-**at which the geodesic ceases to be optimal and the system must transition to a new trajectory.**
+**at which the geodesic ceases to be length-minimizing.** If the system is assumed to track a length-minimizing (or free-energy-minimizing) trajectory, then it must transition to a new minimizing path at or before t*.
 
 **Proof.**
 
@@ -188,11 +195,7 @@ Step 2: By the theory of Jacobi fields, a geodesic fails to minimize arc length 
 Step 3: Since coherence C(t) is arc length (Definition I.2.2), the coherence at the first conjugate point satisfies:
 $$\mathcal{C}(t_*) \leq \frac{\pi}{\sqrt{\kappa}}$$
 
-Step 4: Beyond t*, the current geodesic is no longer optimal. The system must:
-- Either switch to a different geodesic (model transition)
-- Or continue suboptimally (which violates the free energy minimization principle)
-
-This switch is the rupture event. ∎
+Step 4: Beyond t*, the current geodesic is no longer length-minimizing. If the modeling principle is that belief trajectories remain minimizing, then a transition to a new minimizing path occurs at or before t*. This transition is the rupture event. ∎
 
 ### Corollary I.3.3 (Geometric Origin of Ω = π)
 If the statistical manifold has constant sectional curvature κ = 1 (the "unit sphere" of probability distributions), then:
@@ -265,7 +268,7 @@ where:
 
 **Proof that this is well-defined:**
 
-Step 1: Parallel transport is a linear isometry between tangent spaces, hence preserves norms and angles.
+Step 1: Under the Levi-Civita connection, parallel transport is a linear isometry between tangent spaces, hence preserves norms and angles.
 
 Step 2: The integrand is a vector in $T_{\gamma(t_*)}M$ (since all terms are transported to t*).
 
@@ -390,7 +393,7 @@ The coherence C_t satisfies:
 
 (ii) **Monotonicity:** C_t is increasing in t
 
-(iii) **Predictability:** C_t is F_{t-}-measurable (known just before time t)
+(iii) **Predictability:** The predictable quadratic variation ⟨μ⟩_t is F_{t-}-measurable (known just before time t), and for continuous semimartingales [μ, μ]_t = ⟨μ⟩_t.
 
 (iv) **Continuity:** If σ is continuous, C_t is continuous
 
@@ -400,18 +403,20 @@ The coherence C_t satisfies:
 
 (ii) The integrand is non-negative, so the integral is increasing.
 
-(iii) Quadratic variation is the predictable compensator in the Doob-Meyer decomposition.
+(iii) For continuous semimartingales, the quadratic variation equals the predictable quadratic variation, which is predictable by construction.
 
 (iv) Integral of continuous function is continuous. ∎
 
 ### Proposition II.2.2 (Alternative Characterization)
-For a discrete-time process with observations y_1, y_2, ..., the coherence is:
+For a discrete-time process with observations y_1, y_2, ..., assume the belief increments satisfy:
+$$\mathbb{E}[\mu_i - \mu_{i-1} \mid \mathcal{F}_{i-1}] = 0 \quad \text{for all } i.$$
+Then the coherence is:
 
 $$\mathcal{C}_n = \sum_{i=1}^{n} \text{Var}[\mu_i - \mu_{i-1} | \mathcal{F}_{i-1}]$$
 
 This is the cumulative conditional variance of belief updates.
 
-**Proof.** This is the discrete analogue of quadratic variation:
+**Proof.** Under the stated zero-mean increment assumption, this is the discrete analogue of quadratic variation:
 $$[\mu, \mu]_n = \sum_{i=1}^n (\mu_i - \mu_{i-1})^2$$
 Taking conditional expectation yields the conditional variance sum. ∎
 
@@ -443,7 +448,7 @@ $$\mathbb{E}[S_\tau^2] = \sigma^2 \cdot \mathbb{E}[\tau] + \mu^2 \cdot \mathbb{E
 **Proof.** See Williams, *Probability with Martingales*, Section 10.10. ∎
 
 ### Theorem II.3.3 (Expected Coherence at Rupture)
-Let the coherence increments ΔC_i = C_i - C_{i-1} be i.i.d. with mean δ > 0. Then:
+Let the coherence increments ΔC_i = C_i - C_{i-1} be i.i.d. with mean δ > 0 and finite variance, and let N = τ_Ω satisfy E[N] < ∞. Then:
 
 $$\boxed{\mathbb{E}[\mathcal{C}_{\tau_\Omega}] = \Omega + O(\mathbb{E}[\Delta \mathcal{C}])}$$
 
@@ -495,7 +500,7 @@ where A is the predictable drift.
 **Proof.**
 From Doob-Meyer: μ_t = M_t + A_t.
 
-By Optional Stopping: E[M_{τ_Ω}] = E[M_0] (under appropriate conditions).
+By Optional Stopping: E[M_{τ_Ω}] = E[M_0] under any of the stated sufficient conditions (bounded τ_Ω, integrable increments with finite expectation, or uniform integrability).
 
 Therefore:
 $$\mathbb{E}[\mu_{\tau_\Omega}] = \mathbb{E}[M_{\tau_\Omega}] + \mathbb{E}[A_{\tau_\Omega}] = \mathbb{E}[M_0] + \mathbb{E}[A_{\tau_\Omega}]$$
@@ -508,11 +513,13 @@ since A_0 = 0. ∎
 ## II.5 Regeneration via Measure Change
 
 ### Definition II.5.1 (Exponential Martingale)
-For a process C_t, define the exponential martingale:
+Let μ_t have continuous martingale part
+$$M_t = \int_0^t \sigma_s \, dW_s$$
+with quadratic variation ⟨M⟩_t = ∫_0^t σ_s^2 ds. Define the exponential martingale:
 
-$$Z_t = \exp\left(\frac{\mathcal{C}_t}{\Omega} - \frac{t}{2\Omega^2}\right)$$
+$$Z_t = \exp\left(\frac{M_t}{\Omega} - \frac{\langle M \rangle_t}{2\Omega^2}\right)$$
 
-(The second term ensures Z is a martingale when C is Brownian motion.)
+(The second term ensures Z is a martingale for a Brownian-driven M_t.)
 
 ### Theorem II.5.1 (Girsanov Theorem - Simplified)
 Let Z_t be a positive martingale with Z_0 = 1 and E[Z_t] = 1. Define a new measure Q by:
@@ -535,7 +542,7 @@ The regeneration operator is:
 
 $$\boxed{\mathcal{R}[\Phi] = \mathbb{E}^Q[\Phi | \mathcal{F}_{\tau_\Omega}]}$$
 
-**Proof that this recovers the canonical form:**
+**Proof that this recovers the canonical form (path-functional version):**
 
 Step 1: By Bayes' rule for conditional expectations:
 $$\mathbb{E}^Q[\Phi | \mathcal{F}_{\tau_\Omega}] = \frac{\mathbb{E}^P[\Phi \cdot (dQ/dP) | \mathcal{F}_{\tau_\Omega}]}{\mathbb{E}^P[dQ/dP | \mathcal{F}_{\tau_\Omega}]}$$
@@ -543,12 +550,9 @@ $$\mathbb{E}^Q[\Phi | \mathcal{F}_{\tau_\Omega}] = \frac{\mathbb{E}^P[\Phi \cdot
 Step 2: The Radon-Nikodym derivative is F_{τ_Ω}-measurable, so:
 $$= \frac{\Phi \cdot e^{\mathcal{C}_{\tau_\Omega}/\Omega} / Z}{e^{\mathcal{C}_{\tau_\Omega}/\Omega} / Z} = \Phi$$
 
-Wait - this is trivial at the stopping time. The non-trivial content is for the historical field:
-
-Step 3: For a historical functional Φ[{μ_s : s ≤ τ_Ω}]:
-$$\mathcal{R}[\Phi] = \int_0^{\tau_\Omega} \Phi(s) \cdot \frac{e^{\mathcal{C}_s/\Omega}}{\int_0^{\tau_\Omega} e^{\mathcal{C}_u/\Omega} du} \, ds$$
-
-This weights historical states by exp(C/Ω), normalized. ∎
+This shows that conditioning at τ_Ω itself is trivial. The non-trivial content is for path functionals. For a time-indexed observable Φ(s) along the history, define the regeneration operator by the normalized exponential reweighting:
+$$\mathcal{R}[\Phi] = \int_0^{\tau_\Omega} \Phi(s) \cdot \frac{e^{\mathcal{C}_s/\Omega}}{\int_0^{\tau_\Omega} e^{\mathcal{C}_u/\Omega} \, du} \, ds$$
+This definition is consistent with the Radon-Nikodym tilt on path space when Φ is a linear functional of the path (e.g., evaluation or time integral). ∎
 
 ### Theorem II.5.3 (MaxEnt Characterization)
 The regeneration weights w(s) ∝ exp(C_s/Ω) maximize entropy subject to:
@@ -583,7 +587,7 @@ The CRR rupture condition C_m - C_{m'} > Ω is equivalent to SPRT with:
 - The coherence difference is the log-likelihood ratio
 
 **Proof.**
-From the coherence-likelihood correspondence (proved in the main CRR document):
+Assume the coherence-likelihood correspondence (proved in the main CRR document):
 
 $$\mathcal{C}_m(t) = -\log p(y_{1:t} | m) + \text{const}$$
 
@@ -707,7 +711,7 @@ $$X_n = \{x \in A : \tau_A(x) > n\} = A \cap T^{-1}A^c \cap \cdots \cap T^{-n}A^
 
 Step 3: The sets $T^k(X_n)$ for k = 0, 1, ..., n-1 are pairwise disjoint (follows from the definition).
 
-Step 4: By ergodicity, $\bigcup_{n \geq 1} \bigcup_{k=0}^{n-1} T^k(A_n) = X$ (almost surely).
+Step 4: By Poincaré recurrence applied to A (which follows from measure preservation and μ(X) < ∞), almost every point of A returns to A, hence the towers over A cover X up to a μ-null set.
 
 Step 5: Taking measures:
 $$\mu(X) = \sum_{n \geq 1} \sum_{k=0}^{n-1} \mu(T^k(A_n)) = \sum_{n \geq 1} n \cdot \mu(A_n)$$
@@ -731,12 +735,12 @@ Then the rigidity parameter is:
 
 $$\boxed{\Omega = \frac{1}{\mu(A_m)}}$$
 
-and the expected time to rupture (exit from A_m and return) is:
+and the expected return time to A_m is:
 
 $$\mathbb{E}[\tau_{\text{rupture}}] = \Omega$$
 
 **Proof.**
-This follows directly from Kac's Lemma. The system starts in A_m (operating under model m). It will eventually exit A_m (rupture occurs when predictions fail). By Poincaré recurrence, it will return to A_m (regeneration under a possibly modified configuration). The expected cycle time is 1/μ(A_m) = Ω. ∎
+This follows directly from Kac's Lemma. The system starts in A_m (operating under model m). The expected return time to A_m is 1/μ(A_m) = Ω. If one models a rupture-regeneration cycle as the return to A_m, then the expected cycle time equals Ω. ∎
 
 ### Corollary III.3.3 (Rigidity-Measure Duality)
 Small coherent regions (selective models) have high rigidity:
@@ -776,7 +780,7 @@ where w_k is the weight at step k. The regeneration is:
 $$\mathcal{R}[\Phi] = \lim_{n \to \infty} \frac{\sum_{k=0}^{n-1} \Phi(T^k x) \cdot e^{\mathcal{C}(x,k)/\Omega}}{\sum_{k=0}^{n-1} e^{\mathcal{C}(x,k)/\Omega}}$$
 
 **Proof Sketch.**
-This is a weighted ergodic average. Under appropriate conditions (weights satisfy Birkhoff-type assumptions), the limit exists and equals the weighted space average. ∎
+This is a weighted ergodic average. If the weights {e^{\mathcal{C}(x,k)/\Omega}} are tempered and the induced weighted sums satisfy a pointwise ergodic theorem (e.g., under bounded or summable distortion conditions), then the limit exists and equals the corresponding weighted space average. ∎
 
 ---
 
