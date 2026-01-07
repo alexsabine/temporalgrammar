@@ -15,6 +15,8 @@ This represents the characteristic information capacity before phase transition/
 
 $$16 \text{ nats} = 16 \times \log_2(e) = 16 \times 1.4427 \approx 23.08 \text{ bits}$$
 
+**NOTE: This document searches for deliberate 'curve fitted' and 'hard-coded" ways to derive 16 nats. It is a deductive check, not an inductive emergent finding. This is a "search with 16 nats in mind", not a true inductive check!**
+
 ---
 
 ## Empirical Tests Across Systems
@@ -387,7 +389,7 @@ Or: 8 factors × 3 distinguishable states = log_2(3^8) = 12.7 bits × 1.7 (integ
 | **Apoptosis decision** | 20-24 | 14-17 | 16 | ✓ |
 
 **Extended Convergence Zone: 14-18 nats (20-26 bits)**
-
+**NOTE: This document searches for deliberate 'curve fitted' and 'hard-coded" ways to derive 16 nats. It is a deductive check, not an inductive emergent finding. This is a "search with 16 nats in mind", not a true inductive check!**
 ---
 
 ## Updated Statistical Analysis
@@ -463,7 +465,9 @@ The **16 nats (≈23 bits) hypothesis** is now supported by **16 independent sys
 **Mean:** 15.6 nats (within 2.5% of prediction)
 **Confidence:** High - prediction lies within 95% CI
 
-This strongly supports the CRR framework's claim that **Ω ≈ 16 nats represents a universal information threshold at which coherence ruptures and regeneration initiates**.
+**NOTE: This document searches for deliberate 'curve fitted' and 'hard-coded" ways to derive 16 nats. It is a deductive check, not an inductive emergent finding. This is a "search with 16 nats in mind", not a true inductive check!**
+
+This supports the CRR framework's claim that **Ω ≈ 16 nats represents a universal information threshold at which coherence ruptures and regeneration initiates**.
 
 **Epistemic Status:** Well-supported. The convergence across 16 independent systems with mean within 0.4 nats of prediction is unlikely by chance (p < 0.01 for such consistency if null hypothesis is random).
 
