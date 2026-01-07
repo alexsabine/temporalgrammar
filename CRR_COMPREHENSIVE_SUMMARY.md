@@ -754,3 +754,322 @@ Whether in individual psychology, AI development, or civilisational dynamics, **
 **Last Updated:** January 2026
 
 **Website:** [https://alexsabine.github.io/CRR/](https://alexsabine.github.io/CRR/)
+
+---
+
+# Part V: Complete Repository Catalogue
+
+## Navigation
+
+- [Core Documentation](#core-documentation-markdown)
+- [Formal Treatises (PDF)](#formal-treatises-pdf)
+- [Interactive Simulations (HTML)](#interactive-simulations-html)
+- [Computational Validation (Python)](#computational-validation-python)
+- [Diagrams and Images](#diagrams-and-images)
+
+---
+
+## Core Documentation (Markdown)
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [README.md](https://alexsabine.github.io/CRR/) | Master introduction to CRR framework; overview of all components; quick implementation guide | Core operators C, δ, R; Ω parameter definition; regeneration integral | Entry point for researchers, AI developers, and practitioners seeking temporal grammar for adaptive systems |
+| [crr_meta_theorem.md](https://github.com/alexsabine/CRR/blob/main/crr_meta_theorem.md) | Unifying principle showing all 24 proof sketches arise from single meta-theorem | Categorical, variational, and information-theoretic formulations; bounded adjunction → CRR | Demonstrates CRR is not ad-hoc but mathematically necessary for bounded observers |
+| [crr_advanced_proof_sketches.md](https://github.com/alexsabine/CRR/blob/main/crr_advanced_proof_sketches.md) | 12 rigorous proofs from mathematical frontiers | Sheaf theory, homotopy type theory, Floer homology, CFT, spin geometry, persistent homology, RMT, large deviations, non-equilibrium thermo, causal sets, operads, tropical geometry | Cross-disciplinary validation; connects CRR to cutting-edge mathematics and theoretical physics |
+| [crr_first_principles_proofs.md](https://github.com/alexsabine/CRR/blob/main/crr_first_principles_proofs.md) | 12 independent derivations from distinct axiomatic foundations | Category theory, information geometry, optimal transport, topology, RG theory, martingales, symplectic geometry, Kolmogorov complexity, gauge theory, ergodic theory, homological algebra, quantum mechanics | Shows CRR emerges from multiple independent foundations; robust theoretical grounding |
+| [crr_full_proofs.md](https://github.com/alexsabine/CRR/blob/main/crr_full_proofs.md) | Three complete rigorous proofs with all steps justified | Information geometry (Bonnet-Myers → Ω=π/√κ), Martingale theory (Wald's identity), Ergodic theory (Kac's lemma → Ω=1/μ(A)) | Reference-quality proofs for peer review and formal verification |
+| [CRR canonical proof sketch.md](https://github.com/alexsabine/CRR/blob/main/CRR%20canonical%20proof%20sketch.md) | Canonical rigorous proof of core CRR structure | Coherence accumulation, rupture threshold, regeneration operator derivation | Concise formal foundation for implementation |
+| [canonical_crr_rigorous_proof_sketch.md](https://github.com/alexsabine/CRR/blob/main/canonical_crr_rigorous_proof_sketch.md) | Concise formal proof of CRR mathematics | Core operator definitions with axioms stated explicitly | Quick reference for mathematicians |
+| [CRR_Complete_Proof_Sketch.md](https://github.com/alexsabine/CRR/blob/main/CRR_Complete_Proof_Sketch.md) | Comprehensive proof covering all foundational aspects | Full derivation chain from axioms to applications | Complete self-contained proof document |
+| [multiscale_crr_proof_sketch.md](https://github.com/alexsabine/CRR/blob/main/multiscale_crr_proof_sketch.md) | Proof of CRR structure across multiple scales | Scale coupling: L^(n+1) from ruptures at scale n; CV regularisation theorem; inevitable rupture proof | Critical for AI architectures with hierarchical memory; explains macro-regularity from micro-stochasticity |
+| [fep_crr_integration.md](https://github.com/alexsabine/CRR/blob/main/fep_crr_integration.md) | Complete synthesis of FEP and CRR | C = F₀ - F(t); Π = e^(C/Ω)/Ω; rupture as model comparison threshold | Bridges Friston's Active Inference with discontinuous transitions; essential for cognitive science |
+| [crr_active_reasoning.md](https://github.com/alexsabine/CRR/blob/main/crr_active_reasoning.md) | CRR reformulation of active inference | Explicit model switching; expected coherence gain replacing expected free energy; aha moments as rupture | Computational cognitive science; explains insight and learning phase transitions |
+| [crr_16_nats_hypothesis.md](https://github.com/alexsabine/CRR/blob/main/crr_16_nats_hypothesis.md) | Testing information threshold hypothesis across 16 systems | Ω ≈ 16 nats ≈ 23 bits; statistical validation (mean 15.6, p > 0.4) | Universal information capacity limit; implications for AI context windows, human cognition, biological signalling |
+| [crr_empirical_validation_test.md](https://github.com/alexsabine/CRR/blob/main/crr_empirical_validation_test.md) | Empirical test results across biological systems | R² values for wound healing, muscle growth, saltatory development | Evidence base for biological applications; medical/therapeutic implications |
+| [CRR_Analysis_Report.md](https://github.com/alexsabine/CRR/blob/main/CRR_Analysis_Report.md) | Analysis of empirical validation results | Statistical analysis of prediction accuracy | Quality assessment of framework predictions |
+
+---
+
+## Formal Treatises (PDF)
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [crr_unified_theory.pdf](https://github.com/alexsabine/CRR/blob/main/crr_unified_theory.pdf) | Unified mathematical theory of CRR framework | Complete formal treatment of all operators and their relationships | Comprehensive reference for theoretical development |
+| [crr_comprehensive_treatise.pdf](https://github.com/alexsabine/CRR/blob/main/crr_comprehensive_treatise.pdf) | Comprehensive treatment covering all aspects | Extended derivations with full mathematical rigour | Academic publication-ready treatment |
+| [crr_complete_unified.pdf](https://github.com/alexsabine/CRR/blob/main/crr_complete_unified.pdf) | Complete unified formulation | Synthesis of all proof approaches | Single-document complete theory |
+| [crr_full_proofs.pdf](https://github.com/alexsabine/CRR/blob/main/crr_full_proofs.pdf) | Rigorous formal proofs (PDF version) | Information geometry, martingale, ergodic theory proofs | Archival-quality formal proofs |
+| [crr_martingale_derivation.pdf](https://github.com/alexsabine/CRR/blob/main/crr_martingale_derivation.pdf) | Derivation of CRR from martingale theory | Quadratic variation, stopping times, Optional Stopping Theorem | Stochastic process foundation; financial/risk applications |
+| [crr_solomonoff_analysis.pdf](https://github.com/alexsabine/CRR/blob/main/crr_solomonoff_analysis.pdf) | Integration with Solomonoff induction theory | Kolmogorov complexity, algorithmic probability, MDL | AI/ML theoretical foundations; compression-based learning |
+| [crr_coherence-FE.pdf](https://github.com/alexsabine/CRR/blob/main/crr_coherence-FE.pdf) | Analysis of coherence-free energy relationship | C = F₀ - F(t) derivation and implications | Core FEP-CRR bridge; precision dynamics |
+| [crr_validation_report.pdf](https://github.com/alexsabine/CRR/blob/main/crr_validation_report.pdf) | Comprehensive validation report | Statistical analysis across multiple systems | Evidence quality documentation |
+| [crr_validation_report_extended.pdf](https://github.com/alexsabine/CRR/blob/main/crr_validation_report_extended.pdf) | Extended validation with additional systems | Expanded empirical testing | Broader evidence base |
+| [fep_crr_cheatsheet.pdf](https://github.com/alexsabine/CRR/blob/main/fep_crr_cheatsheet.pdf) | Quick reference for FEP-CRR integration | Key equations and correspondences | Practical implementation guide |
+| [fep_crr_driving_analysis.pdf](https://github.com/alexsabine/CRR/blob/main/fep_crr_driving_analysis.pdf) | Analysis of driving dynamics in FEP-CRR | Active inference with CRR transitions | Robotics/autonomous systems applications |
+| [aha.pdf](https://github.com/alexsabine/CRR/blob/main/aha.pdf) | Large-scale treatment of insight/aha moments as ruptures | Phenomenology of insight; rupture mechanics in cognition | Understanding creativity, learning breakthroughs, therapeutic change |
+| [Inner_screen(Fields).pdf](https://github.com/alexsabine/CRR/blob/main/Inner_screen(Fields).pdf) | Field-theoretic treatment of inner experience | Field theory formulation of consciousness | Consciousness studies; phenomenology formalisation |
+| [elements_CRR_frequency_Omega.pdf](https://github.com/alexsabine/CRR/blob/main/elements_CRR_frequency_Omega.pdf) | Analysis of Ω parameter across frequencies | Frequency-domain analysis of rupture dynamics | Signal processing; neural oscillation research |
+
+### Diagrams (PDF)
+
+| File | Summary | Content | 2026 Relevance |
+|------|---------|---------|----------------|
+| [diagrams/bifurcation_standalone.pdf](https://github.com/alexsabine/CRR/blob/main/diagrams/bifurcation_standalone.pdf) | Bifurcation diagrams showing rupture dynamics | Phase space visualisation of C→Ω transitions | Understanding system stability and transition points |
+| [diagrams/crr_cycle_standalone.pdf](https://github.com/alexsabine/CRR/blob/main/diagrams/crr_cycle_standalone.pdf) | CRR cycle visualisation | C→δ→R cycle diagram | Educational/communication tool |
+| [diagrams/unified_model_standalone.pdf](https://github.com/alexsabine/CRR/blob/main/diagrams/unified_model_standalone.pdf) | Unified model diagram | Complete system architecture | Overview visualisation |
+
+---
+
+## Interactive Simulations (HTML)
+
+### Core CRR Demonstrations
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [index.html](https://alexsabine.github.io/CRR/index.html) | Main navigation hub | Links to all simulations | Entry point for interactive exploration |
+| [crr-explained.html](https://alexsabine.github.io/CRR/crr-explained.html) | Educational explanation with visualisations | Step-by-step CRR concept introduction | Teaching tool; onboarding for new researchers |
+| [crr-simulations.html](https://alexsabine.github.io/CRR/crr-simulations.html) | Overview and directory of simulations | Catalogue of all demonstrations | Navigation for simulation library |
+| [guide.html](https://alexsabine.github.io/CRR/guide.html) | User guide to simulations | Usage instructions | Practical orientation |
+| [about.html](https://alexsabine.github.io/CRR/about.html) | About page and project overview | Background and motivation | Context for the project |
+| [crr_equation_visual.html](https://alexsabine.github.io/CRR/crr_equation_visual.html) | Mathematical equation visualisation | Dynamic display of CRR equations | Understanding operator relationships |
+| [crr-three-phase-visualiser.html](https://alexsabine.github.io/CRR/crr-three-phase-visualiser.html) | Three-phase (C→δ→R) system visualisation | Phase dynamics animation | Intuitive grasp of CRR cycle |
+| [dirac-delta-crr.html](https://alexsabine.github.io/CRR/dirac-delta-crr.html) | Rupture as Dirac delta discontinuity | δ(t-t*) visualisation; instantaneous transition | Understanding rupture's mathematical nature |
+| [crr-benchmarks.html](https://alexsabine.github.io/CRR/crr-benchmarks.html) | Benchmark comparisons | Performance metrics across systems | Validation tool |
+| [Maths.html](https://alexsabine.github.io/CRR/Maths.html) | Mathematical visualisation of core concepts | Equation animations | Educational mathematics |
+| [maths_q.html](https://alexsabine.github.io/CRR/maths_q.html) | Mathematical exploration | Extended mathematical concepts | Deeper mathematical understanding |
+| [crr_time.html](https://alexsabine.github.io/CRR/crr_time.html) | Time, precision, and possibility space | Temporal structure visualisation | Understanding CRR's temporal grammar |
+
+### FEP & Active Inference Integration
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [fep-crr-finale-wspeech.html](https://alexsabine.github.io/CRR/fep-crr-finale-wspeech.html) | Complete FEP-CRR integration demo with narration | Full synthesis demonstration; 5 developmental stages | Comprehensive understanding of FEP-CRR relationship |
+| [fep-crr-5stages.html](https://alexsabine.github.io/CRR/fep-crr-5stages.html) | Five-stage FEP-CRR process visualisation | Stage-by-stage learning dynamics | Developmental psychology; AI training phases |
+| [fep-crr-game.html](https://alexsabine.github.io/CRR/fep-crr-game.html) | Interactive game demonstrating FEP-CRR principles | Gamified learning of prediction-error dynamics | Engaging education; public understanding |
+| [fep-agent-shapes.html](https://alexsabine.github.io/CRR/fep-agent-shapes.html) | Free Energy Principle agent with shape learning | Active inference with visual prediction | AI/robotics learning demonstrations |
+| [fep_crr_dynamics.html](https://alexsabine.github.io/CRR/fep_crr_dynamics.html) | Dynamic FEP-CRR integration | Real-time coherence-free energy relationship | Understanding precision-rigidity dynamics |
+| [perceiving-agent.html](https://alexsabine.github.io/CRR/perceiving-agent.html) | Perceptual decision-making agent | Active inference in perception | Cognitive science; perceptual systems |
+
+### Biological Systems - Animals
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [fish.html](https://alexsabine.github.io/CRR/fish.html) | Fish predator-prey learning dynamics | Coherence in survival behaviour | Ecology; behavioural biology |
+| [crr-fish-learning.html](https://alexsabine.github.io/CRR/crr-fish-learning.html) | Fish learning curve visualisation | Learning as coherence accumulation | Education research; skill acquisition |
+| [fish_irridescence.html](https://alexsabine.github.io/CRR/fish_irridescence.html) | Fish iridescent structure dynamics | Structural colour as coherence phenomenon | Materials science; bio-inspired design |
+| [birds.html](https://alexsabine.github.io/CRR/birds.html) | Bird flocking collective behaviour | Coherence in swarm dynamics; rupture as flock splitting | Collective intelligence; coordination systems |
+| [bees.html](https://alexsabine.github.io/CRR/bees.html) | Bee swarm intelligence | Distributed coherence accumulation | Distributed AI; consensus algorithms |
+| [bee_vision.html](https://alexsabine.github.io/CRR/bee_vision.html) | Bee colour space and perception | Visual coherence in insect perception | Bio-inspired sensors; computer vision |
+| [dolphin_crr_optimized.html](https://alexsabine.github.io/CRR/dolphin_crr_optimized.html) | Dolphin echolocation and navigation | Sonar as coherence-building system | Underwater robotics; sonar systems |
+| [bats.html](https://alexsabine.github.io/CRR/bats.html) | Bat sonar and flight dynamics | Echolocation coherence; flight rupture events | Bio-inspired navigation; SLAM systems |
+| [butterfly.html](https://alexsabine.github.io/CRR/butterfly.html) | Butterfly metamorphosis | Developmental rupture; larva→pupa→adult transitions | Understanding transformational change; developmental biology |
+| [drosophila_anatomical_crr (2).html](https://alexsabine.github.io/CRR/drosophila_anatomical_crr%20(2).html) | Fruit fly anatomical development | Morphogen gradients as coherence fields | Developmental biology; body planning |
+| [fixed_ant_colony.html](https://alexsabine.github.io/CRR/fixed_ant_colony.html) | Ant colony dynamics | Pheromone trails as coherence accumulation | Swarm robotics; optimisation algorithms |
+
+### Biological Systems - Plants & Fungi
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [crr-forest-seasonal.html](https://alexsabine.github.io/CRR/crr-forest-seasonal.html) | Forest seasonal cycles and rupture | Annual coherence cycles; seasonal transitions | Climate adaptation; ecosystem management |
+| [tree_ring.html](https://alexsabine.github.io/CRR/tree_ring.html) | Tree growth rings as CRR cycles | Dendrochronology through CRR lens | Climate reconstruction; long-term dynamics |
+| [mycelium.html](https://alexsabine.github.io/CRR/mycelium.html) | Fungal network growth dynamics | Network coherence; distributed rupture | Distributed computing; network design |
+| [lichen.html](https://alexsabine.github.io/CRR/lichen.html) | Lichen symbiotic growth patterns | Multi-organism coherence | Symbiosis; partnership dynamics |
+| [moss.html](https://alexsabine.github.io/CRR/moss.html) | Moss colonisation dynamics | Slow coherence accumulation | Ecological succession; patience in systems |
+| [moss_a.html](https://alexsabine.github.io/CRR/moss_a.html) | Alternative moss growth simulation | Variant colonisation patterns | Comparative dynamics |
+
+### Biological Systems - Human Body
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [crr-body-accurate.html](https://alexsabine.github.io/CRR/crr-body-accurate.html) | Anatomically accurate body CRR dynamics | Organ-level coherence; systemic rupture | Medical applications; health monitoring |
+| [crr-body-scientific.html](https://alexsabine.github.io/CRR/crr-body-scientific.html) | Scientific body model visualisation | Physiological coherence mapping | Medical education; systems medicine |
+| [crr-brain-photorealistic.html](https://alexsabine.github.io/CRR/crr-brain-photorealistic.html) | Brain CRR visualisation | Neural coherence; cognitive rupture | Neuroscience; consciousness research |
+| [child_dev.html](https://alexsabine.github.io/CRR/child_dev.html) | Child developmental stages | Piagetian stages as rupture events | Developmental psychology; education |
+| [inner_screen.html](https://alexsabine.github.io/CRR/inner_screen.html) | Inner experience visualisation | Phenomenological coherence | Consciousness studies; meditation research |
+
+### Ecological & Environmental Systems
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [ecosystem.html](https://alexsabine.github.io/CRR/ecosystem.html) | Multi-species ecosystem dynamics | Ecological coherence; cascade ruptures | Ecosystem management; biodiversity |
+| [biological-systems.html](https://alexsabine.github.io/CRR/biological-systems.html) | Overview of biological CRR | General biological coherence patterns | Life sciences integration |
+| [marine.html](https://alexsabine.github.io/CRR/marine.html) | Ocean ecosystem dynamics | Marine coherence; tidal rupture | Ocean conservation; fisheries |
+| [marine2.html](https://alexsabine.github.io/CRR/marine2.html) | Extended marine simulation | Deeper ocean dynamics | Marine biology research |
+| [marine_enhanced(FPS_slow).html](https://alexsabine.github.io/CRR/marine_enhanced(FPS_slow).html) | High-detail marine simulation | Detailed creature dynamics | Educational visualisation |
+| [atmosphere.html](https://alexsabine.github.io/CRR/atmosphere.html) | Atmospheric circulation patterns | Weather coherence; storm rupture | Climate science; weather prediction |
+| [hurricane.html](https://alexsabine.github.io/CRR/hurricane.html) | Hurricane intensification and rupture | Storm dynamics; threshold crossing | Extreme weather; disaster preparedness |
+| [weather.html](https://alexsabine.github.io/CRR/weather.html) | General weather pattern formation | Meteorological coherence | Climate understanding |
+| [abiogenesis.html](https://alexsabine.github.io/CRR/abiogenesis.html) | Origin of life chemistry | Prebiotic coherence → first rupture (life emerges) | Astrobiology; origin of life research |
+
+### Physical Systems - Cosmological
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [black_hole.html](https://alexsabine.github.io/CRR/black_hole.html) | Black hole information dynamics | Event horizon coherence; Hawking rupture | Information paradox; theoretical physics |
+| [black_hole_enhanced.html](https://alexsabine.github.io/CRR/black_hole_enhanced.html) | Enhanced black hole simulation | Detailed horizon dynamics | Advanced cosmology |
+| [blackhole_a.html](https://alexsabine.github.io/CRR/blackhole_a.html) | Alternative black hole visualisation | Variant dynamics | Comparative physics |
+| [crr_bh_grounded.html](https://alexsabine.github.io/CRR/crr_bh_grounded.html) | Grounded black hole physics | Rigorous BH-CRR connection | Peer-review ready physics |
+| [sun.html](https://alexsabine.github.io/CRR/sun.html) | Solar dynamics and cycles | Solar coherence; flare rupture | Space weather; solar physics |
+| [sun2.html](https://alexsabine.github.io/CRR/sun2.html) | Extended solar simulation | Solar cycle dynamics | Heliophysics |
+| [darkenergy.html](https://alexsabine.github.io/CRR/darkenergy.html) | Dark energy cosmological dynamics | Cosmic coherence; accelerating expansion | Fundamental cosmology |
+| [crr_holographic_final.html](https://alexsabine.github.io/CRR/crr_holographic_final.html) | Holographic principle application | Bulk-boundary coherence | Holographic physics; AdS/CFT |
+
+### Physical Systems - Materials & Chemistry
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [atom_advanced.html](https://alexsabine.github.io/CRR/atom_advanced.html) | Atomic structure and electron dynamics | Quantum coherence; orbital transitions | Quantum computing; atomic physics |
+| [crr_periodic_table.html](https://alexsabine.github.io/CRR/crr_periodic_table.html) | Element organisation through CRR lens | Periodic patterns as coherence structures | Chemistry education; materials science |
+| [ice.html](https://alexsabine.github.io/CRR/ice.html) | Ice crystal growth patterns | Crystalline coherence; nucleation rupture | Materials science; cryogenics |
+| [crr-snowflakes.html](https://alexsabine.github.io/CRR/crr-snowflakes.html) | Snowflake formation dynamics | Dendritic growth; branching rupture | Crystal growth; self-organisation |
+| [crr-bubble-simulation__2_.html](https://alexsabine.github.io/CRR/crr-bubble-simulation__2_.html) | Bubble surface tension dynamics | Membrane coherence; pop rupture | Fluid dynamics; soft matter |
+| [crr_water_realistic.html](https://alexsabine.github.io/CRR/crr_water_realistic.html) | Realistic water dynamics | Phase transition coherence | Fluid physics |
+| [CRR_Water.html](https://alexsabine.github.io/CRR/CRR_Water.html) | Water dynamics and art | Fluid coherence patterns | Art-science integration |
+| [kettle.html](https://alexsabine.github.io/CRR/kettle.html) | Boiling water phase transition | Liquid→gas rupture | Everyday physics; phase transitions |
+| [Zippo.html](https://alexsabine.github.io/CRR/Zippo.html) | Lighter ignition and combustion | Ignition rupture; flame coherence | Combustion science; safety |
+| [crr_mother_of_pearl.html](https://alexsabine.github.io/CRR/crr_mother_of_pearl.html) | Nacre biomaterial organisation | Layered coherence; structural strength | Bio-inspired materials |
+| [golden_beetle_crr.html](https://alexsabine.github.io/CRR/golden_beetle_crr.html) | Beetle iridescence | Structural colour formation | Photonics; bio-inspired optics |
+
+### Physical Systems - Thermodynamics & Entropy
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [crr-thermo-rupture-rate.html](https://alexsabine.github.io/CRR/crr-thermo-rupture-rate.html) | Thermodynamic rupture rate analysis | Arrhenius-like rupture kinetics | Reaction rates; energy systems |
+| [entropic-crr.html](https://alexsabine.github.io/CRR/entropic-crr.html) | Entropy dynamics in CRR | ΔS at rupture; entropy production | Second law; irreversibility |
+| [crr_temperature_clean.html](https://alexsabine.github.io/CRR/crr_temperature_clean.html) | Temperature as Ω modulator | Thermal control of rigidity | Climate systems; thermal management |
+| [crr_sandpile_sim__2_.html](https://alexsabine.github.io/CRR/crr_sandpile_sim__2_.html) | Self-organised criticality (sandpile model) | Power-law rupture distribution; SOC | Complex systems; earthquake prediction |
+
+### Cognitive & Psychological Simulations
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [room.html](https://alexsabine.github.io/CRR/room.html) | Multi-room spatial navigation | Exploration coherence; room-switch rupture | Spatial cognition; navigation AI |
+| [Maze.html](https://alexsabine.github.io/CRR/Maze.html) | Maze solving and pathfinding | Search coherence; dead-end rupture | Planning algorithms; problem-solving |
+| [soduku.html](https://alexsabine.github.io/CRR/soduku.html) | Sudoku constraint satisfaction | Logical coherence; contradiction rupture | Constraint solving; logical reasoning |
+| [nostalgia_trap.html](https://alexsabine.github.io/CRR/nostalgia_trap.html) | Nostalgia as low-Ω regeneration trap | Psychological rigidity; stuck patterns | Mental health; therapeutic intervention |
+| [crr-shepard-canonical (1).html](https://alexsabine.github.io/CRR/crr-shepard-canonical%20(1).html) | Shepard tone auditory illusion | Perceptual coherence without rupture | Perception research; illusion science |
+| [peanut.html](https://alexsabine.github.io/CRR/peanut.html) | Pattern exploration | Novel pattern recognition | Cognitive flexibility |
+
+### Swarm & Collective Intelligence
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [ucf_swarm_crr.html](https://alexsabine.github.io/CRR/ucf_swarm_crr.html) | UCF swarm intelligence research | Distributed coherence; collective rupture | Swarm robotics; drone coordination |
+| [mathematical-life.html](https://alexsabine.github.io/CRR/mathematical-life.html) | Conway-style mathematical patterns | Emergent coherence; pattern death as rupture | Artificial life; emergence |
+
+### Art & Special
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [CRR_Art.html](https://alexsabine.github.io/CRR/CRR_Art.html) | Artistic expression of CRR concepts | Aesthetic coherence | Science communication; public engagement |
+| [Christmas_Greetings.html](https://alexsabine.github.io/CRR/Christmas_Greetings.html) | Holiday greeting with CRR theme | Seasonal coherence | Community building |
+
+---
+
+## Computational Validation (Python)
+
+| File | Summary | Mathematical Content | 2026 Relevance |
+|------|---------|---------------------|----------------|
+| [crr_simulation.py](https://github.com/alexsabine/CRR/blob/main/crr_simulation.py) | Core CRR operators and FEP integration | Complete simulation framework; C, δ, R operators in code | Reference implementation for AI/ML integration |
+| [crr_martingale_verification.py](https://github.com/alexsabine/CRR/blob/main/crr_martingale_verification.py) | Verification of CRR from martingale theory | Quadratic variation computation; stopping time verification | Mathematical validation |
+| [crr_validation.py](https://github.com/alexsabine/CRR/blob/main/crr_validation.py) | General validation testing | Cross-system prediction testing | Quality assurance |
+| [crr_wound_analysis.py](https://github.com/alexsabine/CRR/blob/main/crr_wound_analysis.py) | Wound healing dynamics analysis | 80% recovery ceiling; fetal vs adult Ω | Medical applications; regenerative medicine |
+| [crr_muscle_predictions.py](https://github.com/alexsabine/CRR/blob/main/crr_muscle_predictions.py) | Muscle hypertrophy predictions | Growth curve fitting; R² = 0.9985 | Sports science; rehabilitation |
+| [crr_muscle_validation.py](https://github.com/alexsabine/CRR/blob/main/crr_muscle_validation.py) | Muscle growth model validation | Prospective prediction testing | Evidence quality |
+
+---
+
+## Diagrams and Images
+
+### Core Concept Diagrams
+
+| File | Summary | 2026 Relevance |
+|------|---------|----------------|
+| [diagrams/bifurcation-1.png](https://github.com/alexsabine/CRR/blob/main/diagrams/bifurcation-1.png) | Bifurcation diagram (PNG) | Quick reference for presentations |
+| [diagrams/crr_cycle-1.png](https://github.com/alexsabine/CRR/blob/main/diagrams/crr_cycle-1.png) | CRR cycle diagram (PNG) | Educational materials |
+| [diagrams/unified_model-1.png](https://github.com/alexsabine/CRR/blob/main/diagrams/unified_model-1.png) | Unified model diagram (PNG) | Overview presentations |
+| [diagrams/fep_crr_page-01.png](https://github.com/alexsabine/CRR/blob/main/diagrams/fep_crr_page-01.png) through [fep_crr_page-13.png](https://github.com/alexsabine/CRR/blob/main/diagrams/fep_crr_page-13.png) | FEP-CRR integration slides (13 pages) | Presentation deck for FEP community |
+
+### Concept Visualisations
+
+| File | Summary | 2026 Relevance |
+|------|---------|----------------|
+| [coherence_accumulation.png](https://github.com/alexsabine/CRR/blob/main/coherence_accumulation.png) | Coherence accumulation curve | Core concept illustration |
+| [precision_coherence.png](https://github.com/alexsabine/CRR/blob/main/precision_coherence.png) | Precision-coherence relationship | FEP-CRR bridge visualisation |
+| [fep_crr_correspondence.png](https://github.com/alexsabine/CRR/blob/main/fep_crr_correspondence.png) | FEP-CRR equation correspondence | Quick reference |
+| [master_equation.png](https://github.com/alexsabine/CRR/blob/main/master_equation.png) | Master CRR equation | Core equation reference |
+| [memory_kernel.png](https://github.com/alexsabine/CRR/blob/main/memory_kernel.png) | Memory kernel exp(C/Ω) | Regeneration weighting visualisation |
+| [exploration_exploitation.png](https://github.com/alexsabine/CRR/blob/main/exploration_exploitation.png) | Exploration-exploitation trade-off | RL/AI decision-making |
+| [proof_sketches_overview.png](https://github.com/alexsabine/CRR/blob/main/proof_sketches_overview.png) | Overview of 24 proof sketches | Cross-domain validation summary |
+| [q_omega_correlation.png](https://github.com/alexsabine/CRR/blob/main/q_omega_correlation.png) | Q-Ω correlation analysis | Parameter relationships |
+| [multi.png](https://github.com/alexsabine/CRR/blob/main/multi.png) | Multi-scale CRR diagram | Scale coupling visualisation |
+
+### Validation Results
+
+| File | Summary | 2026 Relevance |
+|------|---------|----------------|
+| [crr_muscle_validation_plot.png](https://github.com/alexsabine/CRR/blob/main/crr_muscle_validation_plot.png) | Muscle hypertrophy validation plot | Evidence for biological applications |
+| [crr_wound_validation_plot.png](https://github.com/alexsabine/CRR/blob/main/crr_wound_validation_plot.png) | Wound healing validation plot | Medical application evidence |
+| [crr_wound_validation_results.txt](https://github.com/alexsabine/CRR/blob/main/crr_wound_validation_results.txt) | Wound healing numerical results | Detailed validation data |
+
+### Illustrative Images
+
+| File | Summary | 2026 Relevance |
+|------|---------|----------------|
+| [albion.png](https://github.com/alexsabine/CRR/blob/main/albion.png) | Conceptual artwork (Blake's Albion) | Philosophical/artistic framing |
+| [bees.png](https://github.com/alexsabine/CRR/blob/main/bees.png) | Bee swarm illustration | Collective intelligence imagery |
+| [fish.png](https://github.com/alexsabine/CRR/blob/main/fish.png) | Fish illustration | Biological systems imagery |
+| [marine.png](https://github.com/alexsabine/CRR/blob/main/marine.png) | Marine ecosystem | Ecological imagery |
+| [moss.png](https://github.com/alexsabine/CRR/blob/main/moss.png) | Moss growth | Slow dynamics imagery |
+| [mycelium.png](https://github.com/alexsabine/CRR/blob/main/mycelium.png) | Fungal network | Network intelligence imagery |
+| [tree.png](https://github.com/alexsabine/CRR/blob/main/tree.png) | Tree illustration | Growth and cycles |
+| [jacob.png](https://github.com/alexsabine/CRR/blob/main/jacob.png) | Jacob illustration | Narrative framing |
+| [newton.png](https://github.com/alexsabine/CRR/blob/main/newton.png) | Newton illustration | Scientific heritage |
+| [stock.png](https://github.com/alexsabine/CRR/blob/main/stock.png) | Stock market dynamics | Financial applications |
+| [thunder.png](https://github.com/alexsabine/CRR/blob/main/thunder.png) | Lightning/thunder | Rupture event imagery |
+
+---
+
+## Repository Statistics
+
+| Category | Count | Total Size |
+|----------|-------|------------|
+| Markdown Documentation | 15 | ~8,500 lines |
+| PDF Treatises | 14 | ~2.7 GB |
+| HTML Simulations | 78 | ~3-200 KB each |
+| Python Scripts | 6 | ~3,000 lines |
+| PNG Images | 25 | ~50 MB |
+| Diagram PDFs | 3 | ~5 MB |
+| **Total Files** | **141** | **~2.8 GB** |
+
+---
+
+## Quick Navigation by Application Domain
+
+### For AI/ML Researchers
+- Start: [README.md](https://alexsabine.github.io/CRR/) → [crr_simulation.py](https://github.com/alexsabine/CRR/blob/main/crr_simulation.py)
+- Theory: [crr_solomonoff_analysis.pdf](https://github.com/alexsabine/CRR/blob/main/crr_solomonoff_analysis.pdf), [multiscale_crr_proof_sketch.md](https://github.com/alexsabine/CRR/blob/main/multiscale_crr_proof_sketch.md)
+- Simulations: [fep-agent-shapes.html](https://alexsabine.github.io/CRR/fep-agent-shapes.html), [perceiving-agent.html](https://alexsabine.github.io/CRR/perceiving-agent.html)
+
+### For Cognitive Scientists
+- Start: [fep_crr_integration.md](https://github.com/alexsabine/CRR/blob/main/fep_crr_integration.md) → [crr_active_reasoning.md](https://github.com/alexsabine/CRR/blob/main/crr_active_reasoning.md)
+- Theory: [aha.pdf](https://github.com/alexsabine/CRR/blob/main/aha.pdf), [crr_16_nats_hypothesis.md](https://github.com/alexsabine/CRR/blob/main/crr_16_nats_hypothesis.md)
+- Simulations: [child_dev.html](https://alexsabine.github.io/CRR/child_dev.html), [fep-crr-5stages.html](https://alexsabine.github.io/CRR/fep-crr-5stages.html)
+
+### For Physicists
+- Start: [crr_full_proofs.md](https://github.com/alexsabine/CRR/blob/main/crr_full_proofs.md) → [crr_advanced_proof_sketches.md](https://github.com/alexsabine/CRR/blob/main/crr_advanced_proof_sketches.md)
+- Theory: [crr_martingale_derivation.pdf](https://github.com/alexsabine/CRR/blob/main/crr_martingale_derivation.pdf), [crr_holographic_final.html](https://alexsabine.github.io/CRR/crr_holographic_final.html)
+- Simulations: [black_hole_enhanced.html](https://alexsabine.github.io/CRR/black_hole_enhanced.html), [crr-thermo-rupture-rate.html](https://alexsabine.github.io/CRR/crr-thermo-rupture-rate.html)
+
+### For Biologists/Medical Researchers
+- Start: [crr_empirical_validation_test.md](https://github.com/alexsabine/CRR/blob/main/crr_empirical_validation_test.md)
+- Code: [crr_wound_analysis.py](https://github.com/alexsabine/CRR/blob/main/crr_wound_analysis.py), [crr_muscle_predictions.py](https://github.com/alexsabine/CRR/blob/main/crr_muscle_predictions.py)
+- Simulations: [butterfly.html](https://alexsabine.github.io/CRR/butterfly.html), [ecosystem.html](https://alexsabine.github.io/CRR/ecosystem.html)
+
+### For General Public/Educators
+- Start: [crr-explained.html](https://alexsabine.github.io/CRR/crr-explained.html) → [guide.html](https://alexsabine.github.io/CRR/guide.html)
+- Interactive: [fep-crr-game.html](https://alexsabine.github.io/CRR/fep-crr-game.html), [crr-three-phase-visualiser.html](https://alexsabine.github.io/CRR/crr-three-phase-visualiser.html)
+- Visual: [CRR_Art.html](https://alexsabine.github.io/CRR/CRR_Art.html)
+
+---
+
+**End of Repository Catalogue**
