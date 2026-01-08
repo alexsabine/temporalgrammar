@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Drone Formation — Sacred Mathematics</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --bg-subtle: #f8f9fa;
+            --bg-panel: #f1f3f5;
+            --border: #dee2e6;
+            --border-light: #e9ecef;
+            --text: #212529;
+            --text-mid: #495057;
+            --text-dim: #868e96;
+            --accent: #1864ab;
+            --accent-light: #4dabf7;
+            --coherence: #2f9e44;
+            --coherence-light: #8ce99a;
+            --rupture: #e03131;
+            --rupture-light: #ffa8a8;
+            --regen: #1971c2;
+            --gold: #e67700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: normal;
+            letter-spacing: 1px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        header h1 span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+        }
+
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .canvas-wrapper {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .canvas-title {
+            font-size: 0.85rem;
+            font-weight: normal;
+            color: var(--text-mid);
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .canvas-container {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: var(--bg);
+        }
+
+        #mainCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric {
+            background: var(--bg);
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .metric-value.coherence { color: var(--coherence); }
+        .metric-value.error { color: var(--rupture); }
+        .metric-value.memory { color: var(--regen); }
+        .metric-value.ruptures { color: var(--gold); }
+        .metric-value.convergence { color: var(--accent); }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            font-weight: normal;
+            color: var(--text-mid);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .panel-body {
+            padding: 16px;
+        }
+
+        .formation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .formation-btn {
+            aspect-ratio: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 6px;
+        }
+
+        .formation-btn:hover {
+            border-color: var(--accent-light);
+            background: var(--bg-subtle);
+        }
+
+        .formation-btn.active {
+            border-color: var(--accent);
+            background: #e7f5ff;
+        }
+
+        .formation-btn canvas {
+            width: 28px;
+            height: 28px;
+        }
+
+        .formation-btn .label {
+            font-size: 0.55rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-family: Georgia, serif;
+        }
+
+        .formation-btn.active .label {
+            color: var(--accent);
+        }
+
+        .formation-btn .constant {
+            font-family: 'Courier New', monospace;
+            font-size: 0.5rem;
+            color: var(--text-dim);
+        }
+
+        .slider-group {
+            margin-bottom: 16px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .slider-label {
+            font-size: 0.75rem;
+            color: var(--text-mid);
+        }
+
+        .slider-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: Georgia, serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn:hover {
+            background: var(--bg-subtle);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1971c2;
+        }
+
+        .btn-rupture {
+            background: var(--bg);
+            border-color: var(--rupture);
+            color: var(--rupture);
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .btn-rupture:hover {
+            background: #fff5f5;
+        }
+
+        .chart-container {
+            height: 80px;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #chartCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .verification {
+            background: #fffbeb;
+            border: 1px solid #fcc419;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 0.7rem;
+        }
+
+        .verification-title {
+            font-weight: bold;
+            color: #e67700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .verification-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            color: var(--text-mid);
+        }
+
+        .verification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .check {
+            color: var(--coherence);
+            font-weight: bold;
+        }
+
+        .equations-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .equations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+
+        .equations-title {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .toggle-icon {
+            color: var(--text-dim);
+            transition: transform 0.3s;
+        }
+
+        .toggle-icon.open {
+            transform: rotate(180deg);
+        }
+
+        .equations-content {
+            display: none;
+        }
+
+        .equations-content.open {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .equation-card {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--coherence);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .equation-card.rupture {
+            border-left-color: var(--rupture);
+        }
+
+        .equation-card.regen {
+            border-left-color: var(--regen);
+        }
+
+        .eq-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--coherence);
+            margin-bottom: 8px;
+        }
+
+        .equation-card.rupture .eq-label {
+            color: var(--rupture);
+        }
+
+        .equation-card.regen .eq-label {
+            color: var(--regen);
+        }
+
+        .eq-formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .eq-desc {
+            font-size: 0.8rem;
+            color: var(--text-mid);
+            line-height: 1.5;
+        }
+
+        .eq-impl {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-family: 'Courier New', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 1100px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .equations-content.open {
+                grid-template-columns: 1fr;
+            }
+            .metrics-bar {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Coherence-Rupture-Regeneration <span>Drone Formation</span></h1>
+            <p class="subtitle">Multi-agent coordination via sacred mathematical principles</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="canvas-section">
+                <div class="canvas-wrapper">
+                    <div class="canvas-header">
+                        <span class="canvas-title">Formation Field</span>
+                        <span class="time-display">t = <span id="timeVal">0.000</span>s</span>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="mainCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="metrics-bar">
+                    <div class="metric">
+                        <div class="metric-label">Global Coherence C</div>
+                        <div class="metric-value coherence" id="cohVal">0.000</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Formation Error</div>
+                        <div class="metric-value error" id="errVal">0.0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Memory Gain exp(C/Ω)</div>
+                        <div class="metric-value memory" id="memVal">1.00</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Ruptures δ</div>
+                        <div class="metric-value ruptures" id="rupVal">0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">95% Convergence</div>
+                        <div class="metric-value convergence" id="convVal">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <div class="panel-header">Sacred Formations</div>
+                    <div class="panel-body">
+                        <div class="formation-grid" id="formationGrid"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">CRR Parameters</div>
+                    <div class="panel-body">
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Memory Parameter Ω</span>
+                                <span class="slider-value" id="omegaVal">0.35</span>
+                            </div>
+                            <input type="range" id="omegaSlider" min="0.1" max="1.5" step="0.05" value="0.35">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Drone Count</span>
+                                <span class="slider-value" id="droneVal">8</span>
+                            </div>
+                            <input type="range" id="droneSlider" min="3" max="24" step="1" value="8">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-label">Simulation Speed</span>
+                                <span class="slider-value" id="speedVal">1.0×</span>
+                            </div>
+                            <input type="range" id="speedSlider" min="0.25" max="3" step="0.25" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">Control</div>
+                    <div class="panel-body">
+                        <div class="btn-row">
+                            <button class="btn btn-primary" id="startBtn">▶ Start</button>
+                            <button class="btn" id="resetBtn">↺ Reset</button>
+                        </div>
+                        <button class="btn btn-rupture" id="perturbBtn">⚡ Induce Rupture Event</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">Coherence History</div>
+                    <div class="panel-body">
+                        <div class="chart-container">
+                            <canvas id="chartCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verification">
+                    <div class="verification-title">CRR Verification</div>
+                    <div class="verification-item"><span class="check">✓</span> Coherence accumulated via ∫L(x,τ)dτ</div>
+                    <div class="verification-item"><span class="check">✓</span> Rupture detection: C &lt; θ ∧ dC/dt &lt; 0</div>
+                    <div class="verification-item"><span class="check">✓</span> Memory gain: exp(C/Ω) weighting</div>
+                    <div class="verification-item"><span class="check">✓</span> Ω modulates memory sharpness</div>
+                    <div class="verification-item"><span class="check">✓</span> Formation-relative coherence</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="equations-section">
+            <div class="equations-header" id="eqToggle">
+                <h3 class="equations-title">CRR Mathematical Framework</h3>
+                <span class="toggle-icon" id="toggleIcon">▼</span>
+            </div>
+            <div class="equations-content" id="eqContent">
+                <div class="equation-card">
+                    <div class="eq-label">Coherence Accumulation</div>
+                    <div class="eq-formula">C(x,t) = ∫₀ᵗ L(x,τ) dτ</div>
+                    <div class="eq-desc">
+                        Local coherence rate L(x,t) integrates over time. L measures alignment 
+                        to target AND relative positions to neighbors.
+                    </div>
+                    <div class="eq-impl">
+                        L = 0.5·exp(-d_target/scale) + 0.5·mean(exp(-d_relative/scale))
+                    </div>
+                </div>
+                <div class="equation-card rupture">
+                    <div class="eq-label">Rupture Event</div>
+                    <div class="eq-formula">δ(now): C &lt; θ ∧ dC/dt &lt; 0</div>
+                    <div class="eq-desc">
+                        Rupture occurs when coherence drops below threshold θ while decreasing.
+                        Triggers coherence collapse and regeneration.
+                    </div>
+                    <div class="eq-impl">
+                        if (C &lt; 0.12 && dC/dt &lt; 0 && t - t_last &gt; 0.15) → rupture
+                    </div>
+                </div>
+                <div class="equation-card regen">
+                    <div class="eq-label">Regeneration</div>
+                    <div class="eq-formula">R = ∫ φ(x,τ)·exp(C(τ)/Ω) dτ</div>
+                    <div class="eq-desc">
+                        Reconstruction field φ points toward target. Memory gain exp(C/Ω) amplifies 
+                        high-coherence moments.
+                    </div>
+                    <div class="eq-impl">
+                        v = φ · k_p · distance · (exp(C/Ω) / normalizer)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    "use strict";
+
+    // ============================================================================
+    // SACRED CONSTANTS
+    // ============================================================================
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    const PHI_CONJUGATE = PHI - 1;
+    const SQRT2 = Math.sqrt(2);
+    const SQRT3 = Math.sqrt(3);
+    const TAU = 2 * Math.PI;
+    const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    function clamp(val, min, max) {
+        if (!Number.isFinite(val)) return min;
+        return Math.max(min, Math.min(max, val));
+    }
+
+    function safeNorm(dx, dy) {
+        const d = Math.sqrt(dx * dx + dy * dy);
+        return Number.isFinite(d) ? d : 0;
+    }
+
+    // ============================================================================
+    // FORMATIONS
+    // ============================================================================
+    const FORMATIONS = {
+        goldenSpiral: {
+            name: 'Golden Spiral',
+            symbol: 'φ',
+            value: PHI,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                const c = r * 0.12;
+                for (let i = 0; i < n; i++) {
+                    const theta = i * GOLDEN_ANGLE;
+                    const rad = c * Math.sqrt(i + 1);
+                    pts.push([cx + rad * Math.cos(theta), cy + rad * Math.sin(theta)]);
+                }
+                return pts;
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                const c = r * 0.12;
+                for (let i = 0; i <= 50; i++) {
+                    const theta = i * GOLDEN_ANGLE;
+                    const rad = c * Math.sqrt(i + 1);
+                    const x = cx + rad * Math.cos(theta);
+                    const y = cy + rad * Math.sin(theta);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        pentagon: {
+            name: 'Pentagon',
+            symbol: 'φ',
+            value: PHI,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < Math.min(5, n); i++) {
+                    const angle = -Math.PI / 2 + (TAU * i) / 5;
+                    pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+                }
+                if (pts.length < n) {
+                    const r2 = r / (PHI * PHI);
+                    for (let i = 0; i < Math.min(5, n - pts.length); i++) {
+                        const angle = -Math.PI / 2 + Math.PI / 5 + (TAU * i) / 5;
+                        pts.push([cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle)]);
+                    }
+                }
+                if (pts.length < n) pts.push([cx, cy]);
+                const r3 = r / PHI;
+                let idx = 0;
+                while (pts.length < n) {
+                    const angle = (TAU * idx) / 10;
+                    pts.push([cx + r3 * Math.cos(angle), cy + r3 * Math.sin(angle)]);
+                    idx++;
+                    if (idx > 20) break;
+                }
+                return pts.slice(0, n);
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i <= 5; i++) {
+                    const angle = -Math.PI / 2 + (TAU * i) / 5;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        hexagon: {
+            name: 'Hexagon',
+            symbol: '√3',
+            value: SQRT3,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < Math.min(6, n); i++) {
+                    const angle = (TAU * i) / 6;
+                    pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+                }
+                if (pts.length < n) pts.push([cx, cy]);
+                const r2 = r * SQRT3 / 2;
+                for (let i = 0; i < Math.min(6, n - pts.length); i++) {
+                    const angle = Math.PI / 6 + (TAU * i) / 6;
+                    pts.push([cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle)]);
+                }
+                return pts.slice(0, n);
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i <= 6; i++) {
+                    const angle = (TAU * i) / 6;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        square: {
+            name: 'Square',
+            symbol: '√2',
+            value: SQRT2,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < Math.min(4, n); i++) {
+                    const angle = Math.PI / 4 + (TAU * i) / 4;
+                    pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+                }
+                const r2 = r / SQRT2;
+                for (let i = 0; i < Math.min(4, n - pts.length); i++) {
+                    const angle = (TAU * i) / 4;
+                    pts.push([cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle)]);
+                }
+                if (pts.length < n) pts.push([cx, cy]);
+                return pts.slice(0, n);
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i <= 4; i++) {
+                    const angle = Math.PI / 4 + (TAU * i) / 4;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        decagon: {
+            name: 'Decagon',
+            symbol: 'φ',
+            value: PHI,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < n; i++) {
+                    const ring = Math.floor(i / 10);
+                    const idx = i % 10;
+                    const angle = -Math.PI / 2 + (TAU * idx) / 10;
+                    const rad = r * Math.pow(PHI_CONJUGATE, ring);
+                    pts.push([cx + rad * Math.cos(angle), cy + rad * Math.sin(angle)]);
+                }
+                return pts;
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i <= 10; i++) {
+                    const angle = -Math.PI / 2 + (TAU * i) / 10;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        vesica: {
+            name: 'Vesica Piscis',
+            symbol: '√3',
+            value: SQRT3,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                const offset = r * 0.5;
+                const circleR = r * 0.7;
+                const half = Math.ceil(n / 2);
+                for (let i = 0; i < half; i++) {
+                    const angle = (TAU * i) / half;
+                    pts.push([cx - offset + circleR * Math.cos(angle), cy + circleR * Math.sin(angle)]);
+                }
+                for (let i = 0; i < n - half; i++) {
+                    const angle = Math.PI + (TAU * i) / Math.max(1, n - half);
+                    pts.push([cx + offset + circleR * Math.cos(angle), cy + circleR * Math.sin(angle)]);
+                }
+                return pts.slice(0, n);
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                const offset = r * 0.5;
+                const circleR = r * 0.7;
+                ctx.beginPath();
+                ctx.arc(cx - offset, cy, circleR, 0, TAU);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + offset, cy, circleR, 0, TAU);
+                ctx.stroke();
+            }
+        },
+
+        lissajous: {
+            name: 'Lissajous',
+            symbol: '3:2',
+            value: 1.5,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < n; i++) {
+                    const t = (TAU * i) / n;
+                    pts.push([cx + r * 0.9 * Math.sin(3 * t), cy + r * 0.9 * Math.sin(2 * t)]);
+                }
+                return pts;
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i <= 100; i++) {
+                    const t = (TAU * i) / 100;
+                    const x = cx + r * 0.9 * Math.sin(3 * t);
+                    const y = cy + r * 0.9 * Math.sin(2 * t);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        pentagram: {
+            name: 'Pentagram',
+            symbol: 'φ',
+            value: PHI,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                for (let i = 0; i < Math.min(5, n); i++) {
+                    const angle = -Math.PI / 2 + (TAU * i) / 5;
+                    pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+                }
+                const r2 = r / (PHI * PHI);
+                for (let i = 0; i < Math.min(5, n - pts.length); i++) {
+                    const angle = -Math.PI / 2 + Math.PI / 5 + (TAU * i) / 5;
+                    pts.push([cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle)]);
+                }
+                if (pts.length < n) pts.push([cx, cy]);
+                return pts.slice(0, n);
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = -Math.PI / 2 + (TAU * i * 2) / 5;
+                    const x = cx + r * Math.cos(angle);
+                    const y = cy + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        },
+
+        logarithmic: {
+            name: 'Log Spiral',
+            symbol: 'e',
+            value: Math.E,
+            generate: function(n, cx, cy, r) {
+                const pts = [];
+                const k = 0.12;
+                const a = r * 0.08;
+                for (let i = 0; i < n; i++) {
+                    const theta = (4 * Math.PI * i) / Math.max(1, n);
+                    const rad = a * Math.exp(k * theta);
+                    pts.push([cx + rad * Math.cos(theta), cy + rad * Math.sin(theta)]);
+                }
+                return pts;
+            },
+            drawGuide: function(ctx, cx, cy, r) {
+                ctx.beginPath();
+                const k = 0.12;
+                const a = r * 0.08;
+                for (let i = 0; i <= 100; i++) {
+                    const theta = (4 * Math.PI * i) / 100;
+                    const rad = a * Math.exp(k * theta);
+                    const x = cx + rad * Math.cos(theta);
+                    const y = cy + rad * Math.sin(theta);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        }
+    };
+
+    // ============================================================================
+    // CRR DRONE CLASS
+    // ============================================================================
+    class CRRDrone {
+        constructor(id, position, target, omega) {
+            this.id = id;
+            this.x = Number.isFinite(position[0]) ? position[0] : 0;
+            this.y = Number.isFinite(position[1]) ? position[1] : 0;
+            this.vx = 0;
+            this.vy = 0;
+            this.targetX = Number.isFinite(target[0]) ? target[0] : this.x;
+            this.targetY = Number.isFinite(target[1]) ? target[1] : this.y;
+            this.omega = clamp(omega, 0.05, 5);
+
+            this.C = 0.15;
+            this.L = 0;
+            this.dCdt = 0;
+            this.Chistory = [0.15];
+            this.posHistory = [[this.x, this.y]];
+
+            this.ruptures = 0;
+            this.lastRuptureTime = -1;
+            this.inRupture = false;
+
+            this.maxSpeed = 300;
+            this.maxAccel = 800;
+        }
+
+        update(neighbors, neighborTargets, dt, t) {
+            // Validate inputs
+            dt = clamp(dt, 0.0001, 0.1);
+            t = Number.isFinite(t) ? t : 0;
+
+            // 1. Compute local coherence rate L
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            const distTarget = safeNorm(dx, dy);
+            const L_target = Math.exp(-distTarget / 50);
+
+            let L_formation = L_target;
+            if (neighbors && neighbors.length > 0 && neighborTargets && neighborTargets.length === neighbors.length) {
+                let sum = 0;
+                let count = 0;
+                for (let i = 0; i < neighbors.length; i++) {
+                    const n = neighbors[i];
+                    const nt = neighborTargets[i];
+                    if (!n || !nt) continue;
+
+                    const actualRelX = this.x - n.x;
+                    const actualRelY = this.y - n.y;
+                    const targetRelX = this.targetX - nt[0];
+                    const targetRelY = this.targetY - nt[1];
+                    const relErr = safeNorm(actualRelX - targetRelX, actualRelY - targetRelY);
+                    sum += Math.exp(-relErr / 40);
+                    count++;
+                }
+                if (count > 0) {
+                    L_formation = sum / count;
+                }
+            }
+
+            this.L = 0.5 * L_target + 0.5 * L_formation;
+
+            // 2. Coherence accumulation
+            const tau = 0.2;
+            const decay = 0.03;
+            const prevC = this.C;
+            this.C += dt * (this.L * 2.5 - this.C * decay) / tau;
+            this.C = clamp(this.C, 0.01, 5.0);
+            this.dCdt = (this.C - prevC) / dt;
+
+            // 3. Rupture detection
+            const ruptureThreshold = 0.12;
+            const refractoryPeriod = 0.15;
+            if (this.C < ruptureThreshold && this.dCdt < 0 && (t - this.lastRuptureTime) > refractoryPeriod) {
+                this.ruptures++;
+                this.lastRuptureTime = t;
+                this.inRupture = true;
+                this.C = clamp(this.C * 0.3, 0.05, 5);
+            } else {
+                this.inRupture = false;
+            }
+
+            // 4. Regeneration
+            let ax = 0, ay = 0;
+            if (distTarget > 0.5) {
+                const phiX = dx / distTarget;
+                const phiY = dy / distTarget;
+                let memoryGain = Math.exp(this.C / this.omega);
+                memoryGain = clamp(memoryGain, 1, 40);
+                const kp = 15 * (memoryGain / 6);
+                ax = phiX * distTarget * kp;
+                ay = phiY * distTarget * kp;
+            }
+
+            // Formation-relative force
+            if (neighbors && neighbors.length > 0 && neighborTargets && neighborTargets.length === neighbors.length) {
+                let fx = 0, fy = 0, count = 0;
+                for (let i = 0; i < neighbors.length; i++) {
+                    const n = neighbors[i];
+                    const nt = neighborTargets[i];
+                    if (!n || !nt) continue;
+                    const desiredX = n.x + (this.targetX - nt[0]);
+                    const desiredY = n.y + (this.targetY - nt[1]);
+                    fx += desiredX - this.x;
+                    fy += desiredY - this.y;
+                    count++;
+                }
+                if (count > 0) {
+                    fx /= count;
+                    fy /= count;
+                    const alpha = clamp(this.C, 0.2, 0.95);
+                    ax = alpha * ax + (1 - alpha) * fx * 8;
+                    ay = alpha * ay + (1 - alpha) * fy * 8;
+                }
+            }
+
+            // 5. Collision avoidance
+            const collisionRadius = 20;
+            if (neighbors) {
+                for (const n of neighbors) {
+                    if (!n) continue;
+                    const cdx = this.x - n.x;
+                    const cdy = this.y - n.y;
+                    const cdist = safeNorm(cdx, cdy);
+                    if (cdist > 0.1 && cdist < collisionRadius * 2) {
+                        const repulsion = Math.pow((collisionRadius * 2 - cdist) / collisionRadius, 2) * 500;
+                        ax += (cdx / cdist) * repulsion;
+                        ay += (cdy / cdist) * repulsion;
+                    }
+                }
+            }
+
+            // 6. Acceleration limit
+            const aMag = safeNorm(ax, ay);
+            if (aMag > this.maxAccel) {
+                ax = (ax / aMag) * this.maxAccel;
+                ay = (ay / aMag) * this.maxAccel;
+            }
+
+            // 7. Velocity update
+            this.vx = clamp((this.vx + ax * dt) * 0.88, -this.maxSpeed, this.maxSpeed);
+            this.vy = clamp((this.vy + ay * dt) * 0.88, -this.maxSpeed, this.maxSpeed);
+
+            const speed = safeNorm(this.vx, this.vy);
+            if (speed > this.maxSpeed) {
+                this.vx = (this.vx / speed) * this.maxSpeed;
+                this.vy = (this.vy / speed) * this.maxSpeed;
+            }
+
+            // 8. Position update
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+
+            // Validate position
+            if (!Number.isFinite(this.x)) this.x = this.targetX;
+            if (!Number.isFinite(this.y)) this.y = this.targetY;
+
+            // 9. History
+            this.Chistory.push(this.C);
+            if (this.Chistory.length > 200) this.Chistory.shift();
+            this.posHistory.push([this.x, this.y]);
+            if (this.posHistory.length > 100) this.posHistory.shift();
+        }
+
+        setTarget(tx, ty) {
+            this.targetX = Number.isFinite(tx) ? tx : this.x;
+            this.targetY = Number.isFinite(ty) ? ty : this.y;
+        }
+
+        reset(x, y) {
+            this.x = Number.isFinite(x) ? x : this.targetX;
+            this.y = Number.isFinite(y) ? y : this.targetY;
+            this.vx = 0;
+            this.vy = 0;
+            this.C = 0.15;
+            this.L = 0;
+            this.dCdt = 0;
+            this.Chistory = [0.15];
+            this.posHistory = [[this.x, this.y]];
+            this.ruptures = 0;
+            this.lastRuptureTime = -1;
+            this.inRupture = false;
+        }
+    }
+
+    // ============================================================================
+    // CRR SWARM
+    // ============================================================================
+    class CRRSwarm {
+        constructor(n, formationKey, omega, width, height) {
+            this.n = clamp(n, 1, 50);
+            this.omega = clamp(omega, 0.05, 5);
+            this.width = width || 800;
+            this.height = height || 600;
+            this.formationKey = formationKey;
+            this.time = 0;
+            this.converged = false;
+            this.convTime = null;
+            this.isUpdating = false;
+
+            this.formation = FORMATIONS[formationKey] || FORMATIONS.goldenSpiral;
+            this.targets = [];
+            this.drones = [];
+            this.cohHistory = [];
+            this.errHistory = [];
+            
+            // Convergence tracking - require sustained 95% for 0.3s
+            this.convergenceStartTime = null;
+            this.sustainedConvergenceRequired = 0.3; // seconds
+            
+            // Initialize the formation and drones
+            this._initializeFormation();
+        }
+
+        _initializeFormation() {
+            const cx = this.width / 2;
+            const cy = this.height / 2;
+            const radius = Math.min(this.width, this.height) * 0.38;
+
+            try {
+                this.targets = this.formation.generate(this.n, cx, cy, radius);
+            } catch (e) {
+                console.error('Formation generation error:', e);
+                this.targets = [];
+                for (let i = 0; i < this.n; i++) {
+                    const angle = (TAU * i) / this.n;
+                    this.targets.push([cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]);
+                }
+            }
+
+            // Ensure we have exactly n targets
+            while (this.targets.length < this.n) {
+                const angle = (TAU * this.targets.length) / this.n;
+                const r = Math.min(this.width, this.height) * 0.2;
+                this.targets.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+            }
+            this.targets = this.targets.slice(0, this.n);
+
+            // Create drones
+            this.drones = [];
+            for (let i = 0; i < this.n; i++) {
+                const initX = this.width * (0.1 + Math.random() * 0.8);
+                const initY = this.height * (0.1 + Math.random() * 0.8);
+                this.drones.push(new CRRDrone(i, [initX, initY], this.targets[i], this.omega));
+            }
+            
+            // Reset convergence state
+            this.converged = false;
+            this.convTime = null;
+            this.convergenceStartTime = null;
+        }
+
+        globalCoherence() {
+            if (!this.drones || this.drones.length === 0) return 0;
+            let totalErr = 0;
+            for (let i = 0; i < this.drones.length; i++) {
+                const d = this.drones[i];
+                const t = this.targets[i];
+                if (!d || !t) continue;
+                totalErr += safeNorm(d.x - t[0], d.y - t[1]);
+            }
+            const avgErr = totalErr / this.drones.length;
+            // Dynamic scale based on canvas size
+            // Scale = min(w,h) * 0.22 gives meaningful initial coherence (~0.1)
+            // and 95% threshold at ~5px average error
+            const scale = Math.min(this.width, this.height) * 0.22;
+            return Math.exp(-avgErr / Math.max(scale, 50));
+        }
+
+        formationError() {
+            if (!this.drones || this.drones.length === 0) return 0;
+            let err = 0;
+            for (let i = 0; i < this.drones.length; i++) {
+                const d = this.drones[i];
+                const t = this.targets[i];
+                if (!d || !t) continue;
+                const dx = d.x - t[0];
+                const dy = d.y - t[1];
+                err += dx * dx + dy * dy;
+            }
+            return Math.sqrt(err / this.drones.length);
+        }
+
+        avgMemoryGain() {
+            if (!this.drones || this.drones.length === 0) return 1;
+            let sum = 0;
+            for (const d of this.drones) {
+                if (!d) continue;
+                sum += Math.exp(d.C / d.omega);
+            }
+            return sum / this.drones.length;
+        }
+
+        totalRuptures() {
+            if (!this.drones) return 0;
+            return this.drones.reduce((s, d) => s + (d ? d.ruptures : 0), 0);
+        }
+
+        step(dt) {
+            if (this.isUpdating) return { coh: this.globalCoherence(), err: this.formationError() };
+            this.isUpdating = true;
+
+            try {
+                dt = clamp(dt, 0.0001, 0.05);
+
+                for (let i = 0; i < this.drones.length; i++) {
+                    const drone = this.drones[i];
+                    if (!drone) continue;
+
+                    const neighbors = [];
+                    const neighborTargets = [];
+                    for (let j = 0; j < this.drones.length; j++) {
+                        if (j !== i && this.drones[j] && this.targets[j]) {
+                            neighbors.push(this.drones[j]);
+                            neighborTargets.push(this.targets[j]);
+                        }
+                    }
+
+                    drone.update(neighbors, neighborTargets, dt, this.time);
+                }
+
+                this.time += dt;
+
+                const coh = this.globalCoherence();
+                const err = this.formationError();
+
+                this.cohHistory.push(coh);
+                this.errHistory.push(err);
+                if (this.cohHistory.length > 400) {
+                    this.cohHistory.shift();
+                    this.errHistory.shift();
+                }
+
+                // Sustained convergence detection
+                // Require staying at 95%+ for sustainedConvergenceRequired seconds
+                if (coh >= 0.95) {
+                    if (this.convergenceStartTime === null) {
+                        this.convergenceStartTime = this.time;
+                    } else if (!this.converged && (this.time - this.convergenceStartTime) >= this.sustainedConvergenceRequired) {
+                        this.converged = true;
+                        this.convTime = this.convergenceStartTime; // Record when we FIRST hit 95%
+                    }
+                } else {
+                    // Dropped below 95%, reset convergence tracking
+                    this.convergenceStartTime = null;
+                    // Don't un-converge if already converged - keep the recorded time
+                }
+
+                return { coh, err };
+            } finally {
+                this.isUpdating = false;
+            }
+        }
+
+        perturb(strength) {
+            if (this.isUpdating) return;
+            strength = clamp(strength, 10, 200);
+            for (const d of this.drones) {
+                if (!d) continue;
+                d.x += (Math.random() - 0.5) * strength;
+                d.y += (Math.random() - 0.5) * strength;
+                d.vx *= 0.2;
+                d.vy *= 0.2;
+                d.C *= 0.1;
+                d.ruptures++;
+            }
+            this.converged = false;
+            this.convTime = null;
+            this.convergenceStartTime = null;
+        }
+
+        setFormation(key) {
+            if (this.isUpdating) {
+                setTimeout(() => this.setFormation(key), 50);
+                return;
+            }
+
+            if (!FORMATIONS[key]) {
+                console.warn('Unknown formation:', key);
+                return;
+            }
+
+            this.formationKey = key;
+            this.formation = FORMATIONS[key];
+
+            const cx = this.width / 2;
+            const cy = this.height / 2;
+            const radius = Math.min(this.width, this.height) * 0.38;
+
+            try {
+                this.targets = this.formation.generate(this.n, cx, cy, radius);
+            } catch (e) {
+                console.error('Formation generation error:', e);
+                return;
+            }
+
+            // Ensure targets match drone count
+            while (this.targets.length < this.n) {
+                const angle = (TAU * this.targets.length) / this.n;
+                this.targets.push([cx + radius * 0.5 * Math.cos(angle), cy + radius * 0.5 * Math.sin(angle)]);
+            }
+            this.targets = this.targets.slice(0, this.n);
+
+            // Update drone targets
+            for (let i = 0; i < this.drones.length; i++) {
+                if (this.drones[i] && this.targets[i]) {
+                    this.drones[i].setTarget(this.targets[i][0], this.targets[i][1]);
+                }
+            }
+
+            // Reset timing and convergence state
+            this.time = 0;
+            this.cohHistory = [];
+            this.errHistory = [];
+            this.converged = false;
+            this.convTime = null;
+            this.convergenceStartTime = null;
+        }
+
+        setDroneCount(n) {
+            if (this.isUpdating) {
+                setTimeout(() => this.setDroneCount(n), 50);
+                return;
+            }
+
+            n = clamp(n, 1, 50);
+            if (n === this.n) return;
+
+            this.n = n;
+            this._initializeFormation();
+            this.cohHistory = [];
+            this.errHistory = [];
+            this.time = 0;
+            this.converged = false;
+            this.convTime = null;
+            this.convergenceStartTime = null;
+        }
+
+        setOmega(omega) {
+            this.omega = clamp(omega, 0.05, 5);
+            for (const d of this.drones) {
+                if (d) d.omega = this.omega;
+            }
+        }
+
+        reset() {
+            if (this.isUpdating) {
+                setTimeout(() => this.reset(), 50);
+                return;
+            }
+
+            for (let i = 0; i < this.drones.length; i++) {
+                if (this.drones[i]) {
+                    const x = this.width * (0.1 + Math.random() * 0.8);
+                    const y = this.height * (0.1 + Math.random() * 0.8);
+                    this.drones[i].reset(x, y);
+                }
+            }
+            this.cohHistory = [];
+            this.errHistory = [];
+            this.time = 0;
+            this.converged = false;
+            this.convTime = null;
+            this.convergenceStartTime = null;
+        }
+
+        resize(w, h) {
+            if (this.isUpdating) {
+                setTimeout(() => this.resize(w, h), 50);
+                return;
+            }
+
+            this.width = w || 800;
+            this.height = h || 600;
+            this.setFormation(this.formationKey);
+        }
+    }
+
+    // ============================================================================
+    // VISUALIZATION
+    // ============================================================================
+    const DRONE_COLORS = [
+        '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#7048e8',
+        '#0c8599', '#d6336c', '#5c940d', '#862e9c', '#1098ad',
+        '#e8590c', '#3b5bdb', '#66a80f', '#9c36b5', '#0b7285',
+        '#c2255c', '#5f3dc4', '#ae3ec9', '#12b886', '#fd7e14',
+        '#495057', '#868e96', '#adb5bd', '#ced4da'
+    ];
+
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const chartCanvas = document.getElementById('chartCanvas');
+    const chartCtx = chartCanvas.getContext('2d');
+
+    let swarm = null;
+    let running = false;
+    let speed = 1;
+    let lastTime = 0;
+    let animId = null;
+
+    function resize() {
+        try {
+            const container = canvas.parentElement;
+            if (!container) return;
+            canvas.width = container.clientWidth || 800;
+            canvas.height = container.clientHeight || 600;
+
+            const chartContainer = chartCanvas.parentElement;
+            if (chartContainer) {
+                chartCanvas.width = chartContainer.clientWidth || 300;
+                chartCanvas.height = chartContainer.clientHeight || 80;
+            }
+
+            if (swarm) swarm.resize(canvas.width, canvas.height);
+        } catch (e) {
+            console.error('Resize error:', e);
+        }
+    }
+
+    function buildFormationGrid() {
+        const grid = document.getElementById('formationGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const keys = Object.keys(FORMATIONS);
+        keys.forEach((key, idx) => {
+            const f = FORMATIONS[key];
+            const btn = document.createElement('button');
+            btn.className = 'formation-btn' + (idx === 0 ? ' active' : '');
+            btn.dataset.formation = key;
+
+            const miniCanvas = document.createElement('canvas');
+            miniCanvas.width = 28;
+            miniCanvas.height = 28;
+            miniCanvas.style.width = '28px';
+            miniCanvas.style.height = '28px';
+
+            try {
+                const miniCtx = miniCanvas.getContext('2d');
+                miniCtx.strokeStyle = '#868e96';
+                miniCtx.lineWidth = 1;
+                f.drawGuide(miniCtx, 14, 14, 10);
+            } catch (e) {
+                console.error('Mini canvas error:', e);
+            }
+
+            const label = document.createElement('span');
+            label.className = 'label';
+            label.textContent = f.name;
+
+            const constant = document.createElement('span');
+            constant.className = 'constant';
+            constant.textContent = f.symbol + ' = ' + f.value.toFixed(3);
+
+            btn.appendChild(miniCanvas);
+            btn.appendChild(label);
+            btn.appendChild(constant);
+            grid.appendChild(btn);
+
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.formation-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (swarm) {
+                    swarm.setFormation(key);
+                    draw();
+                    drawChart();
+                    // Update metrics immediately to show reset convergence
+                    updateMetrics({ coh: swarm.globalCoherence(), err: swarm.formationError() });
+                }
+            });
+        });
+    }
+
+    function initSwarm() {
+        try {
+            const n = parseInt(document.getElementById('droneSlider').value) || 8;
+            const omega = parseFloat(document.getElementById('omegaSlider').value) || 0.35;
+            const activeBtn = document.querySelector('.formation-btn.active');
+            const formKey = activeBtn ? activeBtn.dataset.formation : 'goldenSpiral';
+            swarm = new CRRSwarm(n, formKey, omega, canvas.width, canvas.height);
+        } catch (e) {
+            console.error('Init swarm error:', e);
+            swarm = new CRRSwarm(8, 'goldenSpiral', 0.35, 800, 600);
+        }
+    }
+
+    function draw() {
+        if (!ctx) return;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (!swarm || !swarm.drones || !swarm.targets) return;
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const radius = Math.min(canvas.width, canvas.height) * 0.38;
+
+        // Draw formation guide
+        try {
+            ctx.strokeStyle = '#e9ecef';
+            ctx.lineWidth = 1;
+            if (swarm.formation && swarm.formation.drawGuide) {
+                swarm.formation.drawGuide(ctx, cx, cy, radius);
+            }
+        } catch (e) {
+            // Ignore guide drawing errors
+        }
+
+        // Draw targets
+        ctx.fillStyle = '#dee2e6';
+        for (const t of swarm.targets) {
+            if (!t || !Number.isFinite(t[0]) || !Number.isFinite(t[1])) continue;
+            ctx.beginPath();
+            ctx.arc(t[0], t[1], 4, 0, TAU);
+            ctx.fill();
+        }
+
+        // Draw drone trails and drones
+        for (let i = 0; i < swarm.drones.length; i++) {
+            const d = swarm.drones[i];
+            if (!d) continue;
+
+            const color = DRONE_COLORS[i % DRONE_COLORS.length];
+
+            // Trail
+            if (d.posHistory && d.posHistory.length > 1) {
+                ctx.beginPath();
+                let started = false;
+                for (const p of d.posHistory) {
+                    if (!p || !Number.isFinite(p[0]) || !Number.isFinite(p[1])) continue;
+                    if (!started) {
+                        ctx.moveTo(p[0], p[1]);
+                        started = true;
+                    } else {
+                        ctx.lineTo(p[0], p[1]);
+                    }
+                }
+                ctx.strokeStyle = color + '40';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            if (!Number.isFinite(d.x) || !Number.isFinite(d.y)) continue;
+
+            // Glow
+            const glowRadius = 12 + clamp(d.C, 0, 5) * 6;
+            const glow = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, glowRadius);
+            glow.addColorStop(0, color + '30');
+            glow.addColorStop(1, color + '00');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, glowRadius, 0, TAU);
+            ctx.fill();
+
+            // Rupture indicator
+            if (d.inRupture) {
+                ctx.strokeStyle = '#e03131';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, 18, 0, TAU);
+                ctx.stroke();
+            }
+
+            // Drone body
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, 6, 0, TAU);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Direction
+            const spd = safeNorm(d.vx, d.vy);
+            if (spd > 5) {
+                const angle = Math.atan2(d.vy, d.vx);
+                ctx.beginPath();
+                ctx.moveTo(d.x + Math.cos(angle) * 6, d.y + Math.sin(angle) * 6);
+                ctx.lineTo(d.x + Math.cos(angle) * 14, d.y + Math.sin(angle) * 14);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Target line
+            const t = swarm.targets[i];
+            if (t && Number.isFinite(t[0]) && Number.isFinite(t[1])) {
+                ctx.strokeStyle = '#dee2e6';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(t[0], t[1]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+    }
+
+    function drawChart() {
+        if (!chartCtx) return;
+
+        const w = chartCanvas.width;
+        const h = chartCanvas.height;
+
+        chartCtx.fillStyle = '#f8f9fa';
+        chartCtx.fillRect(0, 0, w, h);
+
+        // Grid
+        chartCtx.strokeStyle = '#e9ecef';
+        chartCtx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+            const y = (h * i) / 4;
+            chartCtx.beginPath();
+            chartCtx.moveTo(0, y);
+            chartCtx.lineTo(w, y);
+            chartCtx.stroke();
+        }
+
+        // Threshold
+        const threshY = h * 0.05;
+        chartCtx.strokeStyle = '#adb5bd';
+        chartCtx.setLineDash([3, 3]);
+        chartCtx.beginPath();
+        chartCtx.moveTo(0, threshY);
+        chartCtx.lineTo(w, threshY);
+        chartCtx.stroke();
+        chartCtx.setLineDash([]);
+
+        if (!swarm || !swarm.cohHistory || swarm.cohHistory.length < 2) return;
+
+        const data = swarm.cohHistory;
+        const step = w / Math.max(1, data.length - 1);
+
+        // Fill
+        chartCtx.beginPath();
+        chartCtx.moveTo(0, h);
+        for (let i = 0; i < data.length; i++) {
+            const val = clamp(data[i], 0, 1);
+            chartCtx.lineTo(i * step, h * (1 - val));
+        }
+        chartCtx.lineTo(w, h);
+        chartCtx.closePath();
+        const fill = chartCtx.createLinearGradient(0, 0, 0, h);
+        fill.addColorStop(0, 'rgba(47, 158, 68, 0.2)');
+        fill.addColorStop(1, 'rgba(47, 158, 68, 0)');
+        chartCtx.fillStyle = fill;
+        chartCtx.fill();
+
+        // Line
+        chartCtx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+            const x = i * step;
+            const y = h * (1 - clamp(data[i], 0, 1));
+            if (i === 0) chartCtx.moveTo(x, y);
+            else chartCtx.lineTo(x, y);
+        }
+        chartCtx.strokeStyle = '#2f9e44';
+        chartCtx.lineWidth = 2;
+        chartCtx.stroke();
+    }
+
+    function updateMetrics(m) {
+        try {
+            document.getElementById('cohVal').textContent = (m.coh || 0).toFixed(3);
+            document.getElementById('errVal').textContent = (m.err || 0).toFixed(1);
+            document.getElementById('timeVal').textContent = (swarm ? swarm.time : 0).toFixed(3);
+            document.getElementById('memVal').textContent = (swarm ? swarm.avgMemoryGain() : 1).toFixed(2);
+            document.getElementById('rupVal').textContent = swarm ? swarm.totalRuptures() : 0;
+            document.getElementById('convVal').textContent = (swarm && swarm.convTime)
+                ? swarm.convTime.toFixed(3) + 's'
+                : '—';
+        } catch (e) {
+            // Ignore metric update errors
+        }
+    }
+
+    function animate(ts) {
+        if (!running) return;
+
+        try {
+            const dt = Math.min((ts - lastTime) / 1000, 0.033) * speed;
+            lastTime = ts;
+
+            if (swarm) {
+                const m = swarm.step(dt);
+                draw();
+                drawChart();
+                updateMetrics(m);
+            }
+        } catch (e) {
+            console.error('Animation error:', e);
+        }
+
+        animId = requestAnimationFrame(animate);
+    }
+
+    function start() {
+        if (running) return;
+        running = true;
+        lastTime = performance.now();
+        document.getElementById('startBtn').textContent = '⏸ Pause';
+        animId = requestAnimationFrame(animate);
+    }
+
+    function pause() {
+        running = false;
+        document.getElementById('startBtn').textContent = '▶ Start';
+        if (animId) cancelAnimationFrame(animId);
+    }
+
+    function reset() {
+        pause();
+        if (swarm) swarm.reset();
+        draw();
+        drawChart();
+        updateMetrics({ coh: 0, err: 0 });
+    }
+
+    // Event listeners
+    document.getElementById('startBtn').addEventListener('click', function() {
+        if (running) pause(); else start();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', reset);
+
+    document.getElementById('perturbBtn').addEventListener('click', function() {
+        if (swarm) swarm.perturb(100);
+    });
+
+    document.getElementById('omegaSlider').addEventListener('input', function(e) {
+        const val = parseFloat(e.target.value) || 0.35;
+        document.getElementById('omegaVal').textContent = val.toFixed(2);
+        if (swarm) swarm.setOmega(val);
+    });
+
+    document.getElementById('droneSlider').addEventListener('input', function(e) {
+        const val = parseInt(e.target.value) || 8;
+        document.getElementById('droneVal').textContent = val;
+        if (swarm) {
+            swarm.setDroneCount(val);
+            draw();
+            drawChart();
+            updateMetrics({ coh: swarm.globalCoherence(), err: swarm.formationError() });
+        }
+    });
+
+    document.getElementById('speedSlider').addEventListener('input', function(e) {
+        speed = parseFloat(e.target.value) || 1;
+        document.getElementById('speedVal').textContent = speed.toFixed(2) + '×';
+    });
+
+    document.getElementById('eqToggle').addEventListener('click', function() {
+        document.getElementById('eqContent').classList.toggle('open');
+        document.getElementById('toggleIcon').classList.toggle('open');
+    });
+
+    window.addEventListener('resize', function() {
+        resize();
+        if (swarm) draw();
+    });
+
+    // Initialize
+    resize();
+    buildFormationGrid();
+    initSwarm();
+    draw();
+    drawChart();
+    updateMetrics({ coh: swarm ? swarm.globalCoherence() : 0, err: swarm ? swarm.formationError() : 0 });
+    </script>
+</body>
+</html>
