@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIREN SONG | CRR Mathematical Music Video</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+        
+        :root {
+            --pearl: #f5e6d3;
+            --pearl-glow: #fffaf5;
+            --shadow: #08040c;
+            --deep-shadow: #030106;
+            --siren-gold: #d4a574;
+            --rupture-red: #8b2635;
+            --rupture-glow: #ff4d6a;
+            --coherence-blue: #4a7c9b;
+            --coherence-bright: #7ab8e0;
+            --regeneration-green: #3d6b5a;
+            --regeneration-bright: #6aad94;
+            --evil-purple: #8b3a7d;
+            --evil-glow: #c44db3;
+            --omega-gold: #ffd700;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--deep-shadow);
+            color: var(--pearl);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        #opening {
+            position: fixed;
+            inset: 0;
+            background: var(--deep-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+            transition: opacity 2s ease-out;
+        }
+        
+        #opening::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(139, 58, 125, 0.2) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(74, 124, 155, 0.15) 0%, transparent 50%);
+            animation: aurora 10s ease-in-out infinite;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        #opening.hidden { opacity: 0; pointer-events: none; }
+        
+        .main-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(4rem, 12vw, 10rem);
+            font-weight: 400;
+            letter-spacing: 0.4em;
+            color: var(--pearl);
+            text-shadow: 0 0 80px rgba(212, 165, 116, 0.4);
+            margin-bottom: 0.3em;
+            z-index: 10;
+        }
+        
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.8em;
+            color: var(--siren-gold);
+            opacity: 0.7;
+            margin-bottom: 3em;
+            z-index: 10;
+        }
+        
+        .eq-preview {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.3rem);
+            color: var(--coherence-blue);
+            opacity: 0.5;
+            margin-bottom: 0.6em;
+            z-index: 10;
+        }
+        
+        .start-prompt {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--pearl);
+            opacity: 0.4;
+            animation: pulse 3s ease-in-out infinite;
+            z-index: 10;
+            margin-top: 2em;
+        }
+        
+        .start-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--siren-gold);
+            opacity: 0.4;
+            z-index: 10;
+            margin-top: 1em;
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.6; }
+        }
+        
+        #video-container {
+            display: none;
+            position: fixed;
+            inset: 0;
+        }
+        
+        #video-container.active { display: block; }
+        
+        canvas {
+            position: fixed;
+            inset: 0;
+        }
+        
+        #bg-canvas { z-index: 1; }
+        #particle-canvas { z-index: 2; }
+        
+        .vignette {
+            position: fixed;
+            inset: 0;
+            z-index: 3;
+            background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+        }
+        
+        #rupture-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #rupture-flash.active {
+            animation: flash 0.4s ease-out forwards;
+        }
+        
+        @keyframes flash {
+            0% { opacity: 0.7; background: radial-gradient(circle, var(--rupture-glow) 0%, transparent 60%); }
+            100% { opacity: 0; }
+        }
+        
+        #progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+        }
+        
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+        
+        #progress-bar.coherence { background: var(--coherence-bright); }
+        #progress-bar.rupture { background: var(--rupture-glow); }
+        #progress-bar.regeneration { background: var(--regeneration-bright); }
+        
+        #time-display {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--siren-gold);
+            opacity: 0.5;
+            z-index: 100;
+        }
+        
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 15px 20px;
+            border-radius: 3px;
+            backdrop-filter: blur(15px);
+        }
+        
+        .hud-row { display: flex; margin-bottom: 5px; }
+        .hud-label { color: rgba(255,255,255,0.35); width: 20px; }
+        .hud-val { font-size: 0.9rem; }
+        .hud-val.omega { color: var(--omega-gold); }
+        .hud-val.coherence { color: var(--coherence-bright); }
+        .hud-val.affect { color: var(--evil-glow); }
+        
+        #phase-ind {
+            font-size: 0.6rem;
+            letter-spacing: 0.3em;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        #phase-ind.coherence { color: var(--coherence-bright); }
+        #phase-ind.rupture { color: var(--rupture-glow); }
+        #phase-ind.regeneration { color: var(--regeneration-bright); }
+        
+        #section-ind {
+            font-size: 0.5rem;
+            color: rgba(255,255,255,0.3);
+            margin-top: 6px;
+            letter-spacing: 0.2em;
+        }
+        
+        #omega-viz {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #omega-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--omega-gold);
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .omega-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid;
+            opacity: 0;
+            transition: all 0.15s ease;
+        }
+        
+        #lyrics-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 0 5% 80px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            z-index: 50;
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        
+        #crr-line {
+            font-size: clamp(1.8rem, 5vw, 3.5rem);
+            font-weight: 400;
+            text-align: center;
+            max-width: 1000px;
+            line-height: 1.3;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+            margin-bottom: 15px;
+        }
+        
+        #crr-line.active { opacity: 1; transform: translateY(0); }
+        
+        #crr-line.coherence { color: var(--coherence-bright); text-shadow: 0 0 50px var(--coherence-blue); }
+        #crr-line.rupture { color: var(--rupture-glow); font-weight: 600; text-shadow: 0 0 80px var(--rupture-glow); }
+        #crr-line.regeneration { color: var(--regeneration-bright); text-shadow: 0 0 50px var(--regeneration-green); }
+        #crr-line.pearl { color: var(--pearl-glow); font-style: italic; }
+        #crr-line.shadow { color: var(--evil-glow); font-weight: 700; }
+        
+        #original-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.6rem, 1.3vw, 0.8rem);
+            color: rgba(255,255,255,0.3);
+            max-width: 800px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        #original-line.active { opacity: 1; }
+        
+        #math-line {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.55rem, 1.1vw, 0.7rem);
+            color: var(--siren-gold);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        #math-line.active { opacity: 0.6; }
+        
+        #controls {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .ctrl-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--pearl);
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .ctrl-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--siren-gold); }
+        
+        #ending {
+            position: fixed;
+            inset: 0;
+            background: var(--deep-shadow);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        #ending::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(61, 107, 90, 0.15) 0%, transparent 60%);
+        }
+        
+        #ending.active { display: flex; animation: fadeIn 3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .end-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 6vw, 4rem);
+            margin-bottom: 1.5em;
+            z-index: 10;
+        }
+        
+        .end-eq {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            margin-bottom: 0.7em;
+            opacity: 0.8;
+            z-index: 10;
+        }
+        
+        .end-eq.gold { color: var(--omega-gold); }
+        .end-eq.blue { color: var(--coherence-bright); }
+        .end-eq.green { color: var(--regeneration-bright); }
+        
+        .end-text {
+            font-size: 1.1rem;
+            font-style: italic;
+            max-width: 600px;
+            line-height: 2;
+            opacity: 0.6;
+            z-index: 10;
+            margin-top: 1em;
+        }
+        
+        .credit {
+            margin-top: 3em;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            letter-spacing: 0.3em;
+            z-index: 10;
+            opacity: 0.4;
+        }
+        
+        .credit a { color: var(--coherence-blue); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div id="opening">
+        <h1 class="main-title">SIREN SONG</h1>
+        <p class="subtitle">A CRR MATHEMATICAL MUSIC VIDEO</p>
+        <p class="eq-preview">C(x,t) = ∫ L(x,τ) dτ</p>
+        <p class="eq-preview" style="color: var(--rupture-red); opacity: 0.4;">δ(now) → R = ∫ φ · exp(C/Ω) · Θ dτ</p>
+        <p class="start-prompt">click to begin</p>
+        <p class="start-note">Play the song simultaneously for synchronized experience<br>Timestamps from lrclib.net (Two Suns, 4:58)</p>
+    </div>
+    
+    <div id="video-container">
+        <canvas id="bg-canvas"></canvas>
+        <canvas id="particle-canvas"></canvas>
+        <div class="vignette"></div>
+        <div id="rupture-flash"></div>
+        
+        <div id="progress-container"><div id="progress-bar" class="coherence"></div></div>
+        <div id="time-display">0:00 / 4:58</div>
+        
+        <div id="hud">
+            <div class="hud-row"><span class="hud-label">Ω</span><span class="hud-val omega" id="omega-val">0.318</span></div>
+            <div class="hud-row"><span class="hud-label">C</span><span class="hud-val coherence" id="c-val">0.00</span></div>
+            <div class="hud-row"><span class="hud-label">A</span><span class="hud-val affect" id="a-val">0.00</span></div>
+            <div id="phase-ind" class="coherence">COHERENCE</div>
+            <div id="section-ind">INTRO</div>
+        </div>
+        
+        <div id="omega-viz"><div id="omega-core"></div></div>
+        
+        <div id="lyrics-container">
+            <div id="crr-line"></div>
+            <div id="original-line"></div>
+            <div id="math-line"></div>
+        </div>
+        
+        <div id="controls">
+            <button class="ctrl-btn" id="play-btn">▶ PLAY</button>
+            <button class="ctrl-btn" id="restart-btn">↺ RESTART</button>
+        </div>
+    </div>
+    
+    <div id="ending">
+        <h2 class="end-title">The Pattern Completes</h2>
+        <p class="end-eq gold">Ω = 1/π ≈ 0.318</p>
+        <p class="end-eq blue">exp(C/Ω) = e when C = Ω</p>
+        <p class="end-eq green">Transformation occurs at rupture</p>
+        <p class="end-text">
+            Pearl's tragedy: low Ω creates rigid boundaries.<br>
+            Every rupture returns to the same attractor—<br>
+            the siren call of familiar patterns.<br><br>
+            But what if Ω could increase?
+        </p>
+        <p class="credit">CRR Framework © Alexander Sabine | <a href="https://cohere.org.uk">cohere.org.uk</a></p>
+    </div>
+    
+    <script>
+        // ===== LRCLIB.NET SYNCED LYRICS - PRECISE TIMESTAMPS =====
+        // Two Suns album version, 298s duration
+        // Source: https://lrclib.net (crowdsourced synced lyrics)
+        
+        const DURATION = 298;
+        const OMEGA_BASE = 1 / Math.PI;
+        
+        // Precise timestamps from lrclib.net
+        const lyrics = [
+  {"t": 0.0, "orig": "", "crr": "[Piano enters]", "phase": "coherence", "omega": 0.15, "affect": 0.2, "math": "", "style": "", "wave": false, "flash": false, "section": "INTRO"},
+  {"t": 6.83, "orig": "Are you my family?", "crr": "Seeking resonance frequency", "phase": "coherence", "omega": 0.227, "affect": 0.34, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 13.55, "orig": "Can I stay with you a while?", "crr": "Temporal coupling request", "phase": "coherence", "omega": 0.254, "affect": 0.39, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 20.65, "orig": "Can I stop off in your bed tonight?", "crr": "Boundary permeation attempt", "phase": "coherence", "omega": 0.283, "affect": 0.43, "math": "High Ω enables porosity", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 28.19, "orig": "I could make you smile", "crr": "Offering coherence", "phase": "coherence", "omega": 0.313, "affect": 0.48, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 34.83, "orig": "In the morning, I'll make you breakfast", "crr": "Building temporal patterns", "phase": "coherence", "omega": 0.34, "affect": 0.52, "math": "C(x,t) = ∫ L(x,τ) dτ", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 42.12, "orig": "In the evening, I'll warm the bed", "crr": "Circadian coherence rhythm", "phase": "coherence", "omega": 0.369, "affect": 0.57, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 49.35, "orig": "And I'll always be happy to kiss you", "crr": "Sustained resonance promise", "phase": "coherence", "omega": 0.398, "affect": 0.62, "math": "exp(C/Ω) → 1 as Ω rises", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 56.80, "orig": "Promise I'll never get sad", "crr": "Until...", "phase": "coherence", "omega": 0.45, "affect": 0.75, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 1"},
+  {"t": 62.28, "orig": "Till the siren come calling, calling", "crr": "δ(now)", "phase": "rupture", "omega": 0.15, "affect": 0.9, "math": "Dirac delta: rupture as ontological present", "style": "", "wave": true, "flash": false, "section": "PRE-CHORUS"},
+  {"t": 69.68, "orig": "It's driving me evil, evil", "crr": "Ω collapse initiates", "phase": "rupture", "omega": 0.1, "affect": 0.95, "math": "", "style": "shadow", "wave": false, "flash": false, "section": "PRE-CHORUS"},
+  {"t": 77.53, "orig": "Momma was a heartbreaker, loved you", "crr": "Transgenerational Ω inheritance", "phase": "rupture", "omega": 0.1, "affect": 0.9, "math": "Boundary conditions propagate through time", "style": "", "wave": false, "flash": false, "section": "PRE-CHORUS"},
+  {"t": 81.74, "orig": "The same way I do", "crr": "Pattern replication", "phase": "rupture", "omega": 0.1, "affect": 0.9, "math": "", "style": "", "wave": false, "flash": false, "section": "PRE-CHORUS"},
+  {"t": 85.33, "orig": "But I've got so much wickedness and sin", "crr": "exp(C/Ω) peaked — same attractor", "phase": "rupture", "omega": 0.08, "affect": 0.95, "math": "Small Ω → rigid memory weighting", "style": "", "wave": false, "flash": false, "section": "PRE-CHORUS"},
+  {"t": 91.92, "orig": "My name is Pearl, and I'll love you", "crr": "My name is Pearl", "phase": "rupture", "omega": 0.1, "affect": 1.0, "math": "", "style": "pearl", "wave": false, "flash": false, "section": "CHORUS 1"},
+  {"t": 96.10, "orig": "The best way I know how", "crr": "The only way low Ω allows", "phase": "rupture", "omega": 0.12, "affect": 0.9, "math": "", "style": "", "wave": false, "flash": false, "section": "CHORUS 1"},
+  {"t": 99.31, "orig": "My blonde curls slice through your heart", "crr": "Precision without porosity", "phase": "rupture", "omega": 0.08, "affect": 1.0, "math": "Low Ω: rigid boundaries cut", "style": "", "wave": false, "flash": true, "section": "CHORUS 1"},
+  {"t": 105.94, "orig": "And the siren come calling", "crr": "δ(now) returns", "phase": "rupture", "omega": 0.15, "affect": 0.9, "math": "", "style": "", "wave": true, "flash": false, "section": "CHORUS 1"},
+  {"t": 113.58, "orig": "It won't be long until you're running", "crr": "Inevitable decay", "phase": "rupture", "omega": 0.12, "affect": 0.85, "math": "", "style": "", "wave": false, "flash": false, "section": "CHORUS 1"},
+  {"t": 126.25, "orig": "Help you dress yourself up fancy", "crr": "[Acapella — raw coherence]", "phase": "coherence", "omega": 0.28, "affect": 0.5, "math": "Stripped instrumentation = naked Ω", "style": "", "wave": false, "flash": false, "section": "VERSE 2"},
+  {"t": 133.53, "orig": "And bathe you when you get sore", "crr": "Nurturing = high Ω offering", "phase": "coherence", "omega": 0.32, "affect": 0.55, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 2"},
+  {"t": 141.62, "orig": "I'll be good, I think I could", "crr": "Aspirational Ω elevation", "phase": "coherence", "omega": 0.35, "affect": 0.6, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 2"},
+  {"t": 148.48, "orig": "Be all you would want and more and more", "crr": "C accumulating again", "phase": "coherence", "omega": 0.38, "affect": 0.65, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 2"},
+  {"t": 156.30, "orig": "Be proud when you dazzle the wand'rers", "crr": "[Full band returns]", "phase": "coherence", "omega": 0.40, "affect": 0.7, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 3"},
+  {"t": 164.31, "orig": "Glitter your eyes for the town", "crr": "Social Ω display", "phase": "coherence", "omega": 0.42, "affect": 0.68, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 3"},
+  {"t": 171.94, "orig": "Tell every last boy that you're my man", "crr": "Boundary assertion", "phase": "coherence", "omega": 0.38, "affect": 0.65, "math": "Ω asymmetry: high within, low without", "style": "", "wave": false, "flash": false, "section": "VERSE 3"},
+  {"t": 179.97, "orig": "I'll try not to let you down", "crr": "But pattern memory persists...", "phase": "coherence", "omega": 0.35, "affect": 0.6, "math": "", "style": "", "wave": false, "flash": false, "section": "VERSE 3"},
+  {"t": 185.67, "orig": "Till the siren come calling, calling", "crr": "δ(now) — again", "phase": "rupture", "omega": 0.15, "affect": 0.9, "math": "", "style": "", "wave": true, "flash": false, "section": "PRE-CHORUS 2"},
+  {"t": 193.50, "orig": "It's driving me evil, evil", "crr": "Ω collapses to baseline", "phase": "rupture", "omega": 0.1, "affect": 0.95, "math": "", "style": "shadow", "wave": false, "flash": false, "section": "PRE-CHORUS 2"},
+  {"t": 201.32, "orig": "Momma was a heartbreaker, loved you", "crr": "The pattern she inherited", "phase": "rupture", "omega": 0.1, "affect": 0.9, "math": "Attractors passed through generations", "style": "", "wave": false, "flash": false, "section": "PRE-CHORUS 2"},
+  {"t": 205.89, "orig": "The same way I do", "crr": "Same Ω, same rupture", "phase": "rupture", "omega": 0.1, "affect": 0.88, "math": "", "style": "", "wave": false, "flash": false, "section": "PRE-CHORUS 2"},
+  {"t": 208.89, "orig": "But I've got so much wickedness and sin", "crr": "Coherence → Rupture → Same state", "phase": "rupture", "omega": 0.08, "affect": 0.95, "math": "", "style": "", "wave": false, "flash": false, "section": "CHORUS 2"},
+  {"t": 216.37, "orig": "My name is Pearl, and I'll love you", "crr": "My name is Pearl", "phase": "rupture", "omega": 0.1, "affect": 1.0, "math": "", "style": "pearl", "wave": false, "flash": false, "section": "CHORUS 2"},
+  {"t": 220.04, "orig": "The best way I know how", "crr": "The only way low Ω permits", "phase": "rupture", "omega": 0.12, "affect": 0.92, "math": "", "style": "", "wave": false, "flash": false, "section": "CHORUS 2"},
+  {"t": 223.34, "orig": "My blonde curls slice through your heart", "crr": "Cutting precision", "phase": "rupture", "omega": 0.08, "affect": 1.0, "math": "", "style": "", "wave": false, "flash": true, "section": "CHORUS 2"},
+  {"t": 230.95, "orig": "And the stars are exploding lights", "crr": "Rupture as revelation", "phase": "regeneration", "omega": 0.30, "affect": 0.85, "math": "R = ∫ φ(x,τ) · exp(C/Ω) · Θ dτ", "style": "", "wave": false, "flash": false, "section": "BRIDGE"},
+  {"t": 237.88, "orig": "It won't be long until you're running", "crr": "But Pearl returns", "phase": "rupture", "omega": 0.18, "affect": 0.88, "math": "", "style": "", "wave": true, "flash": false, "section": "OUTRO"},
+  {"t": 245.05, "orig": "No, it won't be long till you're running", "crr": "The attractor pulls", "phase": "rupture", "omega": 0.15, "affect": 0.9, "math": "", "style": "", "wave": false, "flash": false, "section": "OUTRO"},
+  {"t": 251.99, "orig": "It won't be long until you're running", "crr": "Low Ω wins again", "phase": "rupture", "omega": 0.12, "affect": 0.92, "math": "", "style": "", "wave": true, "flash": false, "section": "OUTRO"},
+  {"t": 259.38, "orig": "And it won't be long until you're running", "crr": "Unless...", "phase": "rupture", "omega": 0.15, "affect": 0.88, "math": "", "style": "", "wave": false, "flash": false, "section": "OUTRO"},
+  {"t": 266.63, "orig": "'Cause I'm evil", "crr": "She names the shadow", "phase": "rupture", "omega": 0.20, "affect": 1.0, "math": "", "style": "shadow", "wave": false, "flash": false, "section": "OUTRO"},
+  {"t": 273.56, "orig": "'Cause I'm evil", "crr": "She names the shadow", "phase": "rupture", "omega": 0.20, "affect": 1.0, "math": "", "style": "shadow", "wave": false, "flash": false, "section": "OUTRO"},
+  {"t": 280.0, "orig": "", "crr": "exp(C/Ω) = e when C = Ω", "phase": "regeneration", "omega": 0.318, "affect": 0.6, "math": "At rupture: coherence equals omega", "style": "", "wave": false, "flash": false, "section": "RESOLUTION"},
+  {"t": 288.0, "orig": "", "crr": "Ω = 1/π", "phase": "regeneration", "omega": 0.318, "affect": 0.4, "math": "The fundamental ratio", "style": "", "wave": false, "flash": false, "section": "RESOLUTION"},
+  {"t": 295.0, "orig": "", "crr": "Transformation is possible", "phase": "regeneration", "omega": 0.318, "affect": 0.2, "math": "", "style": "", "wave": false, "flash": false, "section": "RESOLUTION"},
+  {"t": 298.0, "orig": "", "crr": "", "phase": "end", "omega": 0.318, "affect": 0.0, "math": "", "style": "", "wave": false, "flash": false, "section": "END"}
+];
+        
+        // State
+        let playing = false, time = 0, lastTs = 0;
+        let omega = OMEGA_BASE, coherence = 0, affect = 0, phase = 'coherence';
+        let currentLyricIdx = 0;
+        let particles = [], waves = [];
+        
+        // DOM
+        const $ = id => document.getElementById(id);
+        const opening = $('opening'), container = $('video-container'), ending = $('ending');
+        const progBar = $('progress-bar'), timeDisp = $('time-display');
+        const crrLine = $('crr-line'), origLine = $('original-line'), mathLine = $('math-line');
+        const omegaVal = $('omega-val'), cVal = $('c-val'), aVal = $('a-val');
+        const phaseInd = $('phase-ind'), secInd = $('section-ind');
+        const omegaCore = $('omega-core'), omegaViz = $('omega-viz');
+        const flash = $('rupture-flash');
+        const playBtn = $('play-btn'), restartBtn = $('restart-btn');
+        
+        let bgCanvas, bgCtx, pCanvas, pCtx;
+        
+        function init() {
+            bgCanvas = $('bg-canvas');
+            bgCtx = bgCanvas.getContext('2d');
+            pCanvas = $('particle-canvas');
+            pCtx = pCanvas.getContext('2d');
+            
+            resize();
+            window.addEventListener('resize', resize);
+            
+            // Create omega rings
+            for (let i = 0; i < 8; i++) {
+                const ring = document.createElement('div');
+                ring.className = 'omega-ring';
+                omegaViz.appendChild(ring);
+            }
+            
+            // Init particles
+            for (let i = 0; i < 180; i++) {
+                particles.push({
+                    x: Math.random() * innerWidth,
+                    y: Math.random() * innerHeight,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    size: Math.random() * 2 + 0.5,
+                    alpha: Math.random() * 0.4 + 0.1,
+                    ph: Math.random() * Math.PI * 2
+                });
+            }
+            
+            opening.addEventListener('click', start);
+            playBtn.addEventListener('click', toggle);
+            restartBtn.addEventListener('click', restart);
+        }
+        
+        function resize() {
+            bgCanvas.width = pCanvas.width = innerWidth;
+            bgCanvas.height = pCanvas.height = innerHeight;
+        }
+        
+        function start() {
+            opening.classList.add('hidden');
+            setTimeout(() => {
+                container.classList.add('active');
+                setTimeout(() => {
+                    playing = true;
+                    playBtn.textContent = '❚❚ PAUSE';
+                    lastTs = performance.now();
+                    animate();
+                }, 400);
+            }, 2000);
+        }
+        
+        function toggle() {
+            playing = !playing;
+            playBtn.textContent = playing ? '❚❚ PAUSE' : '▶ PLAY';
+            if (playing) { lastTs = performance.now(); animate(); }
+        }
+        
+        function restart() {
+            time = coherence = currentLyricIdx = 0;
+            ending.classList.remove('active');
+            container.classList.add('active');
+            playing = true;
+            playBtn.textContent = '❚❚ PAUSE';
+            lastTs = performance.now();
+            animate();
+        }
+        
+        function animate() {
+            if (!playing) return;
+            
+            const now = performance.now();
+            time += (now - lastTs) / 1000;
+            lastTs = now;
+            
+            if (time >= DURATION) { end(); return; }
+            
+            update();
+            render();
+            requestAnimationFrame(animate);
+        }
+        
+        function update() {
+            // Find current lyric by timestamp
+            let cur = lyrics[0];
+            for (let i = 0; i < lyrics.length; i++) {
+                if (lyrics[i].t <= time) {
+                    cur = lyrics[i];
+                    currentLyricIdx = i;
+                }
+            }
+            
+            // Smooth values
+            omega += (cur.omega - omega) * 0.08;
+            affect += (cur.affect - affect) * 0.06;
+            phase = cur.phase;
+            
+            // Coherence dynamics
+            if (phase === 'coherence') coherence += 0.004 * (1 + omega);
+            else if (phase === 'rupture') coherence *= 0.97;
+            else coherence = coherence * 0.99 + omega * 0.02;
+            coherence = Math.min(Math.max(coherence, 0), 2);
+            
+            // Triggers - only fire once per lyric
+            if (cur.wave && !cur._waveFired) { triggerWaves(); cur._waveFired = true; }
+            if (cur.flash && !cur._flashFired) { triggerFlash(); cur._flashFired = true; }
+            
+            // UI updates
+            const m = Math.floor(time / 60), s = Math.floor(time % 60);
+            timeDisp.textContent = `${m}:${s.toString().padStart(2, '0')} / 4:58`;
+            progBar.style.width = `${(time / DURATION) * 100}%`;
+            progBar.className = phase === 'end' ? 'regeneration' : phase;
+            
+            omegaVal.textContent = omega.toFixed(3);
+            cVal.textContent = coherence.toFixed(2);
+            aVal.textContent = affect.toFixed(2);
+            phaseInd.textContent = phase.toUpperCase();
+            phaseInd.className = phase === 'end' ? 'regeneration' : phase;
+            secInd.textContent = cur.section;
+            
+            // Lyrics update - check if we moved to a new lyric
+            if (crrLine.dataset.idx !== String(currentLyricIdx)) {
+                crrLine.classList.remove('active');
+                origLine.classList.remove('active');
+                mathLine.classList.remove('active');
+                
+                setTimeout(() => {
+                    crrLine.textContent = cur.crr;
+                    crrLine.dataset.idx = String(currentLyricIdx);
+                    crrLine.className = `active ${phase} ${cur.style || ''}`;
+                    
+                    origLine.textContent = cur.orig ? `[ ${cur.orig} ]` : '';
+                    if (cur.orig) origLine.classList.add('active');
+                    
+                    mathLine.textContent = cur.math || '';
+                    if (cur.math) mathLine.classList.add('active');
+                }, 50);
+            }
+            
+            // Omega visualization
+            const scale = 0.5 + omega * 2.5;
+            const glow = 15 + omega * 60 + affect * 30;
+            omegaCore.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            omegaCore.style.boxShadow = `0 0 ${glow}px var(--omega-gold)`;
+            
+            const rings = omegaViz.querySelectorAll('.omega-ring');
+            rings.forEach((r, i) => {
+                const base = 25 + i * 40;
+                const pulse = Math.sin(time * 2 + i * 0.4) * 12 * omega;
+                r.style.width = r.style.height = `${base + pulse}px`;
+                r.style.opacity = (0.06 + omega * 0.1 + affect * 0.06) * (1 - i * 0.1);
+                r.style.borderColor = phase === 'rupture' ? 'var(--rupture-glow)' : 
+                                       phase === 'regeneration' ? 'var(--regeneration-bright)' : 'var(--coherence-bright)';
+            });
+            
+            // Particle physics
+            const cx = innerWidth / 2, cy = innerHeight / 2;
+            particles.forEach(p => {
+                const spd = 1 + omega * 1.5 + affect * 0.8;
+                p.x += p.vx * spd;
+                p.y += p.vy * spd;
+                
+                const dx = cx - p.x, dy = cy - p.y;
+                const d = Math.sqrt(dx * dx + dy * dy) || 1;
+                
+                if (phase === 'coherence' || phase === 'regeneration') {
+                    p.vx += dx / d * 0.006 * omega;
+                    p.vy += dy / d * 0.006 * omega;
+                } else if (phase === 'rupture') {
+                    p.vx -= dx / d * 0.012 * affect;
+                    p.vy -= dy / d * 0.012 * affect;
+                }
+                
+                if (p.x < -30) p.x = innerWidth + 30;
+                if (p.x > innerWidth + 30) p.x = -30;
+                if (p.y < -30) p.y = innerHeight + 30;
+                if (p.y > innerHeight + 30) p.y = -30;
+                
+                p.vx *= 0.99;
+                p.vy *= 0.99;
+                p.ph += 0.012;
+            });
+            
+            // Wave decay
+            waves = waves.filter(w => {
+                w.r += w.spd * (1 + affect);
+                w.a *= 0.975;
+                return w.a > 0.01;
+            });
+        }
+        
+        function triggerWaves() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => waves.push({ r: 0, spd: 5 + i * 1.2, a: 0.6 }), i * 70);
+            }
+        }
+        
+        function triggerFlash() {
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 400);
+        }
+        
+        function render() {
+            const w = bgCanvas.width, h = bgCanvas.height;
+            const cx = w / 2, cy = h / 2;
+            
+            // Background fade
+            bgCtx.fillStyle = `rgba(3, 1, 6, ${0.06 + (1 - omega) * 0.06})`;
+            bgCtx.fillRect(0, 0, w, h);
+            
+            // Phase glow
+            const colors = { coherence: [74, 124, 155], rupture: [139, 38, 53], regeneration: [61, 107, 90] };
+            const [r, g, b] = colors[phase] || colors.coherence;
+            
+            const grad = bgCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.55);
+            grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.02 + coherence * 0.015 + affect * 0.02})`);
+            grad.addColorStop(1, 'transparent');
+            bgCtx.fillStyle = grad;
+            bgCtx.fillRect(0, 0, w, h);
+            
+            // Siren waves
+            waves.forEach(wv => {
+                bgCtx.beginPath();
+                bgCtx.arc(cx, cy, wv.r, 0, Math.PI * 2);
+                bgCtx.strokeStyle = `rgba(139, 38, 53, ${wv.a})`;
+                bgCtx.lineWidth = 2 + affect;
+                bgCtx.stroke();
+            });
+            
+            // Coherence arcs
+            if (phase === 'coherence' || phase === 'regeneration') {
+                bgCtx.strokeStyle = `rgba(74, 124, 155, ${0.015 + coherence * 0.01})`;
+                bgCtx.lineWidth = 1;
+                for (let i = 0; i < 12; i++) {
+                    const ang = (i / 12) * Math.PI * 2 + time * 0.06;
+                    const rad = 100 + Math.sin(time + i * 0.4) * 20 * omega;
+                    bgCtx.beginPath();
+                    bgCtx.arc(cx, cy, rad, ang - 0.12, ang + 0.12);
+                    bgCtx.stroke();
+                }
+            }
+            
+            // Rupture spikes
+            if (phase === 'rupture') {
+                bgCtx.strokeStyle = `rgba(139, 38, 53, ${0.1 + affect * 0.15})`;
+                bgCtx.lineWidth = 1.2;
+                for (let i = 0; i < 20; i++) {
+                    const ang = (i / 20) * Math.PI * 2 + time * 0.25;
+                    const len = 50 + Math.random() * 100 * affect;
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(cx, cy);
+                    bgCtx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+                    bgCtx.stroke();
+                }
+            }
+            
+            // Particles
+            pCtx.clearRect(0, 0, w, h);
+            particles.forEach(p => {
+                const shimmer = Math.sin(p.ph) * 0.25 + 0.75;
+                const alpha = p.alpha * shimmer * (0.5 + affect * 0.4);
+                const sz = p.size * (1 + omega * 0.4);
+                
+                pCtx.beginPath();
+                pCtx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+                pCtx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                pCtx.fill();
+                
+                if (sz > 1.3) {
+                    pCtx.beginPath();
+                    pCtx.arc(p.x, p.y, sz * 2, 0, Math.PI * 2);
+                    pCtx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.12})`;
+                    pCtx.fill();
+                }
+            });
+            
+            // Particle connections during high coherence
+            if (coherence > 0.5) {
+                pCtx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.02 * coherence})`;
+                pCtx.lineWidth = 0.4;
+                for (let i = 0; i < particles.length; i += 4) {
+                    for (let j = i + 1; j < particles.length; j += 4) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        if (Math.sqrt(dx * dx + dy * dy) < 50) {
+                            pCtx.beginPath();
+                            pCtx.moveTo(particles[i].x, particles[i].y);
+                            pCtx.lineTo(particles[j].x, particles[j].y);
+                            pCtx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+        
+        function end() {
+            playing = false;
+            container.classList.remove('active');
+            ending.classList.add('active');
+        }
+        
+        init();
+    </script>
+</body>
+</html>
