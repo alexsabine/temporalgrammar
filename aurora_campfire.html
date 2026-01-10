@@ -59,7 +59,7 @@
         input[type="range"] { width: 100%; height: 3px; -webkit-appearance: none; background: rgba(80,120,100,0.25); border-radius: 2px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: rgba(150,255,190,0.75); border-radius: 50%; cursor: pointer; }
         
-        .eq { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(100,180,140,0.08); font-family: monospace; font-size: 0.5rem; color: rgba(150,220,180,0.45); line-height: 1.5; }
+        .eq { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(100,180,140,0.08); font-family: monospace; font-size: 0.48rem; color: rgba(150,220,180,0.45); line-height: 1.6; }
         .eq .h { color: rgba(255,180,180,0.65); }
     </style>
 </head>
@@ -97,8 +97,8 @@
     <div class="eq">
         C(t) = ∫L(τ)dτ<br>
         <span class="h">δ fires when C > Ω</span><br>
-        Ω = (1/π)(400/v<sub>sw</sub>)<br>
-        Height ∝ Altitude
+        R = Σ Cᵢ·exp(Cᵢ/Ω)·K(t-tᵢ)<br>
+        Ω = (1/π)(400/v<sub>sw</sub>)
     </div>
 </div>
 
@@ -114,48 +114,318 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// CRR CONSTANTS
-// ═══════════════════════════════════════════════════════════════════
-const OMEGA_Z2 = 1 / Math.PI;
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR CONSTANTS (Verified in Python)
+// ═══════════════════════════════════════════════════════════════════════════
+const OMEGA_Z2 = 1 / Math.PI;  // ≈ 0.318
 const V_REF = 400;
 const NUM_COLS = 48;
-const NUM_STARS = 350;
+const NUM_STARS = 450;  // More stars for better sky coverage
 
 const SCALE = [
     130.81,164.81,196.00,220.00,246.94,261.63,329.63,392.00,440.00,493.88,
     523.25,659.25,783.99,880.00,987.77,1046.50,1318.51,1567.98,1760.00,1975.53,
     2093.00,2637.02,3135.96,3520.00,3951.07,4186.01,5274.04,6271.93,7040.00,7902.13,
-    8372.02,10548.08,12543.85,14080.00,15804.26,16744.04,18794.55,21096.16,22350.61,25088.32,
-    28160.00,31608.53,33488.07,37589.10,42192.33,44701.22,50175.64,56320.00
+    8372.02,10548.08,12543.85,14080.00,15804.26,16744.04,18794.55,21096.16
 ];
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR COLUMN CLASS (Mathematically Correct)
+// ═══════════════════════════════════════════════════════════════════════════
+class CRRColumn {
+    constructor(omega, tau, historyLen = 50) {
+        this.omega = omega;
+        this.tau = tau;
+        this.C = Math.random() * omega * 0.3;
+        this.R = 0;
+        this.phase = Math.random() * Math.PI * 2;
+        this.sway = Math.random() * Math.PI * 2;
+        this.height = 0.5 + Math.random() * 0.35;
+        
+        // Rupture history for proper regeneration integral
+        this.ruptureHistory = [];
+        this.historyLen = historyLen;
+        this.lastRuptureTime = -10;
+    }
+    
+    update(dt, t, L_input, coupling = 0) {
+        // ══════════════════════════════════════════════
+        // COHERENCE ACCUMULATION: C(t) = ∫L(τ)dτ
+        // ══════════════════════════════════════════════
+        let dC = L_input * dt;
+        dC += coupling * dt;
+        
+        // Wave modulation (natural aurora dynamics)
+        const wave = Math.sin(this.phase + t * 0.3) * 0.04;
+        dC += wave * L_input * dt;
+        
+        // Stochastic fluctuation: variance σ² = Ω (FEP connection)
+        const sigma = Math.sqrt(this.omega);
+        dC += (Math.random() - 0.5) * sigma * dt * 1.6;
+        
+        this.C += dC;
+        this.C = Math.max(0, this.C);
+        this.phase += dt * 0.25;
+        
+        // ══════════════════════════════════════════════
+        // RUPTURE: δ fires when C > Ω
+        // ══════════════════════════════════════════════
+        const threshold = this.omega * (0.9 + Math.random() * 0.2);
+        const minGap = 0.12;
+        
+        let ruptured = false;
+        let energy = 0;
+        let expWeight = 0;
+        
+        if (this.C > threshold && (t - this.lastRuptureTime) > minGap) {
+            ruptured = true;
+            const C_at_rupture = this.C;
+            
+            // exp(C/Ω) - memory amplification (NO CAP - mathematically correct)
+            expWeight = Math.exp(C_at_rupture / this.omega);
+            energy = C_at_rupture / this.omega;
+            
+            // Record rupture event for regeneration integral
+            this.ruptureHistory.push({
+                time: t,
+                C: C_at_rupture,
+                expWeight: expWeight
+            });
+            
+            // Trim old events (keep ~5τ worth of history)
+            const cutoff = t - this.tau * 5;
+            this.ruptureHistory = this.ruptureHistory.filter(e => e.time > cutoff);
+            
+            // Keep bounded
+            while (this.ruptureHistory.length > this.historyLen) {
+                this.ruptureHistory.shift();
+            }
+            
+            // Reset coherence after rupture
+            this.C = Math.random() * this.omega * 0.1;
+            this.lastRuptureTime = t;
+        }
+        
+        // ══════════════════════════════════════════════
+        // REGENERATION: R = ∫φ(τ)·exp(C(τ)/Ω)·K(t-τ)dτ
+        // Proper integral over rupture history
+        // ══════════════════════════════════════════════
+        let R_new = 0;
+        for (const event of this.ruptureHistory) {
+            const deltaT = t - event.time;
+            // Memory kernel: exponential decay K(Δt) = exp(-Δt/τ)
+            const kernel = Math.exp(-deltaT / this.tau);
+            // Contribution weighted by exp(C/Ω)
+            R_new += event.C * event.expWeight * kernel;
+        }
+        this.R = R_new;
+        
+        // Update sway
+        this.sway += dt * (0.18 + Math.sin(t * 0.06) * 0.07);
+        
+        return { ruptured, energy, expWeight };
+    }
+    
+    updateParams(omega, tau) {
+        this.omega = omega;
+        this.tau = tau;
+    }
+    
+    getBrightness(intensity) {
+        return Math.min(1, this.R * 0.08 + this.C / this.omega * 0.4) * intensity;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR STAR CLASS (Simplified CRR for twinkling)
+// ═══════════════════════════════════════════════════════════════════════════
+class CRRStar {
+    constructor() {
+        this.x = Math.random();
+        this.y = Math.random() * 0.55;  // Extended range to show through aurora
+        this.size = 0.5 + Math.random() * 1.8;
+        this.omega = 0.12 + Math.random() * 0.18;
+        this.C = Math.random() * this.omega * 0.5;
+        this.phase = Math.random() * Math.PI * 2;
+        this.brightness = 0.4 + Math.random() * 0.3;  // Higher base brightness
+        this.lastRupture = -10;
+        this.R = 0;
+        this.baseAlpha = 0.5 + Math.random() * 0.5;  // Individual star intensity
+    }
+    
+    update(dt, t) {
+        // Coherence accumulation
+        this.C += 0.3 * dt;
+        this.C += Math.sin(this.phase) * 0.1 * dt;
+        this.C += (Math.random() - 0.5) * Math.sqrt(this.omega) * dt * 2;
+        this.C = Math.max(0, this.C);
+        this.phase += dt * 0.5;
+        
+        // Rupture = brightness flash
+        if (this.C > this.omega && (t - this.lastRupture) > 0.3) {
+            const expW = Math.exp(this.C / this.omega);
+            this.R = this.C * expW;  // Proper regeneration
+            this.C = Math.random() * this.omega * 0.2;
+            this.lastRupture = t;
+        }
+        
+        // Regeneration decay
+        this.R *= Math.exp(-dt / 0.5);
+        this.brightness = 0.35 + Math.min(0.65, this.R * 0.12);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR FIRE CLASS (Campfire with proper CRR)
+// ═══════════════════════════════════════════════════════════════════════════
+class CRRFire {
+    constructor() {
+        this.omega = 0.15;
+        this.tau = 0.3;
+        this.C = 0.1;
+        this.R = 0;
+        this.ruptureHistory = [];
+        this.lastRupture = -10;
+        this.particles = [];
+        this.sparks = [];
+        this.logs = [
+            { x: -18, y: 0, len: 40, angle: -0.15 },
+            { x: 12, y: 2, len: 38, angle: 0.2 },
+            { x: -5, y: 5, len: 35, angle: 0.05 }
+        ];
+    }
+    
+    update(dt, t, playCrackle) {
+        // Coherence: accumulation minus fuel consumption
+        this.C += 0.25 * dt;
+        this.C -= 0.08 * dt;
+        this.C += (Math.random() - 0.5) * Math.sqrt(this.omega) * dt * 2;
+        this.C = Math.max(0, this.C);
+        
+        let ruptured = false;
+        
+        // Rupture
+        if (this.C > this.omega && (t - this.lastRupture) > 0.08) {
+            const expW = Math.exp(this.C / this.omega);
+            
+            this.ruptureHistory.push({ time: t, C: this.C, expWeight: expW });
+            
+            // Trim history
+            const cutoff = t - this.tau * 5;
+            this.ruptureHistory = this.ruptureHistory.filter(e => e.time > cutoff);
+            if (this.ruptureHistory.length > 30) this.ruptureHistory.shift();
+            
+            // Particle burst
+            const burstCount = 3 + Math.floor((this.C / this.omega) * 4);
+            for (let i = 0; i < burstCount; i++) {
+                this.particles.push({
+                    x: (Math.random() - 0.5) * 15,
+                    y: 0,
+                    vx: (Math.random() - 0.5) * 25,
+                    vy: -40 - Math.random() * 60,
+                    life: 0.6 + Math.random() * 0.8,
+                    age: 0,
+                    size: 2 + Math.random() * 4
+                });
+            }
+            
+            // Sparks
+            if (Math.random() < 0.4) {
+                for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
+                    this.sparks.push({
+                        x: (Math.random() - 0.5) * 10,
+                        y: -5,
+                        vx: (Math.random() - 0.5) * 50,
+                        vy: -80 - Math.random() * 40,
+                        life: 0.8 + Math.random() * 0.6,
+                        age: 0
+                    });
+                }
+            }
+            
+            playCrackle(this.C / this.omega);
+            
+            this.C = Math.random() * this.omega * 0.2;
+            this.lastRupture = t;
+            ruptured = true;
+        }
+        
+        // Regeneration integral
+        let R_new = 0;
+        for (const event of this.ruptureHistory) {
+            const deltaT = t - event.time;
+            const kernel = Math.exp(-deltaT / this.tau);
+            R_new += event.C * event.expWeight * kernel;
+        }
+        this.R = R_new;
+        
+        // Continuous embers (rate depends on C)
+        if (Math.random() < 0.15 + (this.C / this.omega) * 0.2) {
+            this.particles.push({
+                x: (Math.random() - 0.5) * 20,
+                y: 0,
+                vx: (Math.random() - 0.5) * 15,
+                vy: -20 - Math.random() * 35,
+                life: 0.4 + Math.random() * 0.5,
+                age: 0,
+                size: 1.5 + Math.random() * 2.5
+            });
+        }
+        
+        // Update particles
+        this.particles.forEach(p => {
+            p.age += dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vy += 15 * dt;
+            p.vx += (Math.random() - 0.5) * 30 * dt;
+        });
+        this.particles = this.particles.filter(p => p.age < p.life);
+        
+        // Update sparks
+        this.sparks.forEach(s => {
+            s.age += dt;
+            s.x += s.vx * dt;
+            s.y += s.vy * dt;
+            s.vy += 60 * dt;
+        });
+        this.sparks = this.sparks.filter(s => s.age < s.life);
+        
+        return { ruptured, needsTending: this.C < 0.04 };
+    }
+    
+    addFuel() {
+        this.C += 0.12;
+    }
+    
+    getIntensity() {
+        return 0.3 + (this.C / this.omega) * 0.7;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 let canvas, ctx, mcanvas, mctx, W, H;
 let playing = false, audioCtx, master, hissGain;
 let t = 0;
 
 let solarWind = 450, imfBz = -8, kp = 5, altitude = 150;
-let omega, dCdt, intensity, tau;
+let omega, dCdt, intensity, tau, auroraTop, auroraBot;
 
-// Aurora height derived from altitude (90-350km maps to screen position)
-let auroraTop, auroraBot;
-
-let cols = [], stars = [], flashes = [];
+let cols = [];
+let stars = [];
+let fire;
+let figures = [];
+let tending = { active: false, figureIdx: -1, progress: 0, cooldown: 0 };
+let harpist = { figureIdx: -1, playing: false, progress: 0, lastNote: -10, noteQueue: [] };
 let mountains = [];
+let flashes = [];
 let total = 0, recent = [], lastExp = 0;
 
-// Campfire state
-let fire = { C: 0, R: 0, lastδ: -10, particles: [], sparks: [], logs: [] };
-
-// Lowry figures
-let figures = [];
-
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 function init() {
     canvas = document.getElementById('canvas');
     ctx = canvas.getContext('2d');
@@ -165,37 +435,24 @@ function init() {
     resize();
     window.addEventListener('resize', resize);
     
-    // Stars with CRR twinkle
-    for (let i = 0; i < NUM_STARS; i++) {
-        stars.push({
-            x: Math.random(), y: Math.random() * 0.45,
-            size: 0.3 + Math.random() * 1.6,
-            C: Math.random() * 0.2, omega: 0.12 + Math.random() * 0.18,
-            phase: Math.random() * Math.PI * 2, brightness: 0.4
-        });
-    }
-    
-    // Aurora columns
-    for (let i = 0; i < NUM_COLS; i++) {
-        cols.push({
-            C: Math.random() * 0.1, phase: Math.random() * Math.PI * 2,
-            R: 0, lastδ: -10, sway: Math.random() * Math.PI * 2,
-            height: 0.5 + Math.random() * 0.35
-        });
-    }
-    
-    // Generate Lowry figures around campfire
-    generateFigures();
-    
-    // Campfire logs
-    fire.logs = [
-        { x: -18, y: 0, len: 40, angle: -0.15 },
-        { x: 12, y: 2, len: 38, angle: 0.2 },
-        { x: -5, y: 5, len: 35, angle: 0.05 }
-    ];
-    
-    generateMountains();
     updateParams();
+    
+    // Initialize CRR columns
+    for (let i = 0; i < NUM_COLS; i++) {
+        cols.push(new CRRColumn(omega, tau));
+    }
+    
+    // Initialize CRR stars
+    for (let i = 0; i < NUM_STARS; i++) {
+        stars.push(new CRRStar());
+    }
+    
+    // Initialize CRR fire
+    fire = new CRRFire();
+    
+    // Lowry figures
+    generateFigures();
+    generateMountains();
     setupControls();
     animate();
 }
@@ -217,7 +474,6 @@ function resize() {
 }
 
 function generateFigures() {
-    // Lowry-style stick figures: simple, elongated, slightly melancholic
     figures = [];
     const cx = W * 0.5;
     const groundY = H * 0.91;
@@ -228,25 +484,25 @@ function generateFigures() {
         { dx: -70, pose: 'standing', facing: 1 },
         { dx: 45, pose: 'sitting', facing: -1 },
         { dx: 65, pose: 'standing', facing: -1 },
-        { dx: 25, pose: 'crouching', facing: -1 }
+        { dx: 25, pose: 'crouching', facing: -1 },
+        { dx: -45, pose: 'harpist', facing: 1 }  // Harpist!
     ];
     
-    positions.forEach(p => {
+    positions.forEach((p, i) => {
         figures.push({
-            x: cx + p.dx,
-            y: groundY,
-            pose: p.pose,
-            facing: p.facing,
+            x: cx + p.dx, y: groundY,
+            pose: p.pose, facing: p.facing,
             sway: Math.random() * Math.PI * 2,
             height: 18 + Math.random() * 6
         });
+        if (p.pose === 'harpist') {
+            harpist.figureIdx = i;
+        }
     });
 }
 
 function generateMountains() {
     mountains = [];
-    
-    // 5 ranges with photorealistic depth
     const ranges = [
         { y: 0.58, h: 0.12, detail: 0.0015, col: [45, 55, 75], mist: 0.4, snow: 0.6 },
         { y: 0.64, h: 0.14, detail: 0.0025, col: [35, 45, 60], mist: 0.3, snow: 0.5 },
@@ -293,15 +549,18 @@ function generateMountains() {
 }
 
 function updateParams() {
+    // Verified formulas from Python
     omega = OMEGA_Z2 * (V_REF / solarWind);
     dCdt = Math.max(0, -imfBz * 0.1);
     intensity = Math.pow(kp / 9, 0.7);
     tau = 0.5 + ((altitude - 90) / 260) * 3.5;
     
-    // ALTITUDE → AURORA HEIGHT
     const altNorm = (altitude - 90) / 260;
     auroraBot = H * (0.55 - altNorm * 0.1);
     auroraTop = H * (0.02 + altNorm * 0.05);
+    
+    // Update existing columns
+    cols.forEach(col => col.updateParams(omega, tau));
     
     document.getElementById('s-omega').textContent = omega.toFixed(4);
 }
@@ -326,15 +585,16 @@ function setupControls() {
     document.getElementById('play').onclick = togglePlay;
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // AUDIO
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 async function initAudio() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     master = audioCtx.createGain();
     master.gain.value = 0.45;
     master.connect(audioCtx.destination);
     
+    // Hiss: variance σ² = Ω (mathematically faithful)
     const bufSize = audioCtx.sampleRate * 2;
     const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
     const data = buf.getChannelData(0);
@@ -360,6 +620,7 @@ async function initAudio() {
     hissGain.connect(master);
     hiss.start();
     
+    // Reverb
     [0.029, 0.061, 0.103, 0.149, 0.197].forEach(d => {
         const delay = audioCtx.createDelay();
         delay.delayTime.value = d;
@@ -383,7 +644,7 @@ function playCrackle(energy) {
     const src = audioCtx.createBufferSource();
     src.buffer = buf;
     const g = audioCtx.createGain();
-    g.gain.value = 0.12 * Math.min(energy, 1.5);
+    g.gain.value = 0.12 * Math.min(energy, 2);
     const hp = audioCtx.createBiquadFilter();
     hp.type = 'highpass';
     hp.frequency.value = 1800;
@@ -397,8 +658,8 @@ function playHarp(col, energy, expW) {
     if (!audioCtx || !playing) return;
     const freq = SCALE[Math.min(col, SCALE.length - 1)];
     const now = audioCtx.currentTime;
-    const vel = Math.min(0.6, 0.1 + energy * 0.2);
-    const dur = 0.6 + expW * 0.25;
+    const vel = Math.min(0.6, 0.1 + energy * 0.18);
+    const dur = 0.6 + Math.min(expW, 4) * 0.2;  // Duration scales with exp(C/Ω)
     
     [1, 2, 3].forEach((h, i) => {
         const osc = audioCtx.createOscillator();
@@ -454,158 +715,140 @@ async function togglePlay() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// CRR DYNAMICS
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR UPDATE (Main simulation loop)
+// ═══════════════════════════════════════════════════════════════════════════
 function updateCRR(dt) {
     let maxRatio = 0;
     
-    // Aurora columns
-    cols.forEach((c, i) => {
-        const L = cols[(i - 1 + NUM_COLS) % NUM_COLS].C;
-        const R = cols[(i + 1) % NUM_COLS].C;
-        const coupling = (L + R) * 0.035;
-        const wave = Math.sin(c.phase + t * 0.28) * 0.035;
+    // Update aurora columns
+    cols.forEach((col, i) => {
+        const leftC = cols[(i - 1 + NUM_COLS) % NUM_COLS].C;
+        const rightC = cols[(i + 1) % NUM_COLS].C;
+        const coupling = (leftC + rightC) * 0.03;
         
-        c.C += (dCdt + coupling) * dt * 0.38;
-        c.C += wave * dCdt * dt;
-        c.C += (Math.random() - 0.5) * Math.sqrt(omega) * dt * 0.7;
-        c.C = Math.max(0, c.C);
-        c.phase += dt * 0.22;
+        const result = col.update(dt, t, dCdt, coupling);
         
-        const ratio = c.C / omega;
-        maxRatio = Math.max(maxRatio, ratio);
-        
-        const thresh = omega * (0.88 + Math.random() * 0.24);
-        const gap = t - c.lastδ;
-        
-        if (c.C > thresh && gap > 0.14) {
-            const C_at_δ = c.C;
-            const expW = Math.exp(C_at_δ / omega);
-            const energy = C_at_δ / omega;
+        if (result.ruptured) {
+            playCrackle(result.energy);
+            playHarp(i, result.energy, result.expWeight);
             
-            playCrackle(energy);
-            playHarp(i, energy, expW);
+            // Queue note for harpist animation
+            harpist.noteQueue.push({ time: t, col: i, energy: result.energy });
             
-            flashes.push({ x: (i + 0.5) / NUM_COLS, y: 0.15 + Math.random() * 0.12, age: 0, energy, expW });
-            
-            c.R = C_at_δ * Math.min(expW, 5);
-            c.C = Math.random() * omega * 0.07;
-            c.lastδ = t;
+            flashes.push({
+                x: (i + 0.5) / NUM_COLS,
+                y: 0.15 + Math.random() * 0.12,
+                age: 0,
+                energy: result.energy,
+                expW: result.expWeight
+            });
             
             total++;
             recent.push(t);
-            lastExp = expW;
+            lastExp = result.expWeight;
         }
         
-        c.R *= Math.exp(-dt / tau);
-        c.sway += dt * (0.18 + Math.sin(t * 0.06 + i * 0.35) * 0.07);
+        maxRatio = Math.max(maxRatio, col.C / col.omega);
     });
     
-    // Stars CRR twinkle
-    stars.forEach(s => {
-        s.C += 0.25 * dt + Math.sin(s.phase) * 0.08 * dt;
-        s.C += (Math.random() - 0.5) * Math.sqrt(s.omega) * dt * 1.8;
-        s.C = Math.max(0, s.C);
-        s.phase += dt * 0.4;
-        if (s.C > s.omega) {
-            s.brightness = 1.3 + Math.random() * 0.4;
-            s.C = Math.random() * s.omega * 0.25;
-        }
-        s.brightness *= Math.exp(-dt / 0.7);
-        s.brightness = Math.max(0.12, s.brightness);
-    });
+    // Update stars
+    stars.forEach(star => star.update(dt, t));
     
-    // === CAMPFIRE CRR ===
-    const fireOmega = 0.15;
-    fire.C += 0.4 * dt;
-    fire.C += (Math.random() - 0.5) * Math.sqrt(fireOmega) * dt * 2;
-    fire.C = Math.max(0, fire.C);
+    // Update fire
+    const fireResult = fire.update(dt, t, playFireCrackle);
     
-    if (fire.C > fireOmega && t - fire.lastδ > 0.08) {
-        const energy = fire.C / fireOmega;
-        fire.R = fire.C * Math.exp(fire.C / fireOmega);
-        fire.C = Math.random() * fireOmega * 0.2;
-        fire.lastδ = t;
-        
-        const burstCount = 3 + Math.floor(energy * 4);
-        for (let i = 0; i < burstCount; i++) {
-            fire.particles.push({
-                x: (Math.random() - 0.5) * 15,
-                y: 0,
-                vx: (Math.random() - 0.5) * 25,
-                vy: -40 - Math.random() * 60,
-                life: 0.6 + Math.random() * 0.8,
-                age: 0,
-                size: 2 + Math.random() * 4
-            });
+    // Figure tending behavior
+    tending.cooldown = Math.max(0, tending.cooldown - dt);
+    
+    if (!tending.active && fireResult.needsTending && tending.cooldown <= 0) {
+        const sitters = figures.map((f, i) => ({ f, i })).filter(x => x.f.pose === 'sitting');
+        if (sitters.length > 0) {
+            const chosen = sitters[Math.floor(Math.random() * sitters.length)];
+            tending.active = true;
+            tending.figureIdx = chosen.i;
+            tending.progress = 0;
         }
+    }
+    
+    if (tending.active) {
+        tending.progress += dt * 0.4;
         
-        if (Math.random() < 0.4) {
-            for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
-                fire.sparks.push({
-                    x: (Math.random() - 0.5) * 10,
-                    y: -5,
-                    vx: (Math.random() - 0.5) * 50,
-                    vy: -80 - Math.random() * 40,
-                    life: 0.8 + Math.random() * 0.6,
-                    age: 0
+        if (tending.progress >= 0.5 && tending.progress < 0.55) {
+            fire.addFuel();
+            for (let i = 0; i < 8; i++) {
+                fire.particles.push({
+                    x: (Math.random() - 0.5) * 20, y: -5,
+                    vx: (Math.random() - 0.5) * 40,
+                    vy: -50 - Math.random() * 40,
+                    life: 0.5 + Math.random() * 0.4, age: 0,
+                    size: 2 + Math.random() * 3
                 });
             }
+            for (let i = 0; i < 5; i++) {
+                fire.sparks.push({
+                    x: (Math.random() - 0.5) * 15, y: -8,
+                    vx: (Math.random() - 0.5) * 60,
+                    vy: -70 - Math.random() * 50,
+                    life: 0.6 + Math.random() * 0.5, age: 0
+                });
+            }
+            playFireCrackle(1.5);
         }
         
-        playFireCrackle(energy);
+        if (tending.progress >= 1) {
+            tending.active = false;
+            tending.figureIdx = -1;
+            tending.cooldown = 3 + Math.random() * 2;
+        }
     }
     
-    if (Math.random() < 0.3) {
-        fire.particles.push({
-            x: (Math.random() - 0.5) * 20,
-            y: 0,
-            vx: (Math.random() - 0.5) * 15,
-            vy: -20 - Math.random() * 35,
-            life: 0.4 + Math.random() * 0.5,
-            age: 0,
-            size: 1.5 + Math.random() * 2.5
-        });
+    // Harpist animation - plays in sync with aurora ruptures
+    // Process note queue - take next note if not currently playing
+    if (!harpist.playing && harpist.noteQueue.length > 0) {
+        const note = harpist.noteQueue.shift();
+        harpist.playing = true;
+        harpist.progress = 0;
+        harpist.currentNote = note;
+        harpist.lastNote = t;
     }
     
-    fire.particles.forEach(p => {
-        p.age += dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 15 * dt;
-        p.vx += (Math.random() - 0.5) * 30 * dt;
-    });
-    fire.particles = fire.particles.filter(p => p.age < p.life);
+    // Animate harp playing
+    if (harpist.playing) {
+        harpist.progress += dt * 4;  // Fast pluck animation (~0.25s)
+        if (harpist.progress >= 1) {
+            harpist.playing = false;
+            harpist.progress = 0;
+        }
+    }
     
-    fire.sparks.forEach(s => {
-        s.age += dt;
-        s.x += s.vx * dt;
-        s.y += s.vy * dt;
-        s.vy += 60 * dt;
-    });
-    fire.sparks = fire.sparks.filter(s => s.age < s.life);
+    // Clear old notes from queue (don't let it build up)
+    harpist.noteQueue = harpist.noteQueue.filter(n => t - n.time < 0.5);
+    if (harpist.noteQueue.length > 3) {
+        harpist.noteQueue = harpist.noteQueue.slice(-3);
+    }
     
-    fire.R *= Math.exp(-dt / 0.3);
-    
+    // Update flashes
     flashes.forEach(f => f.age += dt);
     flashes = flashes.filter(f => f.age < 1.6);
     recent = recent.filter(r => t - r < 5);
     
+    // Update stats
     document.getElementById('s-ratio').textContent = maxRatio.toFixed(2);
     document.getElementById('s-rate').textContent = (recent.length / 5).toFixed(1);
     document.getElementById('s-exp').textContent = lastExp > 0 ? lastExp.toFixed(2) : '—';
     document.getElementById('s-total').textContent = total;
     
+    // Modulate hiss with activity
     if (hissGain) {
         const activity = cols.reduce((sum, c) => sum + c.R, 0) / NUM_COLS;
-        hissGain.gain.value = 0.06 + activity * 0.12;
+        hissGain.gain.value = 0.06 + Math.min(activity * 0.005, 0.15);
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 // RENDERING
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 function getAuroraColor(alt, br) {
     let r, g, b, a;
     if (alt > 0.88) { r = 155+br*80; g = 22+br*22; b = 42+br*32; a = br*0.32; }
@@ -629,19 +872,31 @@ function render() {
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
     
-    // Stars
+    // Stars - rendered with better visibility
     stars.forEach(s => {
-        const br = Math.min(1, s.brightness);
-        ctx.fillStyle = `rgba(255,255,255,${br * 0.8})`;
+        const br = Math.min(1, s.brightness * s.baseAlpha);
+        const screenY = s.y * H;
+        
+        // Stars in aurora region get slight boost to show through
+        const inAurora = screenY > auroraTop && screenY < auroraBot;
+        const boost = inAurora ? 1.3 : 1.0;
+        
+        // Main star
+        ctx.fillStyle = `rgba(255,255,255,${br * boost * 0.9})`;
         ctx.beginPath();
-        ctx.arc(s.x * W, s.y * H, s.size * br, 0, Math.PI * 2);
+        ctx.arc(s.x * W, screenY, s.size * (0.7 + br * 0.3), 0, Math.PI * 2);
         ctx.fill();
-        if (br > 0.75) {
-            const glow = ctx.createRadialGradient(s.x*W, s.y*H, 0, s.x*W, s.y*H, s.size*3.5);
-            glow.addColorStop(0, `rgba(200,220,255,${(br-0.75)*1.5})`);
+        
+        // Glow for bright stars
+        if (br > 0.5) {
+            const glow = ctx.createRadialGradient(s.x*W, screenY, 0, s.x*W, screenY, s.size * 4);
+            glow.addColorStop(0, `rgba(220,235,255,${(br - 0.5) * 1.2 * boost})`);
+            glow.addColorStop(0.5, `rgba(200,220,255,${(br - 0.5) * 0.4 * boost})`);
             glow.addColorStop(1, 'transparent');
             ctx.fillStyle = glow;
-            ctx.fillRect(s.x*W-8, s.y*H-8, 16, 16);
+            ctx.beginPath();
+            ctx.arc(s.x * W, screenY, s.size * 4, 0, Math.PI * 2);
+            ctx.fill();
         }
     });
     
@@ -654,15 +909,15 @@ function render() {
 }
 
 function renderAuroraGlow() {
-    cols.forEach((c, i) => {
-        const br = (c.R * 0.35 + c.C / omega * 0.18) * intensity * 0.45;
-        if (br < 0.01) return;
+    cols.forEach((col, i) => {
+        const br = col.getBrightness(intensity) * 0.4;  // Reduced from 0.5
+        if (br < 0.015) return;
         const x = (i + 0.5) / NUM_COLS * W;
-        const sway = Math.sin(c.sway) * W * 0.01;
-        const col = getAuroraColor(0.5, br);
-        const grad = ctx.createRadialGradient(x+sway, auroraTop + (auroraBot-auroraTop)*0.3, 0, x+sway, auroraTop + (auroraBot-auroraTop)*0.3, H*0.3);
-        grad.addColorStop(0, `rgba(${col.r},${col.g},${col.b},${br*0.28})`);
-        grad.addColorStop(0.5, `rgba(${col.r*0.6},${col.g*0.7},${col.b*0.6},${br*0.08})`);
+        const sway = Math.sin(col.sway) * W * 0.01;
+        const c = getAuroraColor(0.5, br);
+        const grad = ctx.createRadialGradient(x+sway, auroraTop + (auroraBot-auroraTop)*0.3, 0, x+sway, auroraTop + (auroraBot-auroraTop)*0.3, H*0.28);
+        grad.addColorStop(0, `rgba(${c.r},${c.g},${c.b},${br*0.22})`);  // Reduced opacity
+        grad.addColorStop(0.5, `rgba(${c.r*0.6},${c.g*0.7},${c.b*0.6},${br*0.06})`);
         grad.addColorStop(1, 'transparent');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H * 0.55);
@@ -674,23 +929,23 @@ function renderAuroraCurtains() {
         const alpha = [0.22, 0.38, 0.55, 0.85][pass];
         const off = [0.01, 0.003, -0.002, -0.007][pass];
         
-        cols.forEach((c, i) => {
-            const br = (c.R * 0.45 + c.C / omega * 0.32) * intensity * alpha;
+        cols.forEach((col, i) => {
+            const br = col.getBrightness(intensity) * alpha;
             if (br < 0.018) return;
             
             const baseX = (i + 0.5) / NUM_COLS * W;
-            const sway = Math.sin(c.sway + pass * 0.28) * W * 0.008;
+            const sway = Math.sin(col.sway + pass * 0.28) * W * 0.008;
             const x = baseX + sway + off * W;
             
             const rayTop = auroraTop + H * (0.008 + Math.sin(t * 0.13 + i * 0.18) * 0.01);
-            const rayBot = auroraTop + (auroraBot - auroraTop) * c.height;
+            const rayBot = auroraTop + (auroraBot - auroraTop) * col.height;
             const rayW = W / NUM_COLS * (0.65 + br * 0.28);
             
             const grad = ctx.createLinearGradient(x, rayTop, x, rayBot);
             for (let s = 0; s <= 1; s += 0.1) {
-                const col = getAuroraColor(1 - s, br);
+                const c = getAuroraColor(1 - s, br);
                 const fade = (s < 0.07 || s > 0.93) ? 0.22 : 1;
-                grad.addColorStop(s, `rgba(${col.r},${col.g},${col.b},${col.a * fade})`);
+                grad.addColorStop(s, `rgba(${c.r},${c.g},${c.b},${c.a * fade})`);
             }
             
             ctx.beginPath();
@@ -722,9 +977,8 @@ function renderFlashes() {
             beam.addColorStop(0.22, `rgba(200,255,215,${flash*0.55})`);
             beam.addColorStop(0.55, `rgba(150,255,175,${flash*0.32})`);
             beam.addColorStop(1, 'transparent');
-            const bw = 10 + f.energy * 18;
             ctx.fillStyle = beam;
-            ctx.fillRect(x - bw/2, auroraTop, bw, auroraBot * 0.8);
+            ctx.fillRect(x - (10 + f.energy * 18)/2, auroraTop, 10 + f.energy * 18, auroraBot * 0.8);
             
             const core = ctx.createRadialGradient(x, y, 0, x, y, 30*flash);
             core.addColorStop(0, `rgba(255,255,255,${flash*0.85})`);
@@ -740,14 +994,11 @@ function renderMountains() {
     mountains.forEach((m, mi) => {
         const grad = ctx.createLinearGradient(0, H * m.y - H * 0.15, 0, H * m.y + H * 0.05);
         const [r, g, b] = m.col;
-        
         const tintR = mi < 2 ? 15 + intensity * 20 : 0;
         const tintG = mi < 2 ? 25 + intensity * 30 : 0;
         const tintB = mi < 2 ? 20 + intensity * 15 : 0;
-        
         grad.addColorStop(0, `rgba(${r + tintR}, ${g + tintG}, ${b + tintB}, ${1 - m.mist * 0.3})`);
         grad.addColorStop(1, `rgb(${r}, ${g}, ${b})`);
-        
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.moveTo(-30, H);
@@ -768,12 +1019,10 @@ function renderMountains() {
         
         if (m.snowPts.length > 0) {
             m.snowPts.forEach(p => {
-                const snowAlpha = 0.25 + p.h * 0.5;
-                const snowH = p.h * 12;
-                ctx.fillStyle = `rgba(220, 230, 240, ${snowAlpha})`;
+                ctx.fillStyle = `rgba(220, 230, 240, ${0.25 + p.h * 0.5})`;
                 ctx.beginPath();
                 ctx.moveTo(p.x - 3, p.y + 2);
-                ctx.lineTo(p.x, p.y - snowH);
+                ctx.lineTo(p.x, p.y - p.h * 12);
                 ctx.lineTo(p.x + 3, p.y + 2);
                 ctx.closePath();
                 ctx.fill();
@@ -785,7 +1034,6 @@ function renderMountains() {
             ctx.fillRect(0, H * m.y - H * 0.1, W, H * 0.15);
         }
     });
-    
     ctx.fillStyle = '#040608';
     ctx.fillRect(0, H * 0.91, W, H * 0.09);
 }
@@ -793,10 +1041,11 @@ function renderMountains() {
 function renderCampfire() {
     const cx = W * 0.5;
     const cy = H * 0.91;
+    const fireInt = fire.getIntensity();
     
     // Ground glow
     const groundGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120);
-    const glowInt = 0.15 + fire.R * 0.2;
+    const glowInt = (0.15 + fire.R * 0.01) * fireInt;
     groundGlow.addColorStop(0, `rgba(255, 150, 50, ${glowInt})`);
     groundGlow.addColorStop(0.5, `rgba(255, 100, 30, ${glowInt * 0.4})`);
     groundGlow.addColorStop(1, 'transparent');
@@ -808,7 +1057,6 @@ function renderCampfire() {
         ctx.save();
         ctx.translate(cx + log.x, cy + log.y);
         ctx.rotate(log.angle);
-        
         const logGrad = ctx.createLinearGradient(0, -4, 0, 4);
         logGrad.addColorStop(0, '#2a1a0a');
         logGrad.addColorStop(0.5, '#1a0f05');
@@ -817,26 +1065,23 @@ function renderCampfire() {
         ctx.beginPath();
         ctx.ellipse(0, 0, log.len / 2, 5, 0, 0, Math.PI * 2);
         ctx.fill();
-        
-        ctx.fillStyle = `rgba(255, ${80 + fire.R * 60}, 20, ${0.3 + fire.R * 0.4})`;
+        ctx.fillStyle = `rgba(255, ${80 + fire.R * 3}, 20, ${(0.3 + fire.R * 0.02) * fireInt})`;
         ctx.beginPath();
         ctx.ellipse(log.len / 2 - 5, 0, 6, 4, 0, 0, Math.PI * 2);
         ctx.fill();
-        
         ctx.restore();
     });
     
-    // Fire particles
+    // Particles
     fire.particles.forEach(p => {
         const lifeRatio = 1 - p.age / p.life;
         const size = p.size * lifeRatio;
-        
         let r, g, b, a;
         if (lifeRatio > 0.8) { r = 255; g = 255; b = 200 + (1 - lifeRatio) * 275; a = 0.9; }
         else if (lifeRatio > 0.5) { r = 255; g = 200 + (lifeRatio - 0.5) * 180; b = 50; a = 0.85; }
         else if (lifeRatio > 0.25) { r = 255; g = 100 + (lifeRatio - 0.25) * 400; b = 20; a = 0.7; }
         else { r = 180 + lifeRatio * 300; g = 50 + lifeRatio * 200; b = 30; a = lifeRatio * 2.5; }
-        
+        a *= fireInt;
         const px = cx + p.x, py = cy + p.y;
         const glow = ctx.createRadialGradient(px, py, 0, px, py, size * 2);
         glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a})`);
@@ -854,17 +1099,11 @@ function renderCampfire() {
         ctx.beginPath();
         ctx.arc(sx, sy, 1.5 * lifeRatio, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = `rgba(255, 180, 80, ${lifeRatio * 0.5})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(sx - s.vx * 0.02, sy - s.vy * 0.02);
-        ctx.stroke();
     });
     
     // Core glow
     const coreGlow = ctx.createRadialGradient(cx, cy - 10, 0, cx, cy - 10, 25);
-    const coreInt = 0.4 + fire.R * 0.5;
+    const coreInt = (0.4 + fire.R * 0.02) * fireInt;
     coreGlow.addColorStop(0, `rgba(255, 255, 220, ${coreInt})`);
     coreGlow.addColorStop(0.3, `rgba(255, 200, 100, ${coreInt * 0.7})`);
     coreGlow.addColorStop(0.6, `rgba(255, 120, 40, ${coreInt * 0.4})`);
@@ -874,32 +1113,38 @@ function renderCampfire() {
 }
 
 function renderFigures() {
-    figures.forEach(fig => {
+    const fireInt = fire.getIntensity();
+    
+    figures.forEach((fig, idx) => {
         const x = fig.x, y = fig.y, h = fig.height, facing = fig.facing;
         const sway = Math.sin(t * 0.5 + fig.sway) * 1.5;
+        const isTending = tending.active && tending.figureIdx === idx;
         
         ctx.save();
         ctx.translate(x + sway, y);
         
-        const warmth = 0.15 + fire.R * 0.1;
+        const warmth = (0.15 + fire.R * 0.005) * fireInt;
         ctx.strokeStyle = `rgba(${20 + warmth * 80}, ${15 + warmth * 40}, ${12 + warmth * 20}, 0.9)`;
         ctx.fillStyle = ctx.strokeStyle;
         ctx.lineWidth = 1.5;
         ctx.lineCap = 'round';
         
-        if (fig.pose === 'sitting') {
+        if (isTending) {
+            const p = tending.progress;
+            const lean = Math.sin(p * Math.PI) * 0.3;
+            const reach = Math.sin(p * Math.PI) * 0.4;
             ctx.beginPath();
-            ctx.arc(0, -h * 0.85, h * 0.1, 0, Math.PI * 2);
+            ctx.arc(facing * h * lean * 0.3, -h * (0.75 - lean * 0.15), h * 0.1, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(0, -h * 0.75);
+            ctx.moveTo(facing * h * lean * 0.2, -h * (0.65 - lean * 0.1));
             ctx.lineTo(0, -h * 0.35);
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(0, -h * 0.6);
-            ctx.lineTo(facing * h * 0.25, -h * 0.45);
-            ctx.moveTo(0, -h * 0.55);
-            ctx.lineTo(facing * h * 0.2, -h * 0.35);
+            ctx.moveTo(facing * h * lean * 0.15, -h * (0.55 - lean * 0.08));
+            ctx.lineTo(facing * h * (0.35 + reach * 0.2), -h * (0.35 - reach * 0.1));
+            ctx.moveTo(facing * h * lean * 0.1, -h * (0.5 - lean * 0.05));
+            ctx.lineTo(facing * h * (0.3 + reach * 0.15), -h * (0.25 - reach * 0.08));
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(0, -h * 0.35);
@@ -909,45 +1154,130 @@ function renderFigures() {
             ctx.lineTo(-facing * h * 0.1, -h * 0.15);
             ctx.lineTo(-facing * h * 0.15, 0);
             ctx.stroke();
+        } else if (fig.pose === 'sitting') {
+            ctx.beginPath(); ctx.arc(0, -h * 0.85, h * 0.1, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -h * 0.75); ctx.lineTo(0, -h * 0.35); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -h * 0.6); ctx.lineTo(facing * h * 0.25, -h * 0.45);
+            ctx.moveTo(0, -h * 0.55); ctx.lineTo(facing * h * 0.2, -h * 0.35);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -h * 0.35); ctx.lineTo(facing * h * 0.15, -h * 0.15); ctx.lineTo(facing * h * 0.05, 0);
+            ctx.moveTo(0, -h * 0.35); ctx.lineTo(-facing * h * 0.1, -h * 0.15); ctx.lineTo(-facing * h * 0.15, 0);
+            ctx.stroke();
         } else if (fig.pose === 'standing') {
+            ctx.beginPath(); ctx.arc(0, -h, h * 0.08, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -h * 0.92); ctx.lineTo(0, -h * 0.4); ctx.stroke();
             ctx.beginPath();
-            ctx.arc(0, -h, h * 0.08, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(0, -h * 0.92);
-            ctx.lineTo(0, -h * 0.4);
+            ctx.moveTo(0, -h * 0.75); ctx.lineTo(facing * h * 0.12, -h * 0.5);
+            ctx.moveTo(0, -h * 0.75); ctx.lineTo(-facing * h * 0.08, -h * 0.55);
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(0, -h * 0.75);
-            ctx.lineTo(facing * h * 0.12, -h * 0.5);
-            ctx.moveTo(0, -h * 0.75);
-            ctx.lineTo(-facing * h * 0.08, -h * 0.55);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0, -h * 0.4);
-            ctx.lineTo(h * 0.08, 0);
-            ctx.moveTo(0, -h * 0.4);
-            ctx.lineTo(-h * 0.08, 0);
+            ctx.moveTo(0, -h * 0.4); ctx.lineTo(h * 0.08, 0);
+            ctx.moveTo(0, -h * 0.4); ctx.lineTo(-h * 0.08, 0);
             ctx.stroke();
         } else if (fig.pose === 'crouching') {
-            ctx.beginPath();
-            ctx.arc(0, -h * 0.6, h * 0.09, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(0, -h * 0.6, h * 0.09, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -h * 0.52); ctx.quadraticCurveTo(facing * h * 0.05, -h * 0.35, 0, -h * 0.2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, -h * 0.4); ctx.lineTo(facing * h * 0.2, -h * 0.25); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, -h * 0.2); ctx.lineTo(facing * h * 0.12, -h * 0.05); ctx.lineTo(facing * h * 0.05, 0); ctx.stroke();
+        } else if (fig.pose === 'harpist') {
+            // Seated harpist with mini harp
+            const isPlaying = harpist.figureIdx === idx && harpist.playing;
+            const pluckPhase = isPlaying ? Math.sin(harpist.progress * Math.PI) : 0;
+            
+            // Head
+            ctx.beginPath(); 
+            ctx.arc(0, -h * 0.85, h * 0.1, 0, Math.PI * 2); 
             ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(0, -h * 0.52);
-            ctx.quadraticCurveTo(facing * h * 0.05, -h * 0.35, 0, -h * 0.2);
+            
+            // Body - slightly leaning toward harp
+            ctx.beginPath(); 
+            ctx.moveTo(0, -h * 0.75); 
+            ctx.lineTo(facing * h * 0.05, -h * 0.35); 
             ctx.stroke();
+            
+            // Mini harp (held in front) - triangular frame
+            const harpX = facing * h * 0.28;
+            const harpY = -h * 0.5;
+            const harpW = h * 0.18;
+            const harpH = h * 0.35;
+            
+            // Harp frame
+            ctx.strokeStyle = `rgba(${60 + warmth * 100}, ${45 + warmth * 60}, ${30 + warmth * 40}, 0.85)`;
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
-            ctx.moveTo(0, -h * 0.4);
-            ctx.lineTo(facing * h * 0.2, -h * 0.25);
+            // Curved top (neck)
+            ctx.moveTo(harpX - harpW * 0.3, harpY - harpH * 0.5);
+            ctx.quadraticCurveTo(harpX + harpW * 0.5, harpY - harpH * 0.6, harpX + harpW * 0.4, harpY);
+            // Soundboard (vertical)
+            ctx.lineTo(harpX + harpW * 0.4, harpY + harpH * 0.5);
+            // Base
+            ctx.lineTo(harpX - harpW * 0.3, harpY + harpH * 0.3);
+            ctx.closePath();
             ctx.stroke();
+            
+            // Harp strings (4-5 strings)
+            ctx.strokeStyle = `rgba(${180 + warmth * 50}, ${160 + warmth * 40}, ${120 + warmth * 30}, 0.6)`;
+            ctx.lineWidth = 0.5;
+            for (let s = 0; s < 5; s++) {
+                const stringX = harpX - harpW * 0.2 + s * harpW * 0.12;
+                const topY = harpY - harpH * 0.4 + s * harpH * 0.08;
+                const botY = harpY + harpH * 0.35 - s * harpH * 0.02;
+                
+                // String vibration when playing
+                const vibration = isPlaying ? Math.sin(harpist.progress * Math.PI * 8 + s) * 1.5 * (1 - harpist.progress) : 0;
+                
+                ctx.beginPath();
+                ctx.moveTo(stringX, topY);
+                if (vibration !== 0) {
+                    // Vibrating string - slight wave
+                    const midY = (topY + botY) / 2;
+                    ctx.quadraticCurveTo(stringX + vibration, midY, stringX, botY);
+                } else {
+                    ctx.lineTo(stringX, botY);
+                }
+                ctx.stroke();
+            }
+            
+            // Reset stroke style for body
+            ctx.strokeStyle = `rgba(${20 + warmth * 80}, ${15 + warmth * 40}, ${12 + warmth * 20}, 0.9)`;
+            ctx.lineWidth = 1.5;
+            
+            // Left arm holding harp
             ctx.beginPath();
-            ctx.moveTo(0, -h * 0.2);
-            ctx.lineTo(facing * h * 0.12, -h * 0.05);
-            ctx.lineTo(facing * h * 0.05, 0);
+            ctx.moveTo(0, -h * 0.6);
+            ctx.lineTo(facing * h * 0.15, -h * 0.55);
+            ctx.lineTo(harpX - harpW * 0.1, harpY);
+            ctx.stroke();
+            
+            // Right arm/hand plucking - animates with aurora
+            const handRestX = harpX + harpW * 0.1;
+            const handRestY = harpY + harpH * 0.1;
+            const pluckX = handRestX - pluckPhase * h * 0.08;  // Hand moves back when plucking
+            const pluckY = handRestY + pluckPhase * h * 0.03;
+            
+            ctx.beginPath();
+            ctx.moveTo(facing * h * 0.02, -h * 0.55);
+            ctx.lineTo(facing * h * 0.18, -h * 0.4);
+            ctx.lineTo(pluckX, pluckY);
+            ctx.stroke();
+            
+            // Hand/fingers
+            ctx.beginPath();
+            ctx.arc(pluckX, pluckY, h * 0.03, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bent legs (sitting)
+            ctx.beginPath();
+            ctx.moveTo(facing * h * 0.05, -h * 0.35);
+            ctx.lineTo(facing * h * 0.18, -h * 0.15);
+            ctx.lineTo(facing * h * 0.08, 0);
+            ctx.moveTo(facing * h * 0.05, -h * 0.35);
+            ctx.lineTo(-facing * h * 0.05, -h * 0.15);
+            ctx.lineTo(-facing * h * 0.1, 0);
             ctx.stroke();
         }
-        
         ctx.restore();
     });
 }
@@ -969,14 +1299,15 @@ function renderMetrics() {
     mctx.stroke();
     mctx.setLineDash([]);
     
-    cols.forEach((c, i) => {
+    cols.forEach((col, i) => {
         const x = i * barW;
-        const ratio = c.C / omega;
+        const ratio = col.C / col.omega;
         const h = Math.min(ratio / 1.35, 1) * (mH - 5);
-        const col = getAuroraColor(0.45, Math.min(1, ratio));
-        mctx.fillStyle = `rgba(${col.r},${col.g},${col.b},${0.45 + ratio * 0.4})`;
+        const c = getAuroraColor(0.45, Math.min(1, ratio));
+        mctx.fillStyle = `rgba(${c.r},${c.g},${c.b},${0.45 + ratio * 0.4})`;
         mctx.fillRect(x + 0.5, mH - 2 - h, barW - 1, h);
-        const ts = t - c.lastδ;
+        
+        const ts = t - col.lastRuptureTime;
         if (ts < 0.18) {
             mctx.fillStyle = `rgba(255,255,255,${(1 - ts/0.18) * 0.55})`;
             mctx.fillRect(x, 0, barW, mH);
