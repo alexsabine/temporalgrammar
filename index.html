@@ -1282,7 +1282,7 @@
 
         .anthill-container {
             background: linear-gradient(180deg, #7a6548 0%, #5c4a35 8%, #4a3728 25%, #3d2a1a 60%, #2e1f12 100%);
-            border-radius: 12px;
+            border-radius: 0;
             padding: 0;
             margin: 20px auto 30px;
             max-width: 950px;
@@ -2687,13 +2687,24 @@
                         
                         this.coherence += 0.006 * this.speed;
                         
-                        if (this.coherence > this.omega) {
+                        // Carrying ants are more committed - higher effective omega
+                        const effectiveOmega = this.carrying ? this.omega * 2.2 : this.omega;
+                        
+                        if (this.coherence > effectiveOmega) {
+                            // Rupture - but only drop resource if we're actually at a chamber
                             if (this.carrying) {
                                 const nearIdx = this.nearestChamberIndex();
-                                chambers[nearIdx].resources.push(this.carrying);
-                                chambers[nearIdx].activity += 0.1;
-                                totalResourcesDelivered++;
-                                this.carrying = null;
+                                const nearCh = chambers[nearIdx];
+                                const distToNearest = Math.hypot(nearCh.px - this.x, nearCh.py - this.y);
+                                
+                                // Only drop if we're inside a chamber
+                                if (distToNearest < nearCh.radius * 0.8) {
+                                    nearCh.resources.push(this.carrying);
+                                    nearCh.activity += 0.1;
+                                    totalResourcesDelivered++;
+                                    this.carrying = null;
+                                }
+                                // Otherwise keep carrying - don't drop in tunnels
                             }
                             this.waitTime = 8 + Math.random() * 15;
                             this.decideAction();
