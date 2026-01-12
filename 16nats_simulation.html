@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>16 Nats Identity: CRR Cortical Hierarchy Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0 30px;
+            border-bottom: 2px solid #1a1a1a;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .identity-display {
+            font-size: 32px;
+            font-style: italic;
+            margin: 15px 0;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #555;
+            letter-spacing: 0.5px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 280px;
+            gap: 25px;
+        }
+        
+        .panel {
+            background: #fafafa;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        
+        .panel-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #666;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        /* Hierarchy Panel */
+        .hierarchy-container {
+            position: relative;
+        }
+        
+        .level {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            height: 36px;
+        }
+        
+        .level-number {
+            width: 24px;
+            font-size: 11px;
+            color: #888;
+            text-align: right;
+            padding-right: 8px;
+        }
+        
+        .level-node {
+            flex: 1;
+            height: 28px;
+            background: #e8e8e8;
+            border: 1px solid #999;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.15s ease;
+        }
+        
+        .level-node.active {
+            background: #2a5a8a;
+            border-color: #1a3a5a;
+        }
+        
+        .level-node.completed {
+            background: #3a7a5a;
+            border-color: #2a5a3a;
+        }
+        
+        .level-name {
+            font-size: 11px;
+            color: #333;
+            z-index: 2;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .level-node.active .level-name,
+        .level-node.completed .level-name {
+            color: #fff;
+        }
+        
+        .level-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #5a9ad8 0%, #3a7ab8 100%);
+            opacity: 0.8;
+            transition: width 0.05s ease;
+        }
+        
+        .level-info {
+            width: 70px;
+            font-size: 10px;
+            text-align: right;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Main Visualization */
+        .visualization-panel {
+            min-height: 580px;
+        }
+        
+        .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .crr-state {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .state-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .state-dot {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #666;
+            background: #ddd;
+        }
+        
+        .state-dot.active {
+            background: #2a8a5a;
+            border-color: #1a5a3a;
+        }
+        
+        .state-dot.rupture {
+            background: #c44;
+            border-color: #944;
+        }
+        
+        .state-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+        }
+        
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #bbb;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        .info-readout {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .readout-box {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .readout-value {
+            font-size: 24px;
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .readout-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #777;
+        }
+        
+        /* Parameters Panel */
+        .param-group {
+            margin-bottom: 20px;
+        }
+        
+        .param-label {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .param-value {
+            font-family: 'Courier New', monospace;
+            color: #1a1a1a;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #ddd;
+            outline: none;
+            border: 1px solid #bbb;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #444;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .equations-box {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .equation {
+            font-size: 12px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            color: #333;
+        }
+        
+        .equation-label {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 3px;
+            font-family: Georgia, serif;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            font-family: Georgia, serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid #666;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        button:hover {
+            background: #333;
+            color: #fff;
+        }
+        
+        button.primary {
+            background: #2a5a8a;
+            color: #fff;
+            border-color: #1a3a5a;
+        }
+        
+        button.primary:hover {
+            background: #1a3a5a;
+        }
+        
+        .threshold-indicator {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #ccc;
+        }
+        
+        .threshold-bar {
+            height: 20px;
+            background: #eee;
+            border: 1px solid #bbb;
+            position: relative;
+            margin-top: 8px;
+        }
+        
+        .threshold-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3a7ab8 0%, #5a9ad8 100%);
+            transition: width 0.1s ease;
+        }
+        
+        .threshold-mark {
+            position: absolute;
+            top: -5px;
+            bottom: -5px;
+            width: 2px;
+            background: #c44;
+        }
+        
+        .threshold-label {
+            position: absolute;
+            top: -18px;
+            font-size: 9px;
+            color: #c44;
+            transform: translateX(-50%);
+        }
+        
+        footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .math-note {
+            font-style: italic;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>The 16 Nats Identity</h1>
+            <div class="identity-display">π<sup>14</sup> ≈ 2<sup>e<sup>π</sup></sup></div>
+            <div class="subtitle">Coherence-Rupture-Regeneration Framework | Cortical Hierarchy Simulation</div>
+        </header>
+        
+        <div class="main-grid">
+            <!-- Left Panel: Hierarchy -->
+            <div class="panel">
+                <div class="panel-title">Cortical Hierarchy (Felleman & Van Essen)</div>
+                <div class="hierarchy-container" id="hierarchy">
+                    <!-- Levels will be generated by JS -->
+                </div>
+            </div>
+            
+            <!-- Center Panel: Main Visualization -->
+            <div class="panel visualization-panel">
+                <div class="viz-header">
+                    <div class="panel-title" style="margin-bottom: 0; border: none; padding: 0;">Signal Propagation & Information Accumulation</div>
+                    <div class="crr-state">
+                        <div class="state-indicator">
+                            <div class="state-dot" id="coherence-dot"></div>
+                            <span class="state-label">Coherence</span>
+                        </div>
+                        <div class="state-indicator">
+                            <div class="state-dot" id="rupture-dot"></div>
+                            <span class="state-label">Rupture</span>
+                        </div>
+                        <div class="state-indicator">
+                            <div class="state-dot" id="regen-dot"></div>
+                            <span class="state-label">Regeneration</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+                
+                <div class="info-readout">
+                    <div class="readout-box">
+                        <div class="readout-value" id="readout-level">1</div>
+                        <div class="readout-label">Active Level</div>
+                    </div>
+                    <div class="readout-box">
+                        <div class="readout-value" id="readout-info">0.00</div>
+                        <div class="readout-label">Information (nats)</div>
+                    </div>
+                    <div class="readout-box">
+                        <div class="readout-value" id="readout-coherence">0.00</div>
+                        <div class="readout-label">C / Ω (level)</div>
+                    </div>
+                    <div class="readout-box">
+                        <div class="readout-value" id="readout-gain">1.00</div>
+                        <div class="readout-label">exp(C/Ω) hier.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Parameters -->
+            <div class="panel">
+                <div class="panel-title">CRR Parameters</div>
+                
+                <div class="param-group">
+                    <div class="param-label">
+                        <span>Ω (Boundary Softness)</span>
+                        <span class="param-value" id="omega-value">0.318</span>
+                    </div>
+                    <input type="range" id="omega-slider" min="0.1" max="0.5" step="0.001" value="0.318">
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-top: 4px;">
+                        <span>← System 1 (fast)</span>
+                        <span>System 2 (slow) →</span>
+                    </div>
+                    <div id="system-indicator" style="text-align: center; font-size: 11px; margin-top: 8px; padding: 6px; background: #fff; border: 1px solid #ccc;">
+                        <span id="system-mode">Balanced</span>
+                        <div style="font-size: 9px; color: #666; margin-top: 2px;" id="system-desc">Z₂ default · Precision = π</div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-label">
+                        <span>Signal Rate</span>
+                        <span class="param-value" id="rate-value">1.0×</span>
+                    </div>
+                    <input type="range" id="rate-slider" min="0.2" max="3" step="0.1" value="1">
+                </div>
+                
+                <div class="param-group">
+                    <div class="param-label">
+                        <span>Noise Level</span>
+                        <span class="param-value" id="noise-value">0.05</span>
+                    </div>
+                    <input type="range" id="noise-slider" min="0" max="0.2" step="0.01" value="0.05">
+                </div>
+                
+                <div class="threshold-indicator">
+                    <div class="param-label">
+                        <span>Cumulative Information</span>
+                        <span class="param-value"><span id="info-current">0.00</span> / 16.03 nats</span>
+                    </div>
+                    <div class="threshold-bar">
+                        <div class="threshold-fill" id="info-fill" style="width: 0%"></div>
+                        <div class="threshold-mark" style="left: calc(100% - 2px)">
+                            <div class="threshold-label">e<sup>π</sup></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="threshold-indicator">
+                    <div class="param-label">
+                        <span>Hierarchical Gain exp(C/Ω)</span>
+                        <span class="param-value"><span id="gain-current">1.00</span> / 23.14</span>
+                    </div>
+                    <div class="threshold-bar">
+                        <div class="threshold-fill" id="gain-fill" style="width: 0%"></div>
+                        <div class="threshold-mark" style="left: calc(100% - 2px)">
+                            <div class="threshold-label">e<sup>π</sup></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="equations-box">
+                    <div class="equation-label">Coherence Integral</div>
+                    <div class="equation">C(t) = ∫ L(τ) dτ</div>
+                    
+                    <div class="equation-label">Rupture Condition</div>
+                    <div class="equation">δ(now) when C ≥ Ω</div>
+                    
+                    <div class="equation-label">Hierarchical Gain</div>
+                    <div class="equation">exp(C/Ω) → e<sup>π</sup> at level 14</div>
+                    
+                    <div class="equation-label">Critical Threshold</div>
+                    <div class="equation">I<sub>crit</sub> = 14·ln(π) ≈ 16 nats</div>
+                    
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 10px; color: #555;">
+                        <strong>System 1 vs System 2:</strong><br>
+                        Low Ω → small threshold → fast ruptures<br>
+                        High Ω → large threshold → slow integration
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="btn-reset">Reset</button>
+                    <button id="btn-toggle" class="primary">Start</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <div>Based on Felleman & Van Essen (1991) cortical hierarchy | Murray et al. (2014) temporal dynamics</div>
+            <div class="math-note">The identity π<sup>14</sup> ≈ 2<sup>e<sup>π</sup></sup> emerges from information-theoretic constraints at the Z₂/SO(2) boundary</div>
+        </footer>
+    </div>
+    
+    <script>
+        // ============================================================
+        // MATHEMATICAL CONSTANTS
+        // ============================================================
+        const PI = Math.PI;
+        const E = Math.E;
+        const LN_PI = Math.log(PI);           // ≈ 1.1447
+        const CRITICAL_INFO = 14 * LN_PI;      // ≈ 16.026 nats
+        const E_PI = Math.pow(E, PI);          // ≈ 23.1407
+        const OMEGA_Z2 = 1 / PI;               // ≈ 0.3183
+        
+        // Hierarchy levels (Felleman & Van Essen 1991)
+        const HIERARCHY = [
+            { level: 1, name: 'Retina', abbr: 'RET' },
+            { level: 2, name: 'LGN', abbr: 'LGN' },
+            { level: 3, name: 'V1', abbr: 'V1' },
+            { level: 4, name: 'V2', abbr: 'V2' },
+            { level: 5, name: 'V3 / VP', abbr: 'V3' },
+            { level: 6, name: 'V4', abbr: 'V4' },
+            { level: 7, name: 'MT / V5', abbr: 'MT' },
+            { level: 8, name: 'MST', abbr: 'MST' },
+            { level: 9, name: 'IT', abbr: 'IT' },
+            { level: 10, name: 'TEO', abbr: 'TEO' },
+            { level: 11, name: 'TE', abbr: 'TE' },
+            { level: 12, name: 'Parahippocampal', abbr: 'PH' },
+            { level: 13, name: 'Entorhinal', abbr: 'EC' },
+            { level: 14, name: 'Hippocampus', abbr: 'HPC' }
+        ];
+        
+        // ============================================================
+        // STATE
+        // ============================================================
+        let state = {
+            running: false,
+            omega: OMEGA_Z2,           // 1/π ≈ 0.318
+            signalRate: 1.0,
+            noiseLevel: 0.05,
+            
+            // Hierarchical state
+            activeLevel: 0,            // 0-13 (displayed as 1-14)
+            levelCoherence: 0,         // Current level's coherence (0 to Ω, then resets)
+            completedLevels: 0,        // Number of levels fully processed
+            
+            // CRR state
+            crrState: 'coherence',     // 'coherence', 'rupture', 'regeneration'
+            ruptureCooldown: 0,
+            
+            // Derived values (computed from level)
+            cumulativeInfo: 0,         // completedLevels × ln(π)
+            hierarchicalCoverOmega: 0, // (activeLevel/14) × π
+            hierarchicalGain: 1,       // exp(hierarchicalCoverOmega)
+            
+            // History for waveforms
+            history: [],
+            time: 0,
+            
+            // Signals for animation
+            signals: []
+        };
+        
+        // ============================================================
+        // DOM ELEMENTS
+        // ============================================================
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const hierarchyContainer = document.getElementById('hierarchy');
+        
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        function init() {
+            setupCanvas();
+            buildHierarchy();
+            setupControls();
+            render();
+        }
+        
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        
+        function buildHierarchy() {
+            hierarchyContainer.innerHTML = '';
+            HIERARCHY.forEach((h, i) => {
+                const levelDiv = document.createElement('div');
+                levelDiv.className = 'level';
+                levelDiv.innerHTML = `
+                    <div class="level-number">${h.level}</div>
+                    <div class="level-node" id="level-node-${i}">
+                        <div class="level-fill" id="level-fill-${i}" style="width: 0%"></div>
+                        <span class="level-name">${h.name}</span>
+                    </div>
+                    <div class="level-info" id="level-info-${i}">0.00 nats</div>
+                `;
+                hierarchyContainer.appendChild(levelDiv);
+            });
+        }
+        
+        function setupControls() {
+            // Omega slider
+            const omegaSlider = document.getElementById('omega-slider');
+            omegaSlider.addEventListener('input', (e) => {
+                state.omega = parseFloat(e.target.value);
+                document.getElementById('omega-value').textContent = state.omega.toFixed(3);
+                updateSystemIndicator();
+            });
+            
+            function updateSystemIndicator() {
+                const omega = state.omega;
+                const precision = 1 / omega;
+                const modeEl = document.getElementById('system-mode');
+                const descEl = document.getElementById('system-desc');
+                const indicator = document.getElementById('system-indicator');
+                
+                let mode, desc, color;
+                
+                if (omega < 0.15) {
+                    mode = "System 1 Dominant";
+                    desc = `Rapid, reactive · Precision = ${precision.toFixed(1)}`;
+                    color = "#fff0f0";
+                } else if (omega < 0.22) {
+                    mode = "System 1 Leaning";
+                    desc = `Fast intuitive · SO(2) zone · Precision = ${precision.toFixed(1)}`;
+                    color = "#fff5f0";
+                } else if (omega < 0.38) {
+                    mode = "Balanced";
+                    desc = `Z₂ zone · Precision = ${precision.toFixed(1)}`;
+                    color = "#f8f8f8";
+                } else if (omega < 0.45) {
+                    mode = "System 2 Leaning";
+                    desc = `Deliberate · Precision = ${precision.toFixed(1)}`;
+                    color = "#f0f5ff";
+                } else {
+                    mode = "System 2 Dominant";
+                    desc = `Slow, analytical · Precision = ${precision.toFixed(1)}`;
+                    color = "#f0f0ff";
+                }
+                
+                modeEl.textContent = mode;
+                descEl.textContent = desc;
+                indicator.style.background = color;
+            }
+            
+            // Rate slider
+            const rateSlider = document.getElementById('rate-slider');
+            rateSlider.addEventListener('input', (e) => {
+                state.signalRate = parseFloat(e.target.value);
+                document.getElementById('rate-value').textContent = state.signalRate.toFixed(1) + '×';
+            });
+            
+            // Noise slider
+            const noiseSlider = document.getElementById('noise-slider');
+            noiseSlider.addEventListener('input', (e) => {
+                state.noiseLevel = parseFloat(e.target.value);
+                document.getElementById('noise-value').textContent = state.noiseLevel.toFixed(2);
+            });
+            
+            // Buttons
+            document.getElementById('btn-toggle').addEventListener('click', toggleSimulation);
+            document.getElementById('btn-reset').addEventListener('click', resetSimulation);
+        }
+        
+        function toggleSimulation() {
+            state.running = !state.running;
+            document.getElementById('btn-toggle').textContent = state.running ? 'Pause' : 'Start';
+            if (state.running) {
+                lastTime = performance.now();
+                requestAnimationFrame(update);
+            }
+        }
+        
+        function resetSimulation() {
+            state.running = false;
+            state.activeLevel = 0;
+            state.levelCoherence = 0;
+            state.completedLevels = 0;
+            state.crrState = 'coherence';
+            state.ruptureCooldown = 0;
+            state.cumulativeInfo = 0;
+            state.hierarchicalCoverOmega = 0;
+            state.hierarchicalGain = 1;
+            state.history = [];
+            state.signals = [];
+            state.time = 0;
+            document.getElementById('btn-toggle').textContent = 'Start';
+            render();
+        }
+        
+        // ============================================================
+        // SIMULATION UPDATE
+        // ============================================================
+        let lastTime = 0;
+        
+        function update(timestamp) {
+            if (!state.running) return;
+            
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.05) * state.signalRate;
+            lastTime = timestamp;
+            state.time += dt;
+            
+            // Update CRR dynamics
+            updateCRR(dt);
+            
+            // Compute derived values
+            computeDerivedValues();
+            
+            // Update signals
+            updateSignals(dt);
+            
+            // Record history (for waveform display)
+            recordHistory();
+            
+            // Render
+            render();
+            
+            requestAnimationFrame(update);
+        }
+        
+        function updateCRR(dt) {
+            // Handle rupture cooldown
+            if (state.ruptureCooldown > 0) {
+                state.ruptureCooldown -= dt;
+                if (state.ruptureCooldown <= 0) {
+                    state.crrState = 'regeneration';
+                    setTimeout(() => {
+                        if (state.running) state.crrState = 'coherence';
+                    }, 150);
+                }
+                return;
+            }
+            
+            // Coherence accumulation with noise
+            const noise = (Math.random() - 0.5) * state.noiseLevel * 2;
+            const luminance = Math.max(0.1, 0.8 + noise);
+            
+            // Accumulate coherence for current level
+            // FIXED RATE - independent of Ω so that:
+            // - Lower Ω (rigid) = faster ruptures, faster progression
+            // - Higher Ω (soft) = slower ruptures, slower progression
+            // Rate calibrated so ~2 seconds per level at default Ω=0.318
+            const fixedRate = 0.15;  // nats per second (independent of Ω)
+            state.levelCoherence += dt * luminance * fixedRate;
+            
+            // Check rupture condition: C_level ≥ Ω
+            if (state.levelCoherence >= state.omega) {
+                triggerRupture();
+            }
+        }
+        
+        function triggerRupture() {
+            state.crrState = 'rupture';
+            state.ruptureCooldown = 0.12;
+            
+            // Spawn signal packet
+            if (state.activeLevel < 13) {
+                state.signals.push({
+                    fromLevel: state.activeLevel,
+                    toLevel: state.activeLevel + 1,
+                    progress: 0
+                });
+            }
+            
+            // Mark level as completed
+            state.completedLevels = state.activeLevel + 1;
+            
+            // Advance to next level (or cycle if at top)
+            if (state.activeLevel < 13) {
+                state.activeLevel++;
+            } else {
+                // Reached hippocampus - system cycles
+                // Regeneration: partial reset based on memory weighting
+                setTimeout(() => {
+                    if (state.running) {
+                        // Reset to early levels with some memory preservation
+                        state.activeLevel = 0;
+                        state.completedLevels = 0;
+                    }
+                }, 500);
+            }
+            
+            // Reset level coherence for new level
+            state.levelCoherence = 0;
+        }
+        
+        function computeDerivedValues() {
+            // Cumulative information: completed levels × ln(π)
+            // Plus partial contribution from current level
+            const partialInfo = (state.levelCoherence / state.omega) * LN_PI;
+            state.cumulativeInfo = state.completedLevels * LN_PI + partialInfo;
+            
+            // Hierarchical C/Ω: based on effective level position
+            // At level n (0-indexed), C/Ω = ((n + partial) / 14) × π
+            const effectiveLevel = state.completedLevels + (state.levelCoherence / state.omega);
+            state.hierarchicalCoverOmega = (effectiveLevel / 14) * PI;
+            
+            // Hierarchical gain: exp(C/Ω)
+            state.hierarchicalGain = Math.exp(state.hierarchicalCoverOmega);
+        }
+        
+        function updateSignals(dt) {
+            state.signals = state.signals.filter(sig => {
+                sig.progress += dt * 4;
+                return sig.progress < 1;
+            });
+        }
+        
+        function recordHistory() {
+            if (state.history.length > 600) state.history.shift();
+            state.history.push({
+                time: state.time,
+                info: state.cumulativeInfo,
+                levelCoherence: state.levelCoherence,
+                omega: state.omega,
+                level: state.activeLevel,
+                crrState: state.crrState,
+                hierarchicalGain: state.hierarchicalGain
+            });
+        }
+        
+        // ============================================================
+        // RENDERING
+        // ============================================================
+        function render() {
+            renderCanvas();
+            renderHierarchy();
+            renderReadouts();
+            renderCRRState();
+        }
+        
+        function renderCanvas() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // Clear
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Grid
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+            
+            // ============================================================
+            // CUMULATIVE INFORMATION WAVEFORM (Blue - Step Function)
+            // ============================================================
+            if (state.history.length > 1) {
+                const waveX = 30;
+                const waveY = 30;
+                const waveW = w * 0.55;
+                const waveH = h * 0.35;
+                
+                // Background
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(waveX, waveY, waveW, waveH);
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(waveX, waveY, waveW, waveH);
+                
+                // Title
+                ctx.fillStyle = '#666';
+                ctx.font = '11px Georgia';
+                ctx.fillText('Cumulative Information (step function)', waveX + 5, waveY - 8);
+                
+                // Y-axis labels
+                ctx.fillStyle = '#888';
+                ctx.font = '9px Courier New';
+                ctx.fillText('16', waveX - 18, waveY + 8);
+                ctx.fillText('8', waveX - 12, waveY + waveH/2 + 3);
+                ctx.fillText('0', waveX - 10, waveY + waveH - 2);
+                
+                // 16 nats threshold
+                const thresholdY = waveY + waveH * (1 - 16/18);
+                ctx.strokeStyle = '#c44';
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(waveX, thresholdY);
+                ctx.lineTo(waveX + waveW, thresholdY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#c44';
+                ctx.font = '9px Georgia';
+                ctx.fillText('16.03 nats (critical)', waveX + waveW - 90, thresholdY - 4);
+                
+                // Draw cumulative info (blue, should be step-like)
+                ctx.strokeStyle = '#2a5a8a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                state.history.forEach((h, i) => {
+                    const x = waveX + (i / state.history.length) * waveW;
+                    const y = waveY + waveH * (1 - h.info / 18);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            // ============================================================
+            // LEVEL COHERENCE WAVEFORM (Green - Sawtooth)
+            // ============================================================
+            if (state.history.length > 1) {
+                const sawX = 30;
+                const sawY = h * 0.45;
+                const sawW = w * 0.55;
+                const sawH = h * 0.2;
+                
+                // Background
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(sawX, sawY, sawW, sawH);
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(sawX, sawY, sawW, sawH);
+                
+                // Title
+                ctx.fillStyle = '#666';
+                ctx.font = '11px Georgia';
+                ctx.fillText('Level Coherence C (sawtooth: 0 → Ω → rupture)', sawX + 5, sawY - 8);
+                
+                // Ω threshold line
+                const omegaY = sawY + sawH * 0.15;
+                ctx.strokeStyle = '#4a4';
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(sawX, omegaY);
+                ctx.lineTo(sawX + sawW, omegaY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#4a4';
+                ctx.font = '9px Georgia';
+                ctx.fillText('Ω = 1/π', sawX + sawW - 45, omegaY - 4);
+                
+                // Draw sawtooth (green)
+                ctx.strokeStyle = '#3a7a3a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                state.history.forEach((h, i) => {
+                    const x = sawX + (i / state.history.length) * sawW;
+                    // Normalize coherence to Ω
+                    const normalized = Math.min(h.levelCoherence / h.omega, 1);
+                    const y = sawY + sawH * (1 - normalized * 0.85);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            // ============================================================
+            // HIERARCHICAL GAIN exp(C/Ω) (Right side)
+            // ============================================================
+            const gainX = w * 0.62;
+            const gainY = 30;
+            const gainW = w * 0.35;
+            const gainH = h * 0.35;
+            
+            // Background
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(gainX, gainY, gainW, gainH);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(gainX, gainY, gainW, gainH);
+            
+            // Title
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Georgia';
+            ctx.fillText('Hierarchical Gain exp(C/Ω)', gainX + 5, gainY - 8);
+            
+            // Draw gain history
+            if (state.history.length > 1) {
+                // e^π threshold
+                const epiY = gainY + gainH * 0.1;
+                ctx.strokeStyle = '#c44';
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(gainX, epiY);
+                ctx.lineTo(gainX + gainW, epiY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#c44';
+                ctx.font = '9px Georgia';
+                ctx.fillText('e^π ≈ 23.14', gainX + gainW - 55, epiY - 4);
+                
+                // Draw gain curve
+                ctx.strokeStyle = '#8a2a5a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                state.history.forEach((h, i) => {
+                    const x = gainX + (i / state.history.length) * gainW;
+                    // Scale: 1 to e^π (23.14)
+                    const normalized = (h.hierarchicalGain - 1) / (E_PI - 1);
+                    const y = gainY + gainH * (1 - Math.min(normalized, 1) * 0.9);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            // ============================================================
+            // HIERARCHY SCHEMATIC
+            // ============================================================
+            const schemaX = w * 0.62;
+            const schemaY = h * 0.45;
+            const schemaW = w * 0.35;
+            const schemaH = h * 0.5;
+            const levelHeight = schemaH / 14;
+            
+            // Background
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(schemaX, schemaY, schemaW, schemaH);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(schemaX, schemaY, schemaW, schemaH);
+            
+            // Title
+            ctx.fillStyle = '#666';
+            ctx.font = '11px Georgia';
+            ctx.fillText('Hierarchy State', schemaX + 5, schemaY - 8);
+            
+            // Draw levels
+            HIERARCHY.forEach((h, i) => {
+                const y = schemaY + i * levelHeight;
+                const isActive = i === state.activeLevel;
+                const isCompleted = i < state.completedLevels;
+                
+                // Level background
+                ctx.fillStyle = isActive ? '#e8f0f8' : (isCompleted ? '#e8f8e8' : '#fff');
+                ctx.fillRect(schemaX + 8, y + 2, schemaW - 16, levelHeight - 4);
+                
+                // Level fill for active level
+                if (isActive) {
+                    const fillWidth = (state.levelCoherence / state.omega) * (schemaW - 20);
+                    ctx.fillStyle = '#5a9ad8';
+                    ctx.fillRect(schemaX + 10, y + 4, Math.min(fillWidth, schemaW - 24), levelHeight - 8);
+                } else if (isCompleted) {
+                    ctx.fillStyle = '#7aba7a';
+                    ctx.fillRect(schemaX + 10, y + 4, schemaW - 24, levelHeight - 8);
+                }
+                
+                // Level border
+                ctx.strokeStyle = isActive ? '#2a5a8a' : (isCompleted ? '#3a7a3a' : '#bbb');
+                ctx.lineWidth = isActive ? 2 : 1;
+                ctx.strokeRect(schemaX + 8, y + 2, schemaW - 16, levelHeight - 4);
+                
+                // Level label
+                ctx.fillStyle = (isActive || isCompleted) ? '#333' : '#888';
+                ctx.font = '9px Georgia';
+                ctx.fillText(h.abbr, schemaX + 14, y + levelHeight/2 + 3);
+                
+                // Info contribution
+                const info = isCompleted ? LN_PI : (isActive ? (state.levelCoherence / state.omega) * LN_PI : 0);
+                ctx.fillStyle = '#666';
+                ctx.font = '8px Courier New';
+                ctx.textAlign = 'right';
+                ctx.fillText(info.toFixed(2), schemaX + schemaW - 12, y + levelHeight/2 + 3);
+                ctx.textAlign = 'left';
+            });
+            
+            // Draw signal packets
+            state.signals.forEach(sig => {
+                const fromY = schemaY + sig.fromLevel * levelHeight + levelHeight/2;
+                const toY = schemaY + sig.toLevel * levelHeight + levelHeight/2;
+                const y = fromY + (toY - fromY) * sig.progress;
+                const x = schemaX + schemaW/2;
+                
+                ctx.fillStyle = '#4a9';
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#2a7';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+            
+            // ============================================================
+            // MATH SUMMARY BOX
+            // ============================================================
+            const mathX = 30;
+            const mathY = h * 0.72;
+            const mathW = w * 0.55;
+            const mathH = h * 0.24;
+            
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(mathX, mathY, mathW, mathH);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(mathX, mathY, mathW, mathH);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '11px Georgia';
+            const lineH = 16;
+            let ly = mathY + 18;
+            
+            // System mode indicator
+            let systemMode;
+            const precision = 1 / state.omega;
+            if (state.omega < 0.15) systemMode = "System 1 Dominant";
+            else if (state.omega < 0.22) systemMode = "System 1 Leaning";
+            else if (state.omega < 0.38) systemMode = "Balanced (Z₂)";
+            else if (state.omega < 0.45) systemMode = "System 2 Leaning";
+            else systemMode = "System 2 Dominant";
+            
+            ctx.fillText(`Processing Mode: ${systemMode}`, mathX + 10, ly);
+            ly += lineH + 4;
+            
+            ctx.font = '10px Courier New';
+            ctx.fillStyle = '#444';
+            ctx.fillText(`Active Level: ${state.activeLevel + 1}/14    Ω = ${state.omega.toFixed(3)}    Precision = ${precision.toFixed(2)}`, mathX + 10, ly);
+            ly += lineH;
+            
+            // Time estimate
+            const timePerLevel = state.omega / 0.12;  // Based on fixedRate * luminance
+            const totalTime = timePerLevel * 14;
+            ctx.fillText(`Level Coherence: ${state.levelCoherence.toFixed(3)} / ${state.omega.toFixed(3)}    (~${timePerLevel.toFixed(1)}s per level)`, mathX + 10, ly);
+            ly += lineH;
+            
+            ctx.fillText(`Cumulative Info: ${state.cumulativeInfo.toFixed(2)} / 16.03 nats    (est. ${totalTime.toFixed(0)}s total)`, mathX + 10, ly);
+            ly += lineH;
+            ctx.fillText(`Hierarchical Gain: exp(C/Ω) = ${state.hierarchicalGain.toFixed(2)} / 23.14`, mathX + 10, ly);
+            ly += lineH + 4;
+            
+            ctx.font = '9px Georgia';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`Low Ω (System 1): fast, reactive, frequent ruptures  |  High Ω (System 2): slow, deliberate, sustained integration`, mathX + 10, ly);
+        }
+        
+        function renderHierarchy() {
+            HIERARCHY.forEach((h, i) => {
+                const node = document.getElementById(`level-node-${i}`);
+                const fill = document.getElementById(`level-fill-${i}`);
+                const info = document.getElementById(`level-info-${i}`);
+                
+                const isActive = i === state.activeLevel;
+                const isCompleted = i < state.completedLevels;
+                
+                // Fill percentage
+                let fillPercent = 0;
+                if (isCompleted) {
+                    fillPercent = 100;
+                } else if (isActive) {
+                    fillPercent = (state.levelCoherence / state.omega) * 100;
+                }
+                fill.style.width = fillPercent + '%';
+                
+                // Info text
+                let levelInfo = 0;
+                if (isCompleted) {
+                    levelInfo = LN_PI;
+                } else if (isActive) {
+                    levelInfo = (state.levelCoherence / state.omega) * LN_PI;
+                }
+                info.textContent = levelInfo.toFixed(2) + ' nats';
+                
+                // Node classes
+                node.classList.remove('active', 'completed');
+                if (isActive) {
+                    node.classList.add('active');
+                } else if (isCompleted) {
+                    node.classList.add('completed');
+                }
+            });
+        }
+        
+        function renderReadouts() {
+            document.getElementById('readout-level').textContent = state.activeLevel + 1;
+            document.getElementById('readout-info').textContent = state.cumulativeInfo.toFixed(2);
+            document.getElementById('readout-coherence').textContent = (state.levelCoherence / state.omega).toFixed(2);
+            document.getElementById('readout-gain').textContent = state.hierarchicalGain.toFixed(2);
+            
+            // Info bar
+            document.getElementById('info-current').textContent = state.cumulativeInfo.toFixed(2);
+            document.getElementById('info-fill').style.width = Math.min(state.cumulativeInfo / CRITICAL_INFO * 100, 100) + '%';
+            
+            // Gain bar
+            document.getElementById('gain-current').textContent = state.hierarchicalGain.toFixed(2);
+            const gainFill = Math.min((state.hierarchicalGain - 1) / (E_PI - 1) * 100, 100);
+            document.getElementById('gain-fill').style.width = gainFill + '%';
+        }
+        
+        function renderCRRState() {
+            const coherenceDot = document.getElementById('coherence-dot');
+            const ruptureDot = document.getElementById('rupture-dot');
+            const regenDot = document.getElementById('regen-dot');
+            
+            coherenceDot.classList.remove('active', 'rupture');
+            ruptureDot.classList.remove('active', 'rupture');
+            regenDot.classList.remove('active', 'rupture');
+            
+            if (state.crrState === 'coherence') {
+                coherenceDot.classList.add('active');
+            } else if (state.crrState === 'rupture') {
+                ruptureDot.classList.add('rupture');
+            } else if (state.crrState === 'regeneration') {
+                regenDot.classList.add('active');
+            }
+        }
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            render();
+        });
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
