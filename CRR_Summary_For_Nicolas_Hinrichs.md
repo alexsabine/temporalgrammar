@@ -99,7 +99,7 @@ A complete theoretical synthesis showing CRR and FEP as complementary lenses:
 | **Precision-Rigidity Correspondence** | Π = (1/Ω)·exp(C/Ω) |
 | **Rupture as Model Comparison** | Rupture when C_m - C_m' > Ω |
 
-### Problems FEP-CRR Resolves
+### Problems FEP-CRR (helps) Resolve
 
 1. **The Dark Room Problem**: Why don't agents seek minimal stimulation?
 2. **The Prior Problem**: Where do priors come from?
