@@ -154,12 +154,15 @@ The manuscript develops CRR as mathematised process philosophy with FEP resonanc
 
 | Chapter | Title | Content | Development Status |
 |---------|-------|---------|-------------------|
-| **Prologue** | Temporal Glossary | Personal narrative of framework development; translation tables mapping CRR to 12 domains | Complete |
-| **1** | Stability As Change | Philosophical foundations: Heraclitus → Whitehead; Prigogine's dissipative structures; metastability | Complete |
-| **2** | Coherence Through Time | C(x,t) = ∫L(x,τ)dτ exposition; FEP connection; bioelectric signalling (Levin); participatory universe | Complete |
-| **3** | Rupture and Temporal Phase Shifts | When optimisation fails; Dirac delta mathematics; scale-free rupture | Complete |
-| **4** | Regeneration and Repair | Historical field signal φ(x,τ); exponential weighting exp(C/Ω); Ω as rigidity modulator | Complete |
-| **5** | Jacob's Ladder: Human-AI Systems | Human-LLM interaction analysis; catastrophic forgetting in ML; continual learning strategies | Complete |
+| **Prologue** | Temporal Glossary | Personal narrative of framework development; translation tables mapping CRR to 12 domains | 1st Draft  |
+| **1** | Stability As Change | Philosophical foundations: Heraclitus → Whitehead; Prigogine's dissipative structures; metastability | 1st Draft |
+| **2** | Coherence Through Time | C(x,t) = ∫L(x,τ)dτ exposition; FEP connection; bioelectric signalling (Levin); participatory universe | 1st Draft |
+| **3** | Rupture and Temporal Phase Shifts | When optimisation fails; Dirac delta mathematics; scale-free rupture | 1st Draft |
+| **4** | Regeneration and Repair | Historical field signal φ(x,τ); exponential weighting exp(C/Ω); Ω as rigidity modulator | 1st Draft |
+| **5** | Jacob's Ladder: Human-AI Systems | Human-LLM interaction analysis; catastrophic forgetting in ML; continual learning strategies | 1st Draft |
+| **6** | Play and Precision: Exploring the role of Omega in the Possiblity Space | Planned |
+| **7** | Psychology and Trauma: Rupture as Renewal | Planned |
+| **8** | The Ethics and Ontology of CRR | Planned | <-- implications for interpersonal dynamics, compassion, compersion etc. (e.g. Levin + Saffron etc.)
 
 ### Cross-Domain Translations (Prologue)
 
