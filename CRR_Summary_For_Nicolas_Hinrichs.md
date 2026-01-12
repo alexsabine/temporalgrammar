@@ -192,7 +192,7 @@ This maps directly to Alexander's Child Development background and provides prin
 | Critical period = high plasticity | Elevated Ω (low precision, broad memory access) | Higher CV in developmental windows |
 | CP closure = stability | Decreasing Ω with maturation | CV decreases with age |
 | Experience-dependent refinement | Coherence accumulation shapes regeneration weights | exp(C/Ω) peaks at formative experiences |
-| Stability landscape (Knudsen) | Ω determines landscape curvature | Low Ω = deep attractors; High Ω = shallow |
+| Stability landscape (Knudsen) | Ω determines landscape curvature | Low Ω = rigid attractors (recent history, less open to possibility); High Ω = deeper time attractors; more open to possibility|
 | CP reopening (Cisneros-Franco) | Ω elevation through intervention | Testable via drugs/training |
 | PV cell maturation (Hensch) | Inhibitory regulation as precision control | PV density correlates with 1/Ω |
 
