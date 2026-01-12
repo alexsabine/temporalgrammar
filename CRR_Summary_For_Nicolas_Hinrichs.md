@@ -2,9 +2,9 @@
 ## Summary for Collaboration Meeting
 
 **Prepared for:** Nicolás Hinrichs
-**Date:** Tuesday 14th January 2026
+**Date:** Tuesday 13th January 2026
 **Author:** Alexander Sabine
-**Affiliation:** Active Inference Institute • cohere.org.uk
+**Affiliation:** Active Inference Institute • www.cohere.org.uk (deliberately playful - got a bit over zealous lol - plus they're super fun to make). No association with Cohere the Canadian AI company!! (They wish! haha)
 
 ---
 
