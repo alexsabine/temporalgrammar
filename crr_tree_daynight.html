@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Tree — Day & Night, Season & Year</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #000;
+            min-height: 100vh;
+            font-family: 'Cormorant Garamond', serif;
+            color: #c8d4c0;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px 24px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #title h1 {
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            color: rgba(220,230,210,0.9);
+        }
+        
+        #title p {
+            font-size: 0.65rem;
+            font-style: italic;
+            color: rgba(180,200,170,0.5);
+            margin-top: 3px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            pointer-events: all;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            background: rgba(60,80,60,0.3);
+            border: 1px solid rgba(100,140,100,0.3);
+            border-radius: 15px;
+            color: rgba(200,220,180,0.85);
+            font-family: inherit;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover { background: rgba(80,110,80,0.4); }
+        .btn.active { background: rgba(100,150,100,0.5); border-color: rgba(140,200,140,0.5); }
+        
+        #time-display {
+            position: fixed;
+            top: 16px;
+            right: 24px;
+            text-align: right;
+            z-index: 10;
+        }
+        
+        #clock {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 300;
+            color: rgba(220,230,200,0.9);
+            letter-spacing: 0.05em;
+        }
+        
+        #date-line {
+            font-size: 0.7rem;
+            color: rgba(180,200,160,0.7);
+            margin-top: 2px;
+        }
+        
+        #year-line {
+            font-size: 0.85rem;
+            color: rgba(200,220,180,0.8);
+            margin-top: 6px;
+        }
+        
+        #season-line {
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            color: rgba(160,190,140,0.5);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        /* Left panel */
+        #panel {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            width: 240px;
+            background: rgba(10,20,15,0.9);
+            border: 1px solid rgba(80,120,80,0.2);
+            border-radius: 10px;
+            padding: 14px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+        
+        #panel h3 {
+            font-size: 0.5rem;
+            letter-spacing: 0.2em;
+            color: rgba(150,180,140,0.5);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.7rem;
+        }
+        
+        .stat-label { color: rgba(160,190,150,0.6); }
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: rgba(180,220,160,0.9);
+        }
+        
+        .progress-bar {
+            height: 5px;
+            background: rgba(60,100,60,0.2);
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(100,180,100,0.6), rgba(180,220,120,0.8));
+            border-radius: 3px;
+            transition: width 0.1s;
+        }
+        
+        .divider {
+            height: 1px;
+            background: rgba(100,140,100,0.15);
+            margin: 10px 0;
+        }
+        
+        .equation-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.5rem;
+            color: rgba(130,170,120,0.5);
+            line-height: 1.6;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        
+        .equation-box .hl { color: rgba(220,180,120,0.7); }
+        
+        /* Right panel - cross section */
+        #ring-panel {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            z-index: 10;
+        }
+        
+        #ring-label {
+            text-align: center;
+            font-size: 0.5rem;
+            letter-spacing: 0.12em;
+            color: rgba(150,180,140,0.4);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        
+        #cross-section {
+            width: 140px;
+            height: 140px;
+            background: rgba(10,20,15,0.9);
+            border: 1px solid rgba(80,120,80,0.2);
+            border-radius: 50%;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        #cross-section canvas { width: 100%; height: 100%; }
+        
+        #ring-stats {
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: rgba(160,190,150,0.5);
+            text-align: center;
+        }
+        
+        /* Sun info */
+        #sun-panel {
+            position: fixed;
+            top: 80px;
+            left: 16px;
+            width: 180px;
+            background: rgba(10,20,15,0.85);
+            border: 1px solid rgba(120,100,60,0.2);
+            border-radius: 8px;
+            padding: 10px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+        
+        #sun-panel h3 {
+            font-size: 0.45rem;
+            letter-spacing: 0.15em;
+            color: rgba(200,180,120,0.5);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .sun-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            margin-bottom: 4px;
+        }
+        
+        .sun-stat .label { color: rgba(200,180,120,0.5); }
+        .sun-stat .value { 
+            font-family: 'JetBrains Mono', monospace;
+            color: rgba(255,220,150,0.8);
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+    <div id="title">
+        <h1>CRR TREE</h1>
+        <p>Day & night · Season & year · Identity through time</p>
+    </div>
+    <div class="controls">
+        <button class="btn" id="pause">⏸</button>
+        <button class="btn" id="speed1" data-speed="0.5">½×</button>
+        <button class="btn active" id="speed2" data-speed="2">2×</button>
+        <button class="btn" id="speed5" data-speed="5">5×</button>
+        <button class="btn" id="speed20" data-speed="20">20×</button>
+        <button class="btn" id="stress">☁ Drought</button>
+    </div>
+</div>
+
+<div id="time-display">
+    <div id="clock">12:00</div>
+    <div id="date-line">January 1</div>
+    <div id="year-line">Year 1</div>
+    <div id="season-line">Winter</div>
+</div>
+
+<div id="sun-panel">
+    <h3>☀ CRR Sun</h3>
+    <div class="sun-stat">
+        <span class="label">Altitude</span>
+        <span class="value" id="sun-alt">0°</span>
+    </div>
+    <div class="sun-stat">
+        <span class="label">Day length</span>
+        <span class="value" id="sun-daylen">7.6h</span>
+    </div>
+    <div class="sun-stat">
+        <span class="label">Solar C</span>
+        <span class="value" id="sun-coherence">0.00</span>
+    </div>
+    <div class="sun-stat">
+        <span class="label">Flare activity</span>
+        <span class="value" id="sun-flare">—</span>
+    </div>
+</div>
+
+<div id="panel">
+    <h3>Tree CRR Dynamics</h3>
+    
+    <div class="stat-row">
+        <span class="stat-label">Coherence C(t)</span>
+        <span class="stat-value" id="v-coherence">0.000</span>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="coherence-bar" style="width: 0%"></div>
+    </div>
+    
+    <div class="stat-row">
+        <span class="stat-label">C/Ω Ratio</span>
+        <span class="stat-value" id="v-ratio">0.000</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">Memory L(t)</span>
+        <span class="stat-value" id="v-L">0.000</span>
+    </div>
+    <div class="stat-row">
+        <span class="stat-label">exp(C/Ω)</span>
+        <span class="stat-value" id="v-exp">1.000</span>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="equation-box">
+        <span class="hl">C</span> = ∫L(τ)dτ · <span class="hl">Ω</span> = 1/π<br>
+        <span class="hl">δ</span> at winter · <span class="hl">R</span> = Σexp(C/Ω)·ring
+    </div>
+</div>
+
+<div id="ring-panel">
+    <div id="ring-label">Cross Section</div>
+    <div id="cross-section">
+        <canvas id="ring-canvas"></canvas>
+    </div>
+    <div id="ring-stats"><span id="ring-count">0</span> rings</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+
+const DAYS_PER_YEAR = 365;
+const HOURS_PER_DAY = 24;
+const OMEGA = 1 / Math.PI;
+const L_SCALE = 0.0021653734;
+const LATITUDE = 52;  // UK
+
+const SEASONS = {
+    WINTER_END:   { start: 1,   end: 59,  peakL: 0.0, name: 'Winter' },
+    SPRING:       { start: 60,  end: 151, peakL: 0.8, name: 'Spring' },
+    SUMMER:       { start: 152, end: 243, peakL: 1.0, name: 'Summer' },
+    AUTUMN:       { start: 244, end: 334, peakL: 0.4, name: 'Autumn' },
+    WINTER_START: { start: 335, end: 365, peakL: 0.0, name: 'Winter' }
+};
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS_IN_MONTH = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+// ═══════════════════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const ringCanvas = document.getElementById('ring-canvas');
+const ringCtx = ringCanvas.getContext('2d');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    ringCanvas.width = ringCanvas.height = 280;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+// Time
+let hour = 12;       // 0-24
+let day = 1;         // 1-365
+let year = 1;
+let paused = false;
+let timeScale = 2;   // Hours per real second
+
+// Tree CRR
+let coherence = 0;
+let stressFactor = 1.0;
+const rings = [];
+
+// Tree structure
+let trunk = { height: 120, width: 25 };
+let branches = [];
+let leaves = [];
+let fallingLeaves = [];
+
+// Sun CRR (solar activity)
+const solarRegions = [];
+for (let i = 0; i < 6; i++) {
+    solarRegions.push({
+        C: Math.random() * OMEGA * 0.5,
+        omega: OMEGA,
+        active: false,
+        intensity: 0,
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.3 + Math.random() * 0.5
+    });
+}
+
+// Stars (persistent)
+const stars = [];
+for (let i = 0; i < 200; i++) {
+    stars.push({
+        x: Math.random(),
+        y: Math.random() * 0.7,
+        size: 0.5 + Math.random() * 1.5,
+        twinklePhase: Math.random() * Math.PI * 2,
+        twinkleSpeed: 1 + Math.random() * 2
+    });
+}
+
+// Animation
+let t = 0;
+let lastTime = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// TEMPORAL FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function getSeason(d) {
+    for (const key in SEASONS) {
+        const s = SEASONS[key];
+        if (d >= s.start && d <= s.end) return s;
+    }
+    return SEASONS.WINTER_END;
+}
+
+function getDayLength(d) {
+    const declination = 23.45 * Math.sin(2 * Math.PI * (d - 81) / 365);
+    const latRad = LATITUDE * Math.PI / 180;
+    const decRad = declination * Math.PI / 180;
+    const cosHA = -Math.tan(latRad) * Math.tan(decRad);
+    const hourAngle = Math.acos(Math.max(-1, Math.min(1, cosHA)));
+    return 2 * hourAngle * 180 / Math.PI / 15;
+}
+
+function getSunPosition(h, dayLen) {
+    const sunrise = 12 - dayLen / 2;
+    const sunset = 12 + dayLen / 2;
+    
+    if (h < sunrise || h > sunset) {
+        return { altitude: -15, visible: false, progress: 0 };
+    }
+    
+    const progress = (h - sunrise) / (sunset - sunrise);
+    const altitude = Math.sin(progress * Math.PI) * 55;
+    
+    return { altitude, visible: true, progress };
+}
+
+function getDateString(d) {
+    let remaining = d;
+    for (let m = 0; m < 12; m++) {
+        if (remaining <= DAYS_IN_MONTH[m]) {
+            return `${MONTHS[m]} ${remaining}`;
+        }
+        remaining -= DAYS_IN_MONTH[m];
+    }
+    return `Day ${d}`;
+}
+
+function getL(d) {
+    const season = getSeason(d);
+    if (season.name === 'Spring') {
+        const progress = (d - season.start) / (season.end - season.start);
+        return season.peakL * (0.5 + 0.5 * Math.sin((progress - 0.5) * Math.PI));
+    } else if (season.name === 'Autumn') {
+        const progress = (d - season.start) / (season.end - season.start);
+        return season.peakL * (0.5 - 0.5 * Math.sin((progress - 0.5) * Math.PI));
+    }
+    return season.peakL;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CRR UPDATE
+// ═══════════════════════════════════════════════════════════════
+
+function update(dt) {
+    // Advance time
+    hour += dt * timeScale;
+    
+    // New day
+    while (hour >= 24) {
+        hour -= 24;
+        advanceDay();
+    }
+    
+    // Update sun CRR (flares)
+    updateSolarCRR(dt);
+    
+    // Update leaves
+    updateLeaves(dt);
+}
+
+function advanceDay() {
+    // Tree coherence accumulation
+    const L_raw = getL(day);
+    const L_scaled = L_raw * L_SCALE * stressFactor;
+    coherence += L_scaled;
+    
+    // Leaf generation/dropping based on season
+    const season = getSeason(day);
+    if ((season.name === 'Spring' || season.name === 'Summer') && branches.length > 0) {
+        if (Math.random() < 0.2) generateLeaf();
+    } else if (season.name === 'Autumn' && leaves.length > 0) {
+        if (Math.random() < 0.1) dropLeaf();
+    }
+    
+    day++;
+    
+    // Year end: RUPTURE
+    if (day > DAYS_PER_YEAR) {
+        rupture();
+    }
+}
+
+function rupture() {
+    const ringCoherence = coherence;
+    const ringWidth = Math.max(3, ringCoherence * 25);
+    const weight = Math.exp(ringCoherence / OMEGA);
+    
+    rings.push({
+        coherence: ringCoherence,
+        width: ringWidth,
+        weight: weight,
+        year: year,
+        stressed: stressFactor < 0.8
+    });
+    
+    regenerate();
+    
+    coherence = 0;
+    day = 1;
+    year++;
+    stressFactor = 1.0;
+    document.getElementById('stress').classList.remove('active');
+    
+    // Drop remaining leaves
+    leaves.forEach(leaf => {
+        fallingLeaves.push({
+            ...leaf,
+            vx: (Math.random() - 0.5) * 2,
+            vy: Math.random() * 1.5,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.1,
+            alpha: 0.8
+        });
+    });
+    leaves = [];
+}
+
+function regenerate() {
+    const totalWeight = rings.reduce((sum, r) => sum + r.weight, 0);
+    
+    if (totalWeight > 0) {
+        trunk.height = Math.min(H * 0.5, 120 + rings.length * 10);
+        trunk.width = 25 + rings.length * 2;
+        
+        if (Math.random() < 0.6) {
+            const branchY = trunk.height * (0.25 + Math.random() * 0.5);
+            const side = Math.random() < 0.5 ? -1 : 1;
+            branches.push({
+                y: branchY,
+                side: side,
+                length: 35 + Math.random() * 45,
+                angle: side * (0.25 + Math.random() * 0.3),
+                thickness: 3 + Math.random() * 3,
+                children: Math.random() < 0.5 ? [{
+                    pos: 0.4 + Math.random() * 0.4,
+                    length: 20 + Math.random() * 25,
+                    angle: side * (0.35 + Math.random() * 0.3),
+                    thickness: 2 + Math.random() * 2
+                }] : []
+            });
+        }
+    }
+}
+
+function updateSolarCRR(dt) {
+    solarRegions.forEach(region => {
+        if (!region.active) {
+            region.C += (0.05 + Math.random() * 0.1) * dt * timeScale;
+            
+            if (region.C > region.omega * (0.7 + Math.random() * 0.5)) {
+                region.active = true;
+                region.intensity = Math.exp(region.C / region.omega);
+                region.C = 0;
+            }
+        } else {
+            region.intensity *= Math.pow(0.92, dt * timeScale);
+            if (region.intensity < 0.1) {
+                region.active = false;
+                region.angle = Math.random() * Math.PI * 2;
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEAF MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+function generateLeaf() {
+    if (branches.length === 0) return;
+    const branch = branches[Math.floor(Math.random() * branches.length)];
+    const baseX = W / 2;
+    const baseY = H * 0.8 - trunk.height + branch.y;
+    
+    const pos = 0.3 + Math.random() * 0.6;
+    let x = baseX + Math.sin(branch.angle) * branch.length * pos * branch.side;
+    let y = baseY - Math.cos(branch.angle) * branch.length * pos * 0.5;
+    
+    x += (Math.random() - 0.5) * 25;
+    y += (Math.random() - 0.5) * 20;
+    
+    const season = getSeason(day);
+    const hue = season.name === 'Spring' ? 85 + Math.random() * 30 :
+                season.name === 'Summer' ? 75 + Math.random() * 40 : 30 + Math.random() * 50;
+    
+    leaves.push({ x, y, size: 5 + Math.random() * 5, hue, phase: Math.random() * Math.PI * 2 });
+}
+
+function dropLeaf() {
+    if (leaves.length === 0) return;
+    const idx = Math.floor(Math.random() * leaves.length);
+    const leaf = leaves.splice(idx, 1)[0];
+    leaf.hue = 20 + Math.random() * 40;
+    fallingLeaves.push({
+        ...leaf,
+        vx: (Math.random() - 0.5) * 3,
+        vy: Math.random() * 1.5,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+        alpha: 0.85
+    });
+}
+
+function updateLeaves(dt) {
+    fallingLeaves = fallingLeaves.filter(leaf => {
+        leaf.x += leaf.vx * dt * 60;
+        leaf.y += leaf.vy * dt * 60;
+        leaf.vy += 0.5 * dt * 60;
+        leaf.vx *= 0.99;
+        leaf.rotation += leaf.rotSpeed * dt * 60;
+        leaf.alpha -= 0.3 * dt;
+        return leaf.alpha > 0 && leaf.y < H;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function render() {
+    const dayLen = getDayLength(day);
+    const sunPos = getSunPosition(hour, dayLen);
+    const season = getSeason(day);
+    
+    // Sky colors based on time of day
+    const colors = getSkyColors(hour, dayLen, season);
+    
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, colors.skyTop);
+    skyGrad.addColorStop(0.5, colors.skyMid);
+    skyGrad.addColorStop(1, colors.ground);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // Stars (visible at night)
+    if (colors.starAlpha > 0) {
+        drawStars(colors.starAlpha);
+    }
+    
+    // Sun or moon
+    if (sunPos.visible) {
+        drawSun(sunPos, dayLen);
+    } else {
+        drawMoon(hour, dayLen);
+    }
+    
+    // Ground
+    ctx.fillStyle = colors.ground;
+    ctx.fillRect(0, H * 0.8, W, H * 0.2);
+    
+    // Tree
+    drawTree(colors);
+    
+    // Falling leaves
+    fallingLeaves.forEach(leaf => {
+        ctx.save();
+        ctx.translate(leaf.x, leaf.y);
+        ctx.rotate(leaf.rotation);
+        ctx.fillStyle = `hsla(${leaf.hue}, 55%, 40%, ${leaf.alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, leaf.size, leaf.size * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+    
+    // Leaves on tree
+    const leafAlpha = season.name === 'Winter' ? 0 : 
+                      season.name === 'Autumn' ? 0.5 : 0.75;
+    leaves.forEach(leaf => {
+        const sway = Math.sin(t * 2 + leaf.phase) * 3;
+        ctx.fillStyle = `hsla(${leaf.hue}, 50%, 38%, ${leafAlpha * colors.lightLevel})`;
+        ctx.beginPath();
+        ctx.ellipse(leaf.x + sway, leaf.y, leaf.size, leaf.size * 0.6,
+                    Math.sin(t * 0.5 + leaf.phase) * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    // Ring cross-section
+    drawRings();
+}
+
+function getSkyColors(h, dayLen, season) {
+    const sunrise = 12 - dayLen / 2;
+    const sunset = 12 + dayLen / 2;
+    
+    let skyTop, skyMid, ground, starAlpha, lightLevel;
+    
+    if (h < sunrise - 1) {
+        // Night
+        skyTop = '#050810';
+        skyMid = '#0a1015';
+        ground = '#0a100a';
+        starAlpha = 0.8;
+        lightLevel = 0.3;
+    } else if (h < sunrise) {
+        // Dawn
+        const t = (h - (sunrise - 1));
+        skyTop = lerpColor('#050810', '#1a1525', t);
+        skyMid = lerpColor('#0a1015', '#2a2035', t);
+        ground = lerpColor('#0a100a', '#151510', t);
+        starAlpha = 0.8 * (1 - t);
+        lightLevel = 0.3 + 0.3 * t;
+    } else if (h < sunrise + 1) {
+        // Sunrise
+        const t = h - sunrise;
+        skyTop = lerpColor('#1a1525', '#4a3040', t);
+        skyMid = lerpColor('#2a2035', '#dd8855', t);
+        ground = lerpColor('#151510', '#1a1812', t);
+        starAlpha = 0;
+        lightLevel = 0.6 + 0.3 * t;
+    } else if (h < 12) {
+        // Morning
+        const t = (h - sunrise - 1) / (12 - sunrise - 1);
+        skyTop = lerpColor('#4a3040', '#3a5570', t);
+        skyMid = lerpColor('#dd8855', '#88aacc', t);
+        ground = lerpColor('#1a1812', '#1a2015', t);
+        starAlpha = 0;
+        lightLevel = 0.9 + 0.1 * t;
+    } else if (h < sunset - 1) {
+        // Afternoon
+        const t = (h - 12) / (sunset - 1 - 12);
+        skyTop = lerpColor('#3a5570', '#4a4560', t);
+        skyMid = lerpColor('#88aacc', '#aa9988', t);
+        ground = lerpColor('#1a2015', '#1a1815', t);
+        starAlpha = 0;
+        lightLevel = 1 - 0.1 * t;
+    } else if (h < sunset) {
+        // Sunset
+        const t = h - (sunset - 1);
+        skyTop = lerpColor('#4a4560', '#2a1520', t);
+        skyMid = lerpColor('#aa9988', '#ee6633', t);
+        ground = lerpColor('#1a1815', '#151210', t);
+        starAlpha = 0;
+        lightLevel = 0.9 - 0.3 * t;
+    } else if (h < sunset + 1) {
+        // Dusk
+        const t = h - sunset;
+        skyTop = lerpColor('#2a1520', '#0a0810', t);
+        skyMid = lerpColor('#ee6633', '#1a1020', t);
+        ground = lerpColor('#151210', '#0a100a', t);
+        starAlpha = 0.6 * t;
+        lightLevel = 0.6 - 0.3 * t;
+    } else {
+        // Night
+        skyTop = '#050810';
+        skyMid = '#0a1015';
+        ground = '#0a100a';
+        starAlpha = 0.8;
+        lightLevel = 0.3;
+    }
+    
+    return { skyTop, skyMid, ground, starAlpha, lightLevel };
+}
+
+function lerpColor(c1, c2, t) {
+    const r1 = parseInt(c1.slice(1,3), 16);
+    const g1 = parseInt(c1.slice(3,5), 16);
+    const b1 = parseInt(c1.slice(5,7), 16);
+    const r2 = parseInt(c2.slice(1,3), 16);
+    const g2 = parseInt(c2.slice(3,5), 16);
+    const b2 = parseInt(c2.slice(5,7), 16);
+    return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+}
+
+function drawStars(alpha) {
+    stars.forEach(star => {
+        const twinkle = 0.5 + 0.5 * Math.sin(t * star.twinkleSpeed + star.twinklePhase);
+        ctx.fillStyle = `rgba(255,255,250,${alpha * twinkle * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(star.x * W, star.y * H, star.size * twinkle, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
+function drawSun(sunPos, dayLen) {
+    const sunrise = 12 - dayLen / 2;
+    const sunset = 12 + dayLen / 2;
+    
+    // Sun position on screen
+    const sunX = W * (0.15 + 0.7 * sunPos.progress);
+    const sunY = H * (0.7 - sunPos.altitude / 100);
+    const sunRadius = 35 + 10 * Math.sin(sunPos.progress * Math.PI);
+    
+    // Calculate total flare intensity
+    let totalFlare = 0;
+    solarRegions.forEach(r => {
+        if (r.active) totalFlare += r.intensity * 0.15;
+    });
+    
+    // Outer glow
+    const glowRadius = sunRadius * (3 + totalFlare * 0.5);
+    const glow = ctx.createRadialGradient(sunX, sunY, sunRadius * 0.5, sunX, sunY, glowRadius);
+    glow.addColorStop(0, `rgba(255,240,200,${0.4 + totalFlare * 0.1})`);
+    glow.addColorStop(0.3, `rgba(255,200,100,${0.2 + totalFlare * 0.05})`);
+    glow.addColorStop(1, 'rgba(255,150,50,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Sun body
+    const sunGrad = ctx.createRadialGradient(sunX - sunRadius * 0.2, sunY - sunRadius * 0.2, 
+                                              0, sunX, sunY, sunRadius);
+    sunGrad.addColorStop(0, '#ffffee');
+    sunGrad.addColorStop(0.5, '#ffee88');
+    sunGrad.addColorStop(1, '#ffcc44');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Solar flares (CRR rupture events)
+    solarRegions.forEach(region => {
+        if (region.active && region.intensity > 0.2) {
+            const fx = sunX + Math.cos(region.angle) * sunRadius * region.radius;
+            const fy = sunY + Math.sin(region.angle) * sunRadius * region.radius;
+            const fSize = 5 + region.intensity * 8;
+            
+            ctx.fillStyle = `rgba(255,${200 + region.intensity * 30},${150 + region.intensity * 50},${region.intensity * 0.6})`;
+            ctx.beginPath();
+            ctx.arc(fx, fy, fSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+}
+
+function drawMoon(h, dayLen) {
+    const sunrise = 12 - dayLen / 2;
+    const sunset = 12 + dayLen / 2;
+    
+    // Moon visible at night, roughly opposite to sun
+    let moonProgress;
+    if (h < sunrise) {
+        moonProgress = 0.3 + (sunrise - h) / sunrise * 0.4;
+    } else {
+        moonProgress = 0.3 + (h - sunset) / (24 - sunset) * 0.4;
+    }
+    
+    const moonX = W * (0.2 + 0.6 * moonProgress);
+    const moonY = H * (0.15 + 0.1 * Math.sin(moonProgress * Math.PI));
+    const moonRadius = 20;
+    
+    // Moon glow
+    const glow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.5, moonX, moonY, moonRadius * 3);
+    glow.addColorStop(0, 'rgba(200,210,230,0.3)');
+    glow.addColorStop(1, 'rgba(150,170,200,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonRadius * 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Moon body
+    ctx.fillStyle = '#dde5f0';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Moon craters (subtle)
+    ctx.fillStyle = 'rgba(180,190,210,0.4)';
+    ctx.beginPath();
+    ctx.arc(moonX - 5, moonY - 3, 4, 0, Math.PI * 2);
+    ctx.arc(moonX + 6, moonY + 5, 3, 0, Math.PI * 2);
+    ctx.arc(moonX - 2, moonY + 7, 2, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawTree(colors) {
+    const baseX = W / 2;
+    const baseY = H * 0.8;
+    
+    // Trunk
+    const trunkGrad = ctx.createLinearGradient(baseX - trunk.width/2, 0, baseX + trunk.width/2, 0);
+    const darkFactor = colors.lightLevel;
+    trunkGrad.addColorStop(0, `rgb(${Math.round(35*darkFactor)},${Math.round(25*darkFactor)},${Math.round(18*darkFactor)})`);
+    trunkGrad.addColorStop(0.4, `rgb(${Math.round(60*darkFactor)},${Math.round(45*darkFactor)},${Math.round(30*darkFactor)})`);
+    trunkGrad.addColorStop(1, `rgb(${Math.round(30*darkFactor)},${Math.round(20*darkFactor)},${Math.round(12*darkFactor)})`);
+    
+    ctx.fillStyle = trunkGrad;
+    ctx.beginPath();
+    ctx.moveTo(baseX - trunk.width/2, baseY);
+    ctx.lineTo(baseX - trunk.width/3, baseY - trunk.height);
+    ctx.lineTo(baseX + trunk.width/3, baseY - trunk.height);
+    ctx.lineTo(baseX + trunk.width/2, baseY);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Branches
+    ctx.strokeStyle = `rgb(${Math.round(50*darkFactor)},${Math.round(35*darkFactor)},${Math.round(22*darkFactor)})`;
+    ctx.lineCap = 'round';
+    
+    branches.forEach(branch => {
+        const startX = baseX;
+        const startY = baseY - branch.y;
+        const endX = startX + Math.sin(branch.angle) * branch.length * branch.side;
+        const endY = startY - Math.cos(branch.angle) * branch.length * 0.5;
+        
+        ctx.lineWidth = branch.thickness;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(startX + branch.side * branch.length * 0.3, startY - branch.length * 0.15, endX, endY);
+        ctx.stroke();
+        
+        branch.children.forEach(child => {
+            const csx = startX + Math.sin(branch.angle) * branch.length * child.pos * branch.side;
+            const csy = startY - Math.cos(branch.angle) * branch.length * child.pos * 0.5;
+            const cex = csx + Math.sin(child.angle) * child.length * branch.side;
+            const cey = csy - Math.cos(child.angle) * child.length * 0.5;
+            
+            ctx.lineWidth = child.thickness;
+            ctx.beginPath();
+            ctx.moveTo(csx, csy);
+            ctx.lineTo(cex, cey);
+            ctx.stroke();
+        });
+    });
+}
+
+function drawRings() {
+    const cx = 140, cy = 140;
+    const maxRadius = 60;
+    
+    ringCtx.fillStyle = '#0a1510';
+    ringCtx.fillRect(0, 0, 280, 280);
+    
+    if (rings.length === 0 && coherence === 0) return;
+    
+    let totalWidth = rings.reduce((sum, r) => sum + r.width, 0) + coherence * 25 + 8;
+    const scale = Math.min(1, maxRadius * 2 / totalWidth);
+    let currentRadius = maxRadius;
+    
+    for (let i = 0; i < rings.length; i++) {
+        const ring = rings[i];
+        const w = ring.width * scale;
+        const lightness = ring.stressed ? 18 : 22 + ring.coherence * 15;
+        
+        ringCtx.fillStyle = `hsl(28, ${ring.stressed ? 15 : 25}%, ${lightness}%)`;
+        ringCtx.beginPath();
+        ringCtx.arc(cx, cy, currentRadius, 0, Math.PI * 2);
+        ringCtx.fill();
+        
+        ringCtx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ringCtx.lineWidth = 0.5;
+        ringCtx.stroke();
+        
+        currentRadius -= w;
+    }
+    
+    if (coherence > 0) {
+        const ratio = coherence / OMEGA;
+        ringCtx.fillStyle = `hsla(${80 - ratio * 40}, 35%, 30%, ${0.4 + ratio * 0.4})`;
+        ringCtx.beginPath();
+        ringCtx.arc(cx, cy, currentRadius, 0, Math.PI * 2);
+        ringCtx.fill();
+        currentRadius -= coherence * 25 * scale;
+    }
+    
+    ringCtx.fillStyle = '#151510';
+    ringCtx.beginPath();
+    ringCtx.arc(cx, cy, Math.max(4, currentRadius), 0, Math.PI * 2);
+    ringCtx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+
+function updateUI() {
+    const dayLen = getDayLength(day);
+    const sunPos = getSunPosition(hour, dayLen);
+    const season = getSeason(day);
+    const L_scaled = getL(day) * L_SCALE * stressFactor;
+    const ratio = coherence / OMEGA;
+    
+    // Time display
+    const h = Math.floor(hour);
+    const m = Math.floor((hour - h) * 60);
+    document.getElementById('clock').textContent = 
+        `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+    document.getElementById('date-line').textContent = getDateString(day);
+    document.getElementById('year-line').textContent = `Year ${year}`;
+    document.getElementById('season-line').textContent = season.name;
+    
+    // Sun panel
+    document.getElementById('sun-alt').textContent = 
+        sunPos.visible ? `${sunPos.altitude.toFixed(0)}°` : 'Below';
+    document.getElementById('sun-daylen').textContent = `${dayLen.toFixed(1)}h`;
+    
+    const avgSolarC = solarRegions.reduce((sum, r) => sum + r.C, 0) / solarRegions.length;
+    document.getElementById('sun-coherence').textContent = avgSolarC.toFixed(2);
+    
+    const activeFlares = solarRegions.filter(r => r.active).length;
+    document.getElementById('sun-flare').textContent = activeFlares > 0 ? `${activeFlares} active` : '—';
+    
+    // Tree panel
+    document.getElementById('v-coherence').textContent = coherence.toFixed(3);
+    document.getElementById('v-ratio').textContent = ratio.toFixed(3);
+    document.getElementById('v-L').textContent = L_scaled.toFixed(4);
+    document.getElementById('v-exp').textContent = Math.exp(ratio).toFixed(3);
+    document.getElementById('coherence-bar').style.width = `${Math.min(100, ratio * 100)}%`;
+    
+    // Rings
+    document.getElementById('ring-count').textContent = rings.length;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('pause').addEventListener('click', function() {
+    paused = !paused;
+    this.textContent = paused ? '▶' : '⏸';
+});
+
+document.querySelectorAll('[data-speed]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        timeScale = parseFloat(this.dataset.speed);
+        document.querySelectorAll('[data-speed]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+
+document.getElementById('stress').addEventListener('click', function() {
+    stressFactor = 0.5 + Math.random() * 0.2;
+    this.classList.add('active');
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT & LOOP
+// ═══════════════════════════════════════════════════════════════
+
+function init() {
+    branches = [
+        { y: 70, side: -1, length: 40, angle: -0.35, thickness: 4, children: [] },
+        { y: 80, side: 1, length: 35, angle: 0.3, thickness: 4, children: [] }
+    ];
+    
+    rings.push({
+        coherence: OMEGA * 0.85,
+        width: 6,
+        weight: Math.exp(0.85),
+        year: 0,
+        stressed: false
+    });
+}
+
+function animate(timestamp) {
+    const dt = Math.min(0.1, (timestamp - lastTime) / 1000);
+    lastTime = timestamp;
+    t += dt;
+    
+    if (!paused) update(dt);
+    
+    render();
+    updateUI();
+    requestAnimationFrame(animate);
+}
+
+init();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
