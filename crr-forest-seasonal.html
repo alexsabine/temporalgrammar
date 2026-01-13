@@ -2703,12 +2703,21 @@ function updateWeatherIndicator(w) {
 }
 
 async function fetchRealWeather() {
+  // Skip in restricted environments (like Claude.ai artifacts)
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    console.log('Geolocation not available, using defaults');
+    weatherState.realWeatherEnabled = false;
+    return;
+  }
+  
   try {
     const position = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        timeout: 10000,
-        maximumAge: 300000
-      });
+      const timeout = setTimeout(() => reject(new Error('Geolocation timeout')), 5000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { clearTimeout(timeout); resolve(pos); },
+        (err) => { clearTimeout(timeout); reject(err); },
+        { timeout: 5000, maximumAge: 300000 }
+      );
     });
     
     const lat = position.coords.latitude;
@@ -3851,16 +3860,19 @@ function animate(now) {
   
   if (!isLoaded) return;
   
-  const dt = min((now - lastTime) / 1000, 0.05);
-  lastTime = now; time += dt;
-  
-  if (floor(time) !== floor(time - dt)) updateDayTime();
-  if (time - calendarTime > 1) { updateCalendar(); checkMidnight(); calendarTime = time; }
-  
-  updateWeather(dt);
-  
-  const colors = getTimeColors();
-  const sun = getSunPosition();
+  try {
+    const dt = min((now - lastTime) / 1000, 0.05);
+    lastTime = now; time += dt;
+    
+    if (floor(time) !== floor(time - dt)) updateDayTime();
+    if (time - calendarTime > 1) { updateCalendar(); checkMidnight(); calendarTime = time; }
+    
+    updateWeather(dt);
+    
+    const colors = getTimeColors();
+    if (!colors || typeof colors.ambient !== 'number') return; // Skip frame if colors invalid
+    
+    const sun = getSunPosition();
   
   updateStarlings(dt);
   updatePredator(dt);
@@ -3913,25 +3925,37 @@ function animate(now) {
   
   drawVignette(colors.ambient);
   updateCRRDebug(colors.crrState);
+  } catch (e) {
+    console.error('Animation frame error:', e);
+  }
 }
 
 // ============================================================================
 // INIT
 // ============================================================================
 async function init() {
-  initCanvas();
-  updateSeasonalState();
-  updateDayTime();
-  updateCalendar();
-  
-  requestAnimationFrame(animate);
-  
-  await loadAllAssets();
-  
-  fetchRealWeather();
-  
-  hideLoadingScreen();
-  initDemoPanel();
+  try {
+    initCanvas();
+    updateSeasonalState();
+    updateDayTime();
+    updateCalendar();
+    
+    requestAnimationFrame(animate);
+    
+    await loadAllAssets();
+    
+    // Weather fetch is optional - don't await, let it fail silently
+    fetchRealWeather().catch(() => {});
+    
+    hideLoadingScreen();
+    initDemoPanel();
+  } catch (e) {
+    console.error('Initialization error:', e);
+    // Still try to show something
+    isLoaded = true;
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) loadingScreen.style.display = 'none';
+  }
 }
 
 // ============================================================================
