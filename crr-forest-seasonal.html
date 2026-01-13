@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -2592,13 +2592,14 @@ function getTimeColors() {
   
   let i = 0;
   while (i < times.length - 1 && t >= times[i + 1]) i++;
-  const blend = (t - times[i]) / (times[i + 1] - times[i]);
+  const divisor = times[i + 1] - times[i];
+  const blend = divisor > 0 ? Math.max(0, Math.min(1, (t - times[i]) / divisor)) : 0;
   
   // CRR-MODULATED SMOOTHSTEP
   // Instead of simple smoothstep, use CRR memory weighting
   // During transitions (dawn/dusk), the crrModulation shapes the curve
   let smoothBlend;
-  if (crrState.transitionType) {
+  if (crrState && crrState.transitionType && !isNaN(crrState.crrModulation) && !isNaN(crrState.transitionProgress)) {
     // During dawn/dusk transitions, CRR modulates the blend
     // exp(C/Ω) creates the characteristic CRR transition shape
     const baseSmooth = blend * blend * (3 - 2 * blend);
@@ -2608,16 +2609,24 @@ function getTimeColors() {
     smoothBlend = blend * blend * (3 - 2 * blend);
   }
   
+  // Ensure smoothBlend is valid
+  if (isNaN(smoothBlend)) smoothBlend = blend * blend * (3 - 2 * blend);
+  
   const p1 = palettes[i], p2 = palettes[min(i + 1, palettes.length - 1)];
+  
+  // Ensure smoothBlend is clamped to valid range
+  smoothBlend = Math.max(0, Math.min(1, smoothBlend));
+  
+  const ambientValue = lerp(p1.ambient, p2.ambient, smoothBlend);
   
   currentColors = {
     skyTop: lerpColor(p1.skyTop, p2.skyTop, smoothBlend),
     skyMid: lerpColor(p1.skyMid, p2.skyMid, smoothBlend),
     skyHorizon: lerpColor(p1.skyHorizon, p2.skyHorizon, smoothBlend),
     ground: lerpColor(p1.ground, p2.ground, smoothBlend),
-    ambient: lerp(p1.ambient, p2.ambient, smoothBlend),
+    ambient: isNaN(ambientValue) ? 0.5 : ambientValue,
     // Expose CRR state for debugging/visualization
-    crrState: crrState
+    crrState: crrState || {}
   };
   
   return currentColors;
@@ -3810,6 +3819,12 @@ let vignetteCache = null;
 let vignetteCacheAmbient = -1;
 
 function drawVignette(ambient) {
+  // Ensure ambient is a valid number
+  if (typeof ambient !== 'number' || isNaN(ambient)) {
+    ambient = 0.5; // Default to mid-day lighting
+  }
+  ambient = Math.max(0, Math.min(1, ambient)); // Clamp to 0-1
+  
   // Round ambient to avoid recreating gradient too often
   const roundedAmbient = Math.round(ambient * 20) / 20;
   
