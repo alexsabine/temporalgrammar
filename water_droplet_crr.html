@@ -23,10 +23,51 @@
             height: 100%;
             display: block;
         }
+        
+        .mode-toggle {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .mode-btn {
+            padding: 12px 24px;
+            background: rgba(20, 40, 60, 0.9);
+            border: 1px solid rgba(100, 180, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(40, 80, 120, 0.9);
+            border-color: rgba(100, 200, 255, 0.5);
+        }
+        
+        .mode-btn.active {
+            background: rgba(100, 180, 255, 0.3);
+            border-color: rgba(100, 200, 255, 0.8);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(100, 180, 255, 0.3);
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    
+    <div class="mode-toggle">
+        <button class="mode-btn" id="scientificBtn">🔬 Scientific</button>
+        <button class="mode-btn active" id="photoBtn">📷 Photorealistic</button>
+    </div>
     
     <script>
         /*
@@ -62,6 +103,22 @@
         
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
+        // MODE STATE
+        let photorealisticMode = true;
+        
+        // Mode toggle handlers
+        document.getElementById('scientificBtn').addEventListener('click', () => {
+            photorealisticMode = false;
+            document.getElementById('scientificBtn').classList.add('active');
+            document.getElementById('photoBtn').classList.remove('active');
+        });
+        
+        document.getElementById('photoBtn').addEventListener('click', () => {
+            photorealisticMode = true;
+            document.getElementById('photoBtn').classList.add('active');
+            document.getElementById('scientificBtn').classList.remove('active');
+        });
         
         // High DPI
         function resize() {
@@ -395,6 +452,470 @@
             const cx = droplet.cx;
             const cy = droplet.cy;
             
+            if (photorealisticMode) {
+                renderPhotorealistic(w, h, cx, cy);
+            } else {
+                renderScientific(w, h, cx, cy);
+            }
+        }
+        
+        // =====================================================
+        // PHOTOREALISTIC MODE — Maximum visual fidelity
+        // =====================================================
+        
+        function renderPhotorealistic(w, h, cx, cy) {
+            // Ultra-clean gradient background (like a lit surface)
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+            bgGrad.addColorStop(0, '#2a3a4a');
+            bgGrad.addColorStop(0.3, '#1e2d3d');
+            bgGrad.addColorStop(0.7, '#152535');
+            bgGrad.addColorStop(1, '#0f1a25');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Subtle surface texture (like brushed metal or glass)
+            drawSurfaceTexture(w, h);
+            
+            // === CONTACT SHADOW (where droplet meets surface) ===
+            drawContactShadow(cx, cy);
+            
+            // === MAIN DROPLET ===
+            ctx.save();
+            
+            // Create droplet clipping path
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.clip();
+            
+            // Multi-layer water interior
+            drawWaterInterior(cx, cy);
+            
+            // Deep caustics
+            drawDeepCaustics(cx, cy);
+            
+            // Subsurface scattering layers
+            drawSubsurfaceScattering(cx, cy);
+            
+            ctx.restore();
+            
+            // === SURFACE EFFECTS (outside clip) ===
+            
+            // Ultra-realistic Fresnel rim
+            drawPhotoFresnelRim(cx, cy);
+            
+            // Environment reflection (curved distorted reflection)
+            drawEnvironmentReflection(cx, cy);
+            
+            // Primary specular highlight (sun/light source)
+            drawPhotoMainHighlight(cx, cy);
+            
+            // Secondary highlights
+            drawPhotoSecondaryHighlights(cx, cy);
+            
+            // Edge definition with chromatic aberration hint
+            drawPhotoEdge(cx, cy);
+            
+            // Micro-surface detail (tiny highlights)
+            drawMicroHighlights(cx, cy);
+        }
+        
+        function drawSurfaceTexture(w, h) {
+            // Very subtle noise texture
+            ctx.globalAlpha = 0.03;
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                const r = Math.random() * 100 + 50;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawContactShadow(cx, cy) {
+            // Soft contact shadow
+            const shadowY = cy + droplet.baseRadius * 0.95;
+            
+            // Outer soft shadow
+            const shadow1 = ctx.createRadialGradient(
+                cx, shadowY + 20, 0,
+                cx, shadowY + 20, droplet.baseRadius * 1.3
+            );
+            shadow1.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
+            shadow1.addColorStop(0.3, 'rgba(0, 0, 0, 0.2)');
+            shadow1.addColorStop(0.6, 'rgba(0, 0, 0, 0.1)');
+            shadow1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = shadow1;
+            ctx.beginPath();
+            ctx.ellipse(cx, shadowY + 20, droplet.baseRadius * 1.1, droplet.baseRadius * 0.25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner contact shadow (darker, sharper)
+            const shadow2 = ctx.createRadialGradient(
+                cx, shadowY + 5, 0,
+                cx, shadowY + 5, droplet.baseRadius * 0.6
+            );
+            shadow2.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+            shadow2.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
+            shadow2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = shadow2;
+            ctx.beginPath();
+            ctx.ellipse(cx, shadowY + 5, droplet.baseRadius * 0.5, droplet.baseRadius * 0.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawWaterInterior(cx, cy) {
+            // Multiple gradient layers for depth
+            
+            // Layer 1: Base water color
+            const water1 = ctx.createRadialGradient(
+                cx - droplet.baseRadius * 0.2, cy - droplet.baseRadius * 0.3, 0,
+                cx, cy, droplet.baseRadius * 1.2
+            );
+            water1.addColorStop(0, 'rgba(235, 248, 255, 0.98)');
+            water1.addColorStop(0.15, 'rgba(210, 235, 250, 0.95)');
+            water1.addColorStop(0.3, 'rgba(180, 220, 245, 0.92)');
+            water1.addColorStop(0.5, 'rgba(140, 195, 235, 0.88)');
+            water1.addColorStop(0.7, 'rgba(100, 165, 220, 0.85)');
+            water1.addColorStop(0.85, 'rgba(70, 135, 200, 0.82)');
+            water1.addColorStop(1, 'rgba(50, 110, 180, 0.8)');
+            
+            ctx.fillStyle = water1;
+            ctx.fillRect(cx - droplet.baseRadius * 1.5, cy - droplet.baseRadius * 1.5,
+                        droplet.baseRadius * 3, droplet.baseRadius * 3);
+            
+            // Layer 2: Depth gradient (darker at bottom)
+            const water2 = ctx.createLinearGradient(cx, cy - droplet.baseRadius, cx, cy + droplet.baseRadius);
+            water2.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            water2.addColorStop(0.3, 'rgba(255, 255, 255, 0.05)');
+            water2.addColorStop(0.7, 'rgba(0, 50, 100, 0.1)');
+            water2.addColorStop(1, 'rgba(0, 30, 80, 0.2)');
+            
+            ctx.fillStyle = water2;
+            ctx.fillRect(cx - droplet.baseRadius * 1.5, cy - droplet.baseRadius * 1.5,
+                        droplet.baseRadius * 3, droplet.baseRadius * 3);
+            
+            // Layer 3: Subtle color variation (cyan tint in center)
+            const water3 = ctx.createRadialGradient(cx, cy, 0, cx, cy, droplet.baseRadius * 0.8);
+            water3.addColorStop(0, 'rgba(200, 240, 255, 0.15)');
+            water3.addColorStop(0.5, 'rgba(180, 230, 250, 0.08)');
+            water3.addColorStop(1, 'rgba(150, 210, 240, 0)');
+            
+            ctx.fillStyle = water3;
+            ctx.fillRect(cx - droplet.baseRadius, cy - droplet.baseRadius,
+                        droplet.baseRadius * 2, droplet.baseRadius * 2);
+        }
+        
+        function drawDeepCaustics(cx, cy) {
+            // More realistic caustic patterns
+            const numCaustics = 25;
+            const time = droplet.causticsPhase;
+            
+            for (let i = 0; i < numCaustics; i++) {
+                const baseAngle = (i / numCaustics) * Math.PI * 2;
+                const angle = baseAngle + Math.sin(time * 0.5 + i) * 0.3;
+                const rBase = droplet.baseRadius * (0.2 + (i % 5) * 0.12);
+                const r = rBase + Math.sin(time + i * 0.7) * 20;
+                
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r * 0.9;
+                
+                const size = 15 + Math.sin(time * 0.8 + i * 1.3) * 10;
+                const alpha = 0.04 + Math.sin(time + i) * 0.02;
+                
+                // Caustic shape (elongated, organic)
+                const causticGrad = ctx.createRadialGradient(x, y, 0, x, y, size);
+                causticGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 2})`);
+                causticGrad.addColorStop(0.3, `rgba(240, 250, 255, ${alpha})`);
+                causticGrad.addColorStop(0.7, `rgba(220, 245, 255, ${alpha * 0.5})`);
+                causticGrad.addColorStop(1, 'rgba(200, 240, 255, 0)');
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.scale(1.5, 0.7);  // Elongated shape
+                
+                ctx.fillStyle = causticGrad;
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+        
+        function drawSubsurfaceScattering(cx, cy) {
+            // Light scattering through water
+            
+            // Upper hemisphere glow (light entering from top)
+            const sss1 = ctx.createRadialGradient(
+                cx, cy - droplet.baseRadius * 0.5, droplet.baseRadius * 0.2,
+                cx, cy, droplet.baseRadius
+            );
+            sss1.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+            sss1.addColorStop(0.3, 'rgba(240, 250, 255, 0.06)');
+            sss1.addColorStop(1, 'rgba(220, 245, 255, 0)');
+            
+            ctx.fillStyle = sss1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, droplet.baseRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bottom internal reflection (light bouncing inside)
+            const sss2 = ctx.createRadialGradient(
+                cx, cy + droplet.baseRadius * 0.6, 0,
+                cx, cy + droplet.baseRadius * 0.6, droplet.baseRadius * 0.5
+            );
+            sss2.addColorStop(0, 'rgba(200, 230, 255, 0.08)');
+            sss2.addColorStop(0.5, 'rgba(180, 220, 250, 0.04)');
+            sss2.addColorStop(1, 'rgba(150, 200, 240, 0)');
+            
+            ctx.fillStyle = sss2;
+            ctx.beginPath();
+            ctx.arc(cx, cy + droplet.baseRadius * 0.6, droplet.baseRadius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawPhotoFresnelRim(cx, cy) {
+            // Realistic Fresnel effect - brighter at glancing angles
+            
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            // Full rim with varying intensity
+            for (let i = 0; i <= 360; i += 1) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                
+                // Fresnel: stronger at edges perpendicular to view
+                // Light from upper left
+                const lightAngle = -Math.PI * 0.75;
+                const angleDiff = Math.abs(theta - lightAngle);
+                const fresnel = Math.pow(Math.cos(angleDiff * 0.5), 2);
+                
+                // Stronger on upper portion
+                const heightFactor = 1 - (Math.sin(theta) + 1) * 0.3;
+                
+                const intensity = fresnel * heightFactor;
+                
+                if (intensity > 0.1) {
+                    const rimGrad = ctx.createRadialGradient(x, y, 0, x, y, 8);
+                    rimGrad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.6})`);
+                    rimGrad.addColorStop(0.3, `rgba(240, 250, 255, ${intensity * 0.3})`);
+                    rimGrad.addColorStop(1, 'rgba(220, 245, 255, 0)');
+                    
+                    ctx.fillStyle = rimGrad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawEnvironmentReflection(cx, cy) {
+            // Curved environment reflection (like seeing room reflected)
+            
+            // Upper arc reflection (simulating light environment)
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            const reflectGrad = ctx.createLinearGradient(
+                cx - droplet.baseRadius * 0.6, cy - droplet.baseRadius * 0.5,
+                cx + droplet.baseRadius * 0.6, cy - droplet.baseRadius * 0.2
+            );
+            reflectGrad.addColorStop(0, 'rgba(200, 220, 240, 0)');
+            reflectGrad.addColorStop(0.3, 'rgba(220, 235, 250, 0.08)');
+            reflectGrad.addColorStop(0.5, 'rgba(240, 248, 255, 0.12)');
+            reflectGrad.addColorStop(0.7, 'rgba(220, 235, 250, 0.08)');
+            reflectGrad.addColorStop(1, 'rgba(200, 220, 240, 0)');
+            
+            ctx.fillStyle = reflectGrad;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - droplet.baseRadius * 0.35, 
+                       droplet.baseRadius * 0.7, droplet.baseRadius * 0.25,
+                       -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function drawPhotoMainHighlight(cx, cy) {
+            // Ultra-realistic main specular highlight
+            
+            const hlX = cx - droplet.baseRadius * 0.32;
+            const hlY = cy - droplet.baseRadius * 0.35;
+            
+            // Soft outer glow
+            const glow = ctx.createRadialGradient(hlX, hlY, 0, hlX, hlY, droplet.baseRadius * 0.5);
+            glow.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            glow.addColorStop(0.3, 'rgba(255, 255, 255, 0.2)');
+            glow.addColorStop(0.6, 'rgba(250, 252, 255, 0.08)');
+            glow.addColorStop(1, 'rgba(245, 250, 255, 0)');
+            
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(hlX, hlY, droplet.baseRadius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main highlight (slightly elongated)
+            ctx.save();
+            ctx.translate(hlX, hlY);
+            ctx.rotate(-0.3);
+            ctx.scale(1.2, 0.85);
+            
+            const main = ctx.createRadialGradient(0, 0, 0, 0, 0, droplet.baseRadius * 0.22);
+            main.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+            main.addColorStop(0.2, 'rgba(255, 255, 255, 0.9)');
+            main.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+            main.addColorStop(0.8, 'rgba(255, 255, 255, 0.15)');
+            main.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = main;
+            ctx.beginPath();
+            ctx.arc(0, 0, droplet.baseRadius * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Sharp specular point (the "spark")
+            const sparkX = hlX - droplet.baseRadius * 0.08;
+            const sparkY = hlY - droplet.baseRadius * 0.06;
+            
+            const spark = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, 12);
+            spark.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            spark.addColorStop(0.4, 'rgba(255, 255, 255, 0.9)');
+            spark.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = spark;
+            ctx.beginPath();
+            ctx.arc(sparkX, sparkY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tiny extra spark
+            const spark2 = ctx.createRadialGradient(sparkX + 15, sparkY + 8, 0, sparkX + 15, sparkY + 8, 5);
+            spark2.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            spark2.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = spark2;
+            ctx.beginPath();
+            ctx.arc(sparkX + 15, sparkY + 8, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawPhotoSecondaryHighlights(cx, cy) {
+            const highlights = [
+                { x: 0.25, y: -0.52, r: 0.06, a: 0.4 },
+                { x: 0.42, y: -0.28, r: 0.04, a: 0.3 },
+                { x: -0.45, y: 0.35, r: 0.08, a: 0.15 },
+                { x: 0.35, y: 0.42, r: 0.05, a: 0.1 },
+                { x: -0.2, y: 0.55, r: 0.04, a: 0.08 },
+                { x: 0.5, y: 0.1, r: 0.03, a: 0.2 },
+            ];
+            
+            highlights.forEach(hl => {
+                const x = cx + droplet.baseRadius * hl.x;
+                const y = cy + droplet.baseRadius * hl.y;
+                const r = droplet.baseRadius * hl.r;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${hl.a})`);
+                grad.addColorStop(0.4, `rgba(250, 252, 255, ${hl.a * 0.5})`);
+                grad.addColorStop(1, 'rgba(245, 250, 255, 0)');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function drawPhotoEdge(cx, cy) {
+            // Subtle edge with hint of chromatic aberration
+            
+            ctx.save();
+            
+            // Outer chromatic fringe (very subtle cyan/magenta)
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta) + 2;
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(180, 220, 255, 0.15)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Inner edge definition
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(60, 100, 140, 0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawMicroHighlights(cx, cy) {
+            // Tiny surface detail highlights
+            const time = Date.now() * 0.001;
+            
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2 + time * 0.1;
+                const rFactor = 0.75 + Math.sin(i * 1.5) * 0.15;
+                const r = droplet.baseRadius * rFactor;
+                
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                
+                // Only on upper half
+                if (y < cy + droplet.baseRadius * 0.3) {
+                    const twinkle = 0.3 + Math.sin(time * 3 + i * 2) * 0.2;
+                    
+                    ctx.fillStyle = `rgba(255, 255, 255, ${twinkle * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // =====================================================
+        // SCIENTIFIC MODE — Shows molecular structure
+        // =====================================================
+        
+        function renderScientific(w, h, cx, cy) {
             // Clear with subtle gradient background
             const bgGrad = ctx.createRadialGradient(cx, cy - 100, 0, cx, cy, h);
             bgGrad.addColorStop(0, '#1e2a4a');
@@ -419,8 +940,6 @@
             ctx.fill();
             
             // === DRAW DROPLET BODY ===
-            
-            // Create droplet path with deformation
             ctx.save();
             ctx.beginPath();
             for (let i = 0; i <= 360; i++) {
@@ -448,15 +967,15 @@
             ctx.fillRect(cx - droplet.baseRadius * 1.2, cy - droplet.baseRadius * 1.2,
                         droplet.baseRadius * 2.4, droplet.baseRadius * 2.4);
             
-            // === INTERNAL CAUSTICS (light refraction patterns) ===
+            // === INTERNAL CAUSTICS ===
             drawCaustics(cx, cy);
             
-            // === DRAW INTERIOR MOLECULES (seen through water) ===
+            // === DRAW INTERIOR MOLECULES ===
             molecules.filter(m => m.isInterior).forEach(mol => {
-                drawMolecule(mol, cx, cy, 0.3);  // Dimmer
+                drawMolecule(mol, cx, cy, 0.3);
             });
             
-            // === DRAW CLUSTERS (H-bond networks) ===
+            // === DRAW CLUSTERS ===
             clusters.forEach(cluster => {
                 drawCluster(cluster, cx, cy);
             });
@@ -468,18 +987,10 @@
             
             ctx.restore();
             
-            // === SURFACE EFFECTS (outside clip) ===
-            
-            // Fresnel rim (bright edge)
+            // === SURFACE EFFECTS ===
             drawFresnelRim(cx, cy);
-            
-            // Main specular highlight
             drawMainHighlight(cx, cy);
-            
-            // Secondary highlights
             drawSecondaryHighlights(cx, cy);
-            
-            // Surface tension edge definition
             drawSurfaceEdge(cx, cy);
             
             // === CRR RUPTURE EFFECTS ===
@@ -734,6 +1245,12 @@
         // =====================================================
         
         function drawCRRDisplay() {
+            // Only show in scientific mode or when not in full photorealistic
+            if (photorealisticMode) {
+                drawMinimalCRRIndicator();
+                return;
+            }
+            
             const w = window.innerWidth;
             const cx = droplet.cx;
             const topY = droplet.cy - droplet.baseRadius - 180;
@@ -942,6 +1459,54 @@
             ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.textAlign = 'center';
             ctx.fillText('C(t) = ∫L(τ)dτ  →  δ(t−t₀) when C≥Ω  →  R = exp(C/Ω)', cx, panelY + panelHeight - 10);
+            
+            ctx.restore();
+        }
+        
+        function drawMinimalCRRIndicator() {
+            // Subtle indicator for photorealistic mode
+            const cx = droplet.cx;
+            const cy = droplet.cy - droplet.baseRadius - 40;
+            
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            
+            // Small coherence indicators (three dots)
+            const scales = [
+                { data: CRR.molecular, color: '#ff6b6b', x: -30 },
+                { data: CRR.cluster, color: '#4ecdc4', x: 0 },
+                { data: CRR.droplet, color: '#45b7d1', x: 30 }
+            ];
+            
+            scales.forEach(scale => {
+                const x = cx + scale.x;
+                const fillRatio = Math.min(scale.data.C / scale.data.omega, 1);
+                const radius = 6;
+                
+                // Background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.arc(x, cy, radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Fill (as arc)
+                if (fillRatio > 0) {
+                    ctx.fillStyle = scale.color;
+                    ctx.beginPath();
+                    ctx.moveTo(x, cy);
+                    ctx.arc(x, cy, radius, -Math.PI/2, -Math.PI/2 + fillRatio * Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // Rupture flash
+                if (scale.data.ruptureIntensity > 0.3) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${scale.data.ruptureIntensity})`;
+                    ctx.beginPath();
+                    ctx.arc(x, cy, radius + 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
             
             ctx.restore();
         }
