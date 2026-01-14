@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Droplet — CRR Nested Dynamics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        /*
+         * WATER DROPLET — CRR NESTED SCALE DYNAMICS
+         * 
+         * A single water droplet contains ~10²¹ molecules.
+         * We model nested CRR at three scales:
+         * 
+         * SCALE 1: MOLECULAR (femtoseconds)
+         * - Individual H₂O vibrations
+         * - C = vibrational energy accumulation
+         * - Ω = quantum transition thresholds
+         * - δ = phonon emission/absorption
+         * - R = return to equilibrium geometry
+         * 
+         * SCALE 2: CLUSTER (picoseconds)  
+         * - Hydrogen bond networks (4-6 molecules)
+         * - C = H-bond strain accumulation
+         * - Ω = network reorganization threshold
+         * - δ = H-bond breaking/forming
+         * - R = tetrahedral coordination memory
+         * 
+         * SCALE 3: DROPLET (milliseconds)
+         * - Surface tension, shape dynamics
+         * - C = surface energy accumulation
+         * - Ω = capillary wave threshold
+         * - δ = surface mode transitions
+         * - R = spherical equilibrium memory
+         * 
+         * The droplet emerges from compressed molecular order.
+         * Each scale's R feeds into the next scale's L.
+         */
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // High DPI
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // =====================================================
+        // PHYSICAL CONSTANTS
+        // =====================================================
+        
+        const DROPLET_RADIUS = Math.min(window.innerWidth, window.innerHeight) * 0.35;
+        const NUM_SURFACE_MOLECULES = 200;
+        const NUM_INTERIOR_MOLECULES = 150;
+        const NUM_CLUSTERS = 12;
+        
+        // =====================================================
+        // CRR STATE — NESTED SCALES
+        // =====================================================
+        
+        const CRR = {
+            // Scale 1: Molecular
+            molecular: {
+                C: 0,
+                C_archival: 0,
+                omega: 1.0,
+                L: 0,
+                R: 1,
+                ruptureIntensity: 0
+            },
+            
+            // Scale 2: Cluster (H-bond networks)
+            cluster: {
+                C: 0,
+                C_archival: 0,
+                omega: 5.0,  // Slower timescale
+                L: 0,
+                R: 1,
+                ruptureIntensity: 0
+            },
+            
+            // Scale 3: Droplet (surface dynamics)
+            droplet: {
+                C: 0,
+                C_archival: 0,
+                omega: 20.0,  // Slowest timescale
+                L: 0,
+                R: 1,
+                ruptureIntensity: 0
+            }
+        };
+        
+        // =====================================================
+        // DROPLET STATE
+        // =====================================================
+        
+        const droplet = {
+            cx: 0,
+            cy: 0,
+            baseRadius: DROPLET_RADIUS,
+            
+            // Surface deformation modes (capillary waves)
+            modes: [],
+            
+            // Surface wobble
+            wobblePhase: 0,
+            wobbleAmount: 0,
+            
+            // Internal flow
+            flowPhase: 0,
+            
+            // Light refraction simulation
+            causticsPhase: 0
+        };
+        
+        // Initialize surface wave modes
+        for (let i = 0; i < 8; i++) {
+            droplet.modes.push({
+                amplitude: 0,
+                velocity: 0,
+                frequency: 2 + i,  // Mode number
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        
+        // =====================================================
+        // MOLECULES (visible at surface)
+        // =====================================================
+        
+        const molecules = [];
+        
+        // Surface molecules (visible)
+        for (let i = 0; i < NUM_SURFACE_MOLECULES; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);  // Uniform on sphere
+            
+            molecules.push({
+                theta: theta,
+                phi: phi,
+                depth: 0.95 + Math.random() * 0.05,  // Near surface
+                
+                // Individual CRR state
+                C: Math.random() * 0.5,
+                phase: Math.random() * Math.PI * 2,
+                vibrateAmp: 0.5 + Math.random() * 0.5,
+                
+                // H2O orientation
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.02,
+                
+                // Size (slight variation)
+                scale: 0.8 + Math.random() * 0.4
+            });
+        }
+        
+        // Interior molecules (dimmer, seen through refraction)
+        for (let i = 0; i < NUM_INTERIOR_MOLECULES; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            molecules.push({
+                theta: theta,
+                phi: phi,
+                depth: 0.3 + Math.random() * 0.6,  // Interior
+                
+                C: Math.random() * 0.5,
+                phase: Math.random() * Math.PI * 2,
+                vibrateAmp: 0.3 + Math.random() * 0.3,
+                
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.01,
+                
+                scale: 0.5 + Math.random() * 0.3,
+                isInterior: true
+            });
+        }
+        
+        // =====================================================
+        // HYDROGEN BOND CLUSTERS
+        // =====================================================
+        
+        const clusters = [];
+        
+        for (let i = 0; i < NUM_CLUSTERS; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            clusters.push({
+                theta: theta,
+                phi: phi,
+                depth: 0.5 + Math.random() * 0.4,
+                
+                // Cluster CRR
+                C: Math.random() * 2,
+                coherence: Math.random(),
+                
+                // Network state
+                bonds: 4 + Math.floor(Math.random() * 3),  // 4-6 bonds
+                strain: 0,
+                
+                pulsePhase: Math.random() * Math.PI * 2
+            });
+        }
+        
+        // =====================================================
+        // CRR DYNAMICS — NESTED SCALES
+        // =====================================================
+        
+        function updateCRR(dt) {
+            // === SCALE 1: MOLECULAR ===
+            // Thermal fluctuations drive molecular vibrations
+            CRR.molecular.L = 0.02 + Math.random() * 0.03;
+            CRR.molecular.C += CRR.molecular.L;
+            CRR.molecular.C_archival += CRR.molecular.L * 0.1;
+            
+            if (CRR.molecular.C >= CRR.molecular.omega) {
+                CRR.molecular.C = 0;
+                CRR.molecular.ruptureIntensity = 1;
+                
+                // Molecular rupture feeds cluster L
+                CRR.cluster.L += 0.3;
+                
+                // Excite random molecules
+                for (let i = 0; i < 5; i++) {
+                    const mol = molecules[Math.floor(Math.random() * molecules.length)];
+                    mol.vibrateAmp = 1.5;
+                    mol.C = 0;
+                }
+            }
+            CRR.molecular.ruptureIntensity *= 0.92;
+            CRR.molecular.R = Math.exp(CRR.molecular.C / CRR.molecular.omega);
+            
+            // === SCALE 2: CLUSTER ===
+            // H-bond network dynamics
+            CRR.cluster.L += 0.005 + Math.random() * 0.01;
+            CRR.cluster.C += CRR.cluster.L;
+            CRR.cluster.L *= 0.9;  // Decay
+            CRR.cluster.C_archival += CRR.cluster.L * 0.05;
+            
+            if (CRR.cluster.C >= CRR.cluster.omega) {
+                CRR.cluster.C = 0;
+                CRR.cluster.ruptureIntensity = 1;
+                
+                // Cluster rupture feeds droplet L
+                CRR.droplet.L += 0.5;
+                
+                // Reorganize a random cluster
+                const cluster = clusters[Math.floor(Math.random() * clusters.length)];
+                cluster.strain = 1;
+                cluster.C = 0;
+            }
+            CRR.cluster.ruptureIntensity *= 0.95;
+            CRR.cluster.R = Math.exp(CRR.cluster.C / CRR.cluster.omega);
+            
+            // === SCALE 3: DROPLET ===
+            // Surface tension dynamics
+            CRR.droplet.L += 0.002 + Math.random() * 0.005;
+            CRR.droplet.C += CRR.droplet.L;
+            CRR.droplet.L *= 0.95;
+            CRR.droplet.C_archival += CRR.droplet.L * 0.02;
+            
+            if (CRR.droplet.C >= CRR.droplet.omega) {
+                CRR.droplet.C = 0;
+                CRR.droplet.ruptureIntensity = 1;
+                
+                // Surface mode excitation
+                droplet.wobbleAmount = 0.03;
+                
+                // Excite capillary waves
+                const mode = droplet.modes[Math.floor(Math.random() * droplet.modes.length)];
+                mode.velocity += (Math.random() - 0.5) * 0.01;
+            }
+            CRR.droplet.ruptureIntensity *= 0.98;
+            CRR.droplet.R = Math.exp(CRR.droplet.C / CRR.droplet.omega);
+        }
+        
+        // =====================================================
+        // PHYSICS UPDATE
+        // =====================================================
+        
+        function updatePhysics(dt) {
+            // Update droplet center
+            droplet.cx = window.innerWidth / 2;
+            droplet.cy = window.innerHeight / 2;
+            
+            // Surface wave dynamics
+            droplet.wobblePhase += 0.03;
+            droplet.wobbleAmount *= 0.98;
+            
+            // Capillary wave modes (damped oscillators)
+            droplet.modes.forEach(mode => {
+                // Surface tension restoring force
+                const k = 0.001 * mode.frequency * mode.frequency;
+                const damping = 0.995;
+                
+                mode.velocity -= k * mode.amplitude;
+                mode.velocity *= damping;
+                mode.amplitude += mode.velocity;
+                mode.phase += 0.02 * mode.frequency;
+            });
+            
+            // Internal flow
+            droplet.flowPhase += 0.01;
+            droplet.causticsPhase += 0.015;
+            
+            // Update molecules
+            molecules.forEach(mol => {
+                // Vibration decay
+                mol.vibrateAmp *= 0.995;
+                mol.vibrateAmp = Math.max(0.3, mol.vibrateAmp);
+                
+                // Phase evolution
+                mol.phase += 0.05 * mol.vibrateAmp;
+                
+                // Slow rotation
+                mol.rotation += mol.rotationSpeed;
+                
+                // Individual CRR
+                mol.C += 0.01 * mol.vibrateAmp;
+                if (mol.C > 1) {
+                    mol.C = 0;
+                    mol.vibrateAmp = Math.min(1.5, mol.vibrateAmp + 0.2);
+                }
+            });
+            
+            // Update clusters
+            clusters.forEach(cluster => {
+                cluster.strain *= 0.97;
+                cluster.pulsePhase += 0.03;
+                cluster.C += 0.02;
+                if (cluster.C > 3) {
+                    cluster.C = 0;
+                }
+            });
+        }
+        
+        // =====================================================
+        // GET DROPLET RADIUS AT ANGLE (with deformation)
+        // =====================================================
+        
+        function getDropletRadius(theta) {
+            let r = droplet.baseRadius;
+            
+            // Add wobble
+            r += droplet.wobbleAmount * droplet.baseRadius * 
+                 Math.sin(2 * theta + droplet.wobblePhase);
+            
+            // Add capillary wave modes
+            droplet.modes.forEach(mode => {
+                r += mode.amplitude * droplet.baseRadius * 
+                     Math.cos(mode.frequency * theta + mode.phase);
+            });
+            
+            // Slight gravity-induced asymmetry (teardrop tendency)
+            r += droplet.baseRadius * 0.02 * Math.cos(theta - Math.PI/2);
+            
+            return r;
+        }
+        
+        // =====================================================
+        // RENDERING
+        // =====================================================
+        
+        function render() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const cx = droplet.cx;
+            const cy = droplet.cy;
+            
+            // Clear with subtle gradient background
+            const bgGrad = ctx.createRadialGradient(cx, cy - 100, 0, cx, cy, h);
+            bgGrad.addColorStop(0, '#1e2a4a');
+            bgGrad.addColorStop(0.5, '#151d33');
+            bgGrad.addColorStop(1, '#0a0f1a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // === DROPLET SHADOW ===
+            const shadowGrad = ctx.createRadialGradient(
+                cx + 20, cy + droplet.baseRadius + 40, 0,
+                cx + 20, cy + droplet.baseRadius + 40, droplet.baseRadius * 1.2
+            );
+            shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+            shadowGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.2)');
+            shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = shadowGrad;
+            ctx.beginPath();
+            ctx.ellipse(cx + 20, cy + droplet.baseRadius + 40, 
+                       droplet.baseRadius * 0.9, droplet.baseRadius * 0.3, 
+                       0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // === DRAW DROPLET BODY ===
+            
+            // Create droplet path with deformation
+            ctx.save();
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.clip();
+            
+            // === INTERIOR GRADIENT (water color) ===
+            const waterGrad = ctx.createRadialGradient(
+                cx - droplet.baseRadius * 0.3, cy - droplet.baseRadius * 0.3, 0,
+                cx, cy, droplet.baseRadius * 1.1
+            );
+            waterGrad.addColorStop(0, 'rgba(200, 235, 255, 0.95)');
+            waterGrad.addColorStop(0.2, 'rgba(150, 210, 250, 0.9)');
+            waterGrad.addColorStop(0.5, 'rgba(100, 180, 240, 0.85)');
+            waterGrad.addColorStop(0.8, 'rgba(60, 140, 220, 0.8)');
+            waterGrad.addColorStop(1, 'rgba(40, 100, 180, 0.75)');
+            ctx.fillStyle = waterGrad;
+            ctx.fillRect(cx - droplet.baseRadius * 1.2, cy - droplet.baseRadius * 1.2,
+                        droplet.baseRadius * 2.4, droplet.baseRadius * 2.4);
+            
+            // === INTERNAL CAUSTICS (light refraction patterns) ===
+            drawCaustics(cx, cy);
+            
+            // === DRAW INTERIOR MOLECULES (seen through water) ===
+            molecules.filter(m => m.isInterior).forEach(mol => {
+                drawMolecule(mol, cx, cy, 0.3);  // Dimmer
+            });
+            
+            // === DRAW CLUSTERS (H-bond networks) ===
+            clusters.forEach(cluster => {
+                drawCluster(cluster, cx, cy);
+            });
+            
+            // === DRAW SURFACE MOLECULES ===
+            molecules.filter(m => !m.isInterior).forEach(mol => {
+                drawMolecule(mol, cx, cy, 0.7);
+            });
+            
+            ctx.restore();
+            
+            // === SURFACE EFFECTS (outside clip) ===
+            
+            // Fresnel rim (bright edge)
+            drawFresnelRim(cx, cy);
+            
+            // Main specular highlight
+            drawMainHighlight(cx, cy);
+            
+            // Secondary highlights
+            drawSecondaryHighlights(cx, cy);
+            
+            // Surface tension edge definition
+            drawSurfaceEdge(cx, cy);
+            
+            // === CRR RUPTURE EFFECTS ===
+            if (CRR.droplet.ruptureIntensity > 0.1) {
+                const rippleGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, droplet.baseRadius * 1.2);
+                rippleGrad.addColorStop(0, `rgba(200, 240, 255, ${0.2 * CRR.droplet.ruptureIntensity})`);
+                rippleGrad.addColorStop(0.5, `rgba(150, 220, 255, ${0.1 * CRR.droplet.ruptureIntensity})`);
+                rippleGrad.addColorStop(1, 'rgba(100, 200, 255, 0)');
+                ctx.fillStyle = rippleGrad;
+                ctx.beginPath();
+                ctx.arc(cx, cy, droplet.baseRadius * 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawCaustics(cx, cy) {
+            // Simulated light caustics from internal refraction
+            const numCaustics = 15;
+            
+            for (let i = 0; i < numCaustics; i++) {
+                const angle = (i / numCaustics) * Math.PI * 2 + droplet.causticsPhase;
+                const r = droplet.baseRadius * (0.3 + Math.sin(angle * 3 + droplet.causticsPhase) * 0.2);
+                const x = cx + Math.cos(angle) * r;
+                const y = cy + Math.sin(angle) * r;
+                
+                const causticGrad = ctx.createRadialGradient(x, y, 0, x, y, 30 + Math.sin(droplet.causticsPhase + i) * 10);
+                causticGrad.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+                causticGrad.addColorStop(0.5, 'rgba(200, 240, 255, 0.04)');
+                causticGrad.addColorStop(1, 'rgba(150, 220, 255, 0)');
+                
+                ctx.fillStyle = causticGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, 30 + Math.sin(droplet.causticsPhase + i) * 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawMolecule(mol, cx, cy, opacity) {
+            // Convert spherical to screen coordinates
+            const r = droplet.baseRadius * mol.depth;
+            const x = cx + Math.cos(mol.theta) * Math.sin(mol.phi) * r;
+            const y = cy + Math.cos(mol.phi) * r * 0.8;  // Slight vertical compression
+            const z = Math.sin(mol.theta) * Math.sin(mol.phi);  // For depth sorting
+            
+            // Size based on depth (perspective)
+            const perspectiveScale = 0.5 + (z + 1) * 0.25;
+            const baseSize = 4 * mol.scale * perspectiveScale;
+            
+            // Vibration effect
+            const vibrate = Math.sin(mol.phase) * mol.vibrateAmp * 2;
+            
+            // Depth-based opacity
+            const depthOpacity = opacity * (0.3 + mol.depth * 0.7) * perspectiveScale;
+            
+            // Draw H2O molecule
+            const bondLen = baseSize * 2.5;
+            const bondAngle = 104.45 * Math.PI / 180;
+            const halfAngle = bondAngle / 2;
+            
+            // Hydrogen positions
+            const h1x = x + Math.cos(mol.rotation - halfAngle) * (bondLen + vibrate);
+            const h1y = y + Math.sin(mol.rotation - halfAngle) * (bondLen + vibrate);
+            const h2x = x + Math.cos(mol.rotation + halfAngle) * (bondLen - vibrate * 0.5);
+            const h2y = y + Math.sin(mol.rotation + halfAngle) * (bondLen - vibrate * 0.5);
+            
+            // Bonds
+            ctx.strokeStyle = `rgba(180, 200, 220, ${depthOpacity * 0.5})`;
+            ctx.lineWidth = baseSize * 0.3;
+            ctx.lineCap = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(h1x, h1y);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(h2x, h2y);
+            ctx.stroke();
+            
+            // Oxygen (red)
+            const oGrad = ctx.createRadialGradient(x - baseSize * 0.2, y - baseSize * 0.2, 0, x, y, baseSize);
+            oGrad.addColorStop(0, `rgba(255, 150, 150, ${depthOpacity})`);
+            oGrad.addColorStop(0.5, `rgba(220, 80, 80, ${depthOpacity})`);
+            oGrad.addColorStop(1, `rgba(180, 40, 40, ${depthOpacity * 0.8})`);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, baseSize, 0, Math.PI * 2);
+            ctx.fillStyle = oGrad;
+            ctx.fill();
+            
+            // Hydrogens (white-blue)
+            const hSize = baseSize * 0.6;
+            
+            [{ x: h1x, y: h1y }, { x: h2x, y: h2y }].forEach(h => {
+                const hGrad = ctx.createRadialGradient(h.x - hSize * 0.2, h.y - hSize * 0.2, 0, h.x, h.y, hSize);
+                hGrad.addColorStop(0, `rgba(255, 255, 255, ${depthOpacity})`);
+                hGrad.addColorStop(0.5, `rgba(220, 235, 255, ${depthOpacity})`);
+                hGrad.addColorStop(1, `rgba(180, 210, 250, ${depthOpacity * 0.8})`);
+                
+                ctx.beginPath();
+                ctx.arc(h.x, h.y, hSize, 0, Math.PI * 2);
+                ctx.fillStyle = hGrad;
+                ctx.fill();
+            });
+        }
+        
+        function drawCluster(cluster, cx, cy) {
+            const r = droplet.baseRadius * cluster.depth;
+            const x = cx + Math.cos(cluster.theta) * Math.sin(cluster.phi) * r;
+            const y = cy + Math.cos(cluster.phi) * r * 0.8;
+            
+            // Cluster glow (H-bond network)
+            const pulse = 0.5 + Math.sin(cluster.pulsePhase) * 0.3;
+            const strain = cluster.strain;
+            const size = 25 + cluster.bonds * 5;
+            
+            const clusterGrad = ctx.createRadialGradient(x, y, 0, x, y, size);
+            clusterGrad.addColorStop(0, `rgba(150, 200, 255, ${0.15 * pulse + strain * 0.2})`);
+            clusterGrad.addColorStop(0.5, `rgba(100, 180, 255, ${0.08 * pulse})`);
+            clusterGrad.addColorStop(1, 'rgba(80, 150, 255, 0)');
+            
+            ctx.fillStyle = clusterGrad;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // H-bond lines (tetrahedral network hint)
+            if (cluster.coherence > 0.5) {
+                ctx.strokeStyle = `rgba(180, 220, 255, ${0.1 * pulse})`;
+                ctx.lineWidth = 1;
+                
+                for (let i = 0; i < cluster.bonds; i++) {
+                    const angle = (i / cluster.bonds) * Math.PI * 2 + cluster.pulsePhase * 0.1;
+                    const len = size * 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        function drawFresnelRim(cx, cy) {
+            // Bright rim from Fresnel reflection at glancing angles
+            ctx.save();
+            
+            for (let i = 0; i <= 360; i += 2) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                
+                // Fresnel intensity varies with angle (brighter at edges)
+                const normalAngle = theta;
+                const viewAngle = Math.atan2(y - cy, x - cx);
+                const fresnel = Math.pow(Math.abs(Math.sin(normalAngle - viewAngle)), 0.5);
+                
+                // Brighter on upper portion (light from above)
+                const lightFactor = 0.5 + 0.5 * Math.cos(theta + Math.PI);
+                
+                const alpha = fresnel * lightFactor * 0.4;
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawMainHighlight(cx, cy) {
+            // Large primary specular highlight
+            const hlX = cx - droplet.baseRadius * 0.35;
+            const hlY = cy - droplet.baseRadius * 0.35;
+            const hlR = droplet.baseRadius * 0.4;
+            
+            const hlGrad = ctx.createRadialGradient(hlX, hlY, 0, hlX, hlY, hlR);
+            hlGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            hlGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.7)');
+            hlGrad.addColorStop(0.5, 'rgba(240, 250, 255, 0.3)');
+            hlGrad.addColorStop(1, 'rgba(220, 240, 255, 0)');
+            
+            ctx.fillStyle = hlGrad;
+            ctx.beginPath();
+            ctx.arc(hlX, hlY, hlR, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sharp specular point
+            const specGrad = ctx.createRadialGradient(hlX - 10, hlY - 10, 0, hlX - 10, hlY - 10, 15);
+            specGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            specGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+            specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = specGrad;
+            ctx.beginPath();
+            ctx.arc(hlX - 10, hlY - 10, 15, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawSecondaryHighlights(cx, cy) {
+            // Secondary smaller highlights
+            const highlights = [
+                { x: 0.2, y: -0.5, r: 0.08, a: 0.5 },
+                { x: 0.4, y: -0.3, r: 0.05, a: 0.4 },
+                { x: -0.5, y: 0.3, r: 0.1, a: 0.2 },
+                { x: 0.3, y: 0.4, r: 0.06, a: 0.15 },
+            ];
+            
+            highlights.forEach(hl => {
+                const x = cx + droplet.baseRadius * hl.x;
+                const y = cy + droplet.baseRadius * hl.y;
+                const r = droplet.baseRadius * hl.r;
+                
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${hl.a})`);
+                grad.addColorStop(0.5, `rgba(240, 250, 255, ${hl.a * 0.5})`);
+                grad.addColorStop(1, 'rgba(220, 240, 255, 0)');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function drawSurfaceEdge(cx, cy) {
+            // Subtle dark edge for definition
+            ctx.save();
+            ctx.beginPath();
+            
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getDropletRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            
+            ctx.strokeStyle = 'rgba(40, 80, 120, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // =====================================================
+        // CRR NUMERICAL DISPLAY
+        // =====================================================
+        
+        function drawCRRDisplay() {
+            const w = window.innerWidth;
+            const cx = droplet.cx;
+            const topY = droplet.cy - droplet.baseRadius - 180;
+            
+            ctx.save();
+            
+            // Background panel
+            const panelWidth = 700;
+            const panelHeight = 160;
+            const panelX = cx - panelWidth / 2;
+            const panelY = topY - 20;
+            
+            // Glass panel effect
+            const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelHeight);
+            panelGrad.addColorStop(0, 'rgba(20, 40, 60, 0.85)');
+            panelGrad.addColorStop(0.5, 'rgba(15, 30, 50, 0.9)');
+            panelGrad.addColorStop(1, 'rgba(10, 25, 45, 0.85)');
+            
+            ctx.fillStyle = panelGrad;
+            ctx.beginPath();
+            ctx.roundRect(panelX, panelY, panelWidth, panelHeight, 10);
+            ctx.fill();
+            
+            // Panel border
+            ctx.strokeStyle = 'rgba(100, 180, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Inner glow on rupture
+            const maxRupture = Math.max(
+                CRR.molecular.ruptureIntensity,
+                CRR.cluster.ruptureIntensity,
+                CRR.droplet.ruptureIntensity
+            );
+            if (maxRupture > 0.1) {
+                ctx.shadowColor = 'rgba(100, 200, 255, 0.5)';
+                ctx.shadowBlur = 20 * maxRupture;
+            }
+            
+            // Title
+            ctx.font = '600 14px "SF Mono", "Consolas", monospace';
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.9)';
+            ctx.textAlign = 'center';
+            ctx.fillText('CRR NESTED DYNAMICS — REAL-TIME', cx, panelY + 25);
+            
+            // Separator line
+            ctx.strokeStyle = 'rgba(100, 180, 255, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(panelX + 20, panelY + 35);
+            ctx.lineTo(panelX + panelWidth - 20, panelY + 35);
+            ctx.stroke();
+            
+            // Three columns for three scales
+            const colWidth = panelWidth / 3;
+            const scales = [
+                { 
+                    name: 'MOLECULAR', 
+                    scale: 'femtoseconds',
+                    data: CRR.molecular,
+                    color: '#ff6b6b',
+                    icon: '⚛'
+                },
+                { 
+                    name: 'CLUSTER', 
+                    scale: 'picoseconds',
+                    data: CRR.cluster,
+                    color: '#4ecdc4',
+                    icon: '🔗'
+                },
+                { 
+                    name: 'DROPLET', 
+                    scale: 'milliseconds',
+                    data: CRR.droplet,
+                    color: '#45b7d1',
+                    icon: '💧'
+                }
+            ];
+            
+            scales.forEach((scale, i) => {
+                const colX = panelX + colWidth * i + colWidth / 2;
+                const startY = panelY + 50;
+                
+                // Scale header
+                ctx.font = '600 11px "SF Mono", "Consolas", monospace';
+                ctx.fillStyle = scale.color;
+                ctx.textAlign = 'center';
+                ctx.fillText(`${scale.icon} ${scale.name}`, colX, startY);
+                
+                ctx.font = '400 9px "SF Mono", "Consolas", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillText(scale.scale, colX, startY + 12);
+                
+                // Coherence bar
+                const barWidth = colWidth - 40;
+                const barHeight = 8;
+                const barX = colX - barWidth / 2;
+                const barY = startY + 25;
+                
+                // Bar background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barWidth, barHeight, 3);
+                ctx.fill();
+                
+                // Coherence fill
+                const fillRatio = Math.min(scale.data.C / scale.data.omega, 1);
+                const fillGrad = ctx.createLinearGradient(barX, barY, barX + barWidth * fillRatio, barY);
+                fillGrad.addColorStop(0, scale.color);
+                fillGrad.addColorStop(1, fillRatio > 0.8 ? '#fff' : scale.color);
+                
+                ctx.fillStyle = fillGrad;
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barWidth * fillRatio, barHeight, 3);
+                ctx.fill();
+                
+                // Threshold marker
+                ctx.strokeStyle = 'rgba(255, 100, 100, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(barX + barWidth, barY - 2);
+                ctx.lineTo(barX + barWidth, barY + barHeight + 2);
+                ctx.stroke();
+                
+                // Rupture flash
+                if (scale.data.ruptureIntensity > 0.3) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${scale.data.ruptureIntensity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.roundRect(barX, barY, barWidth, barHeight, 3);
+                    ctx.fill();
+                }
+                
+                // Numerical values
+                ctx.font = '400 10px "SF Mono", "Consolas", monospace';
+                ctx.textAlign = 'left';
+                const valueX = colX - barWidth / 2;
+                let valueY = barY + 22;
+                
+                // C(t)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillText('C(t)', valueX, valueY);
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'right';
+                ctx.fillText(scale.data.C.toFixed(3), valueX + barWidth, valueY);
+                
+                // Ω
+                valueY += 14;
+                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillText('Ω', valueX, valueY);
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.9)';
+                ctx.textAlign = 'right';
+                ctx.fillText(scale.data.omega.toFixed(2), valueX + barWidth, valueY);
+                
+                // L(t)
+                valueY += 14;
+                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillText('L(t)', valueX, valueY);
+                ctx.fillStyle = 'rgba(100, 255, 150, 0.9)';
+                ctx.textAlign = 'right';
+                ctx.fillText(scale.data.L.toFixed(4), valueX + barWidth, valueY);
+                
+                // R (regeneration)
+                valueY += 14;
+                ctx.textAlign = 'left';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillText('R', valueX, valueY);
+                ctx.fillStyle = 'rgba(255, 200, 100, 0.9)';
+                ctx.textAlign = 'right';
+                const rVal = Math.min(scale.data.R, 999.99);
+                ctx.fillText(rVal.toFixed(2), valueX + barWidth, valueY);
+                
+                // Rupture indicator
+                if (scale.data.ruptureIntensity > 0.5) {
+                    ctx.font = '700 10px "SF Mono", "Consolas", monospace';
+                    ctx.fillStyle = `rgba(255, 100, 100, ${scale.data.ruptureIntensity})`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('δ RUPTURE', colX, valueY + 14);
+                }
+            });
+            
+            // Coupling arrows
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            
+            const arrowY = panelY + 80;
+            // Molecular → Cluster
+            ctx.beginPath();
+            ctx.moveTo(panelX + colWidth - 10, arrowY);
+            ctx.lineTo(panelX + colWidth + 10, arrowY);
+            ctx.stroke();
+            drawArrowHead(panelX + colWidth + 10, arrowY, 0);
+            
+            // Cluster → Droplet
+            ctx.beginPath();
+            ctx.moveTo(panelX + colWidth * 2 - 10, arrowY);
+            ctx.lineTo(panelX + colWidth * 2 + 10, arrowY);
+            ctx.stroke();
+            drawArrowHead(panelX + colWidth * 2 + 10, arrowY, 0);
+            
+            ctx.setLineDash([]);
+            
+            // Equation at bottom
+            ctx.font = '400 10px "SF Mono", "Consolas", monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.textAlign = 'center';
+            ctx.fillText('C(t) = ∫L(τ)dτ  →  δ(t−t₀) when C≥Ω  →  R = exp(C/Ω)', cx, panelY + panelHeight - 10);
+            
+            ctx.restore();
+        }
+        
+        function drawArrowHead(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-6, -3);
+            ctx.lineTo(-6, 3);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // =====================================================
+        // ANIMATION LOOP
+        // =====================================================
+        
+        let lastTime = 0;
+        
+        function animate(timestamp) {
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            updateCRR(dt);
+            updatePhysics(dt);
+            render();
+            drawCRRDisplay();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
