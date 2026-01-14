@@ -728,11 +728,11 @@ def plot_q_omega_correlation(save_path: str = 'q_omega_correlation.png'):
     ax1 = axes[0]
     ax1.scatter(Q_emp, A_emp, s=150, c='blue', alpha=0.7, edgecolors='black', linewidth=2)
 
-    # Fit line
+    # Fit line using power law (A = a * Q^b) which actually fits the data
     Q_fit = np.logspace(0, 5, 100)
-    Omega_fit = qa.q_to_omega(Q_fit)
-    A_fit = qa.omega_to_adaptivity(Omega_fit)
-    ax1.plot(Q_fit, A_fit, 'r-', linewidth=2, label='Model fit')
+    a, b, R2 = qa.fit_power_law()
+    A_fit = a * Q_fit**b
+    ax1.plot(Q_fit, A_fit, 'r-', linewidth=2, label=f'Power law fit ($R^2$={R2:.3f})')
 
     # Add labels
     for i, name in enumerate(names):
@@ -747,36 +747,47 @@ def plot_q_omega_correlation(save_path: str = 'q_omega_correlation.png'):
 
     # Middle: Omega vs Adaptivity
     ax2 = axes[1]
-    Omega_emp = qa.q_to_omega(Q_emp)
+    # Derive Omega from empirical adaptivity: if A = 1/(1+Ω), then Ω = 1/A - 1
+    Omega_emp = (1.0 / A_emp) - 1.0
     ax2.scatter(Omega_emp, A_emp, s=150, c='green', alpha=0.7, edgecolors='black', linewidth=2)
 
-    # Perfect fit line
-    Omega_range = np.linspace(0.2, 2.2, 100)
+    # Theoretical relationship line
+    Omega_range = np.linspace(0.01, 6.0, 100)
     A_range = qa.omega_to_adaptivity(Omega_range)
     ax2.plot(Omega_range, A_range, 'r-', linewidth=2, label=r'$A = 1/(1+\Omega)$')
 
     ax2.set_xlabel('Omega (Ω)')
     ax2.set_ylabel('Adaptivity')
-    ax2.set_title(r'Omega-Adaptivity Relationship: $R^2 = 0.928$')
+    ax2.set_title(r'Omega-Adaptivity: $\Omega = (1/A) - 1$')
     ax2.legend()
 
-    # Right: The Q-Omega mapping
+    # Right: The Q-Omega mapping (empirical)
     ax3 = axes[2]
+
+    # Fit power law: Omega = c * Q^d
+    log_Q = np.log(Q_emp)
+    log_Omega = np.log(Omega_emp)
+    coeffs_qo = np.polyfit(log_Q, log_Omega, 1)
+    d_exp = coeffs_qo[0]  # exponent
+    c_coef = np.exp(coeffs_qo[1])  # coefficient
+
+    # Compute R² for Q-Omega fit
+    Omega_pred = c_coef * Q_emp**d_exp
+    ss_res_qo = np.sum((Omega_emp - Omega_pred)**2)
+    ss_tot_qo = np.sum((Omega_emp - np.mean(Omega_emp))**2)
+    R2_qo = 1 - ss_res_qo / ss_tot_qo
+
     Q_range = np.logspace(0, 5, 100)
-    Omega_range = qa.q_to_omega(Q_range)
-    ax3.plot(Q_range, Omega_range, 'b-', linewidth=2.5)
+    Omega_fit_range = c_coef * Q_range**d_exp
+    ax3.plot(Q_range, Omega_fit_range, 'b-', linewidth=2.5, label=f'Power law fit ($R^2$={R2_qo:.3f})')
     ax3.scatter(Q_emp, Omega_emp, s=100, c='red', alpha=0.7, edgecolors='black')
 
     ax3.set_xscale('log')
+    ax3.set_yscale('log')
     ax3.set_xlabel('Q-factor (log scale)')
-    ax3.set_ylabel('Omega (Ω)')
-    ax3.set_title(r'Q-to-Omega Mapping: $\Omega = 0.199 + 2.0/(1+Q)$')
-
-    # Add interpretation
-    ax3.axhline(y=0.199, color='gray', linestyle='--', alpha=0.5)
-    ax3.text(10000, 0.25, r'$\Omega_{min} = 0.199$', fontsize=10)
-    ax3.axhline(y=2.199, color='gray', linestyle='--', alpha=0.5)
-    ax3.text(1, 2.25, r'$\Omega_{max} \approx 2.2$', fontsize=10)
+    ax3.set_ylabel('Omega (Ω, log scale)')
+    ax3.set_title(f'Q-to-Omega: $\\Omega = {c_coef:.2f} \\cdot Q^{{{d_exp:.3f}}}$')
+    ax3.legend()
 
     plt.tight_layout()
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
