@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Inference — Ink in Water</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #4a9cc8;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        #canvas { width: 100%; height: 100%; display: block; }
+        
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            background: rgba(10, 50, 90, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.95);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 15px rgba(0, 50, 100, 0.3);
+        }
+        
+        .btn:hover {
+            background: rgba(20, 70, 120, 0.95);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 50, 100, 0.4);
+        }
+        
+        .btn.active {
+            background: rgba(80, 160, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 30px rgba(100, 180, 255, 0.4);
+        }
+        
+        .btn.living {
+            background: rgba(20, 90, 70, 0.9);
+            border-color: rgba(100, 255, 200, 0.4);
+        }
+        
+        .btn.living.active {
+            background: rgba(50, 180, 140, 0.6);
+            border-color: rgba(100, 255, 200, 0.7);
+            box-shadow: 0 0 30px rgba(100, 255, 180, 0.4);
+        }
+        
+        .title-area {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .title-area h1 {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 10px rgba(0, 50, 100, 0.5);
+        }
+        
+        .title-area .mode-name {
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            transition: all 0.5s ease;
+            text-shadow: 0 2px 15px rgba(0, 50, 100, 0.4);
+        }
+        
+        .title-area .mode-name.passive { color: rgba(80, 20, 100, 0.95); }
+        .title-area .mode-name.active-inf { color: rgba(0, 100, 80, 0.95); }
+        
+        .title-area .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 4px;
+            text-shadow: 0 1px 5px rgba(0, 50, 100, 0.3);
+        }
+        
+        /* Left panel - Environment */
+        .env-panel {
+            position: fixed;
+            top: 140px;
+            left: 25px;
+            width: 200px;
+            padding: 20px;
+            background: rgba(10, 40, 70, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 50, 100, 0.3);
+            z-index: 1000;
+        }
+        
+        .panel-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(100, 180, 255, 0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        
+        .env-stat {
+            margin-bottom: 14px;
+        }
+        
+        .env-stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 4px;
+        }
+        
+        .env-stat-value {
+            font-size: 18px;
+            font-weight: 300;
+            color: rgba(150, 200, 255, 0.9);
+        }
+        
+        .env-stat-unit {
+            font-size: 11px;
+            color: rgba(150, 200, 255, 0.5);
+            margin-left: 4px;
+        }
+        
+        /* Right panel - System stats */
+        .stats-panel {
+            position: fixed;
+            top: 140px;
+            right: 25px;
+            width: 240px;
+            padding: 20px;
+            background: rgba(10, 40, 70, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 50, 100, 0.3);
+            z-index: 1000;
+        }
+        
+        .system-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        
+        .system-label.passive {
+            background: rgba(180, 130, 200, 0.15);
+            color: rgba(180, 130, 200, 0.9);
+            border: 1px solid rgba(180, 130, 200, 0.3);
+        }
+        
+        .system-label.active-inf {
+            background: rgba(100, 255, 180, 0.1);
+            color: rgba(100, 255, 180, 0.9);
+            border: 1px solid rgba(100, 255, 180, 0.3);
+        }
+        
+        .stat-section {
+            margin-bottom: 18px;
+        }
+        
+        .stat-row {
+            margin-bottom: 12px;
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+        }
+        
+        .stat-name {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .stat-symbol {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 13px;
+            color: rgba(150, 200, 255, 0.6);
+            margin-right: 6px;
+        }
+        
+        .stat-value {
+            font-family: 'SF Mono', monospace;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .stat-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .bar-entropy { background: linear-gradient(90deg, rgba(180, 130, 200, 0.7), rgba(220, 150, 200, 0.8)); }
+        .bar-vfe { background: linear-gradient(90deg, rgba(255, 180, 100, 0.7), rgba(255, 140, 100, 0.8)); }
+        .bar-pred-err { background: linear-gradient(90deg, rgba(255, 150, 150, 0.7), rgba(255, 120, 120, 0.8)); }
+        .bar-precision { background: linear-gradient(90deg, rgba(100, 200, 255, 0.7), rgba(100, 180, 255, 0.8)); }
+        .bar-blanket { background: linear-gradient(90deg, rgba(100, 255, 180, 0.7), rgba(100, 255, 200, 0.8)); }
+        
+        .divider {
+            height: 1px;
+            background: rgba(100, 180, 255, 0.1);
+            margin: 16px 0;
+        }
+        
+        .state-indicator {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            padding: 10px;
+            background: rgba(100, 180, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .state-indicator.equilibrating { color: rgba(180, 130, 200, 0.8); }
+        .state-indicator.maintaining { color: rgba(100, 255, 180, 0.8); }
+        
+        .click-hint {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 1px;
+            text-shadow: 0 1px 5px rgba(0, 50, 100, 0.5);
+        }
+        
+        /* Virtual Karl Friston */
+        .karl-container {
+            position: fixed;
+            bottom: 130px;
+            left: 30px;
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            z-index: 1001;
+            transition: all 0.5s ease;
+        }
+        
+        .karl-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2a4a6a 0%, #1a3a5a 100%);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 50, 100, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .karl-avatar::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        }
+        
+        .karl-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100, 200, 255, 0.3) 0%, transparent 70%);
+            animation: karlPulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes karlPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        
+        .speech-bubble {
+            max-width: 350px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 4px 25px rgba(0, 50, 100, 0.3);
+            position: relative;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+        }
+        
+        .speech-bubble.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            clip-path: polygon(100% 0, 100% 100%, 0 50%);
+        }
+        
+        .karl-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #2a5a8a;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        
+        .karl-quote {
+            font-size: 13px;
+            color: #1a3a5a;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        
+        .karl-quote em {
+            font-style: normal;
+            color: #0a6a5a;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="title-area">
+        <h1>Free Energy Principle</h1>
+        <div class="mode-name passive" id="modeName">Passive Matter</div>
+        <div class="subtitle" id="modeSubtitle">Second Law — entropy maximization</div>
+    </div>
+    
+    <div class="env-panel">
+        <div class="panel-title">Environment</div>
+        <div class="env-stat">
+            <div class="env-stat-label">Temperature</div>
+            <div><span class="env-stat-value" id="temperature">298</span><span class="env-stat-unit">K</span></div>
+        </div>
+        <div class="env-stat">
+            <div class="env-stat-label">Thermal Energy</div>
+            <div><span class="env-stat-value" id="thermalEnergy">4.1</span><span class="env-stat-unit">×10⁻²¹ J</span></div>
+        </div>
+        <div class="env-stat">
+            <div class="env-stat-label">Water Molecules</div>
+            <div><span class="env-stat-value" id="waterCount">~10²¹</span></div>
+        </div>
+        <div class="env-stat">
+            <div class="env-stat-label">Fluctuation Rate</div>
+            <div><span class="env-stat-value" id="fluctRate">1.0</span><span class="env-stat-unit">σ</span></div>
+        </div>
+    </div>
+    
+    <div class="stats-panel">
+        <div class="panel-title">System</div>
+        <div class="system-label passive" id="systemLabel">Passive Matter</div>
+        
+        <!-- For passive matter (ink) -->
+        <div id="passiveStats">
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Thermodynamic Entropy</span>
+                    <span><span class="stat-symbol">S</span><span class="stat-value" id="entropy">0.00</span></span>
+                </div>
+                <div class="stat-bar"><div class="stat-bar-fill bar-entropy" id="entropyBar" style="width: 0%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Spatial Spread</span>
+                    <span class="stat-value" id="spread">0</span><span class="env-stat-unit"> px</span>
+                </div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Particles</span>
+                    <span class="stat-value" id="particleCount">0</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="state-indicator equilibrating" id="passiveState">
+                Equilibrating with environment...
+            </div>
+        </div>
+        
+        <!-- For active inference (living) -->
+        <div id="activeStats" style="display: none;">
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Variational Free Energy</span>
+                    <span><span class="stat-symbol">F</span><span class="stat-value" id="vfe">0.00</span></span>
+                </div>
+                <div class="stat-bar"><div class="stat-bar-fill bar-vfe" id="vfeBar" style="width: 0%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Prediction Error</span>
+                    <span><span class="stat-symbol">ε</span><span class="stat-value" id="predErr">0.00</span></span>
+                </div>
+                <div class="stat-bar"><div class="stat-bar-fill bar-pred-err" id="predErrBar" style="width: 0%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Precision</span>
+                    <span><span class="stat-symbol">π</span><span class="stat-value" id="precision">0.00</span></span>
+                </div>
+                <div class="stat-bar"><div class="stat-bar-fill bar-precision" id="precisionBar" style="width: 0%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Markov Blanket</span>
+                    <span class="stat-value" id="blanket">0%</span>
+                </div>
+                <div class="stat-bar"><div class="stat-bar-fill bar-blanket" id="blanketBar" style="width: 0%"></div></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-header">
+                    <span class="stat-name">Particles</span>
+                    <span class="stat-value" id="particleCountActive">0</span>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="state-indicator maintaining" id="activeState">
+                Minimizing free energy...
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn" id="dropBtn">💧 Drop Ink</button>
+        <button class="btn living" id="modeBtn">🧬 Living System</button>
+        <button class="btn" id="clearBtn">✕ Clear</button>
+    </div>
+    
+    <div class="click-hint">Click anywhere to add particles</div>
+    
+    <div class="karl-container" id="karlContainer">
+        <div class="karl-avatar" id="karlAvatar">
+            <div class="karl-glow" id="karlGlow"></div>
+            <span>🧠</span>
+        </div>
+        <div class="speech-bubble" id="speechBubble">
+            <div class="karl-name">Prof. Karl Friston</div>
+            <div class="karl-quote" id="karlQuote">
+                Think of a drop of ink in a glass of water...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        /*
+         * ACTIVE INFERENCE — INK IN WATER
+         * ================================
+         * 
+         * Correct Physics:
+         * 
+         * ENVIRONMENT (Water):
+         *   - Thermal bath at temperature T
+         *   - Provides random perturbations (Brownian motion)
+         *   - kT ≈ 4.1 × 10⁻²¹ J at room temperature
+         * 
+         * PASSIVE MATTER (Normal Ink):
+         *   - No internal model, no agency
+         *   - Obeys Langevin dynamics: dx = √(2D)·dW
+         *   - THERMODYNAMIC ENTROPY increases (Second Law)
+         *   - Equilibrates with environment
+         *   - NOT an agent - has no VFE!
+         * 
+         * ACTIVE INFERENCE (Living System):
+         *   - Has internal states (beliefs)
+         *   - Has generative model p(o,s)
+         *   - VARIATIONAL FREE ENERGY: F = ε + C
+         *   - F DECREASES through active inference
+         *   - Maintains Markov blanket against perturbations
+         * 
+         * Hidden CRR Implementation:
+         *   - Ω = precision (temporal coherence)
+         *   - C = evidence accumulation
+         *   - R = exp(C/Ω) = active inference strength
+         */
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // =====================================================
+        // VIRTUAL KARL FRISTON — A CRR-Based Life Form
+        // (Shhh... he's secretly governed by CRR dynamics!)
+        // =====================================================
+        
+        const Karl = {
+            // Karl's internal CRR state (he IS a living system!)
+            C: 0,              // Coherence accumulator
+            C_arch: 0,         // Archival memory of conversations
+            omega: 4.0,        // High Ω = stable, wise presence
+            R: 1,              // Regeneration (narrative coherence)
+            L: 0,              // Input from observing the simulation
+            
+            // Narrative state
+            currentQuoteIndex: 0,
+            quoteTimer: 0,
+            isVisible: true,
+            lastMode: null,
+            lastParticleCount: 0,
+            
+            // Karl's quotes for passive matter (ink dissipating)
+            passiveQuotes: [
+                "Think of a drop of ink in a glass of water. Normally, the ink molecules will <em>disperse</em> throughout the container...",
+                "Without a Markov blanket, we're just <em>hot gas dissipating</em> into the ether.",
+                "The ink has no model of itself. It simply <em>equilibrates</em> with its environment.",
+                "This is the Second Law in action — entropy increases, disorder wins.",
+                "Notice how the ink <em>surrenders</em> to the thermal fluctuations of the water molecules.",
+                "There's no 'self' here to preserve. No boundary. No <em>thing</em>.",
+                "The ink doesn't minimize free energy because it has no <em>expectations</em> to violate.",
+                "It could be no other way. The ink simply <em>is</em>."
+            ],
+            
+            // Karl's quotes for active inference (living system)
+            activeQuotes: [
+                "But if the ink is <em>alive</em>, it will gather itself together — to resist the dispersion.",
+                "This self-assembly is essentially <em>reverse diffusion</em> — things flowing up concentration gradients.",
+                "A living system maintains a <em>Markov blanket</em> — a boundary that separates self from not-self.",
+                "Watch how it <em>minimizes free energy</em> by acting to fulfill its own predictions.",
+                "The system has <em>beliefs</em> about where it should be, and acts accordingly.",
+                "This is <em>active inference</em> — changing the world to match your predictions.",
+                "To exist is to minimize <em>surprise</em>. To persist is to be unsurprising to yourself.",
+                "The blanket defines how biological things <em>exist over time</em> and behave distinctly.",
+                "It's gathering evidence for its own <em>model</em> of itself. Self-evidencing.",
+                "Free energy is the difference between states you <em>expect</em> and states you <em>observe</em>."
+            ],
+            
+            // Transitional quotes
+            transitionToActive: [
+                "Now watch what happens when we give the ink a <em>model</em> of itself...",
+                "Let's add something remarkable: <em>agency</em>.",
+                "What if the ink could <em>predict</em> and <em>act</em>?"
+            ],
+            
+            transitionToPassive: [
+                "And now, let's remove the model. Back to <em>passive</em> matter...",
+                "Without active inference, we return to pure <em>thermodynamics</em>.",
+                "Watch the Markov blanket <em>dissolve</em>..."
+            ],
+            
+            // Update Karl's CRR dynamics (he's alive!)
+            update: function(simState) {
+                // Karl observes the simulation (sensory input)
+                this.L = 0.01 + (simState.particles.length / 500) * 0.02;
+                
+                // Coherence accumulates as he watches
+                this.C += this.L;
+                this.C_arch += this.L * 0.05;
+                
+                // Karl's rupture = time to say something new
+                if (this.C >= this.omega) {
+                    this.C = 0;
+                    this.R = Math.exp(this.C_arch / (this.omega * 5));
+                    this.advanceNarrative(simState);
+                }
+                
+                // Check for mode transitions
+                if (this.lastMode !== simState.livingMode) {
+                    this.handleModeTransition(simState);
+                    this.lastMode = simState.livingMode;
+                }
+                
+                // Update visual pulse based on R
+                this.updateVisual();
+            },
+            
+            advanceNarrative: function(simState) {
+                const quotes = simState.livingMode ? this.activeQuotes : this.passiveQuotes;
+                this.currentQuoteIndex = (this.currentQuoteIndex + 1) % quotes.length;
+                this.showQuote(quotes[this.currentQuoteIndex]);
+            },
+            
+            handleModeTransition: function(simState) {
+                const transitionQuotes = simState.livingMode ? 
+                    this.transitionToActive : this.transitionToPassive;
+                const quote = transitionQuotes[Math.floor(Math.random() * transitionQuotes.length)];
+                this.showQuote(quote);
+                this.currentQuoteIndex = 0;
+                
+                // Karl gets excited during transitions (coherence spike)
+                this.C_arch += 0.5;
+            },
+            
+            showQuote: function(text) {
+                const bubble = document.getElementById('speechBubble');
+                const quoteEl = document.getElementById('karlQuote');
+                
+                // Fade out
+                bubble.classList.remove('visible');
+                
+                setTimeout(() => {
+                    quoteEl.innerHTML = text;
+                    bubble.classList.add('visible');
+                }, 300);
+            },
+            
+            updateVisual: function() {
+                const glow = document.getElementById('karlGlow');
+                if (glow) {
+                    // Karl's glow intensity reflects his coherence
+                    const intensity = 0.3 + (this.R - 1) * 0.2;
+                    glow.style.background = `radial-gradient(circle, rgba(100, 200, 255, ${intensity}) 0%, transparent 70%)`;
+                }
+            },
+            
+            init: function() {
+                // Show initial quote after a moment
+                setTimeout(() => {
+                    document.getElementById('speechBubble').classList.add('visible');
+                }, 1000);
+            }
+        };
+        
+        // =====================================================
+        // STATE
+        // =====================================================
+        
+        const ENV = {
+            temperature: 298,        // Kelvin
+            kT: 4.11e-21,           // Thermal energy (J)
+            viscosity: 1e-3,        // Water viscosity (Pa·s)
+            fluctuationRate: 1.0,   // Noise amplitude multiplier
+        };
+        
+        const state = {
+            particles: [],
+            waterMolecules: [],
+            caustics: [],
+            livingMode: false,
+            time: 0,
+            
+            // System origin (where particles are dropped)
+            origin: { x: window.innerWidth/2, y: window.innerHeight/2 },
+            
+            // Computed quantities
+            thermodynamicEntropy: 0,  // For passive matter
+            spatialSpread: 0,
+            
+            variationalFreeEnergy: 0, // For active inference
+            predictionError: 0,
+            precision: 0,
+            blanketIntegrity: 0,
+            
+            // VFE history for smoothing
+            vfeHistory: [],
+            initialVFE: null,
+        };
+        
+        // Initialize water molecules (visible environment)
+        for (let i = 0; i < 200; i++) {
+            state.waterMolecules.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                size: 1 + Math.random() * 2.5,
+                alpha: 0.03 + Math.random() * 0.06,
+                energy: 0.5 + Math.random() * 0.5, // Kinetic energy indicator
+            });
+        }
+        
+        // Caustic light patterns
+        for (let i = 0; i < 20; i++) {
+            state.caustics.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: 80 + Math.random() * 150,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.005 + Math.random() * 0.01,
+                intensity: 0.01 + Math.random() * 0.02,
+            });
+        }
+        
+        // =====================================================
+        // PARTICLE CLASS
+        // =====================================================
+        
+        class Particle {
+            constructor(x, y, isLiving = false) {
+                // Origin (preferred/predicted state for living systems)
+                this.originX = x;
+                this.originY = y;
+                
+                // Current state
+                this.x = x + (Math.random() - 0.5) * 5;
+                this.y = y + (Math.random() - 0.5) * 5;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                
+                // Visual
+                this.size = 3 + Math.random() * 3;
+                this.alpha = 0.8;
+                this.hue = isLiving ? 160 : 270;
+                
+                // System type
+                this.isLiving = isLiving;
+                
+                // === HIDDEN CRR STATE ===
+                this.C = 0;           // Coherence accumulator
+                this.C_arch = 0;      // Archival coherence
+                this.omega = isLiving ? 2.5 : 0.03;  // Precision parameter
+                this.R = 1;           // Regeneration strength
+                
+                // For active inference
+                this.beliefs = { x: x, y: y };  // Internal model of preferred state
+                this.predictionError = 0;
+                
+                // Lifetime
+                this.life = isLiving ? 1 : 1;
+                this.age = 0;
+            }
+            
+            update(dt) {
+                this.age++;
+                
+                // === ENVIRONMENTAL PERTURBATION ===
+                // Langevin dynamics: thermal noise from water molecules
+                const noise = ENV.fluctuationRate * Math.sqrt(2 * 0.1);
+                const thermalForceX = (Math.random() - 0.5) * noise;
+                const thermalForceY = (Math.random() - 0.5) * noise;
+                
+                // === HIDDEN CRR DYNAMICS ===
+                this.C += 0.01 + Math.random() * 0.02;
+                this.C_arch += 0.005;
+                
+                if (this.isLiving) {
+                    // === ACTIVE INFERENCE ===
+                    // The system has beliefs about where it should be
+                    // and acts to minimize prediction error
+                    
+                    // Prediction error: deviation from believed/preferred state
+                    const dx = this.x - this.beliefs.x;
+                    const dy = this.y - this.beliefs.y;
+                    this.predictionError = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // CRR rupture check
+                    if (this.C >= this.omega) {
+                        this.C = 0;
+                        // R = exp(C_arch / Ω) - memory-weighted response
+                        this.R = Math.exp(this.C_arch / (this.omega * 3));
+                        this.R = Math.min(this.R, 3); // Cap for stability
+                    }
+                    
+                    // Active inference force: act to reduce prediction error
+                    // F_active = -π × ε × ∂o/∂x
+                    const precision = this.R; // Precision increases with coherence
+                    const dist = this.predictionError + 1;
+                    const activeForceX = -precision * (dx / dist) * 0.15;
+                    const activeForceY = -precision * (dy / dist) * 0.15;
+                    
+                    // Apply both thermal AND active forces
+                    this.vx += thermalForceX + activeForceX;
+                    this.vy += thermalForceY + activeForceY;
+                    
+                    // Damping (higher for living - more controlled)
+                    this.vx *= 0.92;
+                    this.vy *= 0.92;
+                    
+                    // Color shifts toward green as coherence builds
+                    this.hue = 160 + (this.R - 1) * 20;
+                    
+                } else {
+                    // === PASSIVE MATTER ===
+                    // No internal model, no active inference
+                    // Just Brownian motion - pure diffusion
+                    
+                    // CRR with very low Ω = frequent ruptures = no memory
+                    if (this.C >= this.omega) {
+                        this.C = 0;
+                        // Random kick (no directional preference)
+                        this.vx += (Math.random() - 0.5) * 1.5;
+                        this.vy += (Math.random() - 0.5) * 1.5;
+                    }
+                    
+                    // Only thermal forces (no active component)
+                    this.vx += thermalForceX;
+                    this.vy += thermalForceY;
+                    
+                    // Less damping (more susceptible to environment)
+                    this.vx *= 0.98;
+                    this.vy *= 0.98;
+                    
+                    // Gravity (ink sinks slightly)
+                    this.vy += 0.01;
+                    
+                    // Fade over time (equilibrating = dissolving)
+                    this.life -= 0.0008;
+                    this.alpha = Math.max(0, this.life * 0.7);
+                }
+                
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Soft boundaries
+                const margin = 80;
+                const bounce = 0.3;
+                if (this.x < margin) { this.x = margin; this.vx *= -bounce; }
+                if (this.x > window.innerWidth - margin) { this.x = window.innerWidth - margin; this.vx *= -bounce; }
+                if (this.y < margin) { this.y = margin; this.vy *= -bounce; }
+                if (this.y > window.innerHeight - margin) { this.y = window.innerHeight - margin; this.vy *= -bounce; }
+                
+                return this.life > 0 && this.alpha > 0.02;
+            }
+            
+            draw(ctx) {
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 2.5
+                );
+                
+                if (this.isLiving) {
+                    // Living particles - vibrant green-cyan
+                    const sat = 70;
+                    const lit = 35 + this.R * 8;
+                    gradient.addColorStop(0, `hsla(${this.hue}, ${sat}%, ${lit}%, ${this.alpha})`);
+                    gradient.addColorStop(0.4, `hsla(${this.hue}, ${sat-10}%, ${lit-5}%, ${this.alpha * 0.6})`);
+                    gradient.addColorStop(1, `hsla(${this.hue}, ${sat-20}%, ${lit-10}%, 0)`);
+                } else {
+                    // Passive ink - dark purple/black for contrast
+                    gradient.addColorStop(0, `rgba(40, 10, 60, ${this.alpha})`);
+                    gradient.addColorStop(0.3, `rgba(30, 5, 50, ${this.alpha * 0.7})`);
+                    gradient.addColorStop(0.6, `rgba(20, 0, 40, ${this.alpha * 0.3})`);
+                    gradient.addColorStop(1, `rgba(10, 0, 30, 0)`);
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner glow for living particles with high R
+                if (this.isLiving && this.R > 1.2) {
+                    const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    glow.addColorStop(0, `rgba(150, 255, 200, ${(this.R - 1) * 0.3})`);
+                    glow.addColorStop(1, 'rgba(100, 255, 180, 0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // =====================================================
+        // SIMULATION FUNCTIONS
+        // =====================================================
+        
+        function dropParticles(x, y, count = 50) {
+            state.origin = { x, y };
+            state.initialVFE = null; // Reset for new drop
+            state.vfeHistory = [];
+            
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * 8;
+                state.particles.push(new Particle(
+                    x + Math.cos(angle) * r,
+                    y + Math.sin(angle) * r,
+                    state.livingMode
+                ));
+            }
+        }
+        
+        function computeStatistics() {
+            const n = state.particles.length;
+            if (n === 0) {
+                state.thermodynamicEntropy = 0;
+                state.spatialSpread = 0;
+                state.variationalFreeEnergy = 0;
+                state.predictionError = 0;
+                state.precision = 0;
+                state.blanketIntegrity = 0;
+                return;
+            }
+            
+            // Compute centroid
+            let cx = 0, cy = 0;
+            state.particles.forEach(p => { cx += p.x; cy += p.y; });
+            cx /= n;
+            cy /= n;
+            
+            // Compute spread (standard deviation from centroid)
+            let variance = 0;
+            state.particles.forEach(p => {
+                variance += (p.x - cx) ** 2 + (p.y - cy) ** 2;
+            });
+            state.spatialSpread = Math.sqrt(variance / n);
+            
+            if (state.livingMode) {
+                // === ACTIVE INFERENCE STATISTICS ===
+                
+                // Prediction error: mean deviation from preferred state
+                let totalPredErr = 0;
+                let totalR = 0;
+                state.particles.forEach(p => {
+                    const dx = p.x - p.beliefs.x;
+                    const dy = p.y - p.beliefs.y;
+                    totalPredErr += Math.sqrt(dx*dx + dy*dy);
+                    totalR += p.R;
+                });
+                state.predictionError = totalPredErr / n / 100; // Normalized
+                state.precision = totalR / n;
+                
+                // Variational Free Energy: F = ε + complexity
+                // For living systems, this should DECREASE as they adapt
+                const complexity = 0.1; // Simplified constant
+                const rawVFE = state.predictionError + complexity;
+                
+                // Track VFE history
+                state.vfeHistory.push(rawVFE);
+                if (state.vfeHistory.length > 60) state.vfeHistory.shift();
+                
+                // Store initial VFE for comparison
+                if (state.initialVFE === null && state.vfeHistory.length > 5) {
+                    state.initialVFE = state.vfeHistory[0];
+                }
+                
+                // Smooth VFE for display
+                state.variationalFreeEnergy = state.vfeHistory.reduce((a,b) => a+b, 0) / state.vfeHistory.length;
+                
+                // Markov blanket: coordination between particles
+                let blanketScore = 0;
+                const living = state.particles.filter(p => p.isLiving);
+                for (let i = 0; i < living.length; i++) {
+                    for (let j = i + 1; j < living.length; j++) {
+                        const dx = living[j].x - living[i].x;
+                        const dy = living[j].y - living[i].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 60) {
+                            blanketScore += (1 - dist/60) * living[i].R * living[j].R;
+                        }
+                    }
+                }
+                state.blanketIntegrity = Math.min(1, blanketScore / (n * 2));
+                
+            } else {
+                // === PASSIVE MATTER STATISTICS ===
+                
+                // Thermodynamic entropy: S ∝ log(spread)
+                // This INCREASES as the system equilibrates
+                state.thermodynamicEntropy = Math.log(state.spatialSpread + 1) / 4;
+            }
+        }
+        
+        // =====================================================
+        // RENDERING
+        // =====================================================
+        
+        function renderEnvironment() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            // Beautiful bright water background - like looking into clear water
+            const bg = ctx.createLinearGradient(0, 0, 0, h);
+            bg.addColorStop(0, '#8ec8e8');    // Light sky blue at top
+            bg.addColorStop(0.2, '#6ab4d8');  // Bright cyan
+            bg.addColorStop(0.5, '#4a9cc8');  // Clear water blue
+            bg.addColorStop(0.75, '#3a88b8'); // Deeper blue
+            bg.addColorStop(1, '#2a7098');    // Ocean depth
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Sunlight rays from above
+            const sunX = w * 0.3;
+            const sunY = -h * 0.1;
+            const sunLight = ctx.createRadialGradient(sunX, sunY, 0, sunX, h * 0.5, h * 0.9);
+            sunLight.addColorStop(0, 'rgba(255, 255, 240, 0.35)');
+            sunLight.addColorStop(0.2, 'rgba(255, 255, 220, 0.2)');
+            sunLight.addColorStop(0.5, 'rgba(200, 240, 255, 0.1)');
+            sunLight.addColorStop(1, 'rgba(150, 220, 255, 0)');
+            ctx.fillStyle = sunLight;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Secondary light source
+            const light2 = ctx.createRadialGradient(w * 0.7, -h * 0.05, 0, w * 0.7, h * 0.4, h * 0.7);
+            light2.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+            light2.addColorStop(0.3, 'rgba(220, 250, 255, 0.08)');
+            light2.addColorStop(1, 'rgba(180, 230, 255, 0)');
+            ctx.fillStyle = light2;
+            ctx.fillRect(0, 0, w, h);
+            
+            // God rays (light shafts through water)
+            ctx.save();
+            ctx.globalAlpha = 0.08;
+            for (let i = 0; i < 5; i++) {
+                const rayX = w * (0.15 + i * 0.18);
+                const rayWidth = 60 + Math.sin(state.time * 0.01 + i) * 20;
+                
+                const rayGrad = ctx.createLinearGradient(rayX, 0, rayX + rayWidth * 0.5, h);
+                rayGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                rayGrad.addColorStop(0.3, 'rgba(255, 255, 240, 0.4)');
+                rayGrad.addColorStop(0.7, 'rgba(200, 240, 255, 0.1)');
+                rayGrad.addColorStop(1, 'rgba(150, 220, 255, 0)');
+                
+                ctx.fillStyle = rayGrad;
+                ctx.beginPath();
+                ctx.moveTo(rayX - rayWidth/2, 0);
+                ctx.lineTo(rayX + rayWidth/2, 0);
+                ctx.lineTo(rayX + rayWidth * 1.5, h);
+                ctx.lineTo(rayX - rayWidth * 0.5, h);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+            
+            // Caustic light patterns (dancing light on pool floor)
+            state.caustics.forEach(c => {
+                c.phase += c.speed;
+                const x = c.x + Math.sin(c.phase) * 40;
+                const y = c.y + Math.cos(c.phase * 0.7) * 25;
+                const intensity = (c.intensity * 2) * (0.6 + Math.sin(c.phase * 1.3) * 0.4);
+                
+                // Brighter, more visible caustics
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, c.size);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${intensity})`);
+                grad.addColorStop(0.3, `rgba(220, 250, 255, ${intensity * 0.6})`);
+                grad.addColorStop(0.6, `rgba(180, 240, 255, ${intensity * 0.3})`);
+                grad.addColorStop(1, 'rgba(150, 220, 255, 0)');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(x, y, c.size, c.size * 0.6, Math.sin(c.phase * 0.5) * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Floating particles / suspended matter in water (more visible)
+            state.waterMolecules.forEach(m => {
+                // Brownian motion
+                m.vx += (Math.random() - 0.5) * 0.25 * ENV.fluctuationRate;
+                m.vy += (Math.random() - 0.5) * 0.25 * ENV.fluctuationRate;
+                m.vy -= 0.02; // Slight upward drift (buoyancy)
+                m.vx *= 0.96;
+                m.vy *= 0.96;
+                m.x += m.vx;
+                m.y += m.vy;
+                
+                // Wrap around
+                if (m.x < 0) m.x = w;
+                if (m.x > w) m.x = 0;
+                if (m.y < 0) m.y = h;
+                if (m.y > h) m.y = 0;
+                
+                // Draw with sparkle effect
+                const energy = 0.5 + Math.abs(m.vx) + Math.abs(m.vy);
+                const sparkle = 0.5 + Math.sin(state.time * 0.1 + m.x * 0.01) * 0.5;
+                const alpha = m.alpha * Math.min(energy, 1.5) * (1 + sparkle * 0.5);
+                
+                // Brighter particles that catch the light
+                const particleGrad = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.size * 2);
+                particleGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 1.5})`);
+                particleGrad.addColorStop(0.5, `rgba(200, 240, 255, ${alpha})`);
+                particleGrad.addColorStop(1, 'rgba(150, 220, 255, 0)');
+                
+                ctx.fillStyle = particleGrad;
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Subtle wave pattern overlay
+            ctx.save();
+            ctx.globalAlpha = 0.03;
+            for (let y = 0; y < h; y += 40) {
+                const waveOffset = Math.sin(state.time * 0.02 + y * 0.01) * 20;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                for (let x = 0; x < w; x += 20) {
+                    const yOffset = Math.sin(state.time * 0.015 + x * 0.02 + y * 0.005) * 3;
+                    ctx.lineTo(x, y + yOffset + waveOffset);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        function renderMarkovBlanket() {
+            if (!state.livingMode || state.blanketIntegrity < 0.1) return;
+            
+            const living = state.particles.filter(p => p.isLiving);
+            if (living.length < 5) return;
+            
+            let cx = 0, cy = 0;
+            living.forEach(p => { cx += p.x; cy += p.y; });
+            cx /= living.length;
+            cy /= living.length;
+            
+            const radius = state.spatialSpread + 25;
+            
+            // Blanket visualization - darker for contrast on bright water
+            const grad = ctx.createRadialGradient(cx, cy, radius * 0.6, cx, cy, radius * 1.4);
+            grad.addColorStop(0, 'rgba(0, 80, 60, 0)');
+            grad.addColorStop(0.6, `rgba(0, 100, 80, ${state.blanketIntegrity * 0.15})`);
+            grad.addColorStop(1, 'rgba(0, 80, 60, 0)');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 1.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dashed boundary - darker green
+            ctx.strokeStyle = `rgba(0, 100, 70, ${state.blanketIntegrity * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 10]);
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function updateUI() {
+            // Environment
+            document.getElementById('fluctRate').textContent = ENV.fluctuationRate.toFixed(1);
+            
+            // System stats
+            document.getElementById('particleCount').textContent = state.particles.length;
+            document.getElementById('particleCountActive').textContent = state.particles.length;
+            
+            if (state.livingMode) {
+                document.getElementById('vfe').textContent = state.variationalFreeEnergy.toFixed(3);
+                document.getElementById('predErr').textContent = state.predictionError.toFixed(3);
+                document.getElementById('precision').textContent = state.precision.toFixed(2);
+                document.getElementById('blanket').textContent = Math.round(state.blanketIntegrity * 100) + '%';
+                
+                document.getElementById('vfeBar').style.width = `${Math.min(100, state.variationalFreeEnergy * 200)}%`;
+                document.getElementById('predErrBar').style.width = `${Math.min(100, state.predictionError * 200)}%`;
+                document.getElementById('precisionBar').style.width = `${Math.min(100, (state.precision - 1) * 50)}%`;
+                document.getElementById('blanketBar').style.width = `${state.blanketIntegrity * 100}%`;
+                
+                // State indicator
+                const stateEl = document.getElementById('activeState');
+                if (state.initialVFE && state.variationalFreeEnergy < state.initialVFE * 0.8) {
+                    stateEl.textContent = '✓ Free energy minimized';
+                } else if (state.particles.length > 0) {
+                    stateEl.textContent = 'Minimizing free energy...';
+                } else {
+                    stateEl.textContent = 'Awaiting particles...';
+                }
+            } else {
+                document.getElementById('entropy').textContent = state.thermodynamicEntropy.toFixed(3);
+                document.getElementById('spread').textContent = Math.round(state.spatialSpread);
+                document.getElementById('entropyBar').style.width = `${Math.min(100, state.thermodynamicEntropy * 80)}%`;
+                
+                // State indicator
+                const stateEl = document.getElementById('passiveState');
+                if (state.particles.length === 0) {
+                    stateEl.textContent = 'Awaiting particles...';
+                } else if (state.thermodynamicEntropy > 1) {
+                    stateEl.textContent = 'Approaching equilibrium...';
+                } else {
+                    stateEl.textContent = 'Equilibrating with environment...';
+                }
+            }
+        }
+        
+        function render() {
+            renderEnvironment();
+            renderMarkovBlanket();
+            state.particles.forEach(p => p.draw(ctx));
+            updateUI();
+        }
+        
+        // =====================================================
+        // ANIMATION
+        // =====================================================
+        
+        function animate() {
+            state.time++;
+            state.particles = state.particles.filter(p => p.update(16));
+            computeStatistics();
+            
+            // Update Virtual Karl (he's watching and narrating!)
+            Karl.update(state);
+            
+            render();
+            requestAnimationFrame(animate);
+        }
+        
+        // =====================================================
+        // EVENT HANDLERS
+        // =====================================================
+        
+        document.getElementById('dropBtn').addEventListener('click', () => {
+            dropParticles(
+                window.innerWidth / 2 + (Math.random() - 0.5) * 60,
+                window.innerHeight / 2 + (Math.random() - 0.5) * 60
+            );
+        });
+        
+        document.getElementById('modeBtn').addEventListener('click', () => {
+            state.livingMode = !state.livingMode;
+            
+            const btn = document.getElementById('modeBtn');
+            const modeName = document.getElementById('modeName');
+            const modeSubtitle = document.getElementById('modeSubtitle');
+            const systemLabel = document.getElementById('systemLabel');
+            const passiveStats = document.getElementById('passiveStats');
+            const activeStats = document.getElementById('activeStats');
+            
+            if (state.livingMode) {
+                btn.textContent = '💀 Passive Matter';
+                btn.classList.add('active');
+                modeName.textContent = 'Active Inference';
+                modeName.className = 'mode-name active-inf';
+                modeSubtitle.textContent = 'Free energy minimization — self-organization';
+                systemLabel.textContent = 'Active Inference';
+                systemLabel.className = 'system-label active-inf';
+                passiveStats.style.display = 'none';
+                activeStats.style.display = 'block';
+            } else {
+                btn.textContent = '🧬 Living System';
+                btn.classList.remove('active');
+                modeName.textContent = 'Passive Matter';
+                modeName.className = 'mode-name passive';
+                modeSubtitle.textContent = 'Second Law — entropy maximization';
+                systemLabel.textContent = 'Passive Matter';
+                systemLabel.className = 'system-label passive';
+                passiveStats.style.display = 'block';
+                activeStats.style.display = 'none';
+            }
+            
+            // Convert existing particles
+            state.particles.forEach(p => {
+                p.isLiving = state.livingMode;
+                p.omega = state.livingMode ? 2.5 : 0.03;
+                p.hue = state.livingMode ? 160 : 270;
+                if (state.livingMode) {
+                    p.life = 1;
+                    p.beliefs = { x: p.originX, y: p.originY };
+                }
+            });
+            
+            state.vfeHistory = [];
+            state.initialVFE = null;
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            state.particles = [];
+            state.vfeHistory = [];
+            state.initialVFE = null;
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            dropParticles(e.clientX, e.clientY, 35);
+        });
+        
+        // Initialize
+        Karl.init();
+        setTimeout(() => dropParticles(window.innerWidth / 2, window.innerHeight / 2), 500);
+        animate();
+    </script>
+</body>
+</html>
