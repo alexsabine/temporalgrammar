@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Hurricane: Temporal Grammar of Cyclogenesis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;600&family=Source+Serif+4:opsz,wght@8..60,300;8..60,600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --storm-dark: #0a0d12;
+            --storm-blue: #1a2a3a;
+            --eye-glow: #e8dfd0;
+            --rupture-red: #ff3d3d;
+            --coherence-cyan: #00f5ff;
+            --regen-gold: #ffd700;
+            --ocean-deep: #0c1929;
+        }
+        
+        body {
+            background: var(--storm-dark);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            min-height: 100vh;
+        }
+        
+        /* HURRICANE CANVAS */
+        .hurricane-view {
+            position: relative;
+            background: radial-gradient(ellipse at center, #1a2535 0%, #0a0d12 70%);
+            overflow: hidden;
+        }
+        
+        #hurricaneCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Eye overlay glow */
+        .eye-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232,223,208,0.4) 0%, transparent 70%);
+            pointer-events: none;
+            animation: eyePulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes eyePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.9; }
+        }
+        
+        /* CRR Status HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 13, 18, 0.85);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            padding: 20px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .hud h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 3px;
+            color: var(--coherence-cyan);
+            margin-bottom: 15px;
+        }
+        
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .hud-label {
+            color: #888;
+        }
+        
+        .hud-value {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .hud-value.rupture {
+            color: var(--rupture-red);
+            animation: rupturePulse 0.5s ease-in-out;
+        }
+        
+        @keyframes rupturePulse {
+            0%, 100% { text-shadow: 0 0 5px var(--rupture-red); }
+            50% { text-shadow: 0 0 20px var(--rupture-red), 0 0 40px var(--rupture-red); }
+        }
+        
+        /* Coherence bar */
+        .coherence-bar {
+            margin-top: 15px;
+        }
+        
+        .coherence-bar label {
+            display: block;
+            margin-bottom: 5px;
+            color: #888;
+            font-size: 11px;
+        }
+        
+        .bar-container {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--coherence-cyan), #00ff88);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .bar-threshold {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: var(--rupture-red);
+        }
+        
+        /* Category indicator */
+        .category-display {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            text-align: center;
+        }
+        
+        .category-display .cat-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #888;
+        }
+        
+        .category-display .cat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 72px;
+            line-height: 1;
+            letter-spacing: 5px;
+            background: linear-gradient(180deg, #fff 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* SIDEBAR */
+        .sidebar {
+            background: linear-gradient(180deg, #0f1318 0%, #0a0d12 100%);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .sidebar h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            letter-spacing: 4px;
+            margin-bottom: 5px;
+        }
+        
+        .sidebar h2 {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 300;
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        /* Storm info */
+        .storm-info {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 3px solid var(--coherence-cyan);
+        }
+        
+        .storm-info h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .storm-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 12px;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--coherence-cyan);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* CRR Equations */
+        .equations {
+            margin: 25px 0;
+        }
+        
+        .equations h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--regen-gold);
+            margin-bottom: 15px;
+        }
+        
+        .equation {
+            background: rgba(0,0,0,0.4);
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            border-left: 2px solid var(--coherence-cyan);
+        }
+        
+        .equation .name {
+            color: #888;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .equation .formula {
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Timeline */
+        .timeline {
+            margin-top: 25px;
+        }
+        
+        .timeline h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--rupture-red);
+            margin-bottom: 15px;
+        }
+        
+        .timeline-track {
+            position: relative;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .timeline-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #1a3a4a, var(--coherence-cyan));
+            transition: width 0.3s ease;
+        }
+        
+        .timeline-ruptures {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .rupture-marker {
+            position: absolute;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--rupture-red);
+            box-shadow: 0 0 10px var(--rupture-red);
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            background: rgba(0, 245, 255, 0.2);
+            border-color: var(--coherence-cyan);
+        }
+        
+        .btn.active {
+            background: var(--coherence-cyan);
+            color: #000;
+        }
+        
+        /* Rupture Log */
+        .rupture-log {
+            margin-top: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .rupture-log h4 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--rupture-red);
+            margin-bottom: 10px;
+        }
+        
+        .log-entry {
+            font-size: 11px;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 61, 61, 0.1);
+            border-left: 2px solid var(--rupture-red);
+        }
+        
+        .log-entry .time {
+            color: #888;
+        }
+        
+        .log-entry .event {
+            color: #fff;
+            margin-top: 3px;
+        }
+        
+        /* Rupture flash overlay */
+        .rupture-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--rupture-red);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 0.1s ease;
+        }
+        
+        .rupture-flash.active {
+            opacity: 0.3;
+        }
+        
+        /* Speed indicator */
+        .speed-display {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="rupture-flash" id="ruptureFlash"></div>
+    
+    <div class="container">
+        <div class="hurricane-view">
+            <canvas id="hurricaneCanvas"></canvas>
+            <div class="eye-overlay" id="eyeOverlay"></div>
+            
+            <div class="hud">
+                <h3>CRR DYNAMICS</h3>
+                <div class="hud-row">
+                    <span class="hud-label">Wind Speed</span>
+                    <span class="hud-value" id="hudWind">-- kt</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Pressure</span>
+                    <span class="hud-value" id="hudPressure">-- mb</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">C(t) Active</span>
+                    <span class="hud-value" id="hudCoherence">--</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Ω Threshold</span>
+                    <span class="hud-value" id="hudOmega">--</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">L(t) Rate</span>
+                    <span class="hud-value" id="hudL">--</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Status</span>
+                    <span class="hud-value" id="hudStatus">--</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Audio</span>
+                    <span class="hud-value" id="hudAudio" style="color: #666;">Click Play</span>
+                </div>
+                
+                <div class="coherence-bar">
+                    <label>COHERENCE → RUPTURE THRESHOLD</label>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="coherenceBar" style="width: 0%"></div>
+                        <div class="bar-threshold" id="thresholdMarker" style="left: 80%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-display">
+                <div class="cat-label">CATEGORY</div>
+                <div class="cat-value" id="categoryValue">TD</div>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <h1>CRR HURRICANE</h1>
+            <h2>Temporal Grammar of Cyclogenesis</h2>
+            
+            <div class="storm-info">
+                <h3>HURRICANE KATRINA</h3>
+                <div class="storm-stats">
+                    <div class="stat">
+                        <div class="stat-value">170</div>
+                        <div class="stat-label">Peak Wind (kt)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">902</div>
+                        <div class="stat-label">Min Press (mb)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">CAT 5</div>
+                        <div class="stat-label">Max Category</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">13</div>
+                        <div class="stat-label">CRR Ruptures</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="equations">
+                <h4>CRR FORMALISM</h4>
+                <div class="equation">
+                    <div class="name">Coherence (Energy Accumulation)</div>
+                    <div class="formula">C(t) = ∫₀ᵗ L(τ) dτ</div>
+                </div>
+                <div class="equation">
+                    <div class="name">Rupture (Phase Transition)</div>
+                    <div class="formula">δ(t−t₀) when C ≥ Ω</div>
+                </div>
+                <div class="equation">
+                    <div class="name">Regeneration (Memory)</div>
+                    <div class="formula">R = exp(C_archival / Ω)</div>
+                </div>
+            </div>
+            
+            <div class="timeline">
+                <h4>STORM TIMELINE</h4>
+                <div class="timeline-track">
+                    <div class="timeline-progress" id="timelineProgress"></div>
+                    <div class="timeline-ruptures" id="timelineRuptures"></div>
+                </div>
+                <div id="currentTime" style="font-size: 12px; color: #888;">Aug 23, 2005</div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn" id="playBtn">▶ Play</button>
+                <button class="btn" id="soundBtn">🔊 Sound</button>
+                <button class="btn" id="resetBtn">↺ Reset</button>
+            </div>
+            
+            <div class="speed-display">
+                Speed: <span id="speedDisplay">1x</span> | Frame: <span id="frameDisplay">0/26</span>
+            </div>
+            
+            <div class="rupture-log">
+                <h4>RUPTURE LOG</h4>
+                <div id="ruptureLog"></div>
+            </div>
+            
+            <div class="sound-legend" style="margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <h4 style="font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 2px; color: #888; margin-bottom: 10px;">🔊 DIEGETIC SOUND</h4>
+                <div style="line-height: 1.6;">
+                    <span style="color: #4a9eff;">Wind</span> — scales with kt<br>
+                    <span style="color: #8888ff;">Rumble</span> — pressure depth<br>
+                    <span style="color: #00f5ff;">Tone</span> — C(t) → Ω tension<br>
+                    <span style="color: #ff5555;">Crack</span> — rupture δ event<br>
+                    <span style="color: #ffd700;">Chime</span> — category change
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // DIEGETIC SOUND ENGINE - Procedural Hurricane Audio
+        // =====================================================
+        
+        class HurricaneSoundscape {
+            constructor() {
+                this.ctx = null;
+                this.initialized = false;
+                this.muted = false;
+                
+                // Sound nodes
+                this.windNoise = null;
+                this.windFilter = null;
+                this.windGain = null;
+                
+                this.rainNoise = null;
+                this.rainFilter = null;
+                this.rainGain = null;
+                
+                this.rumbleOsc = null;
+                this.rumbleGain = null;
+                
+                this.eyeFilter = null;
+                this.eyeGain = null;
+                
+                this.masterGain = null;
+                
+                // Rupture sounds
+                this.ruptureTimeout = null;
+            }
+            
+            async init() {
+                if (this.initialized) return;
+                
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Master gain
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.6;
+                this.masterGain.connect(this.ctx.destination);
+                
+                // === WIND (filtered noise) ===
+                this.windNoise = this.createNoise();
+                this.windFilter = this.ctx.createBiquadFilter();
+                this.windFilter.type = 'lowpass';
+                this.windFilter.frequency.value = 400;
+                this.windFilter.Q.value = 1;
+                
+                this.windGain = this.ctx.createGain();
+                this.windGain.gain.value = 0;
+                
+                // Wind modulation (gusts)
+                this.windLFO = this.ctx.createOscillator();
+                this.windLFO.type = 'sine';
+                this.windLFO.frequency.value = 0.3;
+                this.windLFOGain = this.ctx.createGain();
+                this.windLFOGain.gain.value = 50;
+                this.windLFO.connect(this.windLFOGain);
+                this.windLFOGain.connect(this.windFilter.frequency);
+                this.windLFO.start();
+                
+                this.windNoise.connect(this.windFilter);
+                this.windFilter.connect(this.windGain);
+                this.windGain.connect(this.masterGain);
+                
+                // === RAIN (high-passed noise) ===
+                this.rainNoise = this.createNoise();
+                this.rainFilter = this.ctx.createBiquadFilter();
+                this.rainFilter.type = 'highpass';
+                this.rainFilter.frequency.value = 3000;
+                this.rainFilter.Q.value = 0.5;
+                
+                this.rainGain = this.ctx.createGain();
+                this.rainGain.gain.value = 0;
+                
+                this.rainNoise.connect(this.rainFilter);
+                this.rainFilter.connect(this.rainGain);
+                this.rainGain.connect(this.masterGain);
+                
+                // === LOW RUMBLE (pressure/power) ===
+                this.rumbleOsc = this.ctx.createOscillator();
+                this.rumbleOsc.type = 'sine';
+                this.rumbleOsc.frequency.value = 40;
+                
+                this.rumbleOsc2 = this.ctx.createOscillator();
+                this.rumbleOsc2.type = 'sine';
+                this.rumbleOsc2.frequency.value = 55;
+                
+                this.rumbleGain = this.ctx.createGain();
+                this.rumbleGain.gain.value = 0;
+                
+                this.rumbleOsc.connect(this.rumbleGain);
+                this.rumbleOsc2.connect(this.rumbleGain);
+                this.rumbleGain.connect(this.masterGain);
+                this.rumbleOsc.start();
+                this.rumbleOsc2.start();
+                
+                // === EYE AMBIENCE (eerie calm, low drone) ===
+                this.eyeOsc = this.ctx.createOscillator();
+                this.eyeOsc.type = 'sine';
+                this.eyeOsc.frequency.value = 80;
+                
+                this.eyeOsc2 = this.ctx.createOscillator();
+                this.eyeOsc2.type = 'sine';
+                this.eyeOsc2.frequency.value = 120;
+                
+                this.eyeGain = this.ctx.createGain();
+                this.eyeGain.gain.value = 0;
+                
+                this.eyeOsc.connect(this.eyeGain);
+                this.eyeOsc2.connect(this.eyeGain);
+                this.eyeGain.connect(this.masterGain);
+                this.eyeOsc.start();
+                this.eyeOsc2.start();
+                
+                // === COHERENCE TONE (building tension) ===
+                this.coherenceOsc = this.ctx.createOscillator();
+                this.coherenceOsc.type = 'triangle';
+                this.coherenceOsc.frequency.value = 220;
+                
+                this.coherenceFilter = this.ctx.createBiquadFilter();
+                this.coherenceFilter.type = 'bandpass';
+                this.coherenceFilter.frequency.value = 220;
+                this.coherenceFilter.Q.value = 10;
+                
+                this.coherenceGain = this.ctx.createGain();
+                this.coherenceGain.gain.value = 0;
+                
+                this.coherenceOsc.connect(this.coherenceFilter);
+                this.coherenceFilter.connect(this.coherenceGain);
+                this.coherenceGain.connect(this.masterGain);
+                this.coherenceOsc.start();
+                
+                this.initialized = true;
+                console.log('🔊 Hurricane soundscape initialized');
+            }
+            
+            createNoise() {
+                const bufferSize = 2 * this.ctx.sampleRate;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = buffer.getChannelData(0);
+                
+                // Pink noise approximation
+                let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    b0 = 0.99886 * b0 + white * 0.0555179;
+                    b1 = 0.99332 * b1 + white * 0.0750759;
+                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b3 = 0.86650 * b3 + white * 0.3104856;
+                    b4 = 0.55000 * b4 + white * 0.5329522;
+                    b5 = -0.7616 * b5 - white * 0.0168980;
+                    output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                    b6 = white * 0.115926;
+                }
+                
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = true;
+                noise.start();
+                return noise;
+            }
+            
+            // Update soundscape based on hurricane data
+            update(data) {
+                if (!this.initialized || this.muted) return;
+                
+                const t = this.ctx.currentTime;
+                const rampTime = 0.5;
+                
+                // Normalize values
+                const windIntensity = data.wind / 170;  // 0-1
+                const pressureDepth = (1013 - data.pressure) / 111;  // 0-1 (902-1013 range)
+                const coherenceRatio = Math.min(data.C_local / data.omega, 1);
+                const isHurricane = data.wind >= 64;
+                const isIntense = data.wind >= 100;
+                
+                // === WIND ===
+                // Louder and higher frequency with intensity
+                const windVol = 0.1 + windIntensity * 0.4;
+                const windFreq = 200 + windIntensity * 800;
+                const gustSpeed = 0.2 + windIntensity * 0.8;
+                
+                this.windGain.gain.linearRampToValueAtTime(windVol, t + rampTime);
+                this.windFilter.frequency.linearRampToValueAtTime(windFreq, t + rampTime);
+                this.windLFO.frequency.linearRampToValueAtTime(gustSpeed, t + rampTime);
+                this.windLFOGain.gain.linearRampToValueAtTime(50 + windIntensity * 200, t + rampTime);
+                
+                // === RAIN ===
+                const rainVol = 0.05 + windIntensity * 0.15;
+                this.rainGain.gain.linearRampToValueAtTime(rainVol, t + rampTime);
+                this.rainFilter.frequency.linearRampToValueAtTime(2000 + windIntensity * 4000, t + rampTime);
+                
+                // === RUMBLE ===
+                // Deep rumble for pressure depth (more intense = deeper)
+                const rumbleVol = pressureDepth * 0.25;
+                const rumbleFreq = 30 + (1 - pressureDepth) * 30;  // Lower freq at lower pressure
+                
+                this.rumbleGain.gain.linearRampToValueAtTime(rumbleVol, t + rampTime);
+                this.rumbleOsc.frequency.linearRampToValueAtTime(rumbleFreq, t + rampTime);
+                this.rumbleOsc2.frequency.linearRampToValueAtTime(rumbleFreq * 1.5, t + rampTime);
+                
+                // === EYE AMBIENCE ===
+                // Subtle when hurricane exists, represents the "calm center"
+                const eyeVol = isHurricane ? 0.03 + windIntensity * 0.04 : 0;
+                this.eyeGain.gain.linearRampToValueAtTime(eyeVol, t + rampTime);
+                
+                // === COHERENCE TONE ===
+                // Rising tone as coherence approaches threshold (tension building)
+                const coherenceVol = coherenceRatio * 0.08;
+                const coherenceFreq = 150 + coherenceRatio * 300;  // Rising pitch
+                
+                this.coherenceGain.gain.linearRampToValueAtTime(coherenceVol, t + rampTime);
+                this.coherenceOsc.frequency.linearRampToValueAtTime(coherenceFreq, t + rampTime);
+                this.coherenceFilter.frequency.linearRampToValueAtTime(coherenceFreq, t + rampTime);
+            }
+            
+            // Trigger rupture sound
+            triggerRupture(intensity = 1) {
+                if (!this.initialized || this.muted) return;
+                
+                const t = this.ctx.currentTime;
+                
+                // === RUPTURE CRACK (noise burst + pitch drop) ===
+                const ruptureBurst = this.ctx.createBufferSource();
+                const burstBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.3, this.ctx.sampleRate);
+                const burstData = burstBuffer.getChannelData(0);
+                
+                for (let i = 0; i < burstData.length; i++) {
+                    const env = Math.exp(-i / (this.ctx.sampleRate * 0.05));
+                    burstData[i] = (Math.random() * 2 - 1) * env;
+                }
+                
+                ruptureBurst.buffer = burstBuffer;
+                
+                const burstFilter = this.ctx.createBiquadFilter();
+                burstFilter.type = 'lowpass';
+                burstFilter.frequency.value = 2000;
+                burstFilter.frequency.linearRampToValueAtTime(200, t + 0.3);
+                
+                const burstGain = this.ctx.createGain();
+                burstGain.gain.value = 0.5 * intensity;
+                burstGain.gain.linearRampToValueAtTime(0, t + 0.4);
+                
+                ruptureBurst.connect(burstFilter);
+                burstFilter.connect(burstGain);
+                burstGain.connect(this.masterGain);
+                ruptureBurst.start();
+                
+                // === RUPTURE TONE (descending pitch) ===
+                const ruptureTone = this.ctx.createOscillator();
+                ruptureTone.type = 'sawtooth';
+                ruptureTone.frequency.value = 400 + intensity * 200;
+                ruptureTone.frequency.linearRampToValueAtTime(50, t + 0.5);
+                
+                const toneFilter = this.ctx.createBiquadFilter();
+                toneFilter.type = 'lowpass';
+                toneFilter.frequency.value = 1000;
+                
+                const toneGain = this.ctx.createGain();
+                toneGain.gain.value = 0.15 * intensity;
+                toneGain.gain.linearRampToValueAtTime(0, t + 0.6);
+                
+                ruptureTone.connect(toneFilter);
+                toneFilter.connect(toneGain);
+                toneGain.connect(this.masterGain);
+                ruptureTone.start();
+                ruptureTone.stop(t + 0.6);
+                
+                // === SUB BASS IMPACT ===
+                const subOsc = this.ctx.createOscillator();
+                subOsc.type = 'sine';
+                subOsc.frequency.value = 60;
+                subOsc.frequency.linearRampToValueAtTime(30, t + 0.4);
+                
+                const subGain = this.ctx.createGain();
+                subGain.gain.value = 0.4 * intensity;
+                subGain.gain.linearRampToValueAtTime(0, t + 0.5);
+                
+                subOsc.connect(subGain);
+                subGain.connect(this.masterGain);
+                subOsc.start();
+                subOsc.stop(t + 0.5);
+                
+                console.log('⚡ RUPTURE SOUND');
+            }
+            
+            // Category change fanfare
+            triggerCategoryChange(newCat) {
+                if (!this.initialized || this.muted) return;
+                
+                const t = this.ctx.currentTime;
+                
+                // Dramatic rising tone
+                const catTone = this.ctx.createOscillator();
+                catTone.type = 'sine';
+                
+                const baseFreq = {
+                    'TD': 130, 'TS': 165, '1': 196, '2': 220, 
+                    '3': 262, '4': 330, '5': 392
+                }[newCat] || 200;
+                
+                catTone.frequency.value = baseFreq * 0.5;
+                catTone.frequency.linearRampToValueAtTime(baseFreq, t + 0.3);
+                
+                const catGain = this.ctx.createGain();
+                catGain.gain.value = 0;
+                catGain.gain.linearRampToValueAtTime(0.15, t + 0.1);
+                catGain.gain.linearRampToValueAtTime(0, t + 0.8);
+                
+                catTone.connect(catGain);
+                catGain.connect(this.masterGain);
+                catTone.start();
+                catTone.stop(t + 0.8);
+            }
+            
+            setMuted(muted) {
+                this.muted = muted;
+                if (this.masterGain) {
+                    this.masterGain.gain.linearRampToValueAtTime(
+                        muted ? 0 : 0.6, 
+                        this.ctx.currentTime + 0.3
+                    );
+                }
+            }
+            
+            toggle() {
+                this.setMuted(!this.muted);
+                return !this.muted;
+            }
+        }
+        
+        const soundscape = new HurricaneSoundscape();
+        
+        // Hurricane Katrina CRR Data
+        const KATRINA_DATA = [
+            {"time": "2005-08-23 18:00", "lat": 23.1, "lon": -75.1, "wind": 30, "pressure": 1008, "status": "TD", "C_local": 0, "C_archival": 0, "omega": 10, "L": 0, "R": 1, "is_rupture": false},
+            {"time": "2005-08-24 00:00", "lat": 23.4, "lon": -75.7, "wind": 30, "pressure": 1007, "status": "TD", "C_local": 0.3, "C_archival": 0.3, "omega": 10, "L": 0.3, "R": 1.03, "is_rupture": false},
+            {"time": "2005-08-24 06:00", "lat": 23.8, "lon": -76.2, "wind": 35, "pressure": 1006, "status": "TS", "C_local": 0, "C_archival": 0.85, "omega": 15, "L": 0.55, "R": 1.06, "is_rupture": true},
+            {"time": "2005-08-24 12:00", "lat": 24.4, "lon": -76.5, "wind": 40, "pressure": 1003, "status": "TS", "C_local": 3.4, "C_archival": 4.25, "omega": 15, "L": 3.4, "R": 1.33, "is_rupture": false},
+            {"time": "2005-08-24 18:00", "lat": 25.4, "lon": -76.9, "wind": 45, "pressure": 1000, "status": "TS", "C_local": 6.9, "C_archival": 7.75, "omega": 15, "L": 3.5, "R": 1.68, "is_rupture": false},
+            {"time": "2005-08-25 00:00", "lat": 26.0, "lon": -77.7, "wind": 50, "pressure": 997, "status": "TS", "C_local": 10.3, "C_archival": 11.15, "omega": 15, "L": 3.4, "R": 2.10, "is_rupture": false},
+            {"time": "2005-08-25 06:00", "lat": 26.1, "lon": -78.4, "wind": 55, "pressure": 994, "status": "TS", "C_local": 13.7, "C_archival": 14.55, "omega": 15, "L": 3.4, "R": 2.64, "is_rupture": false},
+            {"time": "2005-08-25 12:00", "lat": 26.2, "lon": -79.0, "wind": 60, "pressure": 988, "status": "TS", "C_local": 0, "C_archival": 18.85, "omega": 15, "L": 4.3, "R": 3.50, "is_rupture": true},
+            {"time": "2005-08-25 18:00", "lat": 26.0, "lon": -79.6, "wind": 70, "pressure": 984, "status": "HU", "C_local": 0, "C_archival": 25.05, "omega": 20, "L": 6.2, "R": 3.50, "is_rupture": true},
+            {"time": "2005-08-26 00:00", "lat": 25.9, "lon": -80.3, "wind": 75, "pressure": 983, "status": "HU", "C_local": 2.8, "C_archival": 27.85, "omega": 20, "L": 2.8, "R": 4.03, "is_rupture": false},
+            {"time": "2005-08-26 06:00", "lat": 25.7, "lon": -81.3, "wind": 70, "pressure": 987, "status": "HU", "C_local": 6.5, "C_archival": 31.55, "omega": 20, "L": 3.7, "R": 4.85, "is_rupture": false},
+            {"time": "2005-08-26 12:00", "lat": 25.6, "lon": -82.6, "wind": 65, "pressure": 990, "status": "HU", "C_local": 10.0, "C_archival": 35.05, "omega": 20, "L": 3.5, "R": 5.76, "is_rupture": false},
+            {"time": "2005-08-26 18:00", "lat": 25.6, "lon": -84.0, "wind": 75, "pressure": 982, "status": "HU", "C_local": 17.4, "C_archival": 42.45, "omega": 20, "L": 7.4, "R": 8.30, "is_rupture": false},
+            {"time": "2005-08-27 00:00", "lat": 25.4, "lon": -85.3, "wind": 85, "pressure": 972, "status": "HU", "C_local": 0, "C_archival": 53.45, "omega": 25, "L": 11.0, "R": 8.50, "is_rupture": true},
+            {"time": "2005-08-27 06:00", "lat": 25.2, "lon": -86.1, "wind": 95, "pressure": 960, "status": "HU", "C_local": 0, "C_archival": 64.05, "omega": 25, "L": 10.6, "R": 13.0, "is_rupture": true},
+            {"time": "2005-08-27 12:00", "lat": 24.9, "lon": -86.8, "wind": 100, "pressure": 950, "status": "HU", "C_local": 0, "C_archival": 73.55, "omega": 30, "L": 9.5, "R": 12.8, "is_rupture": true},
+            {"time": "2005-08-27 18:00", "lat": 24.6, "lon": -87.5, "wind": 115, "pressure": 942, "status": "HU", "C_local": 0, "C_archival": 83.65, "omega": 30, "L": 10.1, "R": 16.4, "is_rupture": true},
+            {"time": "2005-08-28 00:00", "lat": 24.5, "lon": -88.0, "wind": 130, "pressure": 930, "status": "HU", "C_local": 0, "C_archival": 94.75, "omega": 35, "L": 11.1, "R": 15.0, "is_rupture": true},
+            {"time": "2005-08-28 06:00", "lat": 24.8, "lon": -88.3, "wind": 145, "pressure": 913, "status": "HU", "C_local": 0, "C_archival": 107.95, "omega": 35, "L": 13.2, "R": 21.8, "is_rupture": true},
+            {"time": "2005-08-28 12:00", "lat": 25.2, "lon": -88.6, "wind": 150, "pressure": 908, "status": "HU", "C_local": 5.0, "C_archival": 112.95, "omega": 35, "L": 5.0, "R": 25.0, "is_rupture": false},
+            {"time": "2005-08-28 18:00", "lat": 26.3, "lon": -89.2, "wind": 170, "pressure": 902, "status": "HU", "C_local": 17.8, "C_archival": 125.75, "omega": 40, "L": 12.8, "R": 23.5, "is_rupture": false},
+            {"time": "2005-08-29 00:00", "lat": 27.2, "lon": -89.6, "wind": 150, "pressure": 905, "status": "HU", "C_local": 28.7, "C_archival": 136.65, "omega": 35, "L": 10.9, "R": 49.4, "is_rupture": false},
+            {"time": "2005-08-29 06:00", "lat": 28.2, "lon": -89.6, "wind": 140, "pressure": 913, "status": "HU", "C_local": 0, "C_archival": 143.55, "omega": 35, "L": 6.9, "R": 60.0, "is_rupture": true},
+            {"time": "2005-08-29 11:00", "lat": 29.3, "lon": -89.6, "wind": 125, "pressure": 920, "status": "HU", "C_local": 0, "C_archival": 152.05, "omega": 30, "L": 8.5, "R": 160, "is_rupture": true},
+            {"time": "2005-08-29 18:00", "lat": 31.1, "lon": -89.6, "wind": 75, "pressure": 950, "status": "HU", "C_local": 0, "C_archival": 186.05, "omega": 20, "L": 34.0, "R": 10000, "is_rupture": true},
+            {"time": "2005-08-30 00:00", "lat": 34.0, "lon": -89.0, "wind": 50, "pressure": 970, "status": "TS", "C_local": 0, "C_archival": 204.55, "omega": 15, "L": 18.5, "R": 1e10, "is_rupture": true}
+        ];
+        
+        // Canvas setup
+        const canvas = document.getElementById('hurricaneCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State
+        let currentFrame = 0;
+        let isPlaying = false;
+        let animationId = null;
+        let lastFrameTime = 0;
+        let rotation = 0;
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Get category from wind
+        function getCategory(wind) {
+            if (wind < 34) return 'TD';
+            if (wind < 64) return 'TS';
+            if (wind < 83) return '1';
+            if (wind < 96) return '2';
+            if (wind < 113) return '3';
+            if (wind < 137) return '4';
+            return '5';
+        }
+        
+        // Draw hurricane
+        function drawHurricane(data) {
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+            const cx = w / 2;
+            const cy = h / 2;
+            
+            // Clear
+            ctx.fillStyle = '#0a0d12';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Background ocean gradient
+            const oceanGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7);
+            oceanGrad.addColorStop(0, '#1a2535');
+            oceanGrad.addColorStop(0.5, '#0f1822');
+            oceanGrad.addColorStop(1, '#0a0d12');
+            ctx.fillStyle = oceanGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Hurricane size based on wind
+            const baseSize = Math.min(w, h) * 0.35;
+            const windFactor = data.wind / 170;  // Normalize to peak
+            const size = baseSize * (0.5 + windFactor * 0.5);
+            const eyeSize = size * (0.08 + (1 - windFactor) * 0.05);
+            
+            // Rotation speed based on intensity
+            rotation += 0.005 + windFactor * 0.02;
+            
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(rotation);
+            
+            // Draw spiral bands (outer to inner)
+            const numBands = 8;
+            for (let band = numBands - 1; band >= 0; band--) {
+                const bandRadius = size * (0.3 + band * 0.1);
+                const bandWidth = size * 0.12;
+                const opacity = 0.3 + (band / numBands) * 0.5;
+                
+                // Each band is a spiral
+                ctx.beginPath();
+                for (let angle = 0; angle < Math.PI * 6; angle += 0.02) {
+                    const r = bandRadius * (1 - angle / (Math.PI * 8));
+                    if (r < eyeSize * 1.5) continue;
+                    
+                    const x = Math.cos(angle + band * 0.5) * r;
+                    const y = Math.sin(angle + band * 0.5) * r;
+                    
+                    if (angle === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                
+                // Cloud coloring - more intense = darker bands
+                const intensity = windFactor;
+                const r = Math.floor(140 + intensity * 60);
+                const g = Math.floor(150 + intensity * 50);
+                const b = Math.floor(160 + intensity * 40);
+                
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                ctx.lineWidth = bandWidth * (0.5 + Math.random() * 0.5);
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            
+            // Eyewall - bright ring
+            const eyewallGrad = ctx.createRadialGradient(0, 0, eyeSize * 0.8, 0, 0, eyeSize * 2);
+            eyewallGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            eyewallGrad.addColorStop(0.3, `rgba(255, 255, 255, ${0.4 * windFactor})`);
+            eyewallGrad.addColorStop(0.5, `rgba(200, 220, 240, ${0.6 * windFactor})`);
+            eyewallGrad.addColorStop(0.7, `rgba(150, 180, 200, ${0.3 * windFactor})`);
+            eyewallGrad.addColorStop(1, 'rgba(100, 130, 160, 0)');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, eyeSize * 2, 0, Math.PI * 2);
+            ctx.fillStyle = eyewallGrad;
+            ctx.fill();
+            
+            // Eye (clear center)
+            const eyeGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, eyeSize);
+            eyeGrad.addColorStop(0, '#e8dfd0');
+            eyeGrad.addColorStop(0.3, '#d0c5b5');
+            eyeGrad.addColorStop(0.7, '#8090a0');
+            eyeGrad.addColorStop(1, '#5a6a7a');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, eyeSize, 0, Math.PI * 2);
+            ctx.fillStyle = eyeGrad;
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // Rupture effect
+            if (data.is_rupture) {
+                const flashGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size);
+                flashGrad.addColorStop(0, 'rgba(255, 61, 61, 0.4)');
+                flashGrad.addColorStop(0.5, 'rgba(255, 61, 61, 0.2)');
+                flashGrad.addColorStop(1, 'rgba(255, 61, 61, 0)');
+                ctx.fillStyle = flashGrad;
+                ctx.fillRect(0, 0, w, h);
+            }
+            
+            // Coherence visualization - rings pulsing outward
+            const coherenceRatio = data.C_local / data.omega;
+            if (coherenceRatio > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.3 * coherenceRatio;
+                ctx.strokeStyle = '#00f5ff';
+                ctx.lineWidth = 2;
+                
+                for (let i = 0; i < 3; i++) {
+                    const ringRadius = size * (0.8 + coherenceRatio * 0.3 + i * 0.1);
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+        
+        // Update UI
+        function updateUI(data, frameIdx) {
+            document.getElementById('hudWind').textContent = `${data.wind} kt`;
+            document.getElementById('hudPressure').textContent = `${data.pressure} mb`;
+            document.getElementById('hudCoherence').textContent = data.C_local.toFixed(1);
+            document.getElementById('hudOmega').textContent = data.omega;
+            document.getElementById('hudL').textContent = data.L.toFixed(1);
+            document.getElementById('hudStatus').textContent = data.status;
+            
+            // Rupture indication
+            const statusEl = document.getElementById('hudStatus');
+            if (data.is_rupture) {
+                statusEl.classList.add('rupture');
+                statusEl.textContent = 'δ RUPTURE';
+                document.getElementById('ruptureFlash').classList.add('active');
+                setTimeout(() => document.getElementById('ruptureFlash').classList.remove('active'), 200);
+            } else {
+                statusEl.classList.remove('rupture');
+            }
+            
+            // Coherence bar
+            const coherencePercent = Math.min((data.C_local / data.omega) * 100, 100);
+            document.getElementById('coherenceBar').style.width = coherencePercent + '%';
+            
+            // Category
+            const cat = getCategory(data.wind);
+            document.getElementById('categoryValue').textContent = cat;
+            
+            // Timeline
+            const progress = ((frameIdx + 1) / KATRINA_DATA.length) * 100;
+            document.getElementById('timelineProgress').style.width = progress + '%';
+            document.getElementById('currentTime').textContent = data.time;
+            document.getElementById('frameDisplay').textContent = `${frameIdx + 1}/${KATRINA_DATA.length}`;
+            
+            // Eye overlay size
+            const eyeEl = document.getElementById('eyeOverlay');
+            const eyeSize = 40 + (data.wind / 170) * 40;
+            eyeEl.style.width = eyeSize + 'px';
+            eyeEl.style.height = eyeSize + 'px';
+        }
+        
+        // Add rupture to log
+        function addRuptureLog(data) {
+            const log = document.getElementById('ruptureLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <div class="time">${data.time}</div>
+                <div class="event">${data.status} | ${data.wind}kt | ${data.pressure}mb | C→Ω</div>
+            `;
+            log.insertBefore(entry, log.firstChild);
+        }
+        
+        // Initialize timeline rupture markers
+        function initTimelineMarkers() {
+            const container = document.getElementById('timelineRuptures');
+            KATRINA_DATA.forEach((data, idx) => {
+                if (data.is_rupture) {
+                    const marker = document.createElement('div');
+                    marker.className = 'rupture-marker';
+                    marker.style.left = ((idx + 1) / KATRINA_DATA.length * 100) + '%';
+                    container.appendChild(marker);
+                }
+            });
+        }
+        
+        // Track previous category for change detection
+        let previousCategory = 'TD';
+        
+        // Animation loop
+        function animate(timestamp) {
+            if (!isPlaying) return;
+            
+            const elapsed = timestamp - lastFrameTime;
+            if (elapsed > 800) {  // ~800ms per frame
+                lastFrameTime = timestamp;
+                
+                const data = KATRINA_DATA[currentFrame];
+                drawHurricane(data);
+                updateUI(data, currentFrame);
+                
+                // Update soundscape
+                soundscape.update(data);
+                
+                // Check for rupture
+                if (data.is_rupture) {
+                    addRuptureLog(data);
+                    const intensity = data.wind / 170;
+                    soundscape.triggerRupture(0.5 + intensity * 0.5);
+                }
+                
+                // Check for category change
+                const currentCat = getCategory(data.wind);
+                if (currentCat !== previousCategory) {
+                    soundscape.triggerCategoryChange(currentCat);
+                    previousCategory = currentCat;
+                }
+                
+                currentFrame++;
+                if (currentFrame >= KATRINA_DATA.length) {
+                    currentFrame = 0;
+                    previousCategory = 'TD';
+                    document.getElementById('ruptureLog').innerHTML = '';
+                }
+            }
+            
+            // Keep drawing for smooth rotation
+            drawHurricane(KATRINA_DATA[Math.max(0, currentFrame - 1)]);
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Controls
+        document.getElementById('playBtn').addEventListener('click', async () => {
+            // Initialize sound on first interaction
+            if (!soundscape.initialized) {
+                await soundscape.init();
+                updateAudioHUD();
+            }
+            
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('playBtn');
+            
+            if (isPlaying) {
+                btn.textContent = '⏸ Pause';
+                btn.classList.add('active');
+                lastFrameTime = performance.now();
+                animationId = requestAnimationFrame(animate);
+                updateAudioHUD();
+            } else {
+                btn.textContent = '▶ Play';
+                btn.classList.remove('active');
+                cancelAnimationFrame(animationId);
+            }
+        });
+        
+        // Sound toggle
+        document.getElementById('soundBtn').addEventListener('click', async () => {
+            if (!soundscape.initialized) {
+                await soundscape.init();
+            }
+            
+            const isOn = soundscape.toggle();
+            const btn = document.getElementById('soundBtn');
+            btn.textContent = isOn ? '🔊 Sound' : '🔇 Muted';
+            btn.classList.toggle('active', isOn);
+            
+            document.getElementById('hudAudio').textContent = isOn ? '🔊 Active' : '🔇 Muted';
+            document.getElementById('hudAudio').style.color = isOn ? '#00f5ff' : '#666';
+        });
+        
+        // Update audio HUD when playing starts
+        function updateAudioHUD() {
+            if (soundscape.initialized && !soundscape.muted) {
+                document.getElementById('hudAudio').textContent = '🔊 Active';
+                document.getElementById('hudAudio').style.color = '#00f5ff';
+            }
+        }
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            currentFrame = 0;
+            rotation = 0;
+            previousCategory = 'TD';
+            document.getElementById('ruptureLog').innerHTML = '';
+            const data = KATRINA_DATA[0];
+            drawHurricane(data);
+            updateUI(data, 0);
+            
+            // Update sound to initial state
+            if (soundscape.initialized) {
+                soundscape.update(data);
+            }
+        });
+        
+        // Initialize
+        initTimelineMarkers();
+        const initialData = KATRINA_DATA[0];
+        drawHurricane(initialData);
+        updateUI(initialData, 0);
+        
+        // Continuous rotation when paused
+        function idleAnimation() {
+            if (!isPlaying) {
+                drawHurricane(KATRINA_DATA[currentFrame]);
+            }
+            requestAnimationFrame(idleAnimation);
+        }
+        idleAnimation();
+    </script>
+</body>
+</html>
