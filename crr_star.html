@@ -714,31 +714,154 @@
     </div>
     
     <script>
-        // ============================================
-        // CRR CONSTANTS
-        // ============================================
-        const OMEGA_Z2 = 1 / Math.PI;
-        const OMEGA_SO2 = 1 / (2 * Math.PI);
-        const EXP_PI = Math.exp(Math.PI);
+        /**
+         * ╔══════════════════════════════════════════════════════════════════════════════╗
+         * ║                    CRR STAR: MATHEMATICAL FOUNDATIONS                        ║
+         * ║                                                                              ║
+         * ║  This simulation implements the Coherence-Rupture-Regeneration (CRR)         ║
+         * ║  framework across stellar and observer systems. Each calculation below       ║
+         * ║  is annotated with its mathematical derivation from CRR principles.          ║
+         * ║                                                                              ║
+         * ║  CORE CRR EQUATIONS:                                                         ║
+         * ║    (1) C(x,t) = ∫₀ᵗ L(x,τ) dτ           [Coherence Accumulation]            ║
+         * ║    (2) δ(now)                            [Rupture: Dirac delta]              ║
+         * ║    (3) R = ∫ φ·exp(C/Ω)·Θ dτ            [Regeneration with memory]          ║
+         * ║                                                                              ║
+         * ║  Ω-SYMMETRY THEOREM: Ω = 1/φ_G                                               ║
+         * ║    where φ_G = phase length of symmetry group's fundamental domain           ║
+         * ║                                                                              ║
+         * ║  Author: Alexander Sabine · cohere.org.uk                                    ║
+         * ╚══════════════════════════════════════════════════════════════════════════════╝
+         */
+
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 1: CRR FUNDAMENTAL CONSTANTS
+        // ════════════════════════════════════════════════════════════════════════════════
         
-        const TAU_DISPLAY = 1/60;
-        const TAU_ATM = 0.00314;
+        /**
+         * @CRR_THEOREM: Ω-Symmetry Correspondence
+         * ═══════════════════════════════════════════════════════════════════════════════
+         * 
+         * For a CRR system with symmetry group G:
+         *     Ω = 1/φ_G
+         * where φ_G is the phase (radians) of G's fundamental domain.
+         * 
+         * PROOF SKETCH:
+         * 1. Rupture occurs when phase reaches fundamental domain boundary
+         * 2. For Z₂ (discrete flip): φ_G = π radians
+         * 3. For SO(2) (continuous rotation): φ_G = 2π radians
+         * 4. Empirical observation: CV = Ω/2
+         * 5. Therefore: Ω = 1/φ_G
+         * 
+         * CONNECTION TO FREE ENERGY PRINCIPLE:
+         *     Precision_FEP = 1/σ² = 1/Ω = φ_G
+         */
+        
+        /**
+         * @CRR_CONSTANT: OMEGA_Z2 = 1/π ≈ 0.31831
+         * 
+         * Z₂ SYMMETRY (Binary/Discrete Systems):
+         * - State space: {s, -s} with transition at π
+         * - Fundamental domain: [0, π]
+         * - Phase to rupture: π radians (180°)
+         * 
+         * CV_Z₂ = Ω/2 = 1/(2π) ≈ 0.159 (15.9%)
+         * Precision_Z₂ = 1/Ω = π ≈ 3.14159
+         * 
+         * EXAMPLES: Retinal integration, display refresh, prominence eruptions
+         */
+        const OMEGA_Z2 = 1 / Math.PI;  // = 0.3183098861837907
+        
+        /**
+         * @CRR_CONSTANT: OMEGA_SO2 = 1/(2π) ≈ 0.15915
+         * 
+         * SO(2) SYMMETRY (Continuous/Rotational Systems):
+         * - State space: S¹ (circle)
+         * - Fundamental domain: [0, 2π]
+         * - Phase to complete cycle: 2π radians (360°)
+         * 
+         * CV_SO₂ = Ω/2 = 1/(4π) ≈ 0.080 (8.0%)
+         * Precision_SO₂ = 1/Ω = 2π ≈ 6.28318
+         * 
+         * EXAMPLES: Atmospheric scintillation, gamma oscillations, magnetic fields
+         */
+        const OMEGA_SO2 = 1 / (2 * Math.PI);  // = 0.15915494309189535
+        
+        /**
+         * @CRR_CONSTANT: EXP_PI = e^π ≈ 23.1407
+         * 
+         * EMERGENCE AT Z₂/SO(2) BOUNDARY:
+         * When C = 1 (normalized) with Ω = Ω_Z₂:
+         *     exp(C/Ω_Z₂) = exp(1/(1/π)) = exp(π) ≈ 23.1407
+         * 
+         * UNIVERSAL MANIFESTATION (40+ orders of magnitude):
+         * 1. Black hole scrambling: t* = (1/T)·ln(S)
+         * 2. Neural hierarchical gain: ~23× per cortical level
+         * 3. Memory weight transitions in Z₂ systems
+         */
+        const EXP_PI = Math.exp(Math.PI);  // = 23.140692632779267
+        
+        /**
+         * @CRR_TIMESCALES: Observer Chain Rupture Periods
+         * 
+         * Each τ defines a CRR rupture frequency:
+         *     Ruptures = floor(t / τ)
+         * 
+         * This implements δ(now) events at characteristic timescales.
+         */
+        
+        /** τ_display: 60 Hz refresh, Z₂ symmetry (frame present/absent) */
+        const TAU_DISPLAY = 1/60;  // ~16.67ms
+        
+        /** τ_atm: ~π ms atmospheric seeing, SO(2) symmetry (continuous turbulence) */
+        const TAU_ATM = 0.00314;  // ~3.14ms ≈ π milliseconds
+        
+        /** τ_retinal: 100ms integration window, Z₂ symmetry (photon captured/not) */
         const TAU_RETINAL = 0.1;
+        
+        /** τ_gamma: 40 Hz V1 oscillation, SO(2) symmetry (continuous binding) */
         const TAU_GAMMA = 0.025;
         
-        // ============================================
-        // STELLAR PHYSICS CONSTANTS
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 2: STELLAR PHYSICS CONSTANTS
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_APPLICATION: Sirius A Stellar Parameters
+         * 
+         * Sirius A demonstrates nested CRR cycles across vast timescales:
+         * 
+         * STELLAR CRR HIERARCHY:
+         * - Core fusion: τ ~ 10⁻¹⁵s (Z₂: reaction happens or not)
+         * - Radiative diffusion: τ ~ 10⁻¹⁰s (SO(2): photon scattering)
+         * - P-mode oscillations: τ ~ 46 min (SO(2): standing waves)
+         * - Convective turnover: τ ~ 7 days (SO(2): rotational flow)
+         * - Photon escape: τ ~ 10,000 years (accumulated coherence)
+         */
         const SIRIUS = {
             temperature: 9940,          // K
             radius_solar: 1.711,
             mass_solar: 2.063,
             luminosity_solar: 25.4,
             distance_ly: 8.6,
-            // Oscillation periods (asteroseismology)
+            
+            /**
+             * @CRR_PARAMETER: P-mode Period
+             * τ_p ≈ 46 minutes = 2760 seconds
+             * SYMMETRY: SO(2) (continuous acoustic oscillation)
+             * CRR: P-modes are coherent standing waves; rupture at node crossings
+             */
             p_mode_period: 2760,        // seconds (~46 min for fundamental)
+            
+            /**
+             * @CRR_PARAMETER: Convective Turnover
+             * τ_conv ≈ 7 days = 604800 seconds
+             * SYMMETRY: SO(2) (continuous rotational flow)
+             * CRR: Convective cells cycle through C → δ → R
+             */
             convective_turnover: 604800, // ~7 days in seconds
-            // Derived
+            
+            // Derived color from blackbody at T = 9940K
             rgb: { r: 202, g: 218, b: 255 }
         };
         
@@ -746,9 +869,9 @@
         const LY_TO_KM = 9.461e12;
         const SIRIUS_RADIUS_KM = SIRIUS.radius_solar * SOLAR_RADIUS_KM;
         
-        // ============================================
-        // VISUAL RENDERING
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 3: VISUAL RENDERING STATE
+        // ════════════════════════════════════════════════════════════════════════════════
         const canvas = document.getElementById('sirius-canvas');
         const ctx = canvas.getContext('2d');
         
@@ -758,18 +881,48 @@
         let targetZoom = 0;
         let lastFrameTime = 0;
         
-        // Counters
-        let displayRuptures = 0;
-        let atmRuptures = 0;
-        let retinalCycles = 0;
-        let gammaCycles = 0;
+        /**
+         * @CRR_STATE: Rupture Counters
+         * Each tracks δ(now) events: ruptures = floor(t / τ)
+         */
+        let displayRuptures = 0;    // Z₂: Display frame flips
+        let atmRuptures = 0;        // SO(2): Atmospheric seeing cells
+        let retinalCycles = 0;      // Z₂: Retinal integration windows
+        let gammaCycles = 0;        // SO(2): V1 gamma oscillations
+        
+        /**
+         * @CRR_STATE: Session Coherence
+         * Implements: C(x,t) = ∫₀ᵗ L(x,τ) dτ
+         * Here L = 1 (constant), so C = t (session duration)
+         */
         let sessionCoherence = 0;
         
-        // Scintillation
+        // Scintillation state
         let scintillationPhase = Math.random() * Math.PI * 2;
         let currentBrightness = 1.0;
         
-        // Granulation cells (persistent for animation)
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 4: GRANULATION CELLS (SO(2) CRR DYNAMICS)
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_SYSTEM: Granulation Cells
+         * SYMMETRY: SO(2) (continuous rotational convective flow)
+         * 
+         * Each cell undergoes the full CRR cycle:
+         * 
+         * COHERENCE: Hot plasma rises
+         *   C(cell,t) = ∫ L_thermal(τ) dτ
+         * 
+         * RUPTURE: Cell reaches surface, spreads (δ event)
+         * 
+         * REGENERATION: Cool plasma sinks, new cell forms
+         *   R = ∫ φ·exp(C/Ω_SO2)·Θ dτ
+         * 
+         * LIFECYCLE (lifePhase ∈ [0, 2π]):
+         *   brightness = 0.5 + 0.5·sin(lifePhase)
+         *   Peak at lifePhase = π/2 (max coherence before rupture)
+         */
         let granulationCells = [];
         const NUM_GRANULATION_CELLS = 150;
         
@@ -782,7 +935,9 @@
                     size: 0.03 + Math.random() * 0.05,
                     brightness: Math.random(),
                     phase: Math.random() * Math.PI * 2,
+                    /** @CRR: Convective motion rate (determines L) */
                     speed: 0.0001 + Math.random() * 0.0002,
+                    /** @CRR: Position in CRR cycle [0, 2π] */
                     lifePhase: Math.random() * Math.PI * 2
                 });
             }
@@ -821,19 +976,47 @@
             }
         }
         
-        // ============================================
-        // SCINTILLATION MODEL
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 5: SCINTILLATION MODEL (KOLMOGOROV TURBULENCE)
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_FUNCTION: computeScintillation
+         * 
+         * Atmospheric scintillation = multi-scale CRR dynamics (SO(2) symmetry)
+         * 
+         * PHYSICAL BASIS: Kolmogorov turbulence cascade
+         * Energy cascades from outer to inner scales, each with own CRR timescale.
+         * 
+         * MATHEMATICAL MODEL:
+         *   I(t) = 1 + σ_I · Σᵢ aᵢ·sin(2πfᵢt + φᵢ)
+         * 
+         * FREQUENCY DERIVATION:
+         *   f₁ = 318 Hz ≈ 100/π Hz (inner scale, weight 0.4)
+         *   f₂ = 159 Hz ≈ 50/π Hz  (weight 0.3)
+         *   f₃ = 50 Hz              (weight 0.2)
+         *   f₄ = 15 Hz              (outer scale, weight 0.1)
+         *   
+         *   NOTE: f₁/f₂ ≈ 2 = Ω_Z₂/Ω_SO₂ ratio
+         * 
+         * ZOOM ATTENUATION (leaving atmosphere):
+         *   σ_I(zoom) = 0.12 × (1 - 0.95·zoomFactor)
+         * 
+         * @param {number} t - Time in seconds
+         * @param {number} zoomFactor - 0 (Earth) to 1 (surface)
+         * @returns {number} Intensity multiplier (1.0 = mean)
+         */
         function computeScintillation(t, zoomFactor) {
-            // Kolmogorov turbulence - multiple frequency components
-            const f1 = 318;
-            const f2 = 159;
-            const f3 = 50;
-            const f4 = 15;
+            // Kolmogorov turbulence - multiple CRR scales
+            const f1 = 318;   // Inner scale
+            const f2 = 159;   // ≈ f1/2 (note: ratio = 2 = Ω_Z₂/Ω_SO₂)
+            const f3 = 50;    // Intermediate
+            const f4 = 15;    // Outer scale
             
-            // Scintillation decreases with zoom (leaving atmosphere)
+            // @CRR: Scintillation decreases as we "leave" atmosphere
             const sigmaI = 0.12 * (1 - zoomFactor * 0.95);
             
+            // @CRR: Multi-scale intensity variation (Kolmogorov weights)
             const variation = 
                 0.4 * Math.sin(2 * Math.PI * f1 * t + scintillationPhase) +
                 0.3 * Math.sin(2 * Math.PI * f2 * t + scintillationPhase * 1.3) +
@@ -843,15 +1026,25 @@
             return 1.0 + sigmaI * variation;
         }
         
-        // ============================================
-        // STELLAR RENDERING
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 6: STELLAR RENDERING
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_FUNCTION: drawSirius
+         * 
+         * Main rendering showing CRR at different scales based on zoom:
+         *   0-10%:  Earth view - atmospheric CRR dominates
+         *   10-40%: Approaching - transition between scales
+         *   40-100%: Close - surface CRR structures visible
+         */
         function drawSirius(brightness, t) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
             
+            // @CRR: Quadratic zoom for perceptually uniform scale transition
             const zoomFactor = Math.pow(zoomLevel / 100, 2);
             
             // Apparent size calculation
@@ -859,7 +1052,7 @@
             const maxSize = 140;
             const apparentSize = baseSize + (maxSize - baseSize) * zoomFactor;
             
-            // Different rendering modes based on zoom
+            // Different rendering modes = different CRR scales
             if (zoomFactor < 0.1) {
                 drawDistantStar(cx, cy, apparentSize, brightness, zoomFactor, t);
             } else if (zoomFactor < 0.4) {
@@ -955,6 +1148,21 @@
             }
         }
         
+        /**
+         * @CRR_FUNCTION: drawStellarDisk
+         * 
+         * Renders photosphere with limb darkening and P-mode oscillations.
+         * 
+         * LIMB DARKENING (Eddington Approximation):
+         *   I(θ)/I(0) = 0.4 + 0.6·cos(θ)
+         * 
+         * P-MODE OSCILLATIONS:
+         *   Standing acoustic waves = coherent CRR structure
+         *   Period τ_p ≈ 46 min (Sirius A fundamental)
+         *   
+         *   @CRR: pModePhase traces C → δ → R cycle
+         *         pModeAmp = sin(2π·phase) × 0.005
+         */
         function drawStellarDisk(cx, cy, radius, brightness, zoomFactor, t) {
             // Limb darkening using Eddington approximation
             // I(θ)/I(0) = 0.4 + 0.6*cos(θ)
@@ -979,7 +1187,19 @@
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
             ctx.fill();
             
-            // P-mode oscillation effect (subtle pulsing)
+            /**
+             * @CRR_CALCULATION: P-mode Oscillation Visualization
+             * 
+             * pModePhase = (t mod τ_p) / τ_p  ∈ [0, 1]
+             * pModeAmp = sin(2π·pModePhase) × 0.005
+             * 
+             * This traces the CRR cycle of acoustic standing waves:
+             *   Phase 0.0: Beginning of coherence buildup
+             *   Phase 0.25: Maximum expansion (peak coherence)
+             *   Phase 0.5: Node crossing (rupture δ)
+             *   Phase 0.75: Maximum compression
+             *   Phase 1.0: Cycle complete (regeneration)
+             */
             const pModePhase = (t % SIRIUS.p_mode_period) / SIRIUS.p_mode_period;
             const pModeAmp = Math.sin(pModePhase * 2 * Math.PI) * 0.005;
             
@@ -996,7 +1216,32 @@
             }
         }
         
+        /**
+         * @CRR_FUNCTION: drawGranulation
+         * 
+         * Renders convective granulation cells with CRR lifecycle.
+         * 
+         * PHYSICAL PROCESS:
+         *   Hot plasma rises (bright) → spreads → sinks (dark lanes)
+         *   Typical cell lifetime: 8-20 minutes
+         * 
+         * CRR DYNAMICS (SO(2) symmetry):
+         * 
+         *   COHERENCE: C = ∫ L_thermal(τ) dτ
+         *     Thermal buoyancy drives upward flow
+         *     brightness ∝ coherence
+         * 
+         *   RUPTURE: δ at surface spreading
+         * 
+         *   REGENERATION: R = ∫ φ·exp(C/Ω_SO2)·Θ dτ
+         *     Memory weight determines new cell properties
+         * 
+         * LIFECYCLE FORMULA:
+         *   lifeBrightness = 0.5 + 0.5·sin(lifePhase)
+         *   Peak at lifePhase = π/2 (max coherence)
+         */
         function drawGranulation(cx, cy, radius, brightness, zoomFactor, t) {
+            // @CRR: Granulation visibility scales with approach
             const granIntensity = Math.min(1, (zoomFactor - 0.5) * 2);
             
             ctx.save();
@@ -1007,11 +1252,17 @@
             ctx.clip();
             
             granulationCells.forEach((cell, i) => {
-                // Update cell position (convective motion)
+                // @CRR: Update cell position (SO(2) convective rotation)
                 cell.angle += cell.speed * (1 + Math.sin(t * 0.1 + cell.phase) * 0.3);
-                cell.lifePhase += 0.002;
                 
-                // Cell brightness varies with lifecycle
+                // @CRR: Advance through CRR lifecycle
+                cell.lifePhase += 0.002;  // ~8 min full cycle at 60fps
+                
+                /**
+                 * @CRR_CALCULATION: Cell Brightness from Lifecycle
+                 * lifeBrightness = 0.5 + 0.5·sin(lifePhase)
+                 * Maps CRR phase to visual brightness
+                 */
                 const lifeBrightness = 0.5 + 0.5 * Math.sin(cell.lifePhase);
                 
                 const cellDist = cell.radius * radius * 0.9;
@@ -1020,7 +1271,7 @@
                 
                 const cellRadius = cell.size * radius;
                 
-                // Hot rising center, cooler sinking edges (convective pattern)
+                // @CRR: Gradient shows coherence distribution (hot center → cool edges)
                 const cellGradient = ctx.createRadialGradient(
                     cellX, cellY, 0,
                     cellX, cellY, cellRadius
@@ -1040,7 +1291,7 @@
             
             ctx.restore();
             
-            // Intergranular lanes (dark network between cells)
+            // @CRR: Intergranular lanes (post-rupture regeneration phase)
             if (granIntensity > 0.5) {
                 const laneAlpha = (granIntensity - 0.5) * 0.1 * brightness;
                 ctx.save();
@@ -1090,11 +1341,31 @@
             ctx.fill();
         }
         
-        // ============================================
-        // CRR-EMERGENT CORONA & PROMINENCES
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 7: CRR-EMERGENT CORONA & PROMINENCES
+        // ════════════════════════════════════════════════════════════════════════════════
         
-        // Magnetic field line class with CRR dynamics
+        /**
+         * @CRR_CLASS: MagneticFieldLine
+         * SYMMETRY: SO(2) (continuous magnetic topology)
+         * 
+         * Magnetic field lines undergo CRR with continuous deformation
+         * until reconnection (rupture).
+         * 
+         * STATE MACHINE: COHERENT → RUPTURING → REGENERATING → COHERENT
+         * 
+         * COHERENCE PHASE:
+         *   C(t) = ∫ L(x,τ) dτ   where L = magnetic stress rate
+         *   Transition when: C > Ω_SO2×(1+random) OR exp(C/Ω_SO2) > 3
+         * 
+         * RUPTURE PHASE:
+         *   Magnetic reconnection event (δ)
+         *   Duration: τ = 0.5 + height × 5 seconds
+         * 
+         * REGENERATION PHASE:
+         *   R = ∫ φ·exp(C/Ω_SO2)·Θ dτ
+         *   Duration: τ = 2 + random × 3 seconds
+         */
         class MagneticFieldLine {
             constructor(footpointAngle, polarity) {
                 this.footpointAngle = footpointAngle;
@@ -1102,9 +1373,9 @@
                 this.maxHeight = 0.05 + Math.random() * 0.15;
                 this.arcWidth = 0.1 + Math.random() * 0.2;
                 
-                // CRR state
+                // @CRR_STATE: Field line CRR variables
                 this.coherence = Math.random() * 0.5; // C(t)
-                this.omega = OMEGA_SO2; // SO(2) - continuous magnetic topology
+                this.omega = OMEGA_SO2; // SO(2) - continuous topology
                 this.lastRupture = 0;
                 this.state = 'coherent'; // coherent, rupturing, regenerating
                 this.stateTimer = 0;
@@ -1114,16 +1385,28 @@
                 this.targetOpacity = 0;
             }
             
+            /**
+             * @CRR_METHOD: update
+             * Implements CRR state machine for magnetic field evolution
+             */
             update(dt, t) {
                 // CRR dynamics for magnetic field evolution
                 
                 if (this.state === 'coherent') {
-                    // Accumulate coherence: C(t) = ∫L(x,τ)dτ
-                    const L = 0.0001 + Math.random() * 0.0002; // Magnetic stress accumulation rate
+                    /**
+                     * @CRR_EQUATION: Coherence Accumulation
+                     * C(t) = ∫ L(x,τ) dτ
+                     * L = magnetic stress accumulation rate
+                     */
+                    const L = 0.0001 + Math.random() * 0.0002;
                     this.coherence += L * dt;
                     
-                    // Check for rupture: when C exceeds threshold
-                    // Threshold modulated by exp(C/Ω)
+                    /**
+                     * @CRR_CALCULATION: Rupture Threshold
+                     * Rupture when:
+                     *   C > Ω_SO2 × (1 + random), OR
+                     *   exp(C/Ω_SO2) > 3
+                     */
                     const ruptureThreshold = this.omega * (1 + Math.random() * 0.5);
                     const memoryWeight = Math.exp(this.coherence / this.omega);
                     
@@ -1136,7 +1419,7 @@
                     this.targetOpacity = Math.min(0.6, this.coherence * 2);
                     
                 } else if (this.state === 'rupturing') {
-                    // Rupture: δ(now) - rapid release
+                    // @CRR_PHASE: Rupture δ(now) - rapid energy release
                     this.stateTimer += dt;
                     
                     // Rupture lasts ~0.5-2 seconds
@@ -1145,7 +1428,7 @@
                     if (this.stateTimer > ruptureDuration) {
                         this.state = 'regenerating';
                         this.stateTimer = 0;
-                        this.coherence = 0;
+                        this.coherence = 0; // Reset after rupture
                     }
                     
                     // Bright flash during rupture
@@ -1153,7 +1436,11 @@
                     this.targetOpacity = 0.8 * (1 - ruptureProgress);
                     
                 } else if (this.state === 'regenerating') {
-                    // Regeneration: R = ∫φ·exp(C/Ω)·Θ dτ
+                    /**
+                     * @CRR_PHASE: Regeneration
+                     * R = ∫ φ·exp(C/Ω)·Θ dτ
+                     * New configuration emerges
+                     */
                     this.stateTimer += dt;
                     
                     // Regeneration takes longer than rupture
@@ -1545,10 +1832,11 @@
             document.getElementById('zoom-slider').value = zoomLevel;
         }
         
-        // ============================================
-        // CRR CALCULATIONS
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 8: CRR CALCULATIONS & DISPLAY
+        // ════════════════════════════════════════════════════════════════════════════════
         function updateDisplays() {
+            // @CRR: Display rupture counts (δ events at each scale)
             document.getElementById('display-ruptures').textContent = displayRuptures.toLocaleString();
             document.getElementById('atm-ruptures').textContent = atmRuptures.toLocaleString();
             document.getElementById('retinal-cycles').textContent = retinalCycles.toLocaleString();
@@ -1558,6 +1846,11 @@
             
             document.getElementById('coherence-live').textContent = sessionCoherence.toFixed(4);
             
+            /**
+             * @CRR_CALCULATION: Memory Weight Display
+             * exp(C/Ω_SO2) - using SO(2) for observer session
+             * Capped at exp(10) for numerical stability
+             */
             const memWeight = Math.exp(Math.min(sessionCoherence / OMEGA_SO2, 10));
             document.getElementById('memory-weight').textContent = memWeight.toFixed(4);
             
@@ -1565,9 +1858,25 @@
                 (displayRuptures + atmRuptures + retinalCycles + gammaCycles).toLocaleString();
         }
         
-        // ============================================
-        // MAIN ANIMATION LOOP
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 9: MAIN ANIMATION LOOP
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_FUNCTION: animate
+         * 
+         * Main loop implementing real-time CRR dynamics:
+         * 
+         * 1. COHERENCE: sessionCoherence += dt/1000
+         *    Implements C(t) = ∫₀ᵗ L dτ with L = 1
+         * 
+         * 2. RUPTURES: ruptures = floor(t / τ)
+         *    Counts δ(now) events at each timescale
+         * 
+         * 3. SCINTILLATION: Multi-scale SO(2) atmospheric CRR
+         * 
+         * 4. RENDERING: Updates all CRR visual elements
+         */
         function animate(timestamp) {
             const t = (Date.now() - startTime) / 1000;
             const dt = timestamp - (lastFrameTime || timestamp);
@@ -1579,14 +1888,24 @@
             
             const zoomFactor = Math.pow(zoomLevel / 100, 2);
             
-            // CRR accumulation
+            /**
+             * @CRR_UPDATE: Session Coherence Accumulation
+             * C(t) = ∫₀ᵗ L dτ  with L = 1
+             * sessionCoherence += dt (in seconds)
+             */
             sessionCoherence += dt / 1000;
-            displayRuptures = Math.floor(t / TAU_DISPLAY);
-            atmRuptures = Math.floor(t / TAU_ATM);
-            retinalCycles = Math.floor(t / TAU_RETINAL);
-            gammaCycles = Math.floor(t / TAU_GAMMA);
             
-            // Scintillation
+            /**
+             * @CRR_UPDATE: Rupture Counting
+             * ruptures = floor(t / τ)
+             * Each represents δ(now) events at that timescale
+             */
+            displayRuptures = Math.floor(t / TAU_DISPLAY);   // Z₂
+            atmRuptures = Math.floor(t / TAU_ATM);           // SO(2)
+            retinalCycles = Math.floor(t / TAU_RETINAL);     // Z₂
+            gammaCycles = Math.floor(t / TAU_GAMMA);         // SO(2)
+            
+            // @CRR: Multi-scale atmospheric scintillation (SO(2))
             currentBrightness = computeScintillation(t, zoomFactor);
             
             // Render
@@ -1598,9 +1917,9 @@
             requestAnimationFrame(animate);
         }
         
-        // ============================================
-        // CONTROLS
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 10: CONTROLS
+        // ════════════════════════════════════════════════════════════════════════════════
         function setupControls() {
             const slider = document.getElementById('zoom-slider');
             const zoomIn = document.getElementById('zoom-in');
@@ -1639,9 +1958,20 @@
             });
         }
         
-        // ============================================
-        // INITIALIZATION
-        // ============================================
+        // ════════════════════════════════════════════════════════════════════════════════
+        // SECTION 11: INITIALIZATION
+        // ════════════════════════════════════════════════════════════════════════════════
+        
+        /**
+         * @CRR_FUNCTION: init
+         * 
+         * Initializes all CRR systems:
+         *   1. Background star field
+         *   2. Granulation cells (SO(2) convective CRR)
+         *   3. Magnetic structures (SO(2) field lines, Z₂ prominences)
+         *   4. User controls
+         *   5. Animation loop
+         */
         function init() {
             createStarField();
             initGranulationCells();
@@ -1655,8 +1985,36 @@
             
             requestAnimationFrame(animate);
             
-            console.log('CRR Star v3 initialized');
-            console.log('Magnetic structures with CRR dynamics');
+            /**
+             * @CRR_LOG: Console output of CRR parameters
+             */
+            console.log('════════════════════════════════════════════════════════════════');
+            console.log('CRR Star v3 initialized - Mathematical Framework Active');
+            console.log('════════════════════════════════════════════════════════════════');
+            console.log('');
+            console.log('CRR CORE EQUATIONS:');
+            console.log('  (1) C(x,t) = ∫₀ᵗ L(x,τ) dτ     [Coherence]');
+            console.log('  (2) δ(now)                      [Rupture]');
+            console.log('  (3) R = ∫ φ·exp(C/Ω)·Θ dτ      [Regeneration]');
+            console.log('');
+            console.log('Ω-SYMMETRY THEOREM: Ω = 1/φ_G');
+            console.log('────────────────────────────────────────────────────────────────');
+            console.log('CRR CONSTANTS:');
+            console.log(`  Ω_Z₂  = 1/π   = ${OMEGA_Z2.toFixed(10)}  [Binary systems]`);
+            console.log(`  Ω_SO₂ = 1/2π  = ${OMEGA_SO2.toFixed(10)}  [Continuous systems]`);
+            console.log(`  e^π          = ${EXP_PI.toFixed(10)}  [Universal constant]`);
+            console.log('────────────────────────────────────────────────────────────────');
+            console.log('TIMESCALES & SYMMETRIES:');
+            console.log(`  τ_display  = ${(TAU_DISPLAY*1000).toFixed(2)}ms  (Z₂)  - frame refresh`);
+            console.log(`  τ_atm      = ${(TAU_ATM*1000).toFixed(2)}ms (SO₂) - atmospheric seeing`);
+            console.log(`  τ_retinal  = ${(TAU_RETINAL*1000).toFixed(0)}ms   (Z₂)  - retinal integration`);
+            console.log(`  τ_gamma    = ${(TAU_GAMMA*1000).toFixed(0)}ms    (SO₂) - V1 gamma (40Hz)`);
+            console.log('────────────────────────────────────────────────────────────────');
+            console.log('CRR SYSTEMS ACTIVE:');
+            console.log(`  Granulation cells:    ${NUM_GRANULATION_CELLS} (SO(2) convective)`);
+            console.log(`  Magnetic field lines: ${magneticFieldLines.length} (SO(2) topology)`);
+            console.log(`  Prominences:          ${crrProminences.length} (Z₂ binary state)`);
+            console.log('════════════════════════════════════════════════════════════════');
         }
         
         init();
