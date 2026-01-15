@@ -97,11 +97,480 @@
         <button class="ctrl-btn" id="infoBtn">ℹ Info</button>
         <button class="ctrl-btn" id="physicsBtn">⚛ Physics</button>
         <button class="ctrl-btn active" id="pureBtn">💧 Pure</button>
+        <button class="ctrl-btn" id="soundBtn">🔊 Sound</button>
     </div>
     
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
+        // =====================================================
+        // WATER SOUNDSCAPE ENGINE
+        // =====================================================
+        
+        class WaterSoundscape {
+            constructor() {
+                this.ctx = null;
+                this.initialized = false;
+                this.enabled = false;
+                this.masterGain = null;
+            }
+            
+            async init() {
+                if (this.initialized) return;
+                
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Master output with compression for smooth dynamics
+                this.compressor = this.ctx.createDynamicsCompressor();
+                this.compressor.threshold.value = -24;
+                this.compressor.knee.value = 30;
+                this.compressor.ratio.value = 12;
+                this.compressor.attack.value = 0.003;
+                this.compressor.release.value = 0.25;
+                this.compressor.connect(this.ctx.destination);
+                
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0;
+                this.masterGain.connect(this.compressor);
+                
+                // === MOLECULAR LAYER: High crystalline shimmer ===
+                // Represents H₂O bond vibrations (O-H stretch ~3400 cm⁻¹)
+                this.molecularOsc1 = this.ctx.createOscillator();
+                this.molecularOsc1.type = 'sine';
+                this.molecularOsc1.frequency.value = 2200;
+                
+                this.molecularOsc2 = this.ctx.createOscillator();
+                this.molecularOsc2.type = 'sine';
+                this.molecularOsc2.frequency.value = 2450;
+                
+                this.molecularOsc3 = this.ctx.createOscillator();
+                this.molecularOsc3.type = 'sine';
+                this.molecularOsc3.frequency.value = 2680;
+                
+                // Shimmer LFO
+                this.molecularLFO = this.ctx.createOscillator();
+                this.molecularLFO.type = 'sine';
+                this.molecularLFO.frequency.value = 6;
+                this.molecularLFOGain = this.ctx.createGain();
+                this.molecularLFOGain.gain.value = 60;
+                this.molecularLFO.connect(this.molecularLFOGain);
+                this.molecularLFOGain.connect(this.molecularOsc1.frequency);
+                this.molecularLFOGain.connect(this.molecularOsc2.frequency);
+                
+                this.molecularFilter = this.ctx.createBiquadFilter();
+                this.molecularFilter.type = 'bandpass';
+                this.molecularFilter.frequency.value = 2400;
+                this.molecularFilter.Q.value = 8;
+                
+                this.molecularGain = this.ctx.createGain();
+                this.molecularGain.gain.value = 0;
+                
+                this.molecularOsc1.connect(this.molecularFilter);
+                this.molecularOsc2.connect(this.molecularFilter);
+                this.molecularOsc3.connect(this.molecularFilter);
+                this.molecularFilter.connect(this.molecularGain);
+                this.molecularGain.connect(this.masterGain);
+                
+                this.molecularOsc1.start();
+                this.molecularOsc2.start();
+                this.molecularOsc3.start();
+                this.molecularLFO.start();
+                
+                // === CLUSTER LAYER: Mid-range liquid resonance ===
+                // H-bond network collective modes
+                this.clusterOsc1 = this.ctx.createOscillator();
+                this.clusterOsc1.type = 'triangle';
+                this.clusterOsc1.frequency.value = 380;
+                
+                this.clusterOsc2 = this.ctx.createOscillator();
+                this.clusterOsc2.type = 'triangle';
+                this.clusterOsc2.frequency.value = 480;
+                
+                this.clusterOsc3 = this.ctx.createOscillator();
+                this.clusterOsc3.type = 'sine';
+                this.clusterOsc3.frequency.value = 285;
+                
+                this.clusterFilter = this.ctx.createBiquadFilter();
+                this.clusterFilter.type = 'lowpass';
+                this.clusterFilter.frequency.value = 600;
+                this.clusterFilter.Q.value = 2;
+                
+                this.clusterGain = this.ctx.createGain();
+                this.clusterGain.gain.value = 0;
+                
+                this.clusterOsc1.connect(this.clusterFilter);
+                this.clusterOsc2.connect(this.clusterFilter);
+                this.clusterOsc3.connect(this.clusterFilter);
+                this.clusterFilter.connect(this.clusterGain);
+                this.clusterGain.connect(this.masterGain);
+                
+                this.clusterOsc1.start();
+                this.clusterOsc2.start();
+                this.clusterOsc3.start();
+                
+                // === SURFACE LAYER: Deep droplet resonance ===
+                // Capillary wave modes
+                this.surfaceOsc1 = this.ctx.createOscillator();
+                this.surfaceOsc1.type = 'sine';
+                this.surfaceOsc1.frequency.value = 65;
+                
+                this.surfaceOsc2 = this.ctx.createOscillator();
+                this.surfaceOsc2.type = 'sine';
+                this.surfaceOsc2.frequency.value = 98;
+                
+                this.surfaceOsc3 = this.ctx.createOscillator();
+                this.surfaceOsc3.type = 'sine';
+                this.surfaceOsc3.frequency.value = 130;
+                
+                this.surfaceGain = this.ctx.createGain();
+                this.surfaceGain.gain.value = 0;
+                
+                this.surfaceOsc1.connect(this.surfaceGain);
+                this.surfaceOsc2.connect(this.surfaceGain);
+                this.surfaceOsc3.connect(this.surfaceGain);
+                this.surfaceGain.connect(this.masterGain);
+                
+                this.surfaceOsc1.start();
+                this.surfaceOsc2.start();
+                this.surfaceOsc3.start();
+                
+                // === FLOW LAYER: Whooshy convection ===
+                this.flowNoise = this.createFilteredNoise('pink');
+                this.flowFilter = this.ctx.createBiquadFilter();
+                this.flowFilter.type = 'bandpass';
+                this.flowFilter.frequency.value = 800;
+                this.flowFilter.Q.value = 0.8;
+                
+                this.flowGain = this.ctx.createGain();
+                this.flowGain.gain.value = 0;
+                
+                this.flowNoise.connect(this.flowFilter);
+                this.flowFilter.connect(this.flowGain);
+                this.flowGain.connect(this.masterGain);
+                
+                // === AMBIENT WATER TEXTURE ===
+                this.ambientNoise = this.createFilteredNoise('brown');
+                this.ambientFilter = this.ctx.createBiquadFilter();
+                this.ambientFilter.type = 'lowpass';
+                this.ambientFilter.frequency.value = 300;
+                this.ambientFilter.Q.value = 1;
+                
+                this.ambientGain = this.ctx.createGain();
+                this.ambientGain.gain.value = 0;
+                
+                this.ambientNoise.connect(this.ambientFilter);
+                this.ambientFilter.connect(this.ambientGain);
+                this.ambientGain.connect(this.masterGain);
+                
+                // === COHERENCE TONE: Rising tension before rupture ===
+                this.coherenceOsc = this.ctx.createOscillator();
+                this.coherenceOsc.type = 'sine';
+                this.coherenceOsc.frequency.value = 180;
+                
+                this.coherenceFilter = this.ctx.createBiquadFilter();
+                this.coherenceFilter.type = 'bandpass';
+                this.coherenceFilter.frequency.value = 180;
+                this.coherenceFilter.Q.value = 15;
+                
+                this.coherenceGain = this.ctx.createGain();
+                this.coherenceGain.gain.value = 0;
+                
+                this.coherenceOsc.connect(this.coherenceFilter);
+                this.coherenceFilter.connect(this.coherenceGain);
+                this.coherenceGain.connect(this.masterGain);
+                this.coherenceOsc.start();
+                
+                this.initialized = true;
+                console.log('💧 Water soundscape initialized');
+            }
+            
+            createFilteredNoise(type) {
+                const bufferSize = 2 * this.ctx.sampleRate;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = buffer.getChannelData(0);
+                
+                if (type === 'pink') {
+                    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        b0 = 0.99886 * b0 + white * 0.0555179;
+                        b1 = 0.99332 * b1 + white * 0.0750759;
+                        b2 = 0.96900 * b2 + white * 0.1538520;
+                        b3 = 0.86650 * b3 + white * 0.3104856;
+                        b4 = 0.55000 * b4 + white * 0.5329522;
+                        b5 = -0.7616 * b5 - white * 0.0168980;
+                        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                        b6 = white * 0.115926;
+                    }
+                } else if (type === 'brown') {
+                    let lastOut = 0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        output[i] = (lastOut + 0.02 * white) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5;
+                    }
+                }
+                
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = true;
+                noise.start();
+                return noise;
+            }
+            
+            update(crrState, flowIntensity) {
+                if (!this.initialized || !this.enabled) return;
+                
+                const t = this.ctx.currentTime;
+                const ramp = 0.1;
+                
+                // Molecular layer - responds to molecular CRR
+                const molRatio = crrState.molecular.C / crrState.molecular.omega;
+                const molVol = 0.015 + molRatio * 0.025;
+                const molFreq = 2200 + molRatio * 400;
+                this.molecularGain.gain.linearRampToValueAtTime(molVol, t + ramp);
+                this.molecularFilter.frequency.linearRampToValueAtTime(molFreq, t + ramp);
+                this.molecularLFO.frequency.linearRampToValueAtTime(4 + molRatio * 8, t + ramp);
+                
+                // Cluster layer - responds to cluster CRR
+                const clustRatio = crrState.cluster.C / crrState.cluster.omega;
+                const clustVol = 0.02 + clustRatio * 0.03;
+                const clustFreq = 320 + clustRatio * 150;
+                this.clusterGain.gain.linearRampToValueAtTime(clustVol, t + ramp);
+                this.clusterOsc1.frequency.linearRampToValueAtTime(clustFreq, t + ramp);
+                this.clusterOsc2.frequency.linearRampToValueAtTime(clustFreq * 1.26, t + ramp);
+                this.clusterOsc3.frequency.linearRampToValueAtTime(clustFreq * 0.75, t + ramp);
+                
+                // Surface layer - responds to surface CRR
+                const surfRatio = crrState.surface.C / crrState.surface.omega;
+                const surfVol = 0.03 + surfRatio * 0.04;
+                const surfFreq = 55 + surfRatio * 30;
+                this.surfaceGain.gain.linearRampToValueAtTime(surfVol, t + ramp);
+                this.surfaceOsc1.frequency.linearRampToValueAtTime(surfFreq, t + ramp);
+                this.surfaceOsc2.frequency.linearRampToValueAtTime(surfFreq * 1.5, t + ramp);
+                this.surfaceOsc3.frequency.linearRampToValueAtTime(surfFreq * 2, t + ramp);
+                
+                // Flow layer
+                const flowVol = 0.008 + flowIntensity * 0.012;
+                this.flowGain.gain.linearRampToValueAtTime(flowVol, t + ramp);
+                this.flowFilter.frequency.linearRampToValueAtTime(600 + flowIntensity * 400, t + ramp);
+                
+                // Ambient texture
+                this.ambientGain.gain.linearRampToValueAtTime(0.012, t + ramp);
+                
+                // Coherence tone - average of all scales
+                const avgRatio = (molRatio + clustRatio + surfRatio) / 3;
+                const cohVol = avgRatio * 0.025;
+                const cohFreq = 150 + avgRatio * 180;
+                this.coherenceGain.gain.linearRampToValueAtTime(cohVol, t + ramp);
+                this.coherenceOsc.frequency.linearRampToValueAtTime(cohFreq, t + ramp);
+                this.coherenceFilter.frequency.linearRampToValueAtTime(cohFreq, t + ramp);
+            }
+            
+            triggerPhotonRupture() {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                // Tiny crystalline tick
+                const tick = this.ctx.createOscillator();
+                tick.type = 'sine';
+                tick.frequency.value = 4000 + Math.random() * 2000;
+                tick.frequency.exponentialRampToValueAtTime(2000, t + 0.05);
+                
+                const tickGain = this.ctx.createGain();
+                tickGain.gain.value = 0.03;
+                tickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+                
+                tick.connect(tickGain);
+                tickGain.connect(this.masterGain);
+                tick.start();
+                tick.stop(t + 0.05);
+            }
+            
+            triggerMolecularRupture() {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                // High-pitched crystalline ping
+                const ping = this.ctx.createOscillator();
+                ping.type = 'sine';
+                ping.frequency.value = 2800 + Math.random() * 800;
+                ping.frequency.exponentialRampToValueAtTime(1400, t + 0.18);
+                
+                const pingGain = this.ctx.createGain();
+                pingGain.gain.value = 0.06;
+                pingGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                
+                // Add slight reverb feel with delay
+                const delay = this.ctx.createDelay();
+                delay.delayTime.value = 0.03;
+                const delayGain = this.ctx.createGain();
+                delayGain.gain.value = 0.3;
+                
+                ping.connect(pingGain);
+                ping.connect(delay);
+                delay.connect(delayGain);
+                delayGain.connect(pingGain);
+                pingGain.connect(this.masterGain);
+                ping.start();
+                ping.stop(t + 0.2);
+            }
+            
+            triggerClusterRupture() {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                // Liquid "glub" - H-bond network reorganization
+                const glub = this.ctx.createOscillator();
+                glub.type = 'sine';
+                glub.frequency.value = 500 + Math.random() * 150;
+                glub.frequency.exponentialRampToValueAtTime(180, t + 0.22);
+                
+                const glubGain = this.ctx.createGain();
+                glubGain.gain.value = 0.08;
+                glubGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                
+                // Second harmonic
+                const glub2 = this.ctx.createOscillator();
+                glub2.type = 'triangle';
+                glub2.frequency.value = 350;
+                glub2.frequency.exponentialRampToValueAtTime(120, t + 0.2);
+                
+                const glub2Gain = this.ctx.createGain();
+                glub2Gain.gain.value = 0.04;
+                glub2Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                
+                glub.connect(glubGain);
+                glub2.connect(glub2Gain);
+                glubGain.connect(this.masterGain);
+                glub2Gain.connect(this.masterGain);
+                glub.start();
+                glub2.start();
+                glub.stop(t + 0.25);
+                glub2.stop(t + 0.2);
+            }
+            
+            triggerSurfaceRupture() {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                // Deep resonant "bloop" - capillary wave excitation
+                const bloop = this.ctx.createOscillator();
+                bloop.type = 'sine';
+                bloop.frequency.value = 140;
+                bloop.frequency.exponentialRampToValueAtTime(50, t + 0.4);
+                
+                const bloopGain = this.ctx.createGain();
+                bloopGain.gain.value = 0.12;
+                bloopGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                
+                // Harmonics
+                const bloop2 = this.ctx.createOscillator();
+                bloop2.type = 'sine';
+                bloop2.frequency.value = 280;
+                bloop2.frequency.exponentialRampToValueAtTime(100, t + 0.35);
+                
+                const bloop2Gain = this.ctx.createGain();
+                bloop2Gain.gain.value = 0.05;
+                bloop2Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                
+                const bloop3 = this.ctx.createOscillator();
+                bloop3.type = 'sine';
+                bloop3.frequency.value = 420;
+                bloop3.frequency.exponentialRampToValueAtTime(150, t + 0.25);
+                
+                const bloop3Gain = this.ctx.createGain();
+                bloop3Gain.gain.value = 0.025;
+                bloop3Gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                
+                bloop.connect(bloopGain);
+                bloop2.connect(bloop2Gain);
+                bloop3.connect(bloop3Gain);
+                bloopGain.connect(this.masterGain);
+                bloop2Gain.connect(this.masterGain);
+                bloop3Gain.connect(this.masterGain);
+                
+                bloop.start();
+                bloop2.start();
+                bloop3.start();
+                bloop.stop(t + 0.5);
+                bloop2.stop(t + 0.35);
+                bloop3.stop(t + 0.25);
+                
+                // Splash texture
+                this.triggerSplash(0.06);
+            }
+            
+            triggerSplash(volume) {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                const bufferSize = this.ctx.sampleRate * 0.3;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    const env = Math.exp(-i / (this.ctx.sampleRate * 0.04));
+                    output[i] = (Math.random() * 2 - 1) * env;
+                }
+                
+                const splash = this.ctx.createBufferSource();
+                splash.buffer = buffer;
+                
+                const splashFilter = this.ctx.createBiquadFilter();
+                splashFilter.type = 'bandpass';
+                splashFilter.frequency.value = 2500;
+                splashFilter.Q.value = 1.5;
+                
+                const splashGain = this.ctx.createGain();
+                splashGain.gain.value = volume;
+                
+                splash.connect(splashFilter);
+                splashFilter.connect(splashGain);
+                splashGain.connect(this.masterGain);
+                splash.start();
+            }
+            
+            triggerNeuralRupture() {
+                if (!this.initialized || !this.enabled) return;
+                const t = this.ctx.currentTime;
+                
+                // Subtle "recognition" chime - your V1 firing
+                const chime = this.ctx.createOscillator();
+                chime.type = 'sine';
+                chime.frequency.value = 800;
+                
+                const chimeGain = this.ctx.createGain();
+                chimeGain.gain.value = 0.03;
+                chimeGain.gain.setValueAtTime(0.03, t);
+                chimeGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                
+                chime.connect(chimeGain);
+                chimeGain.connect(this.masterGain);
+                chime.start();
+                chime.stop(t + 0.3);
+            }
+            
+            setEnabled(enabled) {
+                this.enabled = enabled;
+                if (this.masterGain) {
+                    const t = this.ctx.currentTime;
+                    this.masterGain.gain.linearRampToValueAtTime(
+                        enabled ? 0.5 : 0,
+                        t + 0.3
+                    );
+                }
+            }
+            
+            toggle() {
+                this.setEnabled(!this.enabled);
+                return this.enabled;
+            }
+        }
+        
+        const soundscape = new WaterSoundscape();
         
         // =====================================================
         // PHYSICAL CONSTANTS
@@ -294,9 +763,21 @@
             document.getElementById('pureBtn').classList.add('active');
         });
         
+        document.getElementById('soundBtn').addEventListener('click', async () => {
+            if (!soundscape.initialized) {
+                await soundscape.init();
+            }
+            const isOn = soundscape.toggle();
+            const btn = document.getElementById('soundBtn');
+            btn.textContent = isOn ? '🔊 Sound On' : '🔇 Sound Off';
+            btn.classList.toggle('active', isOn);
+        });
+        
         // =====================================================
         // CRR DYNAMICS
         // =====================================================
+        
+        let flowIntensity = 0;
         
         function updateCRR(dt) {
             // Photon scale
@@ -306,6 +787,7 @@
                 CRR.photon.C = 0;
                 CRR.photon.rupture = 1;
                 CRR.molecular.L += 0.15;
+                soundscape.triggerPhotonRupture();
             }
             CRR.photon.rupture *= 0.85;
             
@@ -317,6 +799,7 @@
                 CRR.molecular.C = 0;
                 CRR.molecular.rupture = 1;
                 CRR.cluster.L += 0.25;
+                soundscape.triggerMolecularRupture();
                 
                 // Excite some molecules
                 for (let i = 0; i < 5; i++) {
@@ -335,12 +818,16 @@
                 CRR.cluster.C = 0;
                 CRR.cluster.rupture = 1;
                 CRR.surface.L += 0.35;
+                soundscape.triggerClusterRupture();
                 
                 // Reorganize clusters
                 const cluster = clusters[Math.floor(Math.random() * clusters.length)];
                 cluster.coherence = 0;
                 cluster.vx += (Math.random() - 0.5) * 0.005;
                 cluster.vy += (Math.random() - 0.5) * 0.005;
+                
+                // Boost flow
+                flowIntensity = Math.min(1, flowIntensity + 0.3);
             }
             CRR.cluster.rupture *= 0.92;
             
@@ -353,6 +840,7 @@
                 CRR.surface.rupture = 1;
                 CRR.neural.L += 0.5;
                 droplet.wobbleAmp = Math.min(0.008, droplet.wobbleAmp + 0.003);
+                soundscape.triggerSurfaceRupture();
             }
             CRR.surface.rupture *= 0.95;
             
@@ -363,8 +851,15 @@
             if (CRR.neural.C >= CRR.neural.omega) {
                 CRR.neural.C = 0;
                 CRR.neural.rupture = 1;
+                soundscape.triggerNeuralRupture();
             }
             CRR.neural.rupture *= 0.97;
+            
+            // Decay flow intensity
+            flowIntensity *= 0.995;
+            
+            // Update continuous soundscape
+            soundscape.update(CRR, flowIntensity);
         }
         
         // =====================================================
