@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Brain as Scientist — Neural Realism</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --void: #010208;
+            --deep: #060812;
+            --surface: rgba(6,8,18,0.95);
+            
+            /* 14-level hierarchy: System 1 (cyan) → System 2 (gold) */
+            --l0: #00ffee; --l1: #00e8ff; --l2: #00d0ff; --l3: #00b8ff;
+            --l4: #00a0ff; --l5: #0088ff; --l6: #0070ff; --l7: #4060ff;
+            --l8: #8050ff; --l9: #a040ff; --l10: #c030e0; --l11: #e020a0;
+            --l12: #ff1060; --l13: #ff6020;
+            
+            --text: rgba(255,255,255,0.92);
+            --dim: rgba(255,255,255,0.5);
+            --faint: rgba(255,255,255,0.12);
+        }
+        
+        body {
+            background: var(--void);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+        }
+        
+        #brainCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        
+        /* Title */
+        .title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .title h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 38px;
+            font-weight: 300;
+            background: linear-gradient(90deg, var(--l0), var(--l7), var(--l13));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+        
+        .title .sub {
+            font-size: 9px;
+            color: var(--dim);
+            letter-spacing: 4px;
+            margin-top: 6px;
+        }
+        
+        /* Left Panel - Problem Space */
+        .panel-problem {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            width: 280px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,238,0.08);
+            border-radius: 3px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            padding: 14px;
+        }
+        
+        .panel-header {
+            font-size: 9px;
+            color: var(--l0);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .problem-view {
+            width: 100%;
+            aspect-ratio: 1.3;
+            background: rgba(0,0,0,0.4);
+            border-radius: 2px;
+            margin-bottom: 10px;
+        }
+        
+        #problemCanvas { width: 100%; height: 100%; }
+        
+        .challenge-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .info-item {
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 2px;
+        }
+        
+        .info-item .label {
+            font-size: 8px;
+            color: var(--faint);
+            letter-spacing: 1px;
+        }
+        
+        .info-item .value {
+            font-size: 13px;
+            margin-top: 3px;
+        }
+        
+        .challenge-desc {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 12px;
+            font-style: italic;
+            color: var(--dim);
+            line-height: 1.5;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-left: 2px solid var(--l0);
+            border-radius: 2px;
+        }
+        
+        /* Right Panel - Hierarchy */
+        .panel-hierarchy {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 220px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,238,0.08);
+            border-radius: 3px;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            padding: 14px;
+        }
+        
+        .h-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 0;
+            transition: all 0.2s;
+        }
+        
+        .h-row.active {
+            background: rgba(0,255,238,0.08);
+            margin: 0 -6px;
+            padding: 3px 6px;
+            border-radius: 2px;
+        }
+        
+        .h-row.locked { opacity: 0.25; }
+        
+        .h-num { font-size: 8px; color: var(--faint); width: 14px; }
+        .h-dot { width: 6px; height: 6px; border-radius: 50%; transition: all 0.3s; }
+        .h-row.active .h-dot { box-shadow: 0 0 10px currentColor; transform: scale(1.4); }
+        .h-name { font-size: 9px; color: var(--dim); width: 36px; }
+        .h-row.active .h-name { color: var(--text); }
+        .h-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+        .h-fill { height: 100%; border-radius: 2px; transition: width 0.1s; }
+        .h-omega { font-size: 7px; color: var(--faint); width: 28px; text-align: right; }
+        
+        /* Bottom Panel - CRR & Neuromodulators */
+        .panel-bottom {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .panel-crr, .panel-neuro {
+            background: var(--surface);
+            border: 1px solid rgba(0,255,238,0.08);
+            border-radius: 3px;
+            backdrop-filter: blur(20px);
+            padding: 12px 16px;
+        }
+        
+        .crr-metrics {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .crr-item { text-align: center; }
+        
+        .crr-ring {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            margin-bottom: 4px;
+        }
+        
+        .crr-ring svg { transform: rotate(-90deg); }
+        .crr-ring .val {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+        }
+        
+        .crr-label { font-size: 8px; color: var(--faint); letter-spacing: 1px; }
+        
+        .nats-display {
+            text-align: center;
+            padding: 8px 16px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            margin-left: 10px;
+        }
+        
+        .nats-value {
+            font-size: 22px;
+            font-weight: 300;
+            background: linear-gradient(90deg, var(--l0), var(--l13));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nats-sub { font-size: 8px; color: var(--faint); margin-top: 2px; }
+        
+        .nats-bar {
+            width: 80px;
+            height: 3px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        
+        .nats-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--l0), var(--l7), var(--l13));
+            border-radius: 2px;
+            transition: width 0.2s;
+        }
+        
+        .neuro-bars { display: flex; gap: 12px; }
+        
+        .neuro-item { text-align: center; }
+        
+        .neuro-bar {
+            width: 8px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            margin: 0 auto 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .neuro-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            border-radius: 4px;
+            transition: height 0.2s;
+        }
+        
+        .neuro-label { font-size: 7px; color: var(--faint); }
+        
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,238,0.12);
+            color: var(--dim);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover { border-color: var(--l0); color: var(--text); }
+        .btn.active { background: rgba(0,255,238,0.1); color: var(--l0); }
+        
+        /* Karl */
+        .karl {
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            z-index: 101;
+        }
+        
+        .karl-bubble {
+            max-width: 260px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,238,0.15);
+            border-radius: 3px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s;
+        }
+        
+        .karl-bubble.show { opacity: 1; transform: translateY(0); }
+        
+        .karl-name { font-size: 8px; color: var(--l0); letter-spacing: 2px; margin-bottom: 6px; }
+        
+        .karl-quote {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            font-style: italic;
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .karl-quote em { font-style: normal; color: var(--l0); }
+        
+        /* Stage dots */
+        .stages {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 100;
+        }
+        
+        .stage-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--faint);
+            transition: all 0.3s;
+        }
+        
+        .stage-dot.done { background: var(--l0); }
+        .stage-dot.current { background: var(--l13); box-shadow: 0 0 10px var(--l13); }
+        
+        /* Info */
+        .info-bar {
+            position: fixed;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            color: var(--faint);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="brainCanvas"></canvas>
+    
+    <div class="title">
+        <h1>The Brain as Scientist</h1>
+        <div class="sub">14-LEVEL CORTICAL HIERARCHY • REALISTIC NEURAL DYNAMICS • CRR FRAMEWORK</div>
+    </div>
+    
+    <div class="panel-problem">
+        <div class="panel-header">
+            <span>PROBLEM SPACE</span>
+            <span id="challengeNum">1/7</span>
+        </div>
+        <div class="problem-view">
+            <canvas id="problemCanvas"></canvas>
+        </div>
+        <div class="challenge-info">
+            <div class="info-item">
+                <div class="label">CHALLENGE</div>
+                <div class="value" id="challengeType" style="color:var(--l0)">Detection</div>
+            </div>
+            <div class="info-item">
+                <div class="label">REQUIRES</div>
+                <div class="value" id="reqLevel">LGN-V2</div>
+            </div>
+            <div class="info-item">
+                <div class="label">SCORE</div>
+                <div class="value" id="scoreVal">0/8</div>
+            </div>
+            <div class="info-item">
+                <div class="label">TIME</div>
+                <div class="value" id="timeVal">0:00</div>
+            </div>
+        </div>
+        <div class="challenge-desc" id="challengeDesc">
+            Detect and respond to visual stimuli through thalamo-cortical processing.
+        </div>
+    </div>
+    
+    <div class="panel-hierarchy">
+        <div class="panel-header">CORTICAL HIERARCHY</div>
+        <div id="hList"></div>
+    </div>
+    
+    <div class="panel-bottom">
+        <div class="panel-crr">
+            <div class="panel-header" style="margin-bottom:8px">CRR DYNAMICS</div>
+            <div class="crr-metrics">
+                <div class="crr-item">
+                    <div class="crr-ring">
+                        <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                            <circle id="ringC" cx="25" cy="25" r="21" fill="none" stroke="var(--l0)" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" stroke-linecap="round"/>
+                        </svg>
+                        <div class="val" id="valC">0.00</div>
+                    </div>
+                    <div class="crr-label">C(t)</div>
+                </div>
+                <div class="crr-item">
+                    <div class="crr-ring">
+                        <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                            <circle id="ringExp" cx="25" cy="25" r="21" fill="none" stroke="var(--l13)" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" stroke-linecap="round"/>
+                        </svg>
+                        <div class="val" id="valExp">1.0</div>
+                    </div>
+                    <div class="crr-label">exp(C/Ω)</div>
+                </div>
+                <div class="nats-display">
+                    <div class="nats-value" id="natsVal">0.00</div>
+                    <div class="nats-sub">NATS / 16.03</div>
+                    <div class="nats-bar"><div class="nats-fill" id="natsFill"></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel-neuro">
+            <div class="panel-header" style="margin-bottom:8px">NEUROMODULATION</div>
+            <div class="neuro-bars">
+                <div class="neuro-item">
+                    <div class="neuro-bar"><div class="neuro-fill" id="nDA" style="background:var(--l13)"></div></div>
+                    <div class="neuro-label">DA</div>
+                </div>
+                <div class="neuro-item">
+                    <div class="neuro-bar"><div class="neuro-fill" id="n5HT" style="background:var(--l8)"></div></div>
+                    <div class="neuro-label">5-HT</div>
+                </div>
+                <div class="neuro-item">
+                    <div class="neuro-bar"><div class="neuro-fill" id="nNE" style="background:var(--l0)"></div></div>
+                    <div class="neuro-label">NE</div>
+                </div>
+                <div class="neuro-item">
+                    <div class="neuro-bar"><div class="neuro-fill" id="nACh" style="background:var(--l4)"></div></div>
+                    <div class="neuro-label">ACh</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="karl">
+        <div class="karl-bubble" id="karlBubble">
+            <div class="karl-name">PROF. KARL FRISTON</div>
+            <div class="karl-quote" id="karlQuote">The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments on the world...</div>
+        </div>
+    </div>
+    
+    <div class="stages" id="stages"></div>
+    
+    <div class="controls">
+        <button class="btn" id="btnPause">⏸ PAUSE</button>
+        <button class="btn" id="btnReset">↺ RESET</button>
+        <button class="btn" id="btnSpeed">1×</button>
+    </div>
+    
+    <div class="info-bar">Felleman & Van Essen (1991) • Murray et al. (2014) • CRR Framework (Sabine, 2025)</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// THE BRAIN AS SCIENTIST — Super Enhanced Version
+// ═══════════════════════════════════════════════════════════════════════════
+// Combines:
+// - Realistic neural morphology (dendrites, axons, action potentials)
+// - 14-level Felleman & Van Essen cortical hierarchy  
+// - Murray et al. intrinsic timescales
+// - CRR dynamics with level-dependent Ω
+// - Challenge-based progression requiring specific cortical levels
+// - Neuromodulator dynamics (DA, 5-HT, NE, ACh)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('brainCanvas');
+const ctx = canvas.getContext('2d');
+const probCanvas = document.getElementById('problemCanvas');
+const probCtx = probCanvas.getContext('2d');
+
+let W, H, PW, PH;
+
+function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    
+    const pr = probCanvas.parentElement.getBoundingClientRect();
+    PW = pr.width;
+    PH = pr.height;
+    probCanvas.width = PW * dpr;
+    probCanvas.height = PH * dpr;
+    probCtx.scale(dpr, dpr);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONSTANTS & DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const LEVEL_DATA = [
+    { name: 'LGN',  color: '#00ffee', omega: 0.100, tau: 20 },
+    { name: 'V1',   color: '#00e8ff', omega: 0.113, tau: 50 },
+    { name: 'V2',   color: '#00d0ff', omega: 0.128, tau: 65 },
+    { name: 'V3',   color: '#00b8ff', omega: 0.145, tau: 85 },
+    { name: 'MT',   color: '#00a0ff', omega: 0.164, tau: 110 },
+    { name: 'V4',   color: '#0088ff', omega: 0.186, tau: 140 },
+    { name: 'IT',   color: '#4060ff', omega: 0.211, tau: 175 },
+    { name: 'AIT',  color: '#6050ff', omega: 0.239, tau: 210 },
+    { name: 'STP',  color: '#8040ff', omega: 0.270, tau: 250 },
+    { name: 'TPO',  color: '#a030ff', omega: 0.306, tau: 290 },
+    { name: 'PFC',  color: '#c020e0', omega: 0.347, tau: 340 },
+    { name: 'FEF',  color: '#e010a0', omega: 0.393, tau: 390 },
+    { name: '46',   color: '#ff0060', omega: 0.445, tau: 450 },
+    { name: 'HC',   color: '#ff6020', omega: 0.504, tau: 500 }
+];
+
+const CHALLENGES = [
+    { name: 'Detection', desc: 'Detect flashing targets. Basic thalamo-cortical stimulus-response.', levels: [0, 3], color: '#00ffee' },
+    { name: 'Discrimination', desc: 'Distinguish BLUE from RED. V2-V3 feature extraction required.', levels: [2, 5], color: '#00d0ff' },
+    { name: 'Tracking', desc: 'Follow moving targets. MT/V4 motion processing tracks trajectories.', levels: [4, 7], color: '#00a0ff' },
+    { name: 'Pattern', desc: 'Recognize spatial configurations. IT cortex identifies arrangements.', levels: [6, 9], color: '#4060ff' },
+    { name: 'Sequence', desc: 'Visit beacons in order. STP-TPO temporal integration required.', levels: [8, 11], color: '#8040ff' },
+    { name: 'Planning', desc: 'Navigate obstacles to goal. PFC enables multi-step planning.', levels: [10, 13], color: '#c020e0' },
+    { name: 'Abstraction', desc: 'Discover hidden rules. Area 46/HC extract abstract contingencies.', levels: [12, 14], color: '#ff0060' }
+];
+
+const QUOTES = [
+    ["The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments...", "Every neuron encodes a <em>prediction</em> about the world."],
+    ["<em>Prediction error</em> drives learning—the brain minimizes surprise.", "Visual cortex extracts <em>features</em> to test hypotheses about form."],
+    ["<em>Motion processing</em> in MT predicts where things will be, not where they are.", "The hierarchy processes at <em>different timescales</em>—fast at bottom, slow at top."],
+    ["<em>Object recognition</em> emerges when IT cortex matches patterns to memory.", "Temporal cortex asks: <em>what is this thing?</em>"],
+    ["<em>Temporal integration</em> in STP holds the past to predict the future.", "Working memory is <em>sustained prediction</em>—holding futures in the present."],
+    ["<em>Planning</em> requires simulating action-outcome contingencies.", "Prefrontal cortex is the <em>conductor</em> of the cortical orchestra."],
+    ["<em>Abstract reasoning</em>: the crown of cognition, extracting rules from patterns.", "This is the brain as scientist: <em>building theories</em>, minimizing free energy."]
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+class CRR {
+    constructor(omega) {
+        this.omega = omega;
+        this.C = 0;
+        this.C_arch = 0;
+        this.ruptures = 0;
+    }
+    
+    update(dt, input) {
+        this.C += input * dt;
+        this.C_arch += input * dt * 0.05;
+        
+        if (this.C >= this.omega) {
+            this.C = 0;
+            this.ruptures++;
+            return true;
+        }
+        return false;
+    }
+    
+    get phase() { return Math.min(1, this.C / this.omega); }
+    get expCO() { return Math.exp(Math.min(this.C_arch / this.omega, Math.PI)); }
+    get nats() { return this.C_arch * this.omega * (1 + Math.log(1 + this.ruptures) * 0.3); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DENDRITE (Realistic branching structure)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Dendrite {
+    constructor(angle, length, depth = 0) {
+        this.angle = angle;
+        this.length = length;
+        this.depth = depth;
+        this.activity = 0;
+        this.branches = [];
+        this.spines = [];
+        
+        // Recursive branching
+        if (depth < 3 && length > 10) {
+            const numBranches = depth === 0 ? 3 : 2;
+            for (let i = 0; i < numBranches; i++) {
+                const branchAngle = angle + (Math.random() - 0.5) * 1.2;
+                const branchLength = length * (0.5 + Math.random() * 0.3);
+                this.branches.push(new Dendrite(branchAngle, branchLength, depth + 1));
+            }
+        }
+        
+        // Dendritic spines
+        const numSpines = Math.floor(length / 8);
+        for (let i = 0; i < numSpines; i++) {
+            this.spines.push({
+                pos: 0.15 + Math.random() * 0.7,
+                side: Math.random() > 0.5 ? 1 : -1,
+                size: 1 + Math.random(),
+                activity: 0
+            });
+        }
+    }
+    
+    update(dt, input) {
+        this.activity += (input - this.activity) * dt * 6;
+        for (const spine of this.spines) {
+            spine.activity += (input * Math.random() - spine.activity) * dt * 8;
+        }
+        for (const branch of this.branches) {
+            branch.update(dt, this.activity * 0.8);
+        }
+    }
+    
+    draw(ctx, sx, sy, color, alpha) {
+        const ex = sx + Math.cos(this.angle) * this.length;
+        const ey = sy + Math.sin(this.angle) * this.length;
+        
+        // Shaft
+        ctx.strokeStyle = `rgba(${color}, ${(0.2 + this.activity * 0.5) * alpha})`;
+        ctx.lineWidth = Math.max(0.4, 1.5 - this.depth * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        
+        // Spines
+        for (const spine of this.spines) {
+            const px = sx + (ex - sx) * spine.pos;
+            const py = sy + (ey - sy) * spine.pos;
+            const pa = this.angle + Math.PI / 2 * spine.side;
+            const len = spine.size * 2;
+            
+            if (spine.activity > 0.2) {
+                ctx.strokeStyle = `rgba(${color}, ${spine.activity * 0.4 * alpha})`;
+                ctx.lineWidth = 0.3;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + Math.cos(pa) * len, py + Math.sin(pa) * len);
+                ctx.stroke();
+                
+                ctx.fillStyle = `rgba(255,255,255, ${spine.activity * 0.5 * alpha})`;
+                ctx.beginPath();
+                ctx.arc(px + Math.cos(pa) * len, py + Math.sin(pa) * len, spine.size * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Recurse
+        for (const branch of this.branches) {
+            branch.draw(ctx, ex, ey, color, alpha);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AXON (With myelination and action potentials)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Axon {
+    constructor(source, target) {
+        this.source = source;
+        this.target = target;
+        this.activity = 0;
+        this.pulses = [];
+        
+        // Myelin segments
+        const dist = Math.hypot(target.x - source.x, target.y - source.y);
+        this.myelin = [];
+        const numSegs = Math.floor(dist / 20);
+        for (let i = 0; i < numSegs; i++) {
+            this.myelin.push({ start: (i + 0.1) / numSegs, end: (i + 0.8) / numSegs });
+        }
+    }
+    
+    fire(strength = 1) {
+        this.pulses.push({ pos: 0, str: strength });
+    }
+    
+    update(dt) {
+        this.activity *= 0.92;
+        
+        for (let i = this.pulses.length - 1; i >= 0; i--) {
+            this.pulses[i].pos += dt * 4;
+            this.pulses[i].str *= 0.98;
+            
+            if (this.pulses[i].pos >= 1) {
+                this.activity = Math.max(this.activity, this.pulses[i].str);
+                this.target.receiveInput(this.pulses[i].str * 0.5);
+                this.pulses.splice(i, 1);
+            }
+        }
+    }
+    
+    draw(ctx, alpha = 1) {
+        const sx = this.source.x, sy = this.source.y;
+        const tx = this.target.x, ty = this.target.y;
+        const dx = tx - sx, dy = ty - sy;
+        const color = this.source.colorRGB;
+        
+        // Base axon
+        ctx.strokeStyle = `rgba(${color}, ${(0.03 + this.activity * 0.2) * alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        
+        // Myelin
+        ctx.strokeStyle = `rgba(${color}, ${(0.08 + this.activity * 0.3) * alpha})`;
+        ctx.lineWidth = 2;
+        for (const seg of this.myelin) {
+            ctx.beginPath();
+            ctx.moveTo(sx + dx * seg.start, sy + dy * seg.start);
+            ctx.lineTo(sx + dx * seg.end, sy + dy * seg.end);
+            ctx.stroke();
+        }
+        
+        // Action potentials
+        for (const p of this.pulses) {
+            const px = sx + dx * p.pos;
+            const py = sy + dy * p.pos;
+            
+            const grad = ctx.createRadialGradient(px, py, 0, px, py, 8);
+            grad.addColorStop(0, `rgba(255,255,255, ${p.str * alpha})`);
+            grad.addColorStop(0.4, `rgba(${color}, ${p.str * 0.6 * alpha})`);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(px, py, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEURON (Complete cell with morphology)
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Neuron {
+    constructor(x, y, level) {
+        this.x = x;
+        this.y = y;
+        this.level = level;
+        this.info = LEVEL_DATA[level];
+        this.color = this.info.color;
+        this.colorRGB = this.hexToRGB(this.color);
+        
+        // CRR state
+        this.crr = new CRR(this.info.omega);
+        
+        // Membrane dynamics
+        this.potential = -70;
+        this.threshold = -55;
+        this.firing = false;
+        this.refractory = 0;
+        this.lastFire = 0;
+        this.activity = 0;
+        
+        // Morphology
+        this.somaSize = 4 + level * 0.5;
+        this.dendrites = [];
+        this.axons = [];
+        
+        // Create dendrites
+        const numDend = 4 + Math.floor(level / 3);
+        for (let i = 0; i < numDend; i++) {
+            const angle = (i / numDend) * Math.PI * 2 + Math.random() * 0.3;
+            const length = 20 + Math.random() * 25 + level * 3;
+            this.dendrites.push(new Dendrite(angle, length));
+        }
+        
+        this.pulsePhase = Math.random() * Math.PI * 2;
+    }
+    
+    hexToRGB(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r},${g},${b}`;
+    }
+    
+    receiveInput(input) {
+        const gain = 1 + this.level * 0.1;
+        this.potential += input * 18 * gain;
+    }
+    
+    update(dt, externalInput = 0) {
+        this.pulsePhase += dt * 2;
+        
+        if (this.refractory > 0) {
+            this.refractory -= dt;
+            this.potential = -70;
+        } else {
+            // Leaky integration with level-dependent tau
+            const tau = 1 + this.level * 0.2;
+            const leak = (this.potential + 70) * (0.1 / tau);
+            this.potential += (externalInput * 25 - leak) * dt * 12;
+            
+            // CRR modulation
+            const crrInput = Math.abs(this.potential + 70) / 35;
+            const ruptured = this.crr.update(dt, crrInput);
+            
+            if (this.potential >= this.threshold || ruptured) {
+                this.fire();
+            }
+        }
+        
+        // Activity with level-dependent decay (Murray timescales)
+        const actDecay = 8 / (1 + this.level * 0.15);
+        this.activity += ((this.firing ? 1 : 0) + (this.potential + 70) / 50 - this.activity) * dt * actDecay;
+        this.activity = Math.max(0, Math.min(1, this.activity));
+        
+        // Update dendrites
+        for (const d of this.dendrites) {
+            d.update(dt, this.activity);
+        }
+        
+        this.firing = false;
+    }
+    
+    fire() {
+        if (this.refractory > 0) return;
+        
+        this.firing = true;
+        this.potential = 30;
+        this.refractory = 0.004;
+        this.lastFire = performance.now();
+        
+        for (const axon of this.axons) {
+            axon.fire(0.7 + Math.random() * 0.3);
+        }
+    }
+    
+    draw(ctx, alpha = 1) {
+        // Dendrites
+        for (const d of this.dendrites) {
+            d.draw(ctx, this.x, this.y, this.colorRGB, alpha);
+        }
+        
+        // Axons
+        for (const a of this.axons) {
+            a.draw(ctx, alpha);
+        }
+        
+        // Soma glow
+        const glowSize = this.somaSize * (3 + this.activity * 3);
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        glow.addColorStop(0, `rgba(${this.colorRGB}, ${(0.2 + this.activity * 0.4) * alpha})`);
+        glow.addColorStop(0.5, `rgba(${this.colorRGB}, ${(0.05 + this.activity * 0.15) * alpha})`);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Firing flash
+        const tSinceFire = performance.now() - this.lastFire;
+        if (tSinceFire < 50) {
+            ctx.fillStyle = `rgba(255,255,255, ${(1 - tSinceFire / 50) * alpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.somaSize * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Soma
+        const pulse = 0.8 + Math.sin(this.pulsePhase) * 0.2;
+        const somaGrad = ctx.createRadialGradient(
+            this.x - this.somaSize * 0.3, this.y - this.somaSize * 0.3, 0,
+            this.x, this.y, this.somaSize
+        );
+        somaGrad.addColorStop(0, `rgba(255,255,255, ${(0.5 + this.activity * 0.5) * pulse * alpha})`);
+        somaGrad.addColorStop(0.4, `rgba(${this.colorRGB}, ${0.8 * alpha})`);
+        somaGrad.addColorStop(1, `rgba(${this.colorRGB}, ${0.5 * alpha})`);
+        ctx.fillStyle = somaGrad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.somaSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Nucleus
+        ctx.fillStyle = `rgba(0,0,0, ${0.3 * alpha})`;
+        ctx.beginPath();
+        ctx.arc(this.x + 0.5, this.y + 0.5, this.somaSize * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BRAIN NETWORK
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Brain {
+    constructor() {
+        this.neurons = [];
+        this.neuronsByLevel = Array.from({ length: 14 }, () => []);
+        this.levelActivity = new Array(14).fill(0);
+        this.levelUnlocked = new Array(14).fill(false);
+        this.levelCoherence = new Array(14).fill(0);
+        this.activeLevel = 0;
+        this.peakLevel = 0;
+        this.totalNats = 0;
+        
+        // Start with first 3 levels unlocked
+        for (let i = 0; i < 3; i++) this.levelUnlocked[i] = true;
+        
+        // Neuromodulators
+        this.dopamine = 0.5;
+        this.serotonin = 0.5;
+        this.norepinephrine = 0.5;
+        this.acetylcholine = 0.5;
+        
+        this.globalCRR = new CRR(0.2);
+        
+        this.buildNetwork();
+    }
+    
+    buildNetwork() {
+        const cx = W / 2;
+        const cy = H / 2;
+        
+        // Neurons per level
+        const counts = [12, 11, 10, 9, 8, 8, 7, 6, 6, 5, 5, 4, 4, 3];
+        
+        for (let level = 0; level < 14; level++) {
+            const count = counts[level];
+            const radiusX = 70 + level * 32;
+            const radiusY = 50 + level * 22;
+            
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+                const jitter = (Math.random() - 0.5) * 20;
+                const x = cx + Math.cos(angle) * radiusX + jitter;
+                const y = cy + Math.sin(angle) * radiusY + jitter * 0.6;
+                
+                const neuron = new Neuron(x, y, level);
+                this.neurons.push(neuron);
+                this.neuronsByLevel[level].push(neuron);
+            }
+        }
+        
+        // Feedforward connections
+        for (let level = 0; level < 13; level++) {
+            const sources = this.neuronsByLevel[level];
+            const targets = this.neuronsByLevel[level + 1];
+            
+            for (const src of sources) {
+                const numConn = Math.min(targets.length, 2 + Math.floor(level / 4));
+                const shuffled = [...targets].sort(() => Math.random() - 0.5);
+                for (let c = 0; c < numConn; c++) {
+                    src.axons.push(new Axon(src, shuffled[c]));
+                }
+            }
+        }
+        
+        // Feedback connections
+        for (let level = 1; level < 14; level++) {
+            const sources = this.neuronsByLevel[level];
+            const targets = this.neuronsByLevel[level - 1];
+            
+            for (const src of sources) {
+                if (Math.random() < 0.3 + level * 0.02) {
+                    const tgt = targets[Math.floor(Math.random() * targets.length)];
+                    src.axons.push(new Axon(src, tgt));
+                }
+            }
+        }
+        
+        // Lateral connections
+        for (let level = 0; level < 14; level++) {
+            const neurons = this.neuronsByLevel[level];
+            for (const src of neurons) {
+                if (Math.random() < 0.15 + level * 0.01) {
+                    const tgt = neurons[Math.floor(Math.random() * neurons.length)];
+                    if (tgt !== src) src.axons.push(new Axon(src, tgt));
+                }
+            }
+        }
+    }
+    
+    process(dt, sensoryInput) {
+        // Update all axons first
+        for (const n of this.neurons) {
+            for (const a of n.axons) a.update(dt);
+        }
+        
+        let prevActivity = 0;
+        
+        // Process each level
+        for (let level = 0; level < 14; level++) {
+            const unlocked = this.levelUnlocked[level];
+            const neurons = this.neuronsByLevel[level];
+            
+            for (let i = 0; i < neurons.length; i++) {
+                const n = neurons[i];
+                
+                if (level === 0) {
+                    // LGN receives sensory input
+                    const inp = sensoryInput + Math.random() * 0.1;
+                    n.update(dt, unlocked ? inp : inp * 0.05);
+                } else {
+                    // Higher levels: cascade from below + spontaneous
+                    const cascade = prevActivity * 0.6 * (unlocked ? 1 : 0.05);
+                    const spont = Math.random() * 0.02;
+                    n.update(dt, cascade + spont);
+                }
+            }
+            
+            // Calculate level activity
+            const levelAct = neurons.reduce((s, n) => s + n.activity, 0) / neurons.length;
+            this.levelActivity[level] = levelAct;
+            prevActivity = unlocked ? levelAct : prevActivity * 0.5;
+            
+            // Accumulate coherence
+            if (unlocked) {
+                this.levelCoherence[level] += levelAct * dt;
+                
+                // Fire axons from active neurons
+                for (const n of neurons) {
+                    const threshold = Math.max(0.15, 0.35 - level * 0.015);
+                    if (n.activity > threshold) {
+                        for (const a of n.axons) {
+                            if (a.pulses.length < 3 && Math.random() < n.activity * 0.6) {
+                                a.fire(n.activity * 0.8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Find peak activity level
+        let bestScore = 0;
+        for (let i = 0; i < 14; i++) {
+            if (this.levelUnlocked[i]) {
+                const score = this.levelActivity[i] * (1 + i * 0.12);
+                if (score > bestScore) {
+                    bestScore = score;
+                    this.activeLevel = i;
+                }
+            }
+        }
+        
+        // Smooth peak level
+        if (this.activeLevel > this.peakLevel) {
+            this.peakLevel += (this.activeLevel - this.peakLevel) * dt * 3;
+        } else {
+            this.peakLevel += (this.activeLevel - this.peakLevel) * dt * 0.8;
+        }
+        
+        // Calculate total nats
+        this.totalNats = 0;
+        for (let i = 0; i < 14; i++) {
+            if (this.levelUnlocked[i]) {
+                const omega = LEVEL_DATA[i].omega;
+                this.totalNats += this.levelCoherence[i] * omega * 0.5;
+            }
+        }
+        
+        // Check for level unlocking
+        for (let i = 0; i < 13; i++) {
+            if (this.levelUnlocked[i] && !this.levelUnlocked[i + 1]) {
+                const threshold = 0.25 + i * 0.12;
+                if (this.levelCoherence[i] > threshold) {
+                    this.levelUnlocked[i + 1] = true;
+                    console.log(`Unlocked: ${LEVEL_DATA[i + 1].name}`);
+                }
+            }
+        }
+        
+        // Global CRR
+        const avgAct = this.neurons.reduce((s, n) => s + n.activity, 0) / this.neurons.length;
+        this.globalCRR.update(dt, avgAct);
+        
+        // Update neuromodulators
+        this.updateNeuromodulators(dt, sensoryInput);
+    }
+    
+    updateNeuromodulators(dt, input) {
+        // DA: reward/prediction error
+        const reward = input * 2;
+        this.dopamine += (reward - this.dopamine) * dt * 2;
+        
+        // 5-HT: temporal discounting
+        this.serotonin += (this.peakLevel / 14 - this.serotonin) * dt;
+        
+        // NE: arousal/precision
+        const precision = 1 / (this.globalCRR.C + 0.1);
+        this.norepinephrine += (Math.min(1, precision * 0.1) - this.norepinephrine) * dt * 3;
+        
+        // ACh: attention/learning
+        const novelty = Math.abs(input - 0.5) * 2;
+        this.acetylcholine += (novelty - this.acetylcholine) * dt * 2;
+        
+        // Clamp
+        this.dopamine = Math.max(0, Math.min(1, this.dopamine));
+        this.serotonin = Math.max(0, Math.min(1, this.serotonin));
+        this.norepinephrine = Math.max(0, Math.min(1, this.norepinephrine));
+        this.acetylcholine = Math.max(0, Math.min(1, this.acetylcholine));
+    }
+    
+    getHighestUnlocked() {
+        for (let i = 13; i >= 0; i--) {
+            if (this.levelUnlocked[i]) return i;
+        }
+        return 0;
+    }
+    
+    draw(ctx) {
+        for (let level = 0; level < 14; level++) {
+            const alpha = this.levelUnlocked[level] ? 1 : 0.1;
+            for (const n of this.neuronsByLevel[level]) {
+                n.draw(ctx, alpha);
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHALLENGE SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Challenge {
+    constructor(type) {
+        this.type = type;
+        this.info = CHALLENGES[type];
+        this.targets = [];
+        this.obstacles = [];
+        this.score = 0;
+        this.maxScore = 8;
+        this.time = 0;
+        this.seqIndex = 0;
+        this.hiddenRule = null;
+        this.generate();
+    }
+    
+    generate() {
+        this.targets = [];
+        this.obstacles = [];
+        this.score = 0;
+        this.seqIndex = 0;
+        
+        switch (this.type) {
+            case 0: this.genDetection(); break;
+            case 1: this.genDiscrimination(); break;
+            case 2: this.genTracking(); break;
+            case 3: this.genPattern(); break;
+            case 4: this.genSequence(); break;
+            case 5: this.genPlanning(); break;
+            case 6: this.genAbstraction(); break;
+        }
+    }
+    
+    genDetection() {
+        for (let i = 0; i < 8; i++) {
+            this.targets.push({
+                x: 20 + Math.random() * (PW - 40),
+                y: 20 + Math.random() * (PH - 40),
+                r: 8, type: 'detect', flash: Math.random() * Math.PI * 2, done: false
+            });
+        }
+        this.maxScore = 8;
+    }
+    
+    genDiscrimination() {
+        for (let i = 0; i < 5; i++) {
+            this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), r: 7, type: 'good', color: '#00aaff', done: false });
+        }
+        for (let i = 0; i < 3; i++) {
+            this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), r: 7, type: 'bad', color: '#ff4444', done: false });
+        }
+        this.maxScore = 5;
+    }
+    
+    genTracking() {
+        for (let i = 0; i < 5; i++) {
+            this.targets.push({
+                x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40),
+                vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50,
+                r: 7, type: 'moving', done: false
+            });
+        }
+        this.maxScore = 5;
+    }
+    
+    genPattern() {
+        const pts = [{ x: 0.2, y: 0.25 }, { x: 0.5, y: 0.15 }, { x: 0.8, y: 0.25 }, { x: 0.7, y: 0.55 }, { x: 0.3, y: 0.55 }, { x: 0.5, y: 0.8 }];
+        pts.forEach((p, i) => {
+            this.targets.push({ x: p.x * PW, y: p.y * PH, r: 9, type: 'pattern', order: i, done: false });
+        });
+        for (let i = 0; i < 3; i++) {
+            this.obstacles.push({ x: 0.3 * PW + Math.random() * 0.4 * PW, y: 0.3 * PH + Math.random() * 0.3 * PH, r: 15 });
+        }
+        this.maxScore = 6;
+    }
+    
+    genSequence() {
+        const colors = ['#ff0066', '#00ff66', '#6600ff', '#ffff00', '#00ffff'];
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
+            this.targets.push({
+                x: PW / 2 + Math.cos(angle) * 60,
+                y: PH / 2 + Math.sin(angle) * 45,
+                r: 10, type: 'seq', order: i, color: colors[i], active: i === 0, done: false
+            });
+        }
+        this.maxScore = 5;
+    }
+    
+    genPlanning() {
+        this.targets.push({ x: PW - 30, y: PH / 2, r: 12, type: 'goal', done: false });
+        for (let i = 0; i < 6; i++) {
+            this.obstacles.push({
+                x: 40 + (i % 3) * (PW - 80) / 2,
+                y: 30 + Math.floor(i / 3) * (PH - 60) + (i % 2) * 25,
+                r: 18
+            });
+        }
+        this.maxScore = 1;
+    }
+    
+    genAbstraction() {
+        this.hiddenRule = Math.random() > 0.5 ? 'x>y' : 'x<y';
+        for (let i = 0; i < 8; i++) {
+            const x = 20 + Math.random() * (PW - 40);
+            const y = 20 + Math.random() * (PH - 40);
+            const good = this.hiddenRule === 'x>y' ? x > y * (PW / PH) : x < y * (PW / PH);
+            this.targets.push({ x, y, r: 7, type: 'abstract', good, done: false });
+        }
+        this.maxScore = this.targets.filter(t => t.good).length;
+    }
+    
+    update(dt, agent, brain) {
+        this.time += dt;
+        
+        // Update moving targets
+        for (const t of this.targets) {
+            if (t.type === 'moving' && !t.done) {
+                t.x += t.vx * dt;
+                t.y += t.vy * dt;
+                if (t.x < 15 || t.x > PW - 15) t.vx *= -1;
+                if (t.y < 15 || t.y > PH - 15) t.vy *= -1;
+            }
+            if (t.type === 'detect') t.flash += dt * 3;
+        }
+        
+        // Check collisions
+        for (const t of this.targets) {
+            if (t.done) continue;
+            const dist = Math.hypot(agent.x - t.x, agent.y - t.y);
+            if (dist < agent.r + t.r) {
+                this.collect(t, brain);
+            }
+        }
+        
+        return this.getBestTarget(agent, brain);
+    }
+    
+    collect(t, brain) {
+        t.done = true;
+        
+        switch (this.type) {
+            case 0: case 2: case 3:
+                this.score++;
+                break;
+            case 1:
+                if (t.type === 'good') this.score++;
+                else this.score = Math.max(0, this.score - 1);
+                break;
+            case 4:
+                if (t.order === this.seqIndex) {
+                    this.score++;
+                    this.seqIndex++;
+                    const next = this.targets.find(x => x.order === this.seqIndex);
+                    if (next) next.active = true;
+                } else {
+                    this.seqIndex = 0;
+                    this.score = 0;
+                    this.targets.forEach(x => { x.done = false; x.active = x.order === 0; });
+                }
+                break;
+            case 5:
+                this.score++;
+                break;
+            case 6:
+                if (t.good) this.score++;
+                else this.score = Math.max(0, this.score - 2);
+                break;
+        }
+    }
+    
+    getBestTarget(agent, brain) {
+        const level = brain.getHighestUnlocked();
+        let valid = this.targets.filter(t => !t.done);
+        
+        // Filter based on brain capability
+        if (this.type === 1 && level >= 2) {
+            valid = valid.filter(t => t.type === 'good');
+        }
+        if (this.type === 4 && level >= 8) {
+            valid = valid.filter(t => t.active);
+        }
+        if (this.type === 6 && level >= 12 && this.score > 1) {
+            valid = valid.filter(t => t.good);
+        }
+        
+        // Find nearest
+        let nearest = null, nearDist = Infinity;
+        for (const t of valid) {
+            const d = Math.hypot(agent.x - t.x, agent.y - t.y);
+            if (d < nearDist) { nearDist = d; nearest = t; }
+        }
+        return nearest;
+    }
+    
+    isComplete() {
+        return this.score >= this.maxScore;
+    }
+    
+    draw(ctx) {
+        ctx.fillStyle = '#080a14';
+        ctx.fillRect(0, 0, PW, PH);
+        
+        // Grid
+        ctx.strokeStyle = 'rgba(0,255,238,0.03)';
+        for (let x = 0; x < PW; x += 15) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, PH); ctx.stroke(); }
+        for (let y = 0; y < PH; y += 15) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(PW, y); ctx.stroke(); }
+        
+        // Obstacles
+        for (const o of this.obstacles) {
+            const grad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+            grad.addColorStop(0, 'rgba(255,50,50,0.7)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Targets
+        for (const t of this.targets) {
+            if (t.done) continue;
+            
+            let color = this.info.color;
+            let alpha = 1;
+            
+            if (t.type === 'detect') alpha = 0.5 + Math.sin(t.flash) * 0.5;
+            if (t.type === 'good' || t.type === 'bad') color = t.color;
+            if (t.type === 'seq') { color = t.color; if (!t.active) alpha = 0.3; }
+            if (t.type === 'goal') color = '#ffcc00';
+            
+            // Glow
+            const glow = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r * 2);
+            glow.addColorStop(0, color + '88');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, t.r * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            
+            // Order number for pattern/sequence
+            if (t.type === 'pattern' || t.type === 'seq') {
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px IBM Plex Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.order + 1, t.x, t.y + 3);
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+class Agent {
+    constructor() {
+        this.x = PW / 2;
+        this.y = PH / 2;
+        this.vx = 0;
+        this.vy = 0;
+        this.r = 6;
+        this.trail = [];
+    }
+    
+    update(dt, target, obstacles) {
+        if (target) {
+            const dx = target.x - this.x;
+            const dy = target.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 3) {
+                const speed = 100;
+                this.vx += (dx / dist * speed - this.vx) * dt * 5;
+                this.vy += (dy / dist * speed - this.vy) * dt * 5;
+            }
+        }
+        
+        for (const o of obstacles) {
+            const dx = this.x - o.x;
+            const dy = this.y - o.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < o.r + 25) {
+                const force = 150 / (dist + 1);
+                this.vx += dx / dist * force * dt;
+                this.vy += dy / dist * force * dt;
+            }
+        }
+        
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.x = Math.max(this.r, Math.min(PW - this.r, this.x));
+        this.y = Math.max(this.r, Math.min(PH - this.r, this.y));
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        
+        this.trail.push({ x: this.x, y: this.y, age: 0 });
+        if (this.trail.length > 30) this.trail.shift();
+        this.trail.forEach(p => p.age += dt);
+    }
+    
+    draw(ctx, color) {
+        // Trail
+        for (const p of this.trail) {
+            const a = Math.max(0, 1 - p.age * 3);
+            ctx.fillStyle = `rgba(0,255,238,${a * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Glow
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 3);
+        glow.addColorStop(0, color + 'aa');
+        glow.addColorStop(0.5, color + '44');
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Body
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Highlight
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x - 1.5, this.y - 1.5, this.r * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN STATE & SIMULATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+const state = {
+    brain: null,
+    agent: null,
+    challenge: null,
+    challengeIdx: 0,
+    paused: false,
+    speed: 1,
+    time: 0,
+    quoteIdx: 0,
+    quoteCRR: new CRR(5)
+};
+
+function init() {
+    state.brain = new Brain();
+    state.agent = new Agent();
+    state.challenge = new Challenge(0);
+    state.challengeIdx = 0;
+    state.time = 0;
+    state.quoteIdx = 0;
+    
+    initUI();
+    setTimeout(() => document.getElementById('karlBubble').classList.add('show'), 1000);
+}
+
+function initUI() {
+    // Hierarchy list
+    const hList = document.getElementById('hList');
+    hList.innerHTML = '';
+    for (let i = 0; i < 14; i++) {
+        const d = LEVEL_DATA[i];
+        const row = document.createElement('div');
+        row.className = 'h-row';
+        row.id = `hr${i}`;
+        row.innerHTML = `
+            <span class="h-num">${i + 1}</span>
+            <span class="h-dot" style="background:${d.color}"></span>
+            <span class="h-name">${d.name}</span>
+            <span class="h-bar"><span class="h-fill" id="hf${i}" style="background:${d.color}"></span></span>
+            <span class="h-omega">${d.omega.toFixed(2)}</span>
+        `;
+        hList.appendChild(row);
+    }
+    
+    // Stage dots
+    const stages = document.getElementById('stages');
+    stages.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'stage-dot';
+        dot.id = `sd${i}`;
+        stages.appendChild(dot);
+    }
+}
+
+function updateUI() {
+    const b = state.brain;
+    const c = state.challenge;
+    
+    // Hierarchy
+    for (let i = 0; i < 14; i++) {
+        const row = document.getElementById(`hr${i}`);
+        const fill = document.getElementById(`hf${i}`);
+        row.className = 'h-row';
+        if (Math.round(b.peakLevel) === i) row.classList.add('active');
+        if (!b.levelUnlocked[i]) row.classList.add('locked');
+        fill.style.width = `${b.levelActivity[i] * 100}%`;
+    }
+    
+    // CRR
+    const phase = b.globalCRR.phase;
+    const expCO = b.globalCRR.expCO;
+    document.getElementById('valC').textContent = b.globalCRR.C.toFixed(2);
+    document.getElementById('ringC').style.strokeDashoffset = 131.95 * (1 - phase);
+    document.getElementById('valExp').textContent = expCO.toFixed(1);
+    document.getElementById('ringExp').style.strokeDashoffset = 131.95 * (1 - Math.min(1, expCO / 23.14));
+    
+    // Nats
+    const nats = b.totalNats;
+    document.getElementById('natsVal').textContent = nats.toFixed(2);
+    document.getElementById('natsFill').style.width = `${Math.min(100, (nats % 16.03) / 16.03 * 100)}%`;
+    
+    // Neuromodulators
+    document.getElementById('nDA').style.height = `${b.dopamine * 100}%`;
+    document.getElementById('n5HT').style.height = `${b.serotonin * 100}%`;
+    document.getElementById('nNE').style.height = `${b.norepinephrine * 100}%`;
+    document.getElementById('nACh').style.height = `${b.acetylcholine * 100}%`;
+    
+    // Challenge
+    document.getElementById('challengeNum').textContent = `${state.challengeIdx + 1}/7`;
+    document.getElementById('challengeType').textContent = c.info.name;
+    document.getElementById('challengeType').style.color = c.info.color;
+    document.getElementById('reqLevel').textContent = `${LEVEL_DATA[c.info.levels[0]].name}-${LEVEL_DATA[c.info.levels[1] - 1].name}`;
+    document.getElementById('scoreVal').textContent = `${c.score}/${c.maxScore}`;
+    const mins = Math.floor(c.time / 60);
+    const secs = Math.floor(c.time % 60);
+    document.getElementById('timeVal').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    document.getElementById('challengeDesc').textContent = c.info.desc;
+    
+    // Stage dots
+    for (let i = 0; i < 7; i++) {
+        const dot = document.getElementById(`sd${i}`);
+        dot.className = 'stage-dot';
+        if (i < state.challengeIdx) dot.classList.add('done');
+        if (i === state.challengeIdx) dot.classList.add('current');
+    }
+}
+
+function showQuote() {
+    const quotes = QUOTES[state.challengeIdx] || QUOTES[6];
+    const quote = quotes[state.quoteIdx % quotes.length];
+    state.quoteIdx++;
+    
+    const bubble = document.getElementById('karlBubble');
+    const text = document.getElementById('karlQuote');
+    bubble.classList.remove('show');
+    setTimeout(() => {
+        text.innerHTML = quote;
+        bubble.classList.add('show');
+    }, 200);
+}
+
+function drawBackground() {
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.8);
+    grad.addColorStop(0, '#080a18');
+    grad.addColorStop(0.5, '#040612');
+    grad.addColorStop(1, '#010208');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    
+    // Subtle waves
+    ctx.strokeStyle = 'rgba(0,255,238,0.01)';
+    const t = state.time * 0.03;
+    for (let i = 0; i < 15; i++) {
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 40) {
+            const y = H / 2 + Math.sin(x * 0.005 + t + i * 0.4) * (40 + i * 20);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+}
+
+function simulate(dt) {
+    if (state.paused) return;
+    
+    // Sensory input based on challenge progress
+    const sensoryInput = 0.3 + state.challenge.score / state.challenge.maxScore * 0.5;
+    
+    // Process brain
+    state.brain.process(dt, sensoryInput);
+    
+    // Get target and update agent
+    const target = state.challenge.update(dt, state.agent, state.brain);
+    state.agent.update(dt, target, state.challenge.obstacles);
+    
+    // Check challenge completion
+    if (state.challenge.isComplete()) {
+        if (state.challengeIdx < 6) {
+            // Advance
+            const next = CHALLENGES[state.challengeIdx + 1];
+            const reqLevel = next.levels[0];
+            
+            // Force unlock if needed
+            if (!state.brain.levelUnlocked[reqLevel]) {
+                for (let i = 0; i <= reqLevel; i++) {
+                    state.brain.levelCoherence[i] += 0.15;
+                    if (!state.brain.levelUnlocked[i]) {
+                        state.brain.levelUnlocked[i] = true;
+                    }
+                }
+            }
+            
+            state.challengeIdx++;
+            state.challenge = new Challenge(state.challengeIdx);
+            state.agent.x = PW / 2;
+            state.agent.y = PH / 2;
+            state.agent.vx = 0;
+            state.agent.vy = 0;
+            state.agent.trail = [];
+            showQuote();
+        } else {
+            // Loop final challenge
+            state.challenge = new Challenge(6);
+            state.agent.x = PW / 2;
+            state.agent.y = PH / 2;
+            state.agent.trail = [];
+        }
+    }
+    
+    // Karl quotes via CRR
+    state.quoteCRR.update(dt, 0.08);
+    if (state.quoteCRR.C < 0.05 && state.quoteCRR.phase > 0.95) {
+        showQuote();
+    }
+    
+    state.time += dt;
+}
+
+function render() {
+    const dt = 0.016 * state.speed;
+    simulate(dt);
+    
+    drawBackground();
+    state.brain.draw(ctx);
+    
+    state.challenge.draw(probCtx);
+    state.agent.draw(probCtx, LEVEL_DATA[Math.round(state.brain.peakLevel)].color);
+    
+    updateUI();
+    requestAnimationFrame(render);
+}
+
+// Events
+document.getElementById('btnPause').addEventListener('click', () => {
+    state.paused = !state.paused;
+    document.getElementById('btnPause').textContent = state.paused ? '▶ PLAY' : '⏸ PAUSE';
+    document.getElementById('btnPause').classList.toggle('active', state.paused);
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+    init();
+});
+
+document.getElementById('btnSpeed').addEventListener('click', () => {
+    state.speed = state.speed === 1 ? 2 : state.speed === 2 ? 4 : 1;
+    document.getElementById('btnSpeed').textContent = `${state.speed}×`;
+});
+
+// Start
+init();
+render();
+
+console.log(`
+╔═══════════════════════════════════════════════════════════════════════════╗
+║          THE BRAIN AS SCIENTIST — Super Enhanced Version                  ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  NEURAL REALISM:                                                          ║
+║  • Soma with membrane potential dynamics                                  ║
+║  • Dendritic trees with recursive branching and spines                    ║
+║  • Myelinated axons with action potential propagation                     ║
+║  • CRR state at every neuron                                              ║
+║                                                                           ║
+║  14-LEVEL HIERARCHY (Felleman & Van Essen 1991):                          ║
+║  LGN → V1 → V2 → V3 → MT → V4 → IT → AIT → STP → TPO → PFC → FEF → 46 → HC║
+║                                                                           ║
+║  INTRINSIC TIMESCALES (Murray et al. 2014):                               ║
+║  τ = 20ms (LGN) → 500ms (HC)                                              ║
+║  Ω = 0.1 (LGN) → 0.504 (HC)                                               ║
+║                                                                           ║
+║  CHALLENGES REQUIRE SPECIFIC LEVELS:                                      ║
+║  1. Detection (LGN-V2)    5. Sequence (STP-TPO)                           ║
+║  2. Discrimination (V2-MT) 6. Planning (PFC-46)                           ║
+║  3. Tracking (MT-IT)       7. Abstraction (46-HC)                         ║
+║  4. Pattern (IT-STP)                                                      ║
+║                                                                           ║
+║  NEUROMODULATION: DA (reward), 5-HT (patience), NE (arousal), ACh (learn) ║
+║                                                                           ║
+║  TARGET: 16.03 nats = full hierarchical integration                       ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+`);
+</script>
+</body>
+</html>
