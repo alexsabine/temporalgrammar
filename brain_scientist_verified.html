@@ -3,1868 +3,637 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Brain as Scientist — Neural Realism</title>
+    <title>The Brain as Scientist — Neural Realism (Perfected)</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
-            --void: #020206;
-            --deep: #0a0a14;
-            --cyan: #00ffcc;
-            --cyan-dim: rgba(0, 255, 204, 0.3);
-            --blue: #0088ff;
-            --purple: #8844ff;
-            --pink: #ff44aa;
-            --gold: #ffcc00;
-            --white: rgba(255,255,255,0.95);
-            --dim: rgba(255,255,255,0.4);
-            --faint: rgba(255,255,255,0.15);
+            --void: #010208; --deep: #060812; --surface: rgba(6,8,18,0.95);
+            --l0: #00ffee; --l1: #00e8ff; --l2: #00d0ff; --l3: #00b8ff;
+            --l4: #00a0ff; --l5: #0088ff; --l6: #4060ff; --l7: #6050ff;
+            --l8: #8040ff; --l9: #a030ff; --l10: #c020e0; --l11: #e010a0;
+            --l12: #ff0060; --l13: #ff6020;
+            --text: rgba(255,255,255,0.92); --dim: rgba(255,255,255,0.5); --faint: rgba(255,255,255,0.12);
         }
-        
-        body {
-            background: var(--void);
-            color: var(--white);
-            font-family: 'JetBrains Mono', monospace;
-            overflow: hidden;
-        }
-        
+        body { background: var(--void); color: var(--text); font-family: 'IBM Plex Mono', monospace; overflow: hidden; }
         #brainCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-        
-        .title {
-            position: fixed;
-            top: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        .title h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 11px;
-            font-weight: 300;
-            color: var(--cyan);
-            letter-spacing: 8px;
-            text-transform: uppercase;
-            opacity: 0.6;
-            margin-bottom: 10px;
-        }
-        
-        .title h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 48px;
-            font-weight: 300;
-            letter-spacing: 3px;
-            background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .title p {
-            font-size: 11px;
-            color: var(--dim);
-            margin-top: 10px;
-            letter-spacing: 2px;
-        }
-        
-        /* Left Panel - Development */
-        .panel-left {
-            position: fixed;
-            top: 140px;
-            left: 25px;
-            width: 300px;
-            background: rgba(5,5,15,0.9);
-            border: 1px solid rgba(0,255,204,0.1);
-            border-radius: 4px;
-            padding: 20px;
-            backdrop-filter: blur(20px);
-            z-index: 100;
-        }
-        
-        .panel-header {
-            font-size: 10px;
-            color: var(--cyan);
-            letter-spacing: 3px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        /* Stage Timeline */
-        .timeline {
-            margin-bottom: 20px;
-        }
-        
-        .timeline-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-        
-        .timeline-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple), var(--pink), var(--gold));
-            border-radius: 2px;
-            transition: width 0.5s;
-        }
-        
-        .timeline-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 8px;
-            color: var(--faint);
-        }
-        
-        .timeline-labels span.active { color: var(--cyan); }
-        .timeline-labels span.done { color: var(--dim); }
-        
-        /* Task Display */
-        .task {
-            background: rgba(0,0,0,0.3);
-            border-radius: 3px;
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-        
-        .task-stage {
-            font-size: 9px;
-            color: var(--cyan);
-            letter-spacing: 2px;
-            margin-bottom: 6px;
-        }
-        
-        .task-name {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 18px;
-            color: var(--white);
-            margin-bottom: 4px;
-        }
-        
-        .task-desc {
-            font-size: 10px;
-            color: var(--dim);
-            line-height: 1.5;
-        }
-        
-        /* Neural Metrics */
-        .metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
-        .metric {
-            background: rgba(0,0,0,0.2);
-            border-radius: 3px;
-            padding: 10px;
-        }
-        
-        .metric-label {
-            font-size: 8px;
-            color: var(--faint);
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-        
-        .metric-value {
-            font-size: 16px;
-            color: var(--cyan);
-        }
-        
-        .metric-bar {
-            height: 2px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 1px;
-            margin-top: 6px;
-            overflow: hidden;
-        }
-        
-        .metric-fill {
-            height: 100%;
-            border-radius: 1px;
-            transition: width 0.3s;
-        }
-        
-        /* Right Panel - Problem */
-        .panel-right {
-            position: fixed;
-            top: 140px;
-            right: 25px;
-            width: 280px;
-            background: rgba(5,5,15,0.9);
-            border: 1px solid rgba(0,255,204,0.1);
-            border-radius: 4px;
-            padding: 20px;
-            backdrop-filter: blur(20px);
-            z-index: 100;
-        }
-        
-        .problem-view {
-            width: 100%;
-            aspect-ratio: 1;
-            background: rgba(0,0,0,0.4);
-            border-radius: 3px;
-            margin-bottom: 14px;
-            position: relative;
-        }
-        
+        .title { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); text-align: center; z-index: 100; pointer-events: none; }
+        .title h1 { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; background: linear-gradient(90deg, var(--l0), var(--l7), var(--l13)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; }
+        .title .sub { font-size: 9px; color: var(--dim); letter-spacing: 4px; margin-top: 6px; }
+        .panel-problem { position: fixed; top: 100px; left: 20px; width: 280px; background: var(--surface); border: 1px solid rgba(0,255,238,0.08); border-radius: 3px; backdrop-filter: blur(20px); z-index: 100; padding: 14px; }
+        .panel-header { font-size: 9px; color: var(--l0); letter-spacing: 2px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .problem-view { width: 100%; aspect-ratio: 1.3; background: rgba(0,0,0,0.4); border-radius: 2px; margin-bottom: 10px; }
         #problemCanvas { width: 100%; height: 100%; }
-        
-        /* Layer Activity */
-        .layer-activity {
-            margin-bottom: 14px;
-        }
-        
-        .layer-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 6px;
-            font-size: 9px;
-        }
-        
-        .layer-name {
-            width: 70px;
-            color: var(--dim);
-        }
-        
-        .layer-bar {
-            flex: 1;
-            height: 8px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-left: 8px;
-        }
-        
-        .layer-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.2s;
-        }
-        
-        /* Neurotransmitters */
-        .transmitters {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-        
-        .transmitter {
-            flex: 1;
-            text-align: center;
-            padding: 8px 4px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 3px;
-        }
-        
-        .transmitter-name {
-            font-size: 8px;
-            color: var(--faint);
-            margin-bottom: 4px;
-        }
-        
-        .transmitter-level {
-            height: 30px;
-            width: 6px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 3px;
-            margin: 0 auto;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .transmitter-fill {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            border-radius: 3px;
-            transition: height 0.3s;
-        }
-        
-        /* Controls */
-        .controls {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 12px;
-            z-index: 100;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            background: rgba(5,5,15,0.9);
-            border: 1px solid rgba(0,255,204,0.15);
-            color: var(--white);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 2px;
-            cursor: pointer;
-            border-radius: 3px;
-            transition: all 0.3s;
-        }
-        
-        .btn:hover {
-            background: rgba(0,255,204,0.1);
-            border-color: var(--cyan);
-        }
-        
-        .btn.active {
-            background: rgba(0,255,204,0.15);
-            color: var(--cyan);
-        }
-        
-        /* Karl */
-        .karl {
-            position: fixed;
-            bottom: 90px;
-            left: 30px;
-            display: flex;
-            align-items: flex-end;
-            gap: 14px;
-            z-index: 101;
-        }
-        
-        .karl-face {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: radial-gradient(ellipse at 30% 30%, #1a2530, #0a1015);
-            border: 2px solid rgba(0,255,204,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            position: relative;
-        }
-        
-        .karl-pulse {
-            position: absolute;
-            inset: -4px;
-            border-radius: 50%;
-            border: 1px solid var(--cyan);
-            opacity: 0;
-            animation: pulse 2s ease-out infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.6; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-        
-        .karl-speech {
-            max-width: 380px;
-            padding: 16px 20px;
-            background: rgba(8,12,20,0.95);
-            border: 1px solid rgba(0,255,204,0.2);
-            border-radius: 4px;
-            opacity: 0;
-            transform: translateY(8px);
-            transition: all 0.4s;
-        }
-        
-        .karl-speech.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .karl-speech::before {
-            content: '';
-            position: absolute;
-            left: -8px;
-            bottom: 20px;
-            width: 14px;
-            height: 14px;
-            background: rgba(8,12,20,0.95);
-            border-left: 1px solid rgba(0,255,204,0.2);
-            border-bottom: 1px solid rgba(0,255,204,0.2);
-            transform: rotate(45deg);
-        }
-        
-        .karl-name {
-            font-size: 9px;
-            color: var(--cyan);
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-        }
-        
-        .karl-quote {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 14px;
-            color: var(--white);
-            line-height: 1.7;
-            font-style: italic;
-        }
-        
-        .karl-quote em {
-            font-style: normal;
-            color: var(--cyan);
-        }
-        
-        /* Info */
-        .info {
-            position: fixed;
-            bottom: 75px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: var(--faint);
-            letter-spacing: 1px;
-        }
-        
-        /* Legend */
-        .legend {
-            position: fixed;
-            top: 140px;
-            left: 340px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 100;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 9px;
-            color: var(--dim);
-        }
-        
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
+        .challenge-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .info-item { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 2px; }
+        .info-item .label { font-size: 8px; color: var(--faint); letter-spacing: 1px; }
+        .info-item .value { font-size: 13px; margin-top: 3px; }
+        .challenge-desc { font-family: 'Cormorant Garamond', serif; font-size: 12px; font-style: italic; color: var(--dim); line-height: 1.5; padding: 8px; background: rgba(0,0,0,0.2); border-left: 2px solid var(--l0); border-radius: 2px; }
+        .panel-hierarchy { position: fixed; top: 100px; right: 20px; width: 240px; background: var(--surface); border: 1px solid rgba(0,255,238,0.08); border-radius: 3px; backdrop-filter: blur(20px); z-index: 100; padding: 14px; }
+        .h-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; transition: all 0.2s; }
+        .h-row.active { background: rgba(0,255,238,0.08); margin: 0 -6px; padding: 3px 6px; border-radius: 2px; }
+        .h-row.locked { opacity: 0.25; }
+        .h-num { font-size: 8px; color: var(--faint); width: 14px; }
+        .h-dot { width: 6px; height: 6px; border-radius: 50%; transition: all 0.3s; }
+        .h-row.active .h-dot { box-shadow: 0 0 10px currentColor; transform: scale(1.4); }
+        .h-name { font-size: 9px; color: var(--dim); width: 32px; }
+        .h-row.active .h-name { color: var(--text); }
+        .h-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+        .h-fill { height: 100%; border-radius: 2px; transition: width 0.1s; }
+        .h-tau { font-size: 7px; color: var(--faint); width: 38px; text-align: right; }
+        .panel-bottom { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 100; }
+        .panel-crr, .panel-neuro { background: var(--surface); border: 1px solid rgba(0,255,238,0.08); border-radius: 3px; backdrop-filter: blur(20px); padding: 12px 16px; }
+        .crr-metrics { display: flex; gap: 20px; }
+        .crr-item { text-align: center; }
+        .crr-ring { width: 50px; height: 50px; position: relative; margin-bottom: 4px; }
+        .crr-ring svg { transform: rotate(-90deg); }
+        .crr-ring .val { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; }
+        .crr-label { font-size: 8px; color: var(--faint); letter-spacing: 1px; }
+        .nats-display { text-align: center; padding: 8px 16px; border-left: 1px solid rgba(255,255,255,0.05); margin-left: 10px; }
+        .nats-value { font-size: 22px; font-weight: 300; background: linear-gradient(90deg, var(--l0), var(--l13)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nats-sub { font-size: 8px; color: var(--faint); margin-top: 2px; }
+        .nats-bar { width: 80px; height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .nats-fill { height: 100%; background: linear-gradient(90deg, var(--l0), var(--l7), var(--l13)); border-radius: 2px; transition: width 0.2s; }
+        .neuro-bars { display: flex; gap: 12px; }
+        .neuro-item { text-align: center; }
+        .neuro-bar { width: 8px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 4px; margin: 0 auto 4px; position: relative; overflow: hidden; }
+        .neuro-fill { position: absolute; bottom: 0; width: 100%; border-radius: 4px; transition: height 0.2s; }
+        .neuro-label { font-size: 7px; color: var(--faint); }
+        .controls { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+        .btn { padding: 10px 20px; background: var(--surface); border: 1px solid rgba(0,255,238,0.12); color: var(--dim); font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1px; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+        .btn:hover { border-color: var(--l0); color: var(--text); }
+        .btn.active { background: rgba(0,255,238,0.1); color: var(--l0); }
+        .karl { position: fixed; bottom: 100px; left: 20px; z-index: 101; }
+        .karl-bubble { max-width: 260px; padding: 12px 16px; background: var(--surface); border: 1px solid rgba(0,255,238,0.15); border-radius: 3px; opacity: 0; transform: translateY(10px); transition: all 0.4s; }
+        .karl-bubble.show { opacity: 1; transform: translateY(0); }
+        .karl-name { font-size: 8px; color: var(--l0); letter-spacing: 2px; margin-bottom: 6px; }
+        .karl-quote { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-style: italic; color: var(--text); line-height: 1.6; }
+        .karl-quote em { font-style: normal; color: var(--l0); }
+        .stages { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 100; }
+        .stage-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); transition: all 0.3s; }
+        .stage-dot.done { background: var(--l0); }
+        .stage-dot.current { background: var(--l13); box-shadow: 0 0 10px var(--l13); }
+        .info-bar { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 8px; color: var(--faint); letter-spacing: 1px; }
     </style>
 </head>
 <body>
     <canvas id="brainCanvas"></canvas>
-    
-    <div class="title">
-        <h1>Active Inference</h1>
-        <h2>The Brain as Scientist</h2>
-        <p>Realistic Neural Dynamics • Ontogenic Development</p>
+    <div class="title"><h1>The Brain as Scientist</h1><div class="sub">14-LEVEL CORTICAL HIERARCHY • MURRAY TIMESCALES • CRR FRAMEWORK</div></div>
+    <div class="panel-problem">
+        <div class="panel-header"><span>PROBLEM SPACE</span><span id="challengeNum">1/7</span></div>
+        <div class="problem-view"><canvas id="problemCanvas"></canvas></div>
+        <div class="challenge-info">
+            <div class="info-item"><div class="label">CHALLENGE</div><div class="value" id="challengeType" style="color:var(--l0)">Detection</div></div>
+            <div class="info-item"><div class="label">REQUIRES</div><div class="value" id="reqLevel">LGN-V3</div></div>
+            <div class="info-item"><div class="label">SCORE</div><div class="value" id="scoreVal">0/8</div></div>
+            <div class="info-item"><div class="label">TIME</div><div class="value" id="timeVal">0:00</div></div>
+        </div>
+        <div class="challenge-desc" id="challengeDesc">Detect and respond to visual stimuli through thalamo-cortical processing.</div>
     </div>
-    
-    <div class="panel-left">
-        <div class="panel-header">ONTOGENIC DEVELOPMENT</div>
-        
-        <div class="timeline">
-            <div class="timeline-bar">
-                <div class="timeline-fill" id="timelineFill" style="width:0%"></div>
-            </div>
-            <div class="timeline-labels">
-                <span id="s0" class="active">I</span>
-                <span id="s1">II</span>
-                <span id="s2">III</span>
-                <span id="s3">IV</span>
-                <span id="s4">V</span>
-            </div>
-        </div>
-        
-        <div class="task">
-            <div class="task-stage" id="taskStage">STAGE I — SENSORIMOTOR</div>
-            <div class="task-name" id="taskName">Reflexive Response</div>
-            <div class="task-desc" id="taskDesc">Basic stimulus-response coupling through thalamo-cortical loops</div>
-        </div>
-        
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric-label">FREE ENERGY</div>
-                <div class="metric-value" id="metricFE">0.00</div>
-                <div class="metric-bar"><div class="metric-fill" id="barFE" style="width:0%;background:var(--pink)"></div></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">PRECISION</div>
-                <div class="metric-value" id="metricPrec">0.00</div>
-                <div class="metric-bar"><div class="metric-fill" id="barPrec" style="width:0%;background:var(--cyan)"></div></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">SYNAPTIC GAIN</div>
-                <div class="metric-value" id="metricGain">0.00</div>
-                <div class="metric-bar"><div class="metric-fill" id="barGain" style="width:0%;background:var(--gold)"></div></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">COHERENCE</div>
-                <div class="metric-value" id="metricCoh">0.00</div>
-                <div class="metric-bar"><div class="metric-fill" id="barCoh" style="width:0%;background:var(--purple)"></div></div>
-            </div>
-        </div>
+    <div class="panel-hierarchy">
+        <div class="panel-header"><span>CORTICAL HIERARCHY</span><span style="color:var(--dim)">τ (ms)</span></div>
+        <div id="hList"></div>
     </div>
-    
-    <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Sensory/Thalamus</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Primary Cortex</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Association</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--pink)"></div>Temporal/Parietal</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Prefrontal</div>
-    </div>
-    
-    <div class="panel-right">
-        <div class="panel-header">PROBLEM SPACE <span id="progressIndicator" style="float:right;color:var(--cyan)">0/8</span></div>
-        
-        <div class="problem-view">
-            <canvas id="problemCanvas"></canvas>
+    <div class="panel-bottom">
+        <div class="panel-crr">
+            <div class="panel-header" style="margin-bottom:8px">CRR DYNAMICS</div>
+            <div class="crr-metrics">
+                <div class="crr-item">
+                    <div class="crr-ring">
+                        <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                            <circle id="ringC" cx="25" cy="25" r="21" fill="none" stroke="var(--l0)" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" stroke-linecap="round"/>
+                        </svg>
+                        <div class="val" id="valC">0.00</div>
+                    </div>
+                    <div class="crr-label">C(t)/Ω</div>
+                </div>
+                <div class="crr-item">
+                    <div class="crr-ring">
+                        <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="21" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+                            <circle id="ringExp" cx="25" cy="25" r="21" fill="none" stroke="var(--l13)" stroke-width="3" stroke-dasharray="131.95" stroke-dashoffset="131.95" stroke-linecap="round"/>
+                        </svg>
+                        <div class="val" id="valExp">1.0</div>
+                    </div>
+                    <div class="crr-label">exp(C/Ω)</div>
+                </div>
+                <div class="nats-display">
+                    <div class="nats-value" id="natsVal">0.00</div>
+                    <div class="nats-sub">NATS / 16.03</div>
+                    <div class="nats-bar"><div class="nats-fill" id="natsFill"></div></div>
+                </div>
+            </div>
         </div>
-        
-        <div class="panel-header" style="font-size:9px;margin-bottom:10px">LAYER ACTIVITY</div>
-        <div class="layer-activity" id="layerActivity"></div>
-        
-        <div class="panel-header" style="font-size:9px;margin-bottom:10px">NEUROMODULATION</div>
-        <div class="transmitters">
-            <div class="transmitter">
-                <div class="transmitter-name">DA</div>
-                <div class="transmitter-level"><div class="transmitter-fill" id="tDA" style="height:50%;background:var(--gold)"></div></div>
-            </div>
-            <div class="transmitter">
-                <div class="transmitter-name">5-HT</div>
-                <div class="transmitter-level"><div class="transmitter-fill" id="t5HT" style="height:50%;background:var(--purple)"></div></div>
-            </div>
-            <div class="transmitter">
-                <div class="transmitter-name">NE</div>
-                <div class="transmitter-level"><div class="transmitter-fill" id="tNE" style="height:50%;background:var(--cyan)"></div></div>
-            </div>
-            <div class="transmitter">
-                <div class="transmitter-name">ACh</div>
-                <div class="transmitter-level"><div class="transmitter-fill" id="tACh" style="height:50%;background:var(--blue)"></div></div>
+        <div class="panel-neuro">
+            <div class="panel-header" style="margin-bottom:8px">NEUROMODULATION</div>
+            <div class="neuro-bars">
+                <div class="neuro-item"><div class="neuro-bar"><div class="neuro-fill" id="nDA" style="background:var(--l13)"></div></div><div class="neuro-label">DA</div></div>
+                <div class="neuro-item"><div class="neuro-bar"><div class="neuro-fill" id="n5HT" style="background:var(--l8)"></div></div><div class="neuro-label">5-HT</div></div>
+                <div class="neuro-item"><div class="neuro-bar"><div class="neuro-fill" id="nNE" style="background:var(--l0)"></div></div><div class="neuro-label">NE</div></div>
+                <div class="neuro-item"><div class="neuro-bar"><div class="neuro-fill" id="nACh" style="background:var(--l4)"></div></div><div class="neuro-label">ACh</div></div>
             </div>
         </div>
     </div>
-    
+    <div class="karl"><div class="karl-bubble" id="karlBubble"><div class="karl-name">PROF. KARL FRISTON</div><div class="karl-quote" id="karlQuote">The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments on the world...</div></div></div>
+    <div class="stages" id="stages"></div>
     <div class="controls">
         <button class="btn" id="btnPause">⏸ PAUSE</button>
-        <button class="btn" id="btnReset">↻ RESET</button>
+        <button class="btn" id="btnReset">↺ RESET</button>
         <button class="btn" id="btnSpeed">1×</button>
     </div>
-    
-    <div class="info">Neural computation visualized in real-time • Hidden CRR dynamics govern all temporal processing</div>
-    
-    <div class="karl">
-        <div class="karl-face">
-            <div class="karl-pulse"></div>
-            🧠
-        </div>
-        <div class="karl-speech" id="karlSpeech">
-            <div class="karl-name">PROF. KARL FRISTON</div>
-            <div class="karl-quote" id="karlQuote">The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments on the world...</div>
-        </div>
-    </div>
-    
-    <script>
-    /**
-     * THE BRAIN AS SCIENTIST — Neural Realism
-     * ========================================
-     * 
-     * This simulation renders the ACTUAL information processing required
-     * to solve increasingly complex problems. Every visual element 
-     * represents real computation:
-     * 
-     * NEURAL ARCHITECTURE:
-     * - Soma: Cell body with membrane potential dynamics
-     * - Dendrites: Input integration trees with spatial summation
-     * - Axon: Action potential propagation with myelination
-     * - Synapses: Neurotransmitter release and receptor binding
-     * 
-     * HIDDEN CRR DYNAMICS (not in GUI):
-     * - C(t) = ∫L(τ)dτ at every neuron and synapse
-     * - Ruptures trigger action potentials
-     * - R modulates synaptic plasticity (memory)
-     * 
-     * CORTICAL HIERARCHY:
-     * - Thalamus → V1 → V2 → IT → PFC
-     * - Each level has slower Ω (deeper temporal integration)
-     * - Feedforward (prediction error) + Feedback (predictions)
-     */
-    
-    const canvas = document.getElementById('brainCanvas');
-    const ctx = canvas.getContext('2d');
-    const probCanvas = document.getElementById('problemCanvas');
-    const probCtx = probCanvas.getContext('2d');
-    
-    let W, H;
-    function resize() {
-        const dpr = window.devicePixelRatio || 1;
-        W = window.innerWidth;
-        H = window.innerHeight;
-        canvas.width = W * dpr;
-        canvas.height = H * dpr;
-        ctx.scale(dpr, dpr);
-        
-        const pr = probCanvas.parentElement.getBoundingClientRect();
-        probCanvas.width = pr.width * dpr;
-        probCanvas.height = pr.width * dpr;
-        probCtx.scale(dpr, dpr);
+    <div class="info-bar">Felleman & Van Essen (1991) • Murray et al. (2014) • CRR Framework (Sabine, 2025)</div>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// THE BRAIN AS SCIENTIST — Mathematically Precise Version
+// THE 16 NATS IDENTITY: π^14 ≈ 2^(e^π)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('brainCanvas');
+const ctx = canvas.getContext('2d');
+const probCanvas = document.getElementById('problemCanvas');
+const probCtx = probCanvas.getContext('2d');
+let W, H, PW, PH;
+
+function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    const pr = probCanvas.parentElement.getBoundingClientRect();
+    PW = pr.width; PH = pr.height;
+    probCanvas.width = PW * dpr; probCanvas.height = PH * dpr;
+    probCtx.scale(dpr, dpr);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MATHEMATICAL CONSTANTS - The 16 Nats Identity (Precise)
+// ═══════════════════════════════════════════════════════════════════════════
+const PI = Math.PI;                            // 3.1415926536
+const LN_PI = Math.log(PI);                    // 1.1447298858 nats per level
+const CRITICAL_INFO = 14 * LN_PI;              // 16.0262184019 nats total
+const E_PI = Math.exp(PI);                     // 23.1406926328
+
+// Timing: calibrated for ~38s full traversal at 1× speed
+const COHERENCE_RATE = 0.093333;               // nats/second (uniform)
+
+// Level data with Murray et al. (2014) timescales
+// Ω scales geometrically: 0.1 → 0.5 (5× ratio)
+// τ scales geometrically: 50 → 500ms (10× ratio matching Murray ~5-7×)
+const LEVEL_DATA = [
+    { name: 'LGN', omega: 0.100000, tau:  50, color: '#00ffee' },
+    { name: 'V1',  omega: 0.113179, tau:  60, color: '#00e8ff' },
+    { name: 'V2',  omega: 0.128095, tau:  71, color: '#00d0ff' },
+    { name: 'V3',  omega: 0.144978, tau:  85, color: '#00b8ff' },
+    { name: 'MT',  omega: 0.164085, tau: 102, color: '#00a0ff' },
+    { name: 'V4',  omega: 0.185710, tau: 121, color: '#0088ff' },
+    { name: 'IT',  omega: 0.210185, tau: 145, color: '#4060ff' },
+    { name: 'AIT', omega: 0.237886, tau: 173, color: '#6050ff' },
+    { name: 'STP', omega: 0.269237, tau: 206, color: '#8040ff' },
+    { name: 'TPO', omega: 0.304721, tau: 246, color: '#a030ff' },
+    { name: 'PFC', omega: 0.344881, tau: 294, color: '#c020e0' },
+    { name: 'FEF', omega: 0.390334, tau: 351, color: '#e010a0' },
+    { name: '46',  omega: 0.441777, tau: 419, color: '#ff0060' },
+    { name: 'HC',  omega: 0.500000, tau: 500, color: '#ff6020' }
+];
+
+const CHALLENGES = [
+    { name: 'Detection',      desc: 'Detect flashing targets. Basic thalamo-cortical stimulus-response.',  levels: [0, 3],  color: '#00ffee' },
+    { name: 'Discrimination', desc: 'Distinguish BLUE from RED. V2-V4 feature extraction required.',        levels: [2, 5],  color: '#00d0ff' },
+    { name: 'Tracking',       desc: 'Follow moving targets. MT-AIT motion processing tracks trajectories.', levels: [4, 7],  color: '#00a0ff' },
+    { name: 'Pattern',        desc: 'Recognize spatial configurations. IT-TPO identifies arrangements.',    levels: [6, 9],  color: '#4060ff' },
+    { name: 'Sequence',       desc: 'Visit beacons in order. STP-PFC temporal integration required.',       levels: [8, 11], color: '#8040ff' },
+    { name: 'Planning',       desc: 'Navigate obstacles to goal. PFC-46 enables multi-step planning.',      levels: [10,13], color: '#c020e0' },
+    { name: 'Abstraction',    desc: 'Discover hidden rules. Area 46-HC extract abstract contingencies.',    levels: [12,14], color: '#ff0060' }
+];
+
+const QUOTES = [
+    ["The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments...", "Every neuron encodes a <em>prediction</em> about the world."],
+    ["<em>Prediction error</em> drives learning—the brain minimizes surprise.", "Visual cortex extracts <em>features</em> to test hypotheses about form."],
+    ["<em>Motion processing</em> in MT predicts where things will be, not where they are.", "The hierarchy processes at <em>different timescales</em>—fast at bottom, slow at top."],
+    ["<em>Object recognition</em> emerges when IT cortex matches patterns to memory.", "Temporal cortex asks: <em>what is this thing?</em>"],
+    ["<em>Temporal integration</em> in STP holds the past to predict the future.", "Working memory is <em>sustained prediction</em>—holding futures in the present."],
+    ["<em>Planning</em> requires simulating action-outcome contingencies.", "Prefrontal cortex is the <em>conductor</em> of the cortical orchestra."],
+    ["<em>Abstract reasoning</em>: the crown of cognition, extracting rules from patterns.", "This is the brain as scientist: <em>building theories</em>, minimizing free energy."]
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRR STATE - Mathematically Precise
+// ═══════════════════════════════════════════════════════════════════════════
+class CRR {
+    constructor(level) {
+        this.level = level;
+        this.omega = LEVEL_DATA[level].omega;
+        this.tau = LEVEL_DATA[level].tau;
+        this.C = 0;
+        this.ruptures = 0;
     }
-    resize();
-    window.addEventListener('resize', resize);
-    
-    // ═══════════════════════════════════════════
-    // CRR STATE (Hidden Engine)
-    // ═══════════════════════════════════════════
-    
-    class CRR {
-        constructor(omega) {
+    update(dt, luminance) {
+        this.C += luminance * COHERENCE_RATE * dt;
+        if (this.C >= this.omega) {
             this.C = 0;
-            this.C_arch = 0;
-            this.omega = omega;
-            this.R = 1;
-            this.phase = 0;
+            this.ruptures++;
+            return true;
         }
-        
-        update(dt, input) {
-            const noise = (Math.random() - 0.5) * 0.01;
-            this.C += (input + noise) * dt;
-            this.C_arch += input * dt * 0.02;
-            this.phase = this.C / this.omega;
-            
-            if (this.C >= this.omega) {
-                this.C = 0;
-                this.R = Math.min(8, Math.exp(this.C_arch / (this.omega * 2)));
-                return true;
+        return false;
+    }
+    get phase() { return Math.min(1, this.C / this.omega); }
+    reset() { this.C = 0; this.ruptures = 0; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DENDRITE
+// ═══════════════════════════════════════════════════════════════════════════
+class Dendrite {
+    constructor(angle, length, depth = 0) {
+        this.angle = angle; this.length = length; this.depth = depth;
+        this.activity = 0; this.branches = []; this.spines = [];
+        if (depth < 3 && length > 10) {
+            const n = depth === 0 ? 3 : 2;
+            for (let i = 0; i < n; i++) {
+                this.branches.push(new Dendrite(angle + (Math.random() - 0.5) * 1.2, length * (0.5 + Math.random() * 0.3), depth + 1));
             }
-            return false;
+        }
+        for (let i = 0; i < Math.floor(length / 8); i++) {
+            this.spines.push({ pos: 0.15 + Math.random() * 0.7, side: Math.random() > 0.5 ? 1 : -1, size: 1 + Math.random(), activity: 0 });
         }
     }
-    
-    // ═══════════════════════════════════════════
-    // DENDRITE (Input Tree)
-    // ═══════════════════════════════════════════
-    
-    class Dendrite {
-        constructor(neuron, angle, length, depth = 0) {
-            this.neuron = neuron;
-            this.angle = angle;
-            this.length = length;
-            this.depth = depth;
-            this.branches = [];
-            this.activity = 0;
-            this.spines = [];
-            
-            // Create branches recursively
-            if (depth < 3 && length > 15) {
-                const numBranches = depth === 0 ? 3 : 2;
-                for (let i = 0; i < numBranches; i++) {
-                    const branchAngle = angle + (Math.random() - 0.5) * 1.2;
-                    const branchLength = length * (0.5 + Math.random() * 0.3);
-                    this.branches.push(new Dendrite(neuron, branchAngle, branchLength, depth + 1));
-                }
+    update(dt, input) {
+        this.activity += (input - this.activity) * dt * 6;
+        this.spines.forEach(s => s.activity += (input * Math.random() - s.activity) * dt * 8);
+        this.branches.forEach(b => b.update(dt, this.activity * 0.8));
+    }
+    draw(ctx, sx, sy, color, alpha) {
+        const ex = sx + Math.cos(this.angle) * this.length, ey = sy + Math.sin(this.angle) * this.length;
+        ctx.strokeStyle = `rgba(${color}, ${(0.2 + this.activity * 0.5) * alpha})`;
+        ctx.lineWidth = Math.max(0.4, 1.5 - this.depth * 0.4);
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
+        this.spines.forEach(s => {
+            if (s.activity > 0.2) {
+                const px = sx + (ex - sx) * s.pos, py = sy + (ey - sy) * s.pos;
+                const pa = this.angle + Math.PI / 2 * s.side;
+                ctx.strokeStyle = `rgba(${color}, ${s.activity * 0.4 * alpha})`; ctx.lineWidth = 0.3;
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(pa) * s.size * 2, py + Math.sin(pa) * s.size * 2); ctx.stroke();
             }
-            
-            // Create dendritic spines (synaptic inputs)
-            const numSpines = Math.floor(length / 8);
-            for (let i = 0; i < numSpines; i++) {
-                this.spines.push({
-                    pos: 0.2 + Math.random() * 0.6,
-                    side: Math.random() > 0.5 ? 1 : -1,
-                    size: 1.5 + Math.random(),
-                    activity: 0
-                });
-            }
-        }
-        
-        getEndpoint(startX, startY) {
-            return {
-                x: startX + Math.cos(this.angle) * this.length,
-                y: startY + Math.sin(this.angle) * this.length
-            };
-        }
-        
-        update(dt, input) {
-            this.activity += (input - this.activity) * dt * 5;
-            for (const spine of this.spines) {
-                spine.activity += (input * Math.random() - spine.activity) * dt * 8;
-            }
-            for (const branch of this.branches) {
-                branch.update(dt, this.activity * 0.8);
-            }
-        }
-        
-        draw(ctx, startX, startY, globalAlpha = 1) {
-            const end = this.getEndpoint(startX, startY);
-            const alpha = (0.3 + this.activity * 0.7) * globalAlpha;
-            const color = this.neuron.getColor();
-            
-            // Main dendrite
-            ctx.strokeStyle = `rgba(${color}, ${alpha * 0.6})`;
-            ctx.lineWidth = Math.max(0.5, 2 - this.depth * 0.5);
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(end.x, end.y);
-            ctx.stroke();
-            
-            // Spines
-            for (const spine of this.spines) {
-                const px = startX + (end.x - startX) * spine.pos;
-                const py = startY + (end.y - startY) * spine.pos;
-                const perpAngle = this.angle + Math.PI / 2 * spine.side;
-                const spineEnd = {
-                    x: px + Math.cos(perpAngle) * spine.size * 3,
-                    y: py + Math.sin(perpAngle) * spine.size * 3
-                };
-                
-                const spineAlpha = (0.2 + spine.activity * 0.8) * globalAlpha;
-                ctx.strokeStyle = `rgba(${color}, ${spineAlpha * 0.5})`;
-                ctx.lineWidth = 0.5;
-                ctx.beginPath();
-                ctx.moveTo(px, py);
-                ctx.lineTo(spineEnd.x, spineEnd.y);
-                ctx.stroke();
-                
-                // Spine head
-                if (spine.activity > 0.3) {
-                    ctx.fillStyle = `rgba(255, 255, 255, ${spine.activity * 0.5 * globalAlpha})`;
-                    ctx.beginPath();
-                    ctx.arc(spineEnd.x, spineEnd.y, spine.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-            
-            // Recurse to branches
-            for (const branch of this.branches) {
-                branch.draw(ctx, end.x, end.y, globalAlpha);
-            }
+        });
+        this.branches.forEach(b => b.draw(ctx, ex, ey, color, alpha));
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AXON
+// ═══════════════════════════════════════════════════════════════════════════
+class Axon {
+    constructor(source, target) {
+        this.source = source; this.target = target; this.activity = 0; this.pulses = [];
+        const dist = Math.hypot(target.x - source.x, target.y - source.y);
+        this.myelin = [];
+        for (let i = 0; i < Math.floor(dist / 20); i++) this.myelin.push({ start: (i + 0.1) / Math.floor(dist / 20), end: (i + 0.8) / Math.floor(dist / 20) });
+    }
+    fire(strength = 1) { this.pulses.push({ pos: 0, str: strength }); }
+    update(dt) {
+        this.activity *= 0.92;
+        for (let i = this.pulses.length - 1; i >= 0; i--) {
+            this.pulses[i].pos += dt * 4; this.pulses[i].str *= 0.98;
+            if (this.pulses[i].pos >= 1) { this.activity = Math.max(this.activity, this.pulses[i].str); this.target.receiveInput(this.pulses[i].str * 0.5); this.pulses.splice(i, 1); }
         }
     }
-    
-    // ═══════════════════════════════════════════
-    // AXON (Output Projection)  
-    // ═══════════════════════════════════════════
-    
-    class Axon {
-        constructor(neuron, targetX, targetY) {
-            this.neuron = neuron;
-            this.targetX = targetX;
-            this.targetY = targetY;
-            this.activity = 0;
-            this.pulses = [];
-            this.myelinSegments = [];
-            
-            // Create myelin sheath segments
-            const dist = Math.sqrt(
-                Math.pow(targetX - neuron.x, 2) + 
-                Math.pow(targetY - neuron.y, 2)
-            );
-            const numSegments = Math.floor(dist / 30);
-            for (let i = 0; i < numSegments; i++) {
-                this.myelinSegments.push({
-                    start: (i + 0.1) / numSegments,
-                    end: (i + 0.8) / numSegments
-                });
-            }
-        }
-        
-        fire() {
-            this.pulses.push({ pos: 0, strength: 1 });
-        }
-        
-        update(dt) {
-            this.activity *= 0.95;
-            
-            // Update action potential pulses
-            for (let i = this.pulses.length - 1; i >= 0; i--) {
-                this.pulses[i].pos += dt * 3; // Propagation speed
-                this.pulses[i].strength *= 0.98;
-                
-                if (this.pulses[i].pos > 1) {
-                    this.activity = Math.max(this.activity, this.pulses[i].strength);
-                    this.pulses.splice(i, 1);
-                }
-            }
-        }
-        
-        draw(ctx, globalAlpha = 1) {
-            const sx = this.neuron.x;
-            const sy = this.neuron.y;
-            const dx = this.targetX - sx;
-            const dy = this.targetY - sy;
-            
-            const baseAlpha = (0.1 + this.activity * 0.5) * globalAlpha;
-            const color = this.neuron.getColor();
-            
-            // Base axon
-            ctx.strokeStyle = `rgba(${color}, ${baseAlpha * 0.3})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(this.targetX, this.targetY);
-            ctx.stroke();
-            
-            // Myelin segments
-            for (const seg of this.myelinSegments) {
-                ctx.strokeStyle = `rgba(${color}, ${baseAlpha * 0.5})`;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(sx + dx * seg.start, sy + dy * seg.start);
-                ctx.lineTo(sx + dx * seg.end, sy + dy * seg.end);
-                ctx.stroke();
-            }
-            
-            // Action potential pulses
-            for (const pulse of this.pulses) {
-                const px = sx + dx * pulse.pos;
-                const py = sy + dy * pulse.pos;
-                
-                const pulseGrad = ctx.createRadialGradient(px, py, 0, px, py, 12);
-                pulseGrad.addColorStop(0, `rgba(255, 255, 255, ${pulse.strength * globalAlpha})`);
-                pulseGrad.addColorStop(0.3, `rgba(${color}, ${pulse.strength * 0.8 * globalAlpha})`);
-                pulseGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                
-                ctx.fillStyle = pulseGrad;
-                ctx.beginPath();
-                ctx.arc(px, py, 12, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+    draw(ctx, alpha = 1) {
+        const sx = this.source.x, sy = this.source.y, tx = this.target.x, ty = this.target.y;
+        const dx = tx - sx, dy = ty - sy, color = this.source.colorRGB;
+        ctx.strokeStyle = `rgba(${color}, ${(0.03 + this.activity * 0.2) * alpha})`; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.strokeStyle = `rgba(${color}, ${(0.08 + this.activity * 0.3) * alpha})`; ctx.lineWidth = 2;
+        this.myelin.forEach(seg => { ctx.beginPath(); ctx.moveTo(sx + dx * seg.start, sy + dy * seg.start); ctx.lineTo(sx + dx * seg.end, sy + dy * seg.end); ctx.stroke(); });
+        this.pulses.forEach(p => {
+            const px = sx + dx * p.pos, py = sy + dy * p.pos;
+            const grad = ctx.createRadialGradient(px, py, 0, px, py, 8);
+            grad.addColorStop(0, `rgba(255,255,255, ${p.str * alpha})`); grad.addColorStop(0.4, `rgba(${color}, ${p.str * 0.6 * alpha})`); grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.fill();
+        });
     }
-    
-    // ═══════════════════════════════════════════
-    // NEURON (Complete Cell)
-    // ═══════════════════════════════════════════
-    
-    class Neuron {
-        constructor(x, y, layer, type = 'pyramidal') {
-            this.x = x;
-            this.y = y;
-            this.layer = layer;
-            this.type = type;
-            
-            // Membrane dynamics
-            this.potential = -70; // mV (resting)
-            this.threshold = -55; // mV (firing threshold)
-            this.firing = false;
-            this.refractoryTime = 0;
-            this.lastFire = 0;
-            
-            // CRR state (hidden)
-            this.crr = new CRR((1/Math.PI) * Math.pow(Math.PI, layer * 0.4));
-            
-            // Morphology
-            this.somaSize = 6 + layer * 1.5;
-            this.dendrites = [];
-            this.axons = [];
-            
-            // Create dendritic tree
-            const numDendrites = type === 'pyramidal' ? 5 : 3;
-            for (let i = 0; i < numDendrites; i++) {
-                const angle = (i / numDendrites) * Math.PI * 2 + Math.random() * 0.5;
-                const length = 30 + Math.random() * 40 + layer * 10;
-                this.dendrites.push(new Dendrite(this, angle, length));
-            }
-            
-            // Visual properties
-            this.pulsePhase = Math.random() * Math.PI * 2;
-            this.activity = 0;
-        }
-        
-        getColor() {
-            const colors = [
-                '0, 255, 204',    // Cyan - thalamus/sensory
-                '0, 136, 255',    // Blue - V1
-                '136, 85, 255',   // Purple - V2/association
-                '255, 68, 170',   // Pink - temporal
-                '255, 204, 0'     // Gold - PFC
-            ];
-            return colors[Math.min(this.layer, colors.length - 1)];
-        }
-        
-        receiveInput(input) {
-            // Integrate input with dendritic filtering
-            this.potential += input * 10;
-        }
-        
-        update(dt, externalInput = 0) {
-            this.pulsePhase += dt * 3;
-            
-            // Refractory period
-            if (this.refractoryTime > 0) {
-                this.refractoryTime -= dt;
-                this.potential = -70;
-            } else {
-                // Leaky integration
-                this.potential += (externalInput * 20 - (this.potential + 70) * 0.1) * dt * 10;
-                
-                // CRR modulates threshold
-                const crrInput = Math.abs(this.potential + 70) / 30;
-                const rupture = this.crr.update(dt, crrInput);
-                
-                // Check for firing
-                if (this.potential >= this.threshold || rupture) {
-                    this.fire();
-                }
-            }
-            
-            // Update activity for visualization
-            this.activity += ((this.firing ? 1 : 0) + (this.potential + 70) / 50 - this.activity) * dt * 8;
-            
-            // Update dendrites
-            for (const d of this.dendrites) {
-                d.update(dt, this.activity);
-            }
-            
-            // Update axons
-            for (const a of this.axons) {
-                a.update(dt);
-            }
-            
-            this.firing = false;
-        }
-        
-        fire() {
-            if (this.refractoryTime > 0) return;
-            
-            this.firing = true;
-            this.potential = 30; // Action potential peak
-            this.refractoryTime = 0.003; // 3ms refractory
-            this.lastFire = performance.now();
-            
-            // Propagate along axons
-            for (const axon of this.axons) {
-                axon.fire();
-            }
-        }
-        
-        draw(ctx, globalAlpha = 1) {
-            const color = this.getColor();
-            const alpha = globalAlpha;
-            
-            // Draw dendrites
-            for (const d of this.dendrites) {
-                d.draw(ctx, this.x, this.y, alpha);
-            }
-            
-            // Draw axons
-            for (const a of this.axons) {
-                a.draw(ctx, alpha);
-            }
-            
-            // Soma glow
-            const glowSize = this.somaSize * (3 + this.activity * 3);
-            const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
-            glow.addColorStop(0, `rgba(${color}, ${(0.3 + this.activity * 0.5) * alpha})`);
-            glow.addColorStop(0.5, `rgba(${color}, ${(0.1 + this.activity * 0.2) * alpha})`);
-            glow.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Firing flash
-            if (this.firing || performance.now() - this.lastFire < 50) {
-                const flashAlpha = 1 - (performance.now() - this.lastFire) / 50;
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, flashAlpha) * alpha})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.somaSize * 2.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Soma body
-            const pulse = 0.8 + Math.sin(this.pulsePhase) * 0.2;
-            const somaGrad = ctx.createRadialGradient(
-                this.x - this.somaSize * 0.3, 
-                this.y - this.somaSize * 0.3, 
-                0, this.x, this.y, this.somaSize
-            );
-            somaGrad.addColorStop(0, `rgba(255, 255, 255, ${(0.6 + this.activity * 0.4) * pulse * alpha})`);
-            somaGrad.addColorStop(0.4, `rgba(${color}, ${(0.7 + this.activity * 0.3) * alpha})`);
-            somaGrad.addColorStop(1, `rgba(${color.split(',').map(c => parseInt(c) * 0.4).join(',')}, ${0.8 * alpha})`);
-            
-            ctx.fillStyle = somaGrad;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.somaSize, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Nucleus
-            ctx.fillStyle = `rgba(0, 0, 0, ${0.3 * alpha})`;
-            ctx.beginPath();
-            ctx.arc(this.x + 1, this.y + 1, this.somaSize * 0.4, 0, Math.PI * 2);
-            ctx.fill();
-        }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NEURON
+// ═══════════════════════════════════════════════════════════════════════════
+class Neuron {
+    constructor(x, y, level) {
+        this.x = x; this.y = y; this.level = level;
+        this.info = LEVEL_DATA[level]; this.color = this.info.color;
+        this.colorRGB = this.hexToRGB(this.color);
+        this.crr = new CRR(level);
+        this.potential = -70; this.threshold = -55; this.firing = false;
+        this.refractory = 0; this.lastFire = 0; this.activity = 0;
+        this.somaSize = 4 + level * 0.5; this.dendrites = []; this.axons = [];
+        const numDend = 4 + Math.floor(level / 3);
+        for (let i = 0; i < numDend; i++) this.dendrites.push(new Dendrite((i / numDend) * Math.PI * 2 + Math.random() * 0.3, 20 + Math.random() * 25 + level * 3));
+        this.pulsePhase = Math.random() * Math.PI * 2;
     }
-    
-    // ═══════════════════════════════════════════
-    // BRAIN NETWORK
-    // ═══════════════════════════════════════════
-    
-    class Brain {
-        constructor() {
-            this.neurons = [];
-            this.layers = 5;
-            this.neuronsPerLayer = [20, 16, 12, 8, 5];
-            
-            // Ontogenic development (CRR-driven)
-            this.devCRR = new CRR(15); // Faster development
-            this.stage = 0;
-            this.stageProgress = 0;
-            
-            // Neuromodulators
-            this.dopamine = 0.5;
-            this.serotonin = 0.5;
-            this.norepinephrine = 0.5;
-            this.acetylcholine = 0.5;
-            
-            // Metrics
-            this.freeEnergy = 0;
-            this.precision = 1;
-            this.synapticGain = 1;
-            this.coherence = 0;
-            
-            this.buildNetwork();
+    hexToRGB(hex) { return `${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)}`; }
+    receiveInput(input) { this.potential += input * 18 * (1 + this.level * 0.1); }
+    update(dt, externalInput = 0) {
+        this.pulsePhase += dt * 2;
+        if (this.refractory > 0) { this.refractory -= dt; this.potential = -70; }
+        else {
+            const tauFactor = this.info.tau / 50;
+            this.potential += (externalInput * 25 - (this.potential + 70) * (0.1 / tauFactor)) * dt * 12;
+            const ruptured = this.crr.update(dt, Math.max(0.1, Math.abs(this.potential + 70) / 35));
+            if (this.potential >= this.threshold || ruptured) this.fire();
         }
-        
-        buildNetwork() {
-            const cx = W / 2;
-            const cy = H / 2;
-            
-            // Create neurons in anatomical layout
-            for (let layer = 0; layer < this.layers; layer++) {
-                const count = this.neuronsPerLayer[layer];
-                const radiusX = 100 + layer * 80;
-                const radiusY = 70 + layer * 55;
-                
-                for (let i = 0; i < count; i++) {
-                    const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
-                    const jitter = (Math.random() - 0.5) * 30;
-                    const x = cx + Math.cos(angle) * radiusX + jitter;
-                    const y = cy + Math.sin(angle) * radiusY + jitter * 0.7;
-                    
-                    const neuron = new Neuron(x, y, layer);
-                    this.neurons.push(neuron);
-                }
-            }
-            
-            // Create axonal connections
-            let srcStart = 0;
-            for (let layer = 0; layer < this.layers - 1; layer++) {
-                const srcCount = this.neuronsPerLayer[layer];
-                const tgtCount = this.neuronsPerLayer[layer + 1];
-                const tgtStart = srcStart + srcCount;
-                
-                for (let i = 0; i < srcCount; i++) {
-                    const src = this.neurons[srcStart + i];
-                    const numConnections = 2 + Math.floor(Math.random() * 2);
-                    
-                    for (let c = 0; c < numConnections; c++) {
-                        const tgtIdx = tgtStart + Math.floor(Math.random() * tgtCount);
-                        const tgt = this.neurons[tgtIdx];
-                        src.axons.push(new Axon(src, tgt.x, tgt.y));
-                    }
-                }
-                srcStart = tgtStart;
-            }
-            
-            // Add feedback connections (top-down predictions)
-            srcStart = this.neuronsPerLayer[0];
-            for (let layer = 1; layer < this.layers; layer++) {
-                const srcCount = this.neuronsPerLayer[layer];
-                const tgtCount = this.neuronsPerLayer[layer - 1];
-                const tgtStart = srcStart - tgtCount;
-                
-                for (let i = 0; i < srcCount; i++) {
-                    const src = this.neurons[srcStart + i];
-                    if (Math.random() < 0.3) { // Sparser feedback
-                        const tgtIdx = tgtStart + Math.floor(Math.random() * tgtCount);
-                        const tgt = this.neurons[tgtIdx];
-                        src.axons.push(new Axon(src, tgt.x, tgt.y));
-                    }
-                }
-                srcStart += srcCount;
-            }
-        }
-        
-        process(input, dt) {
-            // Feed input to sensory neurons
-            const sensoryCount = this.neuronsPerLayer[0];
-            for (let i = 0; i < sensoryCount; i++) {
-                const inp = input[i % input.length] || 0;
-                this.neurons[i].update(dt, inp + Math.random() * 0.1);
-            }
-            
-            // Process higher layers (only up to current stage)
-            let start = sensoryCount;
-            for (let layer = 1; layer < this.layers; layer++) {
-                const devAlpha = layer <= this.stage + 1 ? 1 : 0.1;
-                const count = this.neuronsPerLayer[layer];
-                
-                for (let i = 0; i < count; i++) {
-                    const neuron = this.neurons[start + i];
-                    
-                    // Collect input from connected neurons
-                    let totalInput = 0;
-                    let inputCount = 0;
-                    
-                    for (const srcNeuron of this.neurons) {
-                        for (const axon of srcNeuron.axons) {
-                            if (Math.abs(axon.targetX - neuron.x) < 20 && 
-                                Math.abs(axon.targetY - neuron.y) < 20) {
-                                totalInput += axon.activity * this.synapticGain;
-                                inputCount++;
-                            }
-                        }
-                    }
-                    
-                    if (inputCount > 0) {
-                        neuron.update(dt, totalInput / inputCount * devAlpha);
-                    } else {
-                        neuron.update(dt, 0);
-                    }
-                }
-                start += count;
-            }
-            
-            this.updateMetrics(dt, input);
-            this.updateNeuromodulators(dt);
-            this.updateDevelopment(dt);
-        }
-        
-        updateMetrics(dt, input) {
-            // Free energy (prediction error)
-            let totalError = 0;
-            for (const n of this.neurons) {
-                totalError += Math.abs(n.activity - 0.3); // Deviation from baseline
-            }
-            this.freeEnergy = totalError / this.neurons.length;
-            
-            // Precision (inverse variance)
-            const activities = this.neurons.map(n => n.activity);
-            const mean = activities.reduce((a, b) => a + b) / activities.length;
-            const variance = activities.reduce((a, v) => a + Math.pow(v - mean, 2), 0) / activities.length;
-            this.precision = 1 / (variance + 0.01);
-            
-            // Synaptic gain (from CRR regeneration)
-            this.synapticGain = this.neurons.reduce((a, n) => a + n.crr.R, 0) / this.neurons.length;
-            
-            // Coherence (phase alignment)
-            const phases = this.neurons.map(n => n.crr.phase);
-            const meanPhase = phases.reduce((a, b) => a + b) / phases.length;
-            this.coherence = 1 - phases.reduce((a, p) => a + Math.abs(p - meanPhase), 0) / phases.length;
-        }
-        
-        updateNeuromodulators(dt) {
-            // Dopamine: reward/prediction error signal
-            const reward = 1 - this.freeEnergy;
-            this.dopamine += (reward - this.dopamine) * dt * 2;
-            
-            // Serotonin: temporal discounting / patience
-            this.serotonin += (this.coherence - this.serotonin) * dt;
-            
-            // Norepinephrine: arousal / precision
-            this.norepinephrine += (this.precision * 0.1 - this.norepinephrine) * dt * 3;
-            
-            // Acetylcholine: attention / learning
-            const novelty = Math.abs(this.freeEnergy - 0.5);
-            this.acetylcholine += (novelty * 2 - this.acetylcholine) * dt * 2;
-            
-            // Clamp values
-            this.dopamine = Math.max(0, Math.min(1, this.dopamine));
-            this.serotonin = Math.max(0, Math.min(1, this.serotonin));
-            this.norepinephrine = Math.max(0, Math.min(1, this.norepinephrine));
-            this.acetylcholine = Math.max(0, Math.min(1, this.acetylcholine));
-        }
-        
-        updateDevelopment(dt) {
-            // Development accumulates with successful processing
-            const success = (1 - this.freeEnergy) * this.precision * 0.05;
-            const rupture = this.devCRR.update(dt, success + 0.02);
-            
-            this.stageProgress = this.devCRR.phase;
-            
-            if (rupture && this.stage < 4) {
-                this.stage++;
-            }
-        }
-        
-        getLayerActivity() {
-            const activities = [];
-            let start = 0;
-            for (let layer = 0; layer < this.layers; layer++) {
-                const count = this.neuronsPerLayer[layer];
-                let sum = 0;
-                for (let i = 0; i < count; i++) {
-                    sum += this.neurons[start + i].activity;
-                }
-                activities.push(sum / count);
-                start += count;
-            }
-            return activities;
-        }
-        
-        draw(ctx) {
-            // Draw neurons (undeveloped layers faded)
-            let start = 0;
-            for (let layer = 0; layer < this.layers; layer++) {
-                const count = this.neuronsPerLayer[layer];
-                const alpha = layer <= this.stage + 1 ? 1 : 0.15;
-                
-                for (let i = 0; i < count; i++) {
-                    this.neurons[start + i].draw(ctx, alpha);
-                }
-                start += count;
-            }
-        }
+        this.activity += ((this.firing ? 1 : 0) + (this.potential + 70) / 50 - this.activity) * dt * (8 / (1 + this.level * 0.15));
+        this.activity = Math.max(0, Math.min(1, this.activity));
+        this.dendrites.forEach(d => d.update(dt, this.activity));
+        this.firing = false;
     }
-    
-    // ═══════════════════════════════════════════
-    // ENVIRONMENT
-    // ═══════════════════════════════════════════
-    
-    class Environment {
-        constructor() {
-            this.gridSize = 14;
-            this.agent = { x: 7, y: 7 };
-            this.stage = 0;
-            this.reset();
-        }
-        
-        reset() {
-            this.targets = [];
-            this.obstacles = [];
-            this.sequences = [];
-            this.visited = Array.from({length: this.gridSize}, () => Array(this.gridSize).fill(0));
-            this.solved = 0;
-            this.total = 0;
-            this.steps = 0;
-            this.agent = { x: 7, y: 7 };
-            
-            this.setupStage(this.stage);
-        }
-        
-        setupStage(stage) {
-            this.stage = stage;
-            
-            // Simplified configs - each stage has clear objectives
-            const configs = [
-                { targets: 8, obstacles: 0, sequences: 0 },    // Stage 0: Simple collection
-                { targets: 10, obstacles: 12, sequences: 0 },  // Stage 1: Navigate obstacles
-                { targets: 12, obstacles: 8, sequences: 0 },   // Stage 2: Spatial search
-                { targets: 6, obstacles: 4, sequences: 3 },    // Stage 3: Temporal sequences
-                { targets: 15, obstacles: 8, sequences: 2 }    // Stage 4: Combined challenge
-            ];
-            
-            const config = configs[Math.min(stage, configs.length - 1)];
-            
-            // Place targets avoiding overlap with agent start
-            for (let i = 0; i < config.targets; i++) {
-                let x, y, attempts = 0;
-                do {
-                    x = Math.floor(Math.random() * this.gridSize);
-                    y = Math.floor(Math.random() * this.gridSize);
-                    attempts++;
-                } while (attempts < 20 && (
-                    (x === 7 && y === 7) || 
-                    this.targets.some(t => Math.abs(t.x - x) < 2 && Math.abs(t.y - y) < 2)
-                ));
-                
-                this.targets.push({
-                    x, y,
-                    found: false,
-                    type: 'normal'
-                });
-            }
-            
-            // Place obstacles avoiding targets and agent
-            for (let i = 0; i < config.obstacles; i++) {
-                let x, y, attempts = 0;
-                do {
-                    x = Math.floor(Math.random() * this.gridSize);
-                    y = Math.floor(Math.random() * this.gridSize);
-                    attempts++;
-                } while (attempts < 20 && (
-                    (x === 7 && y === 7) ||
-                    this.targets.some(t => t.x === x && t.y === y) ||
-                    this.obstacles.some(o => o.x === x && o.y === y)
-                ));
-                
-                this.obstacles.push({ x, y });
-            }
-            
-            // Create sequences (ordered waypoints)
-            for (let s = 0; s < config.sequences; s++) {
-                const seq = { points: [], current: 0, completed: false };
-                let x = 2 + Math.floor(Math.random() * (this.gridSize - 4));
-                let y = 2 + Math.floor(Math.random() * (this.gridSize - 4));
-                
-                for (let i = 0; i < 4; i++) {
-                    seq.points.push({ x, y, activated: false });
-                    // Move in a direction
-                    const dir = Math.floor(Math.random() * 4);
-                    const moves = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-                    x = Math.max(1, Math.min(this.gridSize - 2, x + moves[dir][0] * 2));
-                    y = Math.max(1, Math.min(this.gridSize - 2, y + moves[dir][1] * 2));
-                }
-                this.sequences.push(seq);
-            }
-            
-            // Total = targets + sequences (each sequence counts as 1 when completed)
-            this.total = this.targets.length + this.sequences.length;
-            if (this.total === 0) this.total = 1;
-        }
-        
-        step(action) {
-            const moves = [[0,-1], [1,0], [0,1], [-1,0], [0,0], [0,0]];
-            const [dx, dy] = moves[action % 6];
-            
-            const nx = Math.max(0, Math.min(this.gridSize - 1, this.agent.x + dx));
-            const ny = Math.max(0, Math.min(this.gridSize - 1, this.agent.y + dy));
-            
-            if (!this.obstacles.some(o => o.x === nx && o.y === ny)) {
-                this.agent.x = nx;
-                this.agent.y = ny;
-            }
-            
-            this.visited[this.agent.x][this.agent.y]++;
-            this.steps++;
-            
-            return this.getObservation();
-        }
-        
-        getObservation() {
-            const obs = new Array(10).fill(0);
-            
-            // Check targets
-            for (const t of this.targets) {
-                if (!t.found) {
-                    const dist = Math.sqrt(Math.pow(this.agent.x - t.x, 2) + Math.pow(this.agent.y - t.y, 2));
-                    if (dist < 1.8) {
-                        t.found = true;
-                        obs[0] = 1;  // Reward signal
-                        this.solved++;
-                    } else if (dist < 6) {
-                        obs[1] = Math.max(obs[1], 1 / (dist + 0.5));  // Proximity signal
-                    }
-                }
-            }
-            
-            // Check sequences - must activate points in order
-            for (const seq of this.sequences) {
-                if (!seq.completed && seq.current < seq.points.length) {
-                    const pt = seq.points[seq.current];
-                    const dist = Math.sqrt(Math.pow(this.agent.x - pt.x, 2) + Math.pow(this.agent.y - pt.y, 2));
-                    
-                    // Proximity to current sequence point
-                    if (dist < 6) {
-                        obs[7] = Math.max(obs[7], 1 / (dist + 0.5));
-                    }
-                    
-                    if (dist < 1.8) {
-                        pt.activated = true;
-                        seq.current++;
-                        obs[0] = 0.5;  // Partial reward
-                        
-                        if (seq.current >= seq.points.length) {
-                            seq.completed = true;
-                            this.solved++;
-                            obs[0] = 1;  // Full reward for completing sequence
-                        }
-                    }
-                }
-            }
-            
-            obs[2] = 1 / (this.visited[this.agent.x][this.agent.y] + 1);  // Novelty
-            obs[3] = this.agent.x / this.gridSize;  // Position x
-            obs[4] = this.agent.y / this.gridSize;  // Position y
-            obs[5] = this.solved / this.total;      // Progress
-            obs[6] = this.obstacles.some(o => Math.abs(o.x - this.agent.x) < 2 && Math.abs(o.y - this.agent.y) < 2) ? 1 : 0;
-            
-            return obs;
-        }
-        
-        draw(ctx, w, h) {
-            ctx.clearRect(0, 0, w, h);
-            
-            const cellW = w / this.gridSize;
-            const cellH = h / this.gridSize;
-            
-            // Visited heatmap
-            for (let x = 0; x < this.gridSize; x++) {
-                for (let y = 0; y < this.gridSize; y++) {
-                    const v = Math.min(8, this.visited[x][y]);
-                    if (v > 0) {
-                        ctx.fillStyle = `rgba(0, 136, 255, ${v * 0.06})`;
-                        ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
-                    }
-                }
-            }
-            
-            // Grid
-            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-            for (let i = 0; i <= this.gridSize; i++) {
-                ctx.beginPath();
-                ctx.moveTo(i * cellW, 0);
-                ctx.lineTo(i * cellW, h);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(0, i * cellH);
-                ctx.lineTo(w, i * cellH);
-                ctx.stroke();
-            }
-            
-            // Obstacles
-            for (const o of this.obstacles) {
-                ctx.fillStyle = 'rgba(255, 60, 60, 0.5)';
-                ctx.fillRect(o.x * cellW + 2, o.y * cellH + 2, cellW - 4, cellH - 4);
-            }
-            
-            // Sequences
-            for (const seq of this.sequences) {
-                ctx.strokeStyle = seq.completed ? 'rgba(0, 255, 204, 0.5)' : 'rgba(255, 204, 0, 0.3)';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                seq.points.forEach((p, i) => {
-                    const px = (p.x + 0.5) * cellW;
-                    const py = (p.y + 0.5) * cellH;
-                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-                });
-                ctx.stroke();
-                
-                seq.points.forEach((p, i) => {
-                    ctx.fillStyle = p.activated ? 'rgba(0, 255, 204, 0.8)' : 
-                                   (i === seq.current ? 'rgba(255, 204, 0, 0.8)' : 'rgba(255, 204, 0, 0.3)');
-                    ctx.beginPath();
-                    ctx.arc((p.x + 0.5) * cellW, (p.y + 0.5) * cellH, 4, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-            
-            // Targets
-            for (const t of this.targets) {
-                if (!t.found) {
-                    const colors = {
-                        normal: 'rgba(255, 204, 0, 0.8)',
-                        pattern: 'rgba(255, 68, 170, 0.8)',
-                        rule: 'rgba(136, 85, 255, 0.8)'
-                    };
-                    ctx.fillStyle = colors[t.type] || colors.normal;
-                    ctx.beginPath();
-                    ctx.arc((t.x + 0.5) * cellW, (t.y + 0.5) * cellH, 4, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-        }
-        
-        drawAgent(ctx, w, h, visualX, visualY) {
-            const cellW = w / this.gridSize;
-            const cellH = h / this.gridSize;
-            
-            // Use smooth visual position
-            const ax = (visualX + 0.5) * cellW;
-            const ay = (visualY + 0.5) * cellH;
-            
-            const agentGlow = ctx.createRadialGradient(ax, ay, 0, ax, ay, 15);
-            agentGlow.addColorStop(0, 'rgba(0, 255, 204, 0.9)');
-            agentGlow.addColorStop(0.5, 'rgba(0, 255, 204, 0.3)');
-            agentGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = agentGlow;
-            ctx.beginPath();
-            ctx.arc(ax, ay, 15, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.fillStyle = '#00ffcc';
-            ctx.beginPath();
-            ctx.arc(ax, ay, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        isSolved() {
-            return this.solved >= Math.max(1, this.total * 0.6);
-        }
+    fire() {
+        if (this.refractory > 0) return;
+        this.firing = true; this.potential = 30; this.refractory = 0.004; this.lastFire = performance.now();
+        this.axons.forEach(a => a.fire(0.7 + Math.random() * 0.3));
     }
-    
-    // ═══════════════════════════════════════════
-    // GENERATIVE MODEL (FEP)
-    // ═══════════════════════════════════════════
-    
-    class GenerativeModel {
-        constructor() {
-            this.nStates = 20;
-            this.nObs = 10;
-            this.nActions = 6;
-            this.qs = new Array(this.nStates).fill(1/this.nStates);
-            this.prefs = [3, 1, 0.5, 0, 0, 2, -1, 0, 0, 0];
+    draw(ctx, alpha = 1) {
+        this.dendrites.forEach(d => d.draw(ctx, this.x, this.y, this.colorRGB, alpha));
+        this.axons.forEach(a => a.draw(ctx, alpha));
+        const glowSize = this.somaSize * (3 + this.activity * 3);
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        glow.addColorStop(0, `rgba(${this.colorRGB}, ${(0.2 + this.activity * 0.4) * alpha})`);
+        glow.addColorStop(0.5, `rgba(${this.colorRGB}, ${(0.05 + this.activity * 0.15) * alpha})`);
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2); ctx.fill();
+        const tSinceFire = performance.now() - this.lastFire;
+        if (tSinceFire < 50) { ctx.fillStyle = `rgba(255,255,255, ${(1 - tSinceFire / 50) * alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.somaSize * 2.5, 0, Math.PI * 2); ctx.fill(); }
+        const pulse = 0.8 + Math.sin(this.pulsePhase) * 0.2;
+        const somaGrad = ctx.createRadialGradient(this.x - this.somaSize * 0.3, this.y - this.somaSize * 0.3, 0, this.x, this.y, this.somaSize);
+        somaGrad.addColorStop(0, `rgba(255,255,255, ${(0.5 + this.activity * 0.5) * pulse * alpha})`);
+        somaGrad.addColorStop(0.4, `rgba(${this.colorRGB}, ${0.8 * alpha})`);
+        somaGrad.addColorStop(1, `rgba(${this.colorRGB}, ${0.5 * alpha})`);
+        ctx.fillStyle = somaGrad; ctx.beginPath(); ctx.arc(this.x, this.y, this.somaSize, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(0,0,0, ${0.3 * alpha})`; ctx.beginPath(); ctx.arc(this.x + 0.5, this.y + 0.5, this.somaSize * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BRAIN NETWORK - Precise Nats Calculation
+// ═══════════════════════════════════════════════════════════════════════════
+class Brain {
+    constructor() {
+        this.neurons = []; this.neuronsByLevel = Array.from({ length: 14 }, () => []);
+        this.levelActivity = new Array(14).fill(0); this.levelUnlocked = new Array(14).fill(false);
+        this.levelCRR = []; for (let i = 0; i < 14; i++) this.levelCRR.push(new CRR(i));
+        this.activeLevel = 0; this.peakLevel = 0; this.completedLevels = 0; this.totalNats = 0;
+        for (let i = 0; i < 3; i++) this.levelUnlocked[i] = true;
+        this.dopamine = 0.5; this.serotonin = 0.5; this.norepinephrine = 0.5; this.acetylcholine = 0.5;
+        this.globalCRR = new CRR(7);
+        this.buildNetwork();
+    }
+    buildNetwork() {
+        const cx = W / 2, cy = H / 2, counts = [12, 11, 10, 9, 8, 8, 7, 6, 6, 5, 5, 4, 4, 3];
+        for (let level = 0; level < 14; level++) {
+            const count = counts[level], rx = 70 + level * 32, ry = 50 + level * 22;
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 - Math.PI / 2, jitter = (Math.random() - 0.5) * 20;
+                const neuron = new Neuron(cx + Math.cos(angle) * rx + jitter, cy + Math.sin(angle) * ry + jitter * 0.6, level);
+                this.neurons.push(neuron); this.neuronsByLevel[level].push(neuron);
+            }
         }
-        
-        softmax(x) {
-            const max = Math.max(...x);
-            const exp = x.map(v => Math.exp(v - max));
-            const sum = exp.reduce((a, b) => a + b);
-            return exp.map(v => v / (sum + 1e-10));
-        }
-        
-        infer(obs) {
-            const logLik = this.qs.map((_, s) => 
-                obs.reduce((ll, o, i) => ll + o * (s === i % this.nStates ? 1 : 0.1), 0)
-            );
-            this.qs = this.softmax(logLik);
-            return this.qs;
-        }
-        
-        selectAction() {
-            const G = Array.from({length: this.nActions}, (_, a) => {
-                // Expected free energy: info gain + preference satisfaction
-                const infoGain = Math.random() * 0.5;
-                const prefSat = this.prefs[a % this.prefs.length] || 0;
-                return infoGain - prefSat;
+        for (let level = 0; level < 13; level++) {
+            const sources = this.neuronsByLevel[level], targets = this.neuronsByLevel[level + 1];
+            sources.forEach(src => {
+                const shuffled = [...targets].sort(() => Math.random() - 0.5);
+                for (let c = 0; c < Math.min(targets.length, 2 + Math.floor(level / 4)); c++) src.axons.push(new Axon(src, shuffled[c]));
             });
-            
-            const probs = this.softmax(G.map(g => -5 * g));
-            const r = Math.random();
-            let cum = 0;
-            for (let a = 0; a < this.nActions; a++) {
-                cum += probs[a];
-                if (r < cum) return { action: a, probs };
-            }
-            return { action: 0, probs };
+        }
+        for (let level = 1; level < 14; level++) {
+            const sources = this.neuronsByLevel[level], targets = this.neuronsByLevel[level - 1];
+            sources.forEach(src => { if (Math.random() < 0.3 + level * 0.02) src.axons.push(new Axon(src, targets[Math.floor(Math.random() * targets.length)])); });
+        }
+        for (let level = 0; level < 14; level++) {
+            const neurons = this.neuronsByLevel[level];
+            neurons.forEach(src => { if (Math.random() < 0.15 + level * 0.01) { const tgt = neurons[Math.floor(Math.random() * neurons.length)]; if (tgt !== src) src.axons.push(new Axon(src, tgt)); } });
         }
     }
-    
-    // ═══════════════════════════════════════════
-    // KARL FRISTON
-    // ═══════════════════════════════════════════
-    
-    const Karl = {
-        crr: new CRR(6),
-        idx: 0,
-        quotes: [
-            ["The brain is a <em>hypothesis-testing machine</em>, forever conducting experiments...", 
-             "Sensory neurons fire in response to <em>prediction errors</em> — the unexpected.",
-             "The thalamus gates information, asking: <em>is this surprising?</em>"],
-            ["Motor learning emerges from <em>action-outcome contingencies</em>.",
-             "The brain discovers that <em>movements have consequences</em>.",
-             "Watch the axons fire — each pulse is a <em>prediction</em> traveling forward."],
-            ["<em>Spatial cognition</em> requires allocentric representations — maps of the world.",
-             "The hippocampus constructs <em>cognitive maps</em> through exploration.",
-             "Notice how the network's activity <em>patterns</em> mirror the environment's structure."],
-            ["<em>Temporal sequences</em> demand working memory — holding the past to predict the future.",
-             "The prefrontal cortex is coming online, enabling <em>planning</em>.",
-             "Each neuron's CRR state integrates history at its <em>characteristic timescale</em>."],
-            ["<em>Abstract reasoning</em> — the crown of cognition — extracts rules from experience.",
-             "The full hierarchy is active: sensation → perception → cognition → <em>metacognition</em>.",
-             "This is the brain as scientist: <em>building theories</em> of its world."]
-        ],
-        
-        update(dt, stage, fe) {
-            this.crr.update(dt, fe + 0.05);
-            if (this.crr.C < 0.1 && this.crr.phase > 0.9) {
-                this.show(stage);
+    process(dt, sensoryInput) {
+        this.neurons.forEach(n => n.axons.forEach(a => a.update(dt)));
+        let prevActivity = 0;
+        for (let level = 0; level < 14; level++) {
+            const unlocked = this.levelUnlocked[level], neurons = this.neuronsByLevel[level];
+            neurons.forEach(n => {
+                if (level === 0) n.update(dt, unlocked ? sensoryInput + Math.random() * 0.1 : (sensoryInput + Math.random() * 0.1) * 0.05);
+                else n.update(dt, prevActivity * 0.6 * (unlocked ? 1 : 0.05) + Math.random() * 0.02);
+            });
+            const levelAct = neurons.reduce((s, n) => s + n.activity, 0) / neurons.length;
+            this.levelActivity[level] = levelAct;
+            prevActivity = unlocked ? levelAct : prevActivity * 0.5;
+            if (unlocked) {
+                const ruptured = this.levelCRR[level].update(dt, 0.5 + levelAct * 0.5);
+                if (ruptured && level >= this.completedLevels) this.completedLevels = level + 1;
+                neurons.forEach(n => {
+                    if (n.activity > Math.max(0.15, 0.35 - level * 0.015)) n.axons.forEach(a => { if (a.pulses.length < 3 && Math.random() < n.activity * 0.6) a.fire(n.activity * 0.8); });
+                });
             }
-        },
-        
-        show(stage) {
-            const stageQuotes = this.quotes[Math.min(stage, this.quotes.length - 1)];
-            const quote = stageQuotes[this.idx % stageQuotes.length];
-            this.idx++;
-            
-            const bubble = document.getElementById('karlSpeech');
-            const text = document.getElementById('karlQuote');
-            bubble.classList.remove('show');
-            setTimeout(() => {
-                text.innerHTML = quote;
-                bubble.classList.add('show');
-            }, 300);
-        },
-        
-        init() {
-            setTimeout(() => document.getElementById('karlSpeech').classList.add('show'), 1000);
         }
-    };
-    
-    // ═══════════════════════════════════════════
-    // MAIN SIMULATION
-    // ═══════════════════════════════════════════
-    
-    const state = {
-        brain: new Brain(),
-        env: new Environment(),
-        model: new GenerativeModel(),
-        paused: false,
-        speed: 1,
-        dt: 0.016,
-        time: 0
-    };
-    
-    const stageInfo = [
-        { name: 'Reflexive Response', desc: 'Basic stimulus-response coupling through thalamo-cortical loops' },
-        { name: 'Motor Adaptation', desc: 'Learning action-outcome contingencies while avoiding obstacles' },
-        { name: 'Spatial Navigation', desc: 'Building cognitive maps to navigate pattern clusters' },
-        { name: 'Temporal Planning', desc: 'Following ordered sequences by predicting future states' },
-        { name: 'Abstract Reasoning', desc: 'Extracting hidden rules governing reward distribution' }
-    ];
-    
-    function initLayerActivity() {
-        const container = document.getElementById('layerActivity');
-        container.innerHTML = '';
-        const names = ['Thalamus', 'V1/S1', 'V2/Assoc', 'Temporal', 'PFC'];
-        const colors = ['var(--cyan)', 'var(--blue)', 'var(--purple)', 'var(--pink)', 'var(--gold)'];
+        // Find active level
+        let bestScore = 0;
+        for (let i = 0; i < 14; i++) if (this.levelUnlocked[i]) { const score = this.levelActivity[i] * (1 + i * 0.12); if (score > bestScore) { bestScore = score; this.activeLevel = i; } }
+        this.peakLevel += ((this.activeLevel > this.peakLevel ? 3 : 0.8) * (this.activeLevel - this.peakLevel)) * dt;
         
-        names.forEach((name, i) => {
-            const row = document.createElement('div');
-            row.className = 'layer-row';
-            row.innerHTML = `
-                <span class="layer-name">${name}</span>
-                <div class="layer-bar"><div class="layer-fill" id="layerBar${i}" style="width:0%;background:${colors[i]}"></div></div>
-            `;
-            container.appendChild(row);
+        // PRECISE NATS: completed × ln(π) + progress × ln(π)
+        const currentProgress = this.levelCRR[this.activeLevel].phase;
+        this.totalNats = Math.min(this.completedLevels * LN_PI + currentProgress * LN_PI, CRITICAL_INFO);
+        
+        // Unlock next level on rupture
+        for (let i = 0; i < 13; i++) if (this.levelUnlocked[i] && !this.levelUnlocked[i + 1] && this.levelCRR[i].ruptures > 0) { this.levelUnlocked[i + 1] = true; console.log(`Unlocked: ${LEVEL_DATA[i + 1].name} (τ=${LEVEL_DATA[i + 1].tau}ms)`); }
+        
+        this.globalCRR.update(dt, this.neurons.reduce((s, n) => s + n.activity, 0) / this.neurons.length);
+        this.updateNeuromodulators(dt, sensoryInput);
+    }
+    updateNeuromodulators(dt, input) {
+        this.dopamine += (input * 2 - this.dopamine) * dt * 2;
+        this.serotonin += (this.peakLevel / 14 - this.serotonin) * dt;
+        this.norepinephrine += (Math.min(1, 1 / (this.globalCRR.phase + 0.1) * 0.1) - this.norepinephrine) * dt * 3;
+        this.acetylcholine += (Math.abs(input - 0.5) * 2 - this.acetylcholine) * dt * 2;
+        this.dopamine = Math.max(0, Math.min(1, this.dopamine));
+        this.serotonin = Math.max(0, Math.min(1, this.serotonin));
+        this.norepinephrine = Math.max(0, Math.min(1, this.norepinephrine));
+        this.acetylcholine = Math.max(0, Math.min(1, this.acetylcholine));
+    }
+    getHighestUnlocked() { for (let i = 13; i >= 0; i--) if (this.levelUnlocked[i]) return i; return 0; }
+    draw(ctx) { for (let level = 0; level < 14; level++) this.neuronsByLevel[level].forEach(n => n.draw(ctx, this.levelUnlocked[level] ? 1 : 0.1)); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CHALLENGE
+// ═══════════════════════════════════════════════════════════════════════════
+class Challenge {
+    constructor(type) {
+        this.type = type; this.info = CHALLENGES[type]; this.targets = []; this.obstacles = [];
+        this.score = 0; this.maxScore = 8; this.time = 0; this.seqIndex = 0; this.hiddenRule = null;
+        this.generate();
+    }
+    generate() {
+        this.targets = []; this.obstacles = []; this.score = 0; this.seqIndex = 0;
+        if (this.type === 0) { for (let i = 0; i < 8; i++) this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), r: 8, type: 'detect', flash: Math.random() * Math.PI * 2, done: false }); this.maxScore = 8; }
+        else if (this.type === 1) { for (let i = 0; i < 5; i++) this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), r: 7, type: 'good', color: '#00aaff', done: false }); for (let i = 0; i < 3; i++) this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), r: 7, type: 'bad', color: '#ff4444', done: false }); this.maxScore = 5; }
+        else if (this.type === 2) { for (let i = 0; i < 5; i++) this.targets.push({ x: 20 + Math.random() * (PW - 40), y: 20 + Math.random() * (PH - 40), vx: (Math.random() - 0.5) * 50, vy: (Math.random() - 0.5) * 50, r: 7, type: 'moving', done: false }); this.maxScore = 5; }
+        else if (this.type === 3) { [{ x: 0.2, y: 0.25 }, { x: 0.5, y: 0.15 }, { x: 0.8, y: 0.25 }, { x: 0.7, y: 0.55 }, { x: 0.3, y: 0.55 }, { x: 0.5, y: 0.8 }].forEach((p, i) => this.targets.push({ x: p.x * PW, y: p.y * PH, r: 9, type: 'pattern', order: i, done: false })); for (let i = 0; i < 3; i++) this.obstacles.push({ x: 0.3 * PW + Math.random() * 0.4 * PW, y: 0.3 * PH + Math.random() * 0.3 * PH, r: 15 }); this.maxScore = 6; }
+        else if (this.type === 4) { const colors = ['#ff0066', '#00ff66', '#6600ff', '#ffff00', '#00ffff']; for (let i = 0; i < 5; i++) { const angle = (i / 5) * Math.PI * 2 - Math.PI / 2; this.targets.push({ x: PW / 2 + Math.cos(angle) * 60, y: PH / 2 + Math.sin(angle) * 45, r: 10, type: 'seq', order: i, color: colors[i], active: i === 0, done: false }); } this.maxScore = 5; }
+        else if (this.type === 5) { this.targets.push({ x: PW - 30, y: PH / 2, r: 12, type: 'goal', done: false }); for (let i = 0; i < 6; i++) this.obstacles.push({ x: 40 + (i % 3) * (PW - 80) / 2, y: 30 + Math.floor(i / 3) * (PH - 60) + (i % 2) * 25, r: 18 }); this.maxScore = 1; }
+        else if (this.type === 6) { this.hiddenRule = Math.random() > 0.5 ? 'x>y' : 'x<y'; for (let i = 0; i < 8; i++) { const x = 20 + Math.random() * (PW - 40), y = 20 + Math.random() * (PH - 40); this.targets.push({ x, y, r: 7, type: 'abstract', good: this.hiddenRule === 'x>y' ? x > y * (PW / PH) : x < y * (PW / PH), done: false }); } this.maxScore = this.targets.filter(t => t.good).length; }
+    }
+    update(dt, agent, brain) {
+        this.time += dt;
+        this.targets.forEach(t => { if (t.type === 'moving' && !t.done) { t.x += t.vx * dt; t.y += t.vy * dt; if (t.x < 15 || t.x > PW - 15) t.vx *= -1; if (t.y < 15 || t.y > PH - 15) t.vy *= -1; } if (t.type === 'detect') t.flash += dt * 3; });
+        this.targets.forEach(t => { if (!t.done && Math.hypot(agent.x - t.x, agent.y - t.y) < agent.r + t.r) this.collect(t, brain); });
+        return this.getBestTarget(agent, brain);
+    }
+    collect(t, brain) {
+        t.done = true;
+        if (this.type === 0 || this.type === 2 || this.type === 3) this.score++;
+        else if (this.type === 1) this.score = t.type === 'good' ? this.score + 1 : Math.max(0, this.score - 1);
+        else if (this.type === 4) { if (t.order === this.seqIndex) { this.score++; this.seqIndex++; const next = this.targets.find(x => x.order === this.seqIndex); if (next) next.active = true; } else { this.seqIndex = 0; this.score = 0; this.targets.forEach(x => { x.done = false; x.active = x.order === 0; }); } }
+        else if (this.type === 5) this.score++;
+        else if (this.type === 6) this.score = t.good ? this.score + 1 : Math.max(0, this.score - 2);
+    }
+    getBestTarget(agent, brain) {
+        const level = brain.getHighestUnlocked();
+        let valid = this.targets.filter(t => !t.done);
+        if (this.type === 1 && level >= 2) valid = valid.filter(t => t.type === 'good');
+        if (this.type === 4 && level >= 8) valid = valid.filter(t => t.active);
+        if (this.type === 6 && level >= 12 && this.score > 1) valid = valid.filter(t => t.good);
+        let nearest = null, nearDist = Infinity;
+        valid.forEach(t => { const d = Math.hypot(agent.x - t.x, agent.y - t.y); if (d < nearDist) { nearDist = d; nearest = t; } });
+        return nearest;
+    }
+    isComplete() { return this.score >= this.maxScore; }
+    draw(ctx) {
+        ctx.fillStyle = '#080a14'; ctx.fillRect(0, 0, PW, PH);
+        ctx.strokeStyle = 'rgba(0,255,238,0.03)';
+        for (let x = 0; x < PW; x += 15) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, PH); ctx.stroke(); }
+        for (let y = 0; y < PH; y += 15) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(PW, y); ctx.stroke(); }
+        this.obstacles.forEach(o => { const grad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r); grad.addColorStop(0, 'rgba(255,50,50,0.7)'); grad.addColorStop(1, 'transparent'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2); ctx.fill(); });
+        this.targets.forEach(t => {
+            if (t.done) return;
+            let color = this.info.color, alpha = 1;
+            if (t.type === 'detect') alpha = 0.5 + Math.sin(t.flash) * 0.5;
+            if (t.type === 'good' || t.type === 'bad') color = t.color;
+            if (t.type === 'seq') { color = t.color; if (!t.active) alpha = 0.3; }
+            if (t.type === 'goal') color = '#ffcc00';
+            const glow = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r * 2);
+            glow.addColorStop(0, color + '88'); glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(t.x, t.y, t.r * 2, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+            if (t.type === 'pattern' || t.type === 'seq') { ctx.fillStyle = '#fff'; ctx.font = '8px IBM Plex Mono'; ctx.textAlign = 'center'; ctx.fillText(t.order + 1, t.x, t.y + 3); }
         });
     }
-    
-    function updateUI() {
-        const b = state.brain;
-        const e = state.env;
-        
-        // Timeline
-        document.getElementById('timelineFill').style.width = `${((b.stage + b.stageProgress) / 5) * 100}%`;
-        for (let i = 0; i < 5; i++) {
-            const el = document.getElementById(`s${i}`);
-            el.className = i < b.stage ? 'done' : (i === b.stage ? 'active' : '');
-        }
-        
-        // Task
-        const info = stageInfo[b.stage];
-        document.getElementById('taskStage').textContent = `STAGE ${['I','II','III','IV','V'][b.stage]} — ${['SENSORIMOTOR','MOTOR','SPATIAL','TEMPORAL','ABSTRACT'][b.stage]}`;
-        document.getElementById('taskName').textContent = info.name;
-        document.getElementById('taskDesc').textContent = info.desc;
-        
-        // Metrics
-        document.getElementById('metricFE').textContent = b.freeEnergy.toFixed(3);
-        document.getElementById('barFE').style.width = `${Math.min(100, b.freeEnergy * 100)}%`;
-        document.getElementById('metricPrec').textContent = b.precision.toFixed(2);
-        document.getElementById('barPrec').style.width = `${Math.min(100, b.precision * 5)}%`;
-        document.getElementById('metricGain').textContent = b.synapticGain.toFixed(2);
-        document.getElementById('barGain').style.width = `${Math.min(100, b.synapticGain * 30)}%`;
-        document.getElementById('metricCoh').textContent = b.coherence.toFixed(3);
-        document.getElementById('barCoh').style.width = `${Math.min(100, b.coherence * 100)}%`;
-        
-        // Layer activity
-        const activities = b.getLayerActivity();
-        activities.forEach((a, i) => {
-            const bar = document.getElementById(`layerBar${i}`);
-            if (bar) bar.style.width = `${Math.min(100, a * 100)}%`;
-        });
-        
-        // Neurotransmitters
-        document.getElementById('tDA').style.height = `${b.dopamine * 100}%`;
-        document.getElementById('t5HT').style.height = `${b.serotonin * 100}%`;
-        document.getElementById('tNE').style.height = `${b.norepinephrine * 100}%`;
-        document.getElementById('tACh').style.height = `${b.acetylcholine * 100}%`;
-        
-        // Progress indicator
-        document.getElementById('progressIndicator').textContent = `${e.solved}/${e.total}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT
+// ═══════════════════════════════════════════════════════════════════════════
+class Agent {
+    constructor() { this.x = PW / 2; this.y = PH / 2; this.vx = 0; this.vy = 0; this.r = 6; this.trail = []; }
+    update(dt, target, obstacles) {
+        if (target) { const dx = target.x - this.x, dy = target.y - this.y, dist = Math.sqrt(dx * dx + dy * dy); if (dist > 3) { this.vx += (dx / dist * 100 - this.vx) * dt * 5; this.vy += (dy / dist * 100 - this.vy) * dt * 5; } }
+        obstacles.forEach(o => { const dx = this.x - o.x, dy = this.y - o.y, dist = Math.sqrt(dx * dx + dy * dy); if (dist < o.r + 25) { const force = 150 / (dist + 1); this.vx += dx / dist * force * dt; this.vy += dy / dist * force * dt; } });
+        this.x += this.vx * dt; this.y += this.vy * dt;
+        this.x = Math.max(this.r, Math.min(PW - this.r, this.x)); this.y = Math.max(this.r, Math.min(PH - this.r, this.y));
+        this.vx *= 0.95; this.vy *= 0.95;
+        this.trail.push({ x: this.x, y: this.y, age: 0 }); if (this.trail.length > 30) this.trail.shift(); this.trail.forEach(p => p.age += dt);
     }
-    
-    function renderBackground() {
-        // Void gradient
-        const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.8);
-        grad.addColorStop(0, '#08080f');
-        grad.addColorStop(0.5, '#040408');
-        grad.addColorStop(1, '#020206');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-        
-        // Subtle field
-        ctx.strokeStyle = 'rgba(0, 255, 204, 0.015)';
-        ctx.lineWidth = 1;
-        const t = state.time * 0.05;
-        for (let i = 0; i < 15; i++) {
-            ctx.beginPath();
-            for (let x = 0; x < W; x += 30) {
-                const y = H/2 + Math.sin(x * 0.008 + t + i * 0.4) * (40 + i * 25);
-                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-        }
+    draw(ctx, color) {
+        this.trail.forEach(p => { ctx.fillStyle = `rgba(0,255,238,${Math.max(0, 1 - p.age * 3) * 0.3})`; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill(); });
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 3);
+        glow.addColorStop(0, color + 'aa'); glow.addColorStop(0.5, color + '44'); glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(this.x, this.y, this.r * 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x - 1.5, this.y - 1.5, this.r * 0.3, 0, Math.PI * 2); ctx.fill();
     }
-    
-    // Agent movement state
-    const agentState = {
-        targetX: null,
-        targetY: null,
-        visualX: 7,
-        visualY: 7,
-        moveTimer: 0,
-        moveInterval: 0.15, // Move every 150ms
-        currentTarget: null
-    };
-    
-    function simulate() {
-        if (state.paused) return;
-        
-        // Update movement timer
-        agentState.moveTimer += state.dt;
-        
-        // Smoothly interpolate visual position toward actual position
-        agentState.visualX += (state.env.agent.x - agentState.visualX) * state.dt * 8;
-        agentState.visualY += (state.env.agent.y - agentState.visualY) * state.dt * 8;
-        
-        // Only move at intervals, not every frame
-        if (agentState.moveTimer >= agentState.moveInterval) {
-            agentState.moveTimer = 0;
-            
-            const agent = state.env.agent;
-            let action;
-            
-            // Find nearest unfound target and commit to it
-            // Check if current target is still valid (not found/activated)
-            const targetInvalid = !agentState.currentTarget || 
-                                  agentState.currentTarget.found === true || 
-                                  agentState.currentTarget.activated === true;
-            
-            if (targetInvalid) {
-                let bestDist = Infinity;
-                agentState.currentTarget = null;
-                
-                for (const t of state.env.targets) {
-                    if (!t.found) {
-                        const dist = Math.sqrt(Math.pow(t.x - agent.x, 2) + Math.pow(t.y - agent.y, 2));
-                        if (dist < bestDist) {
-                            bestDist = dist;
-                            agentState.currentTarget = t;
-                        }
-                    }
-                }
-                
-                // Also check sequences
-                for (const seq of state.env.sequences) {
-                    if (!seq.completed && seq.current < seq.points.length) {
-                        const pt = seq.points[seq.current];
-                        const dist = Math.sqrt(Math.pow(pt.x - agent.x, 2) + Math.pow(pt.y - agent.y, 2));
-                        if (dist < bestDist) {
-                            bestDist = dist;
-                            agentState.currentTarget = pt;
-                        }
-                    }
-                }
-            }
-            
-            // Move toward current target
-            if (agentState.currentTarget) {
-                const dx = agentState.currentTarget.x - agent.x;
-                const dy = agentState.currentTarget.y - agent.y;
-                
-                // Add slight randomness to make it look more natural
-                if (Math.random() < 0.9) {
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        action = dx > 0 ? 1 : 3; // right or left
-                    } else if (Math.abs(dy) > 0) {
-                        action = dy > 0 ? 2 : 0; // down or up
-                    } else {
-                        action = 4; // stay
-                    }
-                } else {
-                    // Occasional random move for exploration
-                    action = Math.floor(Math.random() * 4);
-                }
-            } else {
-                // No target - explore
-                action = Math.floor(Math.random() * 4);
-            }
-            
-            state.env.step(action);
-        }
-        
-        // Always process brain (it runs continuously)
-        const obs = state.env.getObservation();
-        state.brain.process(obs, state.dt);
-        state.model.infer(obs);
-        
-        // Stage completion triggers development rupture and advances to next stage
-        if (state.env.isSolved() && state.brain.stage < 4) {
-            state.brain.stage++;
-            state.brain.devCRR.C = 0;
-            state.brain.devCRR.C_arch += 1;
-            state.env.stage = state.brain.stage;
-            state.env.reset();
-            agentState.currentTarget = null;
-            agentState.visualX = state.env.agent.x;
-            agentState.visualY = state.env.agent.y;
-            Karl.show(state.brain.stage);
-        }
-        
-        Karl.update(state.dt, state.brain.stage, state.brain.freeEnergy);
-        state.time += state.dt;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN
+// ═══════════════════════════════════════════════════════════════════════════
+const state = { brain: null, agent: null, challenge: null, challengeIdx: 0, paused: false, speed: 1, time: 0, quoteIdx: 0, quoteTimer: 0 };
+
+function init() {
+    state.brain = new Brain(); state.agent = new Agent(); state.challenge = new Challenge(0);
+    state.challengeIdx = 0; state.time = 0; state.quoteIdx = 0; state.quoteTimer = 0;
+    const hList = document.getElementById('hList'); hList.innerHTML = '';
+    for (let i = 0; i < 14; i++) { const d = LEVEL_DATA[i]; const row = document.createElement('div'); row.className = 'h-row'; row.id = `hr${i}`; row.innerHTML = `<span class="h-num">${i + 1}</span><span class="h-dot" style="background:${d.color}"></span><span class="h-name">${d.name}</span><span class="h-bar"><span class="h-fill" id="hf${i}" style="background:${d.color}"></span></span><span class="h-tau">${d.tau}ms</span>`; hList.appendChild(row); }
+    const stages = document.getElementById('stages'); stages.innerHTML = '';
+    for (let i = 0; i < 7; i++) { const dot = document.createElement('div'); dot.className = 'stage-dot'; dot.id = `sd${i}`; stages.appendChild(dot); }
+    setTimeout(() => document.getElementById('karlBubble').classList.add('show'), 1000);
+}
+
+function updateUI() {
+    const b = state.brain, c = state.challenge;
+    for (let i = 0; i < 14; i++) { const row = document.getElementById(`hr${i}`), fill = document.getElementById(`hf${i}`); row.className = 'h-row'; if (Math.round(b.peakLevel) === i) row.classList.add('active'); if (!b.levelUnlocked[i]) row.classList.add('locked'); fill.style.width = `${b.levelCRR[i].phase * 100}%`; }
+    const phase = b.levelCRR[b.activeLevel].phase, expCO = Math.exp(phase * Math.PI);
+    document.getElementById('valC').textContent = phase.toFixed(2);
+    document.getElementById('ringC').style.strokeDashoffset = 131.95 * (1 - phase);
+    document.getElementById('valExp').textContent = expCO.toFixed(1);
+    document.getElementById('ringExp').style.strokeDashoffset = 131.95 * (1 - Math.min(1, expCO / E_PI));
+    document.getElementById('natsVal').textContent = b.totalNats.toFixed(2);
+    document.getElementById('natsFill').style.width = `${(b.totalNats / CRITICAL_INFO) * 100}%`;
+    document.getElementById('nDA').style.height = `${b.dopamine * 100}%`;
+    document.getElementById('n5HT').style.height = `${b.serotonin * 100}%`;
+    document.getElementById('nNE').style.height = `${b.norepinephrine * 100}%`;
+    document.getElementById('nACh').style.height = `${b.acetylcholine * 100}%`;
+    document.getElementById('challengeNum').textContent = `${state.challengeIdx + 1}/7`;
+    document.getElementById('challengeType').textContent = c.info.name;
+    document.getElementById('challengeType').style.color = c.info.color;
+    document.getElementById('reqLevel').textContent = `${LEVEL_DATA[c.info.levels[0]].name}-${LEVEL_DATA[Math.min(c.info.levels[1], 13)].name}`;
+    document.getElementById('scoreVal').textContent = `${c.score}/${c.maxScore}`;
+    document.getElementById('timeVal').textContent = `${Math.floor(c.time / 60)}:${Math.floor(c.time % 60).toString().padStart(2, '0')}`;
+    document.getElementById('challengeDesc').textContent = c.info.desc;
+    for (let i = 0; i < 7; i++) { const dot = document.getElementById(`sd${i}`); dot.className = 'stage-dot'; if (i < state.challengeIdx) dot.classList.add('done'); if (i === state.challengeIdx) dot.classList.add('current'); }
+}
+
+function showQuote() {
+    const quotes = QUOTES[state.challengeIdx] || QUOTES[6], quote = quotes[state.quoteIdx % quotes.length]; state.quoteIdx++;
+    const bubble = document.getElementById('karlBubble'), text = document.getElementById('karlQuote');
+    bubble.classList.remove('show'); setTimeout(() => { text.innerHTML = quote; bubble.classList.add('show'); }, 200);
+}
+
+function drawBackground() {
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.8);
+    grad.addColorStop(0, '#080a18'); grad.addColorStop(0.5, '#040612'); grad.addColorStop(1, '#010208');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(0,255,238,0.01)'; const t = state.time * 0.03;
+    for (let i = 0; i < 15; i++) { ctx.beginPath(); for (let x = 0; x <= W; x += 40) { const y = H / 2 + Math.sin(x * 0.005 + t + i * 0.4) * (40 + i * 20); x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); }
+}
+
+function simulate(dt) {
+    if (state.paused) return;
+    state.brain.process(dt, 0.3 + state.challenge.score / state.challenge.maxScore * 0.5);
+    const target = state.challenge.update(dt, state.agent, state.brain);
+    state.agent.update(dt, target, state.challenge.obstacles);
+    if (state.challenge.isComplete()) {
+        if (state.challengeIdx < 6) {
+            const next = CHALLENGES[state.challengeIdx + 1], reqLevel = next.levels[0];
+            for (let i = 0; i <= reqLevel && i < 14; i++) { if (!state.brain.levelUnlocked[i]) { state.brain.levelUnlocked[i] = true; state.brain.levelCRR[i].ruptures = 1; } }
+            state.challengeIdx++; state.challenge = new Challenge(state.challengeIdx);
+            state.agent.x = PW / 2; state.agent.y = PH / 2; state.agent.vx = 0; state.agent.vy = 0; state.agent.trail = [];
+            showQuote();
+        } else { state.challenge = new Challenge(6); state.agent.x = PW / 2; state.agent.y = PH / 2; state.agent.trail = []; }
     }
-    
-    function animate() {
-        for (let i = 0; i < state.speed; i++) simulate();
-        
-        renderBackground();
-        state.brain.draw(ctx);
-        
-        const pr = probCanvas.parentElement.getBoundingClientRect();
-        state.env.draw(probCtx, pr.width, pr.width);
-        state.env.drawAgent(probCtx, pr.width, pr.width, agentState.visualX, agentState.visualY);
-        
-        updateUI();
-        requestAnimationFrame(animate);
-    }
-    
-    // Events
-    document.getElementById('btnPause').addEventListener('click', () => {
-        state.paused = !state.paused;
-        const btn = document.getElementById('btnPause');
-        btn.textContent = state.paused ? '▶ RESUME' : '⏸ PAUSE';
-        btn.classList.toggle('active', state.paused);
-    });
-    
-    document.getElementById('btnReset').addEventListener('click', () => {
-        state.brain = new Brain();
-        state.env = new Environment();
-        state.model = new GenerativeModel();
-        state.time = 0;
-        agentState.visualX = 7;
-        agentState.visualY = 7;
-        agentState.currentTarget = null;
-        agentState.moveTimer = 0;
-        Karl.idx = 0;
-        Karl.crr = new CRR(6);
-    });
-    
-    document.getElementById('btnSpeed').addEventListener('click', () => {
-        state.speed = state.speed === 1 ? 3 : state.speed === 3 ? 10 : 1;
-        document.getElementById('btnSpeed').textContent = `${state.speed}×`;
-    });
-    
-    // Init
-    initLayerActivity();
-    Karl.init();
-    animate();
-    
-    console.log(`
-╔═══════════════════════════════════════════════════════════════════╗
-║           THE BRAIN AS SCIENTIST — Neural Realism                 ║
-╠═══════════════════════════════════════════════════════════════════╣
-║                                                                   ║
-║  Every visual element represents REAL computation:                ║
-║                                                                   ║
-║  NEURONS:                                                         ║
-║  • Soma with membrane potential dynamics (threshold firing)       ║
-║  • Dendritic trees with spines (input integration)                ║
-║  • Axons with myelin segments (action potential propagation)      ║
-║  • CRR state governs firing threshold & plasticity                ║
-║                                                                   ║
-║  HIDDEN CRR:                                                      ║
-║  • C(t) = ∫L(τ)dτ at every neuron                                 ║
-║  • Ruptures trigger action potentials                             ║
-║  • R modulates synaptic gain (memory/plasticity)                  ║
-║                                                                   ║
-║  CORTICAL HIERARCHY:                                              ║
-║  • Thalamus → V1 → V2/Assoc → Temporal → PFC                      ║
-║  • Ω increases π-fold per layer                                   ║
-║  • Feedforward (errors) + Feedback (predictions)                  ║
-║                                                                   ║
-║  NEUROMODULATION:                                                 ║
-║  • DA: reward/prediction error                                    ║
-║  • 5-HT: temporal discounting                                     ║
-║  • NE: precision/arousal                                          ║
-║  • ACh: attention/learning                                        ║
-║                                                                   ║
-╚═══════════════════════════════════════════════════════════════════╝
-    `);
-    </script>
-</body>
-</html>
+    state.quoteTimer += dt; if (state.quoteTimer > 8) { state.quoteTimer = 0; showQuote(); }
+    state.time += dt;
+}
+
+function render() {
+    simulate(0.016 * state.speed);
+    drawBackground(); state.brain.draw(ctx);
+    state.challenge.draw(probCtx); state.agent.draw(probCtx, LEVEL_DATA[Math.round(state.brain.peakLevel)].color);
+    updateUI(); requestAnimationFrame(render);
+}
+
+document.getElementById('btnPause').addEventListener('click', () => { state.paused = !state.paused; document.getElementById('btnPause').textContent = state.paused ? '▶ PLAY' : '⏸ PAUSE'; document.getElementById('btnPause').classList.toggle('active', state.paused); });
+document.getElementById('btnReset').addEventListener('click', init);
+document.getElementById('btnSpeed').addEventListener('click', () => { state.speed = state.speed === 1 ? 2 : state.speed === 2 ? 4 : 1; document.getElementById('btnSpeed').textContent = `${state.speed}×`; });
+
+init(); render();
+console.log(`\n═══ THE BRAIN AS SCIENTIST ═══\nπ^14 ≈ 2^(e^π)\n14 × ln(π) = ${CRITICAL_INFO.toFixed(6)} nats\nMurray timescales: ${LEVEL_DATA[0].tau}ms → ${LEVEL_DATA[13].tau}ms\n`);
+</script></body></html>
