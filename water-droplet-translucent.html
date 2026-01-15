@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Droplet — Translucent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a1a1a;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        .ctrl-btn {
+            padding: 10px 18px;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(30, 30, 30, 0.95);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+        
+        .ctrl-btn.active {
+            background: rgba(60, 130, 180, 0.3);
+            border-color: rgba(100, 180, 255, 0.5);
+            color: #fff;
+        }
+        
+        .info-overlay {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            line-height: 1.6;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .info-overlay.visible {
+            display: block;
+        }
+        
+        .info-overlay .label {
+            color: rgba(100, 180, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="info-overlay" id="infoOverlay">
+        <span class="label">OPTICAL PIPELINE</span><br>
+        Photon → Fresnel → Screen → Retina → V1<br><br>
+        <span class="label">n(water)</span> = 1.333 @ 589nm<br>
+        <span class="label">Display</span> = <span id="refreshRate">60</span>Hz<br><br>
+        <span class="label">INTERNAL DYNAMICS</span><br>
+        H₂O clusters • Convection • H-bonds
+    </div>
+    
+    <div class="controls">
+        <button class="ctrl-btn" id="infoBtn">ℹ Info</button>
+        <button class="ctrl-btn" id="physicsBtn">⚛ Physics</button>
+        <button class="ctrl-btn active" id="pureBtn">💧 Pure</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // =====================================================
+        // PHYSICAL CONSTANTS
+        // =====================================================
+        
+        const WATER = {
+            A: 1.3199,
+            B: 0.00653,
+            n_D: 1.333
+        };
+        
+        function refractiveIndex(lambda_nm) {
+            const lambda_um = lambda_nm / 1000;
+            return WATER.A + WATER.B / (lambda_um * lambda_um);
+        }
+        
+        function fresnelReflectance(n1, n2, cosTheta_i) {
+            const sinTheta_i = Math.sqrt(Math.max(0, 1 - cosTheta_i * cosTheta_i));
+            const sinTheta_t = (n1 / n2) * sinTheta_i;
+            if (sinTheta_t > 1) return 1;
+            const cosTheta_t = Math.sqrt(Math.max(0, 1 - sinTheta_t * sinTheta_t));
+            const Rs = Math.pow((n1 * cosTheta_i - n2 * cosTheta_t) / (n1 * cosTheta_i + n2 * cosTheta_t + 0.0001), 2);
+            const Rp = Math.pow((n1 * cosTheta_t - n2 * cosTheta_i) / (n1 * cosTheta_t + n2 * cosTheta_i + 0.0001), 2);
+            return Math.min(1, (Rs + Rp) / 2);
+        }
+        
+        // =====================================================
+        // CRR STATE
+        // =====================================================
+        
+        const CRR = {
+            photon: { C: 0, omega: 0.8, L: 0, rupture: 0 },
+            molecular: { C: 0, omega: 2.0, L: 0, rupture: 0 },
+            cluster: { C: 0, omega: 5.0, L: 0, rupture: 0 },
+            surface: { C: 0, omega: 12.0, L: 0, rupture: 0 },
+            neural: { C: 0, omega: 30.0, L: 0, rupture: 0 }
+        };
+        
+        // =====================================================
+        // DROPLET STATE
+        // =====================================================
+        
+        const droplet = {
+            cx: 0,
+            cy: 0,
+            baseRadius: 0,
+            wobblePhase: 0,
+            wobbleAmp: 0,
+            causticPhase: 0,
+            flowPhase: 0
+        };
+        
+        // =====================================================
+        // INTERNAL DYNAMICS - Water molecule clusters
+        // =====================================================
+        
+        const NUM_CLUSTERS = 25;
+        const NUM_MOLECULES = 60;
+        const NUM_FLOW_PARTICLES = 40;
+        
+        let clusters = [];
+        let molecules = [];
+        let flowParticles = [];
+        let hBonds = [];
+        
+        function initInternals() {
+            clusters = [];
+            molecules = [];
+            flowParticles = [];
+            hBonds = [];
+            
+            // H₂O clusters (tetrahedral coordination)
+            for (let i = 0; i < NUM_CLUSTERS; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.85;
+                clusters.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    z: (Math.random() - 0.5) * 1.6,
+                    size: 0.02 + Math.random() * 0.025,
+                    phase: Math.random() * Math.PI * 2,
+                    pulseSpeed: 0.02 + Math.random() * 0.02,
+                    coherence: Math.random(),
+                    vx: (Math.random() - 0.5) * 0.001,
+                    vy: (Math.random() - 0.5) * 0.001
+                });
+            }
+            
+            // Individual water molecules (smaller, faster)
+            for (let i = 0; i < NUM_MOLECULES; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.9;
+                molecules.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    z: (Math.random() - 0.5) * 1.8,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.08,
+                    vibration: Math.random() * 0.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.003,
+                    vy: (Math.random() - 0.5) * 0.003
+                });
+            }
+            
+            // Flow/convection particles
+            for (let i = 0; i < NUM_FLOW_PARTICLES; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.8;
+                flowParticles.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    z: (Math.random() - 0.5) * 1.5,
+                    age: Math.random(),
+                    speed: 0.002 + Math.random() * 0.003
+                });
+            }
+            
+            // Generate hydrogen bonds between nearby clusters
+            updateHBonds();
+        }
+        
+        function updateHBonds() {
+            hBonds = [];
+            for (let i = 0; i < clusters.length; i++) {
+                for (let j = i + 1; j < clusters.length; j++) {
+                    const dx = clusters[j].x - clusters[i].x;
+                    const dy = clusters[j].y - clusters[i].y;
+                    const dz = clusters[j].z - clusters[i].z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    
+                    if (dist < 0.35 && dist > 0.08) {
+                        hBonds.push({
+                            from: i,
+                            to: j,
+                            strength: 1 - dist / 0.35,
+                            phase: Math.random() * Math.PI * 2
+                        });
+                    }
+                }
+            }
+        }
+        
+        // =====================================================
+        // RESIZE
+        // =====================================================
+        
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            droplet.cx = window.innerWidth / 2;
+            droplet.cy = window.innerHeight / 2;
+            droplet.baseRadius = Math.min(window.innerWidth, window.innerHeight) * 0.28;
+            
+            initInternals();
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // =====================================================
+        // UI STATE
+        // =====================================================
+        
+        let showInfo = false;
+        let showPhysics = false;
+        let actualRefreshRate = 60;
+        let frameCount = 0;
+        let lastSecond = performance.now();
+        
+        document.getElementById('infoBtn').addEventListener('click', () => {
+            showInfo = !showInfo;
+            document.getElementById('infoOverlay').classList.toggle('visible', showInfo);
+            document.getElementById('infoBtn').classList.toggle('active', showInfo);
+        });
+        
+        document.getElementById('physicsBtn').addEventListener('click', () => {
+            showPhysics = !showPhysics;
+            document.getElementById('physicsBtn').classList.toggle('active', showPhysics);
+            document.getElementById('pureBtn').classList.toggle('active', !showPhysics);
+        });
+        
+        document.getElementById('pureBtn').addEventListener('click', () => {
+            showPhysics = false;
+            showInfo = false;
+            document.getElementById('physicsBtn').classList.remove('active');
+            document.getElementById('infoBtn').classList.remove('active');
+            document.getElementById('infoOverlay').classList.remove('visible');
+            document.getElementById('pureBtn').classList.add('active');
+        });
+        
+        // =====================================================
+        // CRR DYNAMICS
+        // =====================================================
+        
+        function updateCRR(dt) {
+            // Photon scale
+            CRR.photon.L = 0.05 + Math.random() * 0.06;
+            CRR.photon.C += CRR.photon.L;
+            if (CRR.photon.C >= CRR.photon.omega) {
+                CRR.photon.C = 0;
+                CRR.photon.rupture = 1;
+                CRR.molecular.L += 0.15;
+            }
+            CRR.photon.rupture *= 0.85;
+            
+            // Molecular scale
+            CRR.molecular.L += 0.01 + Math.random() * 0.02;
+            CRR.molecular.C += CRR.molecular.L;
+            CRR.molecular.L *= 0.9;
+            if (CRR.molecular.C >= CRR.molecular.omega) {
+                CRR.molecular.C = 0;
+                CRR.molecular.rupture = 1;
+                CRR.cluster.L += 0.25;
+                
+                // Excite some molecules
+                for (let i = 0; i < 5; i++) {
+                    const mol = molecules[Math.floor(Math.random() * molecules.length)];
+                    mol.vibration = 1.5;
+                    mol.rotSpeed *= 1.5;
+                }
+            }
+            CRR.molecular.rupture *= 0.9;
+            
+            // Cluster scale (H-bond network dynamics)
+            CRR.cluster.L += 0.008 + Math.random() * 0.012;
+            CRR.cluster.C += CRR.cluster.L;
+            CRR.cluster.L *= 0.92;
+            if (CRR.cluster.C >= CRR.cluster.omega) {
+                CRR.cluster.C = 0;
+                CRR.cluster.rupture = 1;
+                CRR.surface.L += 0.35;
+                
+                // Reorganize clusters
+                const cluster = clusters[Math.floor(Math.random() * clusters.length)];
+                cluster.coherence = 0;
+                cluster.vx += (Math.random() - 0.5) * 0.005;
+                cluster.vy += (Math.random() - 0.5) * 0.005;
+            }
+            CRR.cluster.rupture *= 0.92;
+            
+            // Surface scale
+            CRR.surface.L += 0.005 + Math.random() * 0.008;
+            CRR.surface.C += CRR.surface.L;
+            CRR.surface.L *= 0.94;
+            if (CRR.surface.C >= CRR.surface.omega) {
+                CRR.surface.C = 0;
+                CRR.surface.rupture = 1;
+                CRR.neural.L += 0.5;
+                droplet.wobbleAmp = Math.min(0.008, droplet.wobbleAmp + 0.003);
+            }
+            CRR.surface.rupture *= 0.95;
+            
+            // Neural scale
+            CRR.neural.L += 0.003 + Math.random() * 0.004;
+            CRR.neural.C += CRR.neural.L;
+            CRR.neural.L *= 0.96;
+            if (CRR.neural.C >= CRR.neural.omega) {
+                CRR.neural.C = 0;
+                CRR.neural.rupture = 1;
+            }
+            CRR.neural.rupture *= 0.97;
+        }
+        
+        // =====================================================
+        // PHYSICS UPDATE
+        // =====================================================
+        
+        function updatePhysics(dt) {
+            droplet.wobblePhase += 0.015;
+            droplet.wobbleAmp *= 0.995;
+            droplet.wobbleAmp = Math.min(0.01, droplet.wobbleAmp);
+            
+            droplet.causticPhase += 0.006;
+            droplet.flowPhase += 0.004;
+            
+            // Update clusters (Brownian motion + coherence recovery)
+            clusters.forEach(cluster => {
+                cluster.x += cluster.vx;
+                cluster.y += cluster.vy;
+                
+                // Brownian kicks
+                cluster.vx += (Math.random() - 0.5) * 0.0003;
+                cluster.vy += (Math.random() - 0.5) * 0.0003;
+                
+                // Damping
+                cluster.vx *= 0.98;
+                cluster.vy *= 0.98;
+                
+                // Boundary
+                const r = Math.sqrt(cluster.x * cluster.x + cluster.y * cluster.y);
+                if (r > 0.85) {
+                    cluster.x *= 0.85 / r;
+                    cluster.y *= 0.85 / r;
+                    cluster.vx *= -0.5;
+                    cluster.vy *= -0.5;
+                }
+                
+                // Phase and coherence
+                cluster.phase += cluster.pulseSpeed;
+                cluster.coherence += 0.01;
+                cluster.coherence = Math.min(1, cluster.coherence);
+            });
+            
+            // Update molecules
+            molecules.forEach(mol => {
+                mol.x += mol.vx;
+                mol.y += mol.vy;
+                
+                // Brownian
+                mol.vx += (Math.random() - 0.5) * 0.0008;
+                mol.vy += (Math.random() - 0.5) * 0.0008;
+                mol.vx *= 0.97;
+                mol.vy *= 0.97;
+                
+                // Boundary
+                const r = Math.sqrt(mol.x * mol.x + mol.y * mol.y);
+                if (r > 0.9) {
+                    mol.x *= 0.9 / r;
+                    mol.y *= 0.9 / r;
+                    mol.vx *= -0.3;
+                    mol.vy *= -0.3;
+                }
+                
+                mol.rotation += mol.rotSpeed;
+                mol.rotSpeed *= 0.995;
+                mol.rotSpeed = Math.max(0.01, Math.abs(mol.rotSpeed)) * Math.sign(mol.rotSpeed || 1);
+                mol.vibration *= 0.98;
+                mol.vibration = Math.max(0.3, mol.vibration);
+            });
+            
+            // Update flow particles (convection simulation)
+            flowParticles.forEach(p => {
+                // Circular convection pattern
+                const angle = Math.atan2(p.y, p.x);
+                const r = Math.sqrt(p.x * p.x + p.y * p.y);
+                
+                // Toroidal flow
+                const flowAngle = angle + droplet.flowPhase;
+                p.x += Math.cos(flowAngle + Math.PI/2) * p.speed * (1 - r);
+                p.y += Math.sin(flowAngle + Math.PI/2) * p.speed * (1 - r);
+                
+                // Vertical component
+                p.z += Math.sin(droplet.flowPhase * 2 + angle) * 0.002;
+                p.z = Math.max(-0.8, Math.min(0.8, p.z));
+                
+                // Reset if outside
+                const newR = Math.sqrt(p.x * p.x + p.y * p.y);
+                if (newR > 0.85) {
+                    const newTheta = Math.random() * Math.PI * 2;
+                    const newRad = Math.random() * 0.3;
+                    p.x = Math.cos(newTheta) * newRad;
+                    p.y = Math.sin(newTheta) * newRad;
+                }
+                
+                p.age += 0.005;
+                if (p.age > 1) p.age = 0;
+            });
+            
+            // Periodically update H-bonds
+            if (Math.random() < 0.02) {
+                updateHBonds();
+            }
+            
+            // Update H-bond phases
+            hBonds.forEach(bond => {
+                bond.phase += 0.03;
+            });
+        }
+        
+        // =====================================================
+        // GET DROPLET RADIUS
+        // =====================================================
+        
+        function getRadius(theta) {
+            let r = droplet.baseRadius;
+            const wobble = droplet.wobbleAmp * droplet.baseRadius;
+            r += wobble * Math.cos(2 * theta + droplet.wobblePhase);
+            r += droplet.baseRadius * 0.004 * Math.cos(theta - Math.PI/2);
+            return r;
+        }
+        
+        // =====================================================
+        // 3D PROJECTION
+        // =====================================================
+        
+        function project3D(x, y, z, cx, cy, radius) {
+            const fov = 600;
+            const scale = fov / (fov + z * radius * 0.5);
+            return {
+                x: cx + x * radius * scale,
+                y: cy + y * radius * scale,
+                scale: scale,
+                depth: z
+            };
+        }
+        
+        // =====================================================
+        // RENDERING
+        // =====================================================
+        
+        function render() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const cx = droplet.cx;
+            const cy = droplet.cy;
+            
+            renderEnvironment(w, h);
+            renderContactShadow(cx, cy);
+            
+            // Main droplet
+            ctx.save();
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const r = getRadius(theta);
+                const x = cx + Math.cos(theta) * r;
+                const y = cy + Math.sin(theta) * r;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.clip();
+            
+            // VERY translucent water body
+            renderWaterBody(cx, cy);
+            
+            // Internal dynamics (always visible, enhanced in physics mode)
+            renderInternalDynamics(cx, cy, showPhysics);
+            
+            // Caustics
+            renderCaustics(cx, cy);
+            
+            // Subsurface
+            renderSubsurface(cx, cy);
+            
+            ctx.restore();
+            
+            // Surface effects
+            renderFresnelRim(cx, cy);
+            renderEnvironmentReflection(cx, cy);
+            renderSpecularHighlights(cx, cy);
+            renderEdge(cx, cy);
+            
+            // CRR overlay
+            if (showPhysics) {
+                renderCRROverlay(cx, cy);
+            }
+        }
+        
+        function renderEnvironment(w, h) {
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+            bgGrad.addColorStop(0, '#404040');
+            bgGrad.addColorStop(0.35, '#333333');
+            bgGrad.addColorStop(0.65, '#2a2a2a');
+            bgGrad.addColorStop(1, '#1f1f1f');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Texture
+            ctx.globalAlpha = 0.015;
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * w;
+                const y = Math.random() * h;
+                const r = 25 + Math.random() * 45;
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                grad.addColorStop(0, '#666');
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function renderContactShadow(cx, cy) {
+            const r = droplet.baseRadius;
+            const shadowY = cy + r * 0.96;
+            
+            const outer = ctx.createRadialGradient(cx, shadowY + 15, 0, cx, shadowY + 15, r * 1.2);
+            outer.addColorStop(0, 'rgba(0, 0, 0, 0.35)');
+            outer.addColorStop(0.4, 'rgba(0, 0, 0, 0.15)');
+            outer.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = outer;
+            ctx.beginPath();
+            ctx.ellipse(cx, shadowY + 15, r * 1.0, r * 0.18, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const inner = ctx.createRadialGradient(cx, shadowY + 3, 0, cx, shadowY + 3, r * 0.4);
+            inner.addColorStop(0, 'rgba(0, 0, 0, 0.5)');
+            inner.addColorStop(0.6, 'rgba(0, 0, 0, 0.2)');
+            inner.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = inner;
+            ctx.beginPath();
+            ctx.ellipse(cx, shadowY + 3, r * 0.35, r * 0.06, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function renderWaterBody(cx, cy) {
+            const r = droplet.baseRadius;
+            
+            // MUCH more translucent - like glass
+            const water = ctx.createRadialGradient(
+                cx - r * 0.1, cy - r * 0.15, 0,
+                cx, cy, r * 1.1
+            );
+            
+            // Very low opacity - you can see through it
+            water.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+            water.addColorStop(0.2, 'rgba(248, 252, 255, 0.10)');
+            water.addColorStop(0.4, 'rgba(240, 248, 255, 0.08)');
+            water.addColorStop(0.6, 'rgba(230, 242, 252, 0.06)');
+            water.addColorStop(0.8, 'rgba(220, 235, 250, 0.05)');
+            water.addColorStop(1, 'rgba(210, 228, 245, 0.04)');
+            
+            ctx.fillStyle = water;
+            ctx.fillRect(cx - r * 1.5, cy - r * 1.5, r * 3, r * 3);
+            
+            // Very subtle blue tint
+            const tint = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            tint.addColorStop(0, 'rgba(200, 225, 255, 0.04)');
+            tint.addColorStop(0.5, 'rgba(190, 220, 250, 0.025)');
+            tint.addColorStop(1, 'rgba(180, 215, 245, 0.015)');
+            ctx.fillStyle = tint;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function renderInternalDynamics(cx, cy, enhanced) {
+            const r = droplet.baseRadius;
+            const baseAlpha = enhanced ? 1 : 0.4;
+            
+            // Sort everything by depth for proper rendering
+            const allItems = [];
+            
+            // Add clusters
+            clusters.forEach((cluster, i) => {
+                allItems.push({ type: 'cluster', data: cluster, index: i, z: cluster.z });
+            });
+            
+            // Add molecules
+            molecules.forEach((mol, i) => {
+                allItems.push({ type: 'molecule', data: mol, index: i, z: mol.z });
+            });
+            
+            // Add flow particles
+            flowParticles.forEach((p, i) => {
+                allItems.push({ type: 'flow', data: p, index: i, z: p.z });
+            });
+            
+            // Sort back to front
+            allItems.sort((a, b) => a.z - b.z);
+            
+            // Draw H-bonds first (behind everything)
+            if (enhanced) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                
+                hBonds.forEach(bond => {
+                    const c1 = clusters[bond.from];
+                    const c2 = clusters[bond.to];
+                    
+                    const p1 = project3D(c1.x, c1.y, c1.z, cx, cy, r);
+                    const p2 = project3D(c2.x, c2.y, c2.z, cx, cy, r);
+                    
+                    const pulse = 0.5 + Math.sin(bond.phase) * 0.5;
+                    
+                    ctx.strokeStyle = `rgba(100, 180, 255, ${bond.strength * pulse * 0.5})`;
+                    ctx.lineWidth = 1 + bond.strength;
+                    ctx.setLineDash([3, 3]);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                });
+                
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+            
+            // Draw items
+            allItems.forEach(item => {
+                if (item.type === 'cluster') {
+                    drawCluster(item.data, cx, cy, r, baseAlpha, enhanced);
+                } else if (item.type === 'molecule') {
+                    drawMolecule(item.data, cx, cy, r, baseAlpha, enhanced);
+                } else if (item.type === 'flow') {
+                    drawFlowParticle(item.data, cx, cy, r, baseAlpha, enhanced);
+                }
+            });
+        }
+        
+        function drawCluster(cluster, cx, cy, r, baseAlpha, enhanced) {
+            const p = project3D(cluster.x, cluster.y, cluster.z, cx, cy, r);
+            const size = cluster.size * r * p.scale;
+            
+            const pulse = 0.7 + Math.sin(cluster.phase) * 0.3;
+            const alpha = baseAlpha * (0.3 + cluster.coherence * 0.7) * pulse;
+            const depthFade = 0.5 + (cluster.z + 1) * 0.25;
+            
+            if (enhanced) {
+                // Outer glow
+                const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 2.5);
+                glow.addColorStop(0, `rgba(150, 200, 255, ${alpha * depthFade * 0.3})`);
+                glow.addColorStop(0.5, `rgba(130, 190, 255, ${alpha * depthFade * 0.15})`);
+                glow.addColorStop(1, 'rgba(120, 180, 255, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Core
+            const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+            core.addColorStop(0, `rgba(200, 230, 255, ${alpha * depthFade * 0.6})`);
+            core.addColorStop(0.5, `rgba(170, 210, 250, ${alpha * depthFade * 0.3})`);
+            core.addColorStop(1, `rgba(150, 200, 245, 0)`);
+            ctx.fillStyle = core;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tetrahedral hint (in enhanced mode)
+            if (enhanced && cluster.coherence > 0.5) {
+                ctx.strokeStyle = `rgba(180, 220, 255, ${alpha * depthFade * 0.2})`;
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < 4; i++) {
+                    const angle = cluster.phase + (i / 4) * Math.PI * 2;
+                    const len = size * 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x + Math.cos(angle) * len, p.y + Math.sin(angle) * len * 0.6);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        function drawMolecule(mol, cx, cy, r, baseAlpha, enhanced) {
+            const p = project3D(mol.x, mol.y, mol.z, cx, cy, r);
+            const size = 3 * p.scale;
+            const alpha = baseAlpha * mol.vibration * 0.5;
+            const depthFade = 0.4 + (mol.z + 1) * 0.3;
+            
+            if (!enhanced) {
+                // Simple dot in pure mode
+                ctx.fillStyle = `rgba(220, 240, 255, ${alpha * depthFade * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                return;
+            }
+            
+            // H₂O structure in enhanced mode
+            const bondLen = size * 2;
+            const bondAngle = 104.45 * Math.PI / 180;
+            
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(mol.rotation);
+            
+            // Oxygen (center)
+            const oGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+            oGrad.addColorStop(0, `rgba(255, 120, 120, ${alpha * depthFade * 0.7})`);
+            oGrad.addColorStop(0.5, `rgba(255, 100, 100, ${alpha * depthFade * 0.4})`);
+            oGrad.addColorStop(1, 'rgba(255, 80, 80, 0)');
+            ctx.fillStyle = oGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hydrogens
+            const h1x = Math.cos(-bondAngle/2) * bondLen;
+            const h1y = Math.sin(-bondAngle/2) * bondLen;
+            const h2x = Math.cos(bondAngle/2) * bondLen;
+            const h2y = Math.sin(bondAngle/2) * bondLen;
+            
+            // Bonds
+            ctx.strokeStyle = `rgba(200, 220, 240, ${alpha * depthFade * 0.3})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(h1x, h1y);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(h2x, h2y);
+            ctx.stroke();
+            
+            // H atoms
+            const hSize = size * 0.5;
+            [{ x: h1x, y: h1y }, { x: h2x, y: h2y }].forEach(h => {
+                const hGrad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, hSize);
+                hGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * depthFade * 0.8})`);
+                hGrad.addColorStop(0.5, `rgba(240, 250, 255, ${alpha * depthFade * 0.4})`);
+                hGrad.addColorStop(1, 'rgba(230, 245, 255, 0)');
+                ctx.fillStyle = hGrad;
+                ctx.beginPath();
+                ctx.arc(h.x, h.y, hSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawFlowParticle(p, cx, cy, r, baseAlpha, enhanced) {
+            const proj = project3D(p.x, p.y, p.z, cx, cy, r);
+            const size = 2 * proj.scale;
+            const alpha = baseAlpha * (1 - p.age) * 0.3;
+            const depthFade = 0.3 + (p.z + 1) * 0.35;
+            
+            if (!enhanced) return;  // Only show in physics mode
+            
+            // Flow line (shows direction)
+            const angle = Math.atan2(p.y, p.x) + Math.PI/2;
+            const tailLen = 8 * proj.scale;
+            
+            const grad = ctx.createLinearGradient(
+                proj.x - Math.cos(angle) * tailLen,
+                proj.y - Math.sin(angle) * tailLen,
+                proj.x, proj.y
+            );
+            grad.addColorStop(0, 'rgba(100, 255, 200, 0)');
+            grad.addColorStop(1, `rgba(100, 255, 200, ${alpha * depthFade})`);
+            
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = size;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(proj.x - Math.cos(angle) * tailLen, proj.y - Math.sin(angle) * tailLen);
+            ctx.lineTo(proj.x, proj.y);
+            ctx.stroke();
+            
+            // Head
+            ctx.fillStyle = `rgba(150, 255, 220, ${alpha * depthFade * 1.5})`;
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function renderCaustics(cx, cy) {
+            const r = droplet.baseRadius;
+            const t = droplet.causticPhase;
+            
+            for (let i = 0; i < 18; i++) {
+                const baseAngle = (i / 18) * Math.PI * 2;
+                const angle = baseAngle + Math.sin(t * 0.35 + i * 0.6) * 0.18;
+                const dist = r * (0.25 + (i % 4) * 0.12);
+                const rDist = dist + Math.sin(t * 0.7 + i * 0.45) * 10;
+                
+                const x = cx + Math.cos(angle) * rDist;
+                const y = cy + Math.sin(angle) * rDist * 0.8;
+                
+                const size = 6 + Math.sin(t * 0.5 + i * 0.9) * 4;
+                const alpha = 0.018 + Math.sin(t * 0.6 + i) * 0.008;
+                
+                const caustic = ctx.createRadialGradient(x, y, 0, x, y, size);
+                caustic.addColorStop(0, `rgba(255, 255, 255, ${alpha * 1.4})`);
+                caustic.addColorStop(0.4, `rgba(255, 255, 255, ${alpha * 0.7})`);
+                caustic.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                ctx.scale(1.2, 0.5);
+                ctx.fillStyle = caustic;
+                ctx.beginPath();
+                ctx.arc(0, 0, size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function renderSubsurface(cx, cy) {
+            const r = droplet.baseRadius;
+            
+            const sss = ctx.createRadialGradient(cx, cy - r * 0.35, r * 0.06, cx, cy, r);
+            sss.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
+            sss.addColorStop(0.4, 'rgba(255, 255, 255, 0.025)');
+            sss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = sss;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function renderFresnelRim(cx, cy) {
+            const r = droplet.baseRadius;
+            
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            for (let i = 0; i <= 360; i += 1) {
+                const theta = (i / 360) * Math.PI * 2;
+                const radius = getRadius(theta);
+                const x = cx + Math.cos(theta) * radius;
+                const y = cy + Math.sin(theta) * radius;
+                
+                const R = fresnelReflectance(1.0, WATER.n_D, 0.1);
+                const lightAngle = -Math.PI * 0.65;
+                const angleDiff = Math.abs(theta - lightAngle);
+                const lightFactor = Math.pow(Math.cos(angleDiff * 0.5), 2);
+                const heightFactor = 0.3 + 0.7 * (1 - (Math.sin(theta) + 1) * 0.5);
+                const intensity = R * lightFactor * heightFactor;
+                
+                if (intensity > 0.03) {
+                    const rimGrad = ctx.createRadialGradient(x, y, 0, x, y, 4);
+                    rimGrad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.6})`);
+                    rimGrad.addColorStop(0.4, `rgba(255, 255, 255, ${intensity * 0.3})`);
+                    rimGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    ctx.fillStyle = rimGrad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        function renderEnvironmentReflection(cx, cy) {
+            const r = droplet.baseRadius;
+            
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            const reflect = ctx.createLinearGradient(
+                cx - r * 0.45, cy - r * 0.35,
+                cx + r * 0.45, cy - r * 0.1
+            );
+            reflect.addColorStop(0, 'rgba(220, 230, 240, 0)');
+            reflect.addColorStop(0.25, 'rgba(235, 245, 255, 0.035)');
+            reflect.addColorStop(0.5, 'rgba(250, 255, 255, 0.06)');
+            reflect.addColorStop(0.75, 'rgba(235, 245, 255, 0.035)');
+            reflect.addColorStop(1, 'rgba(220, 230, 240, 0)');
+            ctx.fillStyle = reflect;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - r * 0.24, r * 0.5, r * 0.14, -0.05, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function renderSpecularHighlights(cx, cy) {
+            const r = droplet.baseRadius;
+            const hlX = cx - r * 0.24;
+            const hlY = cy - r * 0.26;
+            
+            // Outer glow
+            const glow = ctx.createRadialGradient(hlX, hlY, 0, hlX, hlY, r * 0.35);
+            glow.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+            glow.addColorStop(0.35, 'rgba(255, 255, 255, 0.12)');
+            glow.addColorStop(0.7, 'rgba(255, 255, 255, 0.03)');
+            glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(hlX, hlY, r * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main highlight
+            ctx.save();
+            ctx.translate(hlX, hlY);
+            ctx.rotate(-0.15);
+            ctx.scale(1.05, 0.75);
+            
+            const main = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.14);
+            main.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            main.addColorStop(0.2, 'rgba(255, 255, 255, 0.85)');
+            main.addColorStop(0.5, 'rgba(255, 255, 255, 0.38)');
+            main.addColorStop(0.8, 'rgba(255, 255, 255, 0.08)');
+            main.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = main;
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // Sharp spark
+            const sparkX = hlX - r * 0.05;
+            const sparkY = hlY - r * 0.03;
+            const spark = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, 6);
+            spark.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            spark.addColorStop(0.4, 'rgba(255, 255, 255, 0.85)');
+            spark.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = spark;
+            ctx.beginPath();
+            ctx.arc(sparkX, sparkY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Secondary spark
+            const spark2 = ctx.createRadialGradient(sparkX + 9, sparkY + 4, 0, sparkX + 9, sparkY + 4, 3);
+            spark2.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+            spark2.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = spark2;
+            ctx.beginPath();
+            ctx.arc(sparkX + 9, sparkY + 4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Secondary highlights
+            const secondaries = [
+                { x: 0.16, y: -0.44, r: 0.045, a: 0.28 },
+                { x: 0.34, y: -0.18, r: 0.03, a: 0.2 },
+                { x: -0.36, y: 0.24, r: 0.05, a: 0.08 },
+                { x: 0.26, y: 0.31, r: 0.035, a: 0.06 },
+                { x: 0.41, y: 0.03, r: 0.02, a: 0.1 },
+            ];
+            
+            secondaries.forEach(hl => {
+                const x = cx + r * hl.x;
+                const y = cy + r * hl.y;
+                const size = r * hl.r;
+                const grad = ctx.createRadialGradient(x, y, 0, x, y, size);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${hl.a})`);
+                grad.addColorStop(0.45, `rgba(255, 255, 255, ${hl.a * 0.35})`);
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function renderEdge(cx, cy) {
+            ctx.save();
+            
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const radius = getRadius(theta) + 1;
+                const x = cx + Math.cos(theta) * radius;
+                const y = cy + Math.sin(theta) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(200, 225, 255, 0.05)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            for (let i = 0; i <= 360; i++) {
+                const theta = (i / 360) * Math.PI * 2;
+                const radius = getRadius(theta);
+                const x = cx + Math.cos(theta) * radius;
+                const y = cy + Math.sin(theta) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(80, 100, 120, 0.1)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function renderCRROverlay(cx, cy) {
+            const r = droplet.baseRadius;
+            
+            ctx.save();
+            
+            // CRR panel
+            const panelW = 180;
+            const panelH = 140;
+            const panelX = cx + r + 25;
+            const panelY = cy - panelH / 2;
+            
+            // Panel background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.beginPath();
+            ctx.roundRect(panelX, panelY, panelW, panelH, 6);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(100, 180, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Title
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(100, 180, 255, 0.8)';
+            ctx.textAlign = 'left';
+            ctx.fillText('CRR DYNAMICS', panelX + 10, panelY + 18);
+            
+            // CRR bars
+            const scales = [
+                { name: 'Photon', data: CRR.photon, color: '#ff6b6b' },
+                { name: 'Molecular', data: CRR.molecular, color: '#ffeaa7' },
+                { name: 'Cluster', data: CRR.cluster, color: '#74b9ff' },
+                { name: 'Surface', data: CRR.surface, color: '#55efc4' },
+                { name: 'Neural', data: CRR.neural, color: '#a29bfe' }
+            ];
+            
+            scales.forEach((scale, i) => {
+                const y = panelY + 35 + i * 20;
+                const barW = 80;
+                const barH = 6;
+                const barX = panelX + 70;
+                
+                // Label
+                ctx.font = '9px SF Mono, Monaco, monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'right';
+                ctx.fillText(scale.name, barX - 8, y + 5);
+                
+                // Bar background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.beginPath();
+                ctx.roundRect(barX, y, barW, barH, 2);
+                ctx.fill();
+                
+                // Bar fill
+                const ratio = Math.min(scale.data.C / scale.data.omega, 1);
+                ctx.fillStyle = scale.color;
+                ctx.beginPath();
+                ctx.roundRect(barX, y, barW * ratio, barH, 2);
+                ctx.fill();
+                
+                // Rupture flash
+                if (scale.data.rupture > 0.3) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${scale.data.rupture * 0.4})`;
+                    ctx.beginPath();
+                    ctx.roundRect(barX, y, barW, barH, 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Physics info
+            const infoY = panelY + panelH + 15;
+            ctx.font = '9px SF Mono, Monaco, monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.textAlign = 'left';
+            ctx.fillText(`n = ${WATER.n_D.toFixed(4)}`, panelX, infoY);
+            ctx.fillText(`Clusters: ${clusters.length}`, panelX, infoY + 14);
+            ctx.fillText(`H-bonds: ${hBonds.length}`, panelX, infoY + 28);
+            ctx.fillText(`Molecules: ${molecules.length}`, panelX, infoY + 42);
+            
+            ctx.restore();
+        }
+        
+        // =====================================================
+        // ANIMATION LOOP
+        // =====================================================
+        
+        let lastTime = 0;
+        
+        function animate(timestamp) {
+            frameCount++;
+            if (timestamp - lastSecond >= 1000) {
+                actualRefreshRate = frameCount;
+                frameCount = 0;
+                lastSecond = timestamp;
+                document.getElementById('refreshRate').textContent = actualRefreshRate;
+            }
+            
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            updateCRR(dt);
+            updatePhysics(dt);
+            render();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        requestAnimationFrame(animate);
+        
+    </script>
+</body>
+</html>
