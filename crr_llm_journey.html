@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR: Journey Into Claude's Corpus</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a12; color: #e0e0e0; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+        #mainCanvas { display: block; }
+        
+        .overlay { position: fixed; pointer-events: none; z-index: 100; }
+        .top-left { top: 20px; left: 20px; }
+        .top-right { top: 20px; right: 20px; text-align: right; }
+        .bottom-left { bottom: 20px; left: 20px; }
+        .bottom-right { bottom: 20px; right: 20px; text-align: right; }
+        .bottom-center { bottom: 20px; left: 50%; transform: translateX(-50%); }
+        
+        .panel {
+            background: rgba(10, 10, 20, 0.9);
+            border: 1px solid rgba(122, 255, 218, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .title { color: #7affda; font-size: 1.3em; letter-spacing: 3px; margin-bottom: 5px; }
+        .subtitle { color: #6a7a8a; font-size: 0.65em; letter-spacing: 2px; }
+        .scale-display { font-size: 1.6em; color: #fff; margin: 8px 0; }
+        .scale-name { color: #ff9a7a; font-size: 1em; margin-bottom: 5px; }
+        .scale-desc { color: #8a9aaa; font-size: 0.7em; max-width: 280px; }
+        
+        .crr-panel { min-width: 260px; }
+        .crr-header { color: #8a9aba; font-size: 0.6em; letter-spacing: 2px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(122,255,218,0.2); }
+        .crr-equation { background: rgba(122,255,218,0.1); padding: 10px; border-radius: 4px; margin-bottom: 10px; font-family: 'Times New Roman', serif; font-size: 1em; text-align: center; color: #7affda; }
+        .crr-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.7em; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .crr-label { color: #5a6a7a; }
+        .crr-value { color: #a0b0c0; }
+        
+        .symmetry-z2 { color: #ff9a7a; }
+        .symmetry-so2 { color: #7affda; }
+        .symmetry-mixed { color: #aa88ff; }
+        
+        .depth-track { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+        .depth-fill { height: 100%; background: linear-gradient(90deg, #7affda, #ff9a7a, #aa88ff); border-radius: 3px; }
+        .depth-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.45em; color: #4a5a6a; }
+        
+        .metric-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.65em; }
+        .metric-value { color: #7affaa; }
+        .instructions { color: #4a5a6a; font-size: 0.6em; margin-top: 8px; }
+        
+        .layer-chain { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 600px; }
+        .layer-node { padding: 4px 8px; background: rgba(255,255,255,0.05); border-radius: 3px; font-size: 0.55em; color: #3a4a5a; transition: all 0.3s; }
+        .layer-node.active { background: rgba(122,255,218,0.2); color: #7affda; }
+        .layer-node.current { background: rgba(255,154,122,0.4); color: #fff; box-shadow: 0 0 15px rgba(255,154,122,0.4); }
+        .layer-arrow { color: #2a3a4a; font-size: 0.5em; }
+        
+        /* Floating words effect */
+        .floating-word {
+            position: absolute;
+            font-family: Georgia, serif;
+            pointer-events: none;
+            opacity: 0.6;
+            text-shadow: 0 0 10px currentColor;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="mainCanvas"></canvas>
+    
+    <div class="overlay top-left">
+        <div class="panel">
+            <div class="title">⟨ CRR : LLM ⟩</div>
+            <div class="subtitle">JOURNEY INTO CLAUDE'S CORPUS</div>
+            <div class="instructions">Scroll/Click to zoom · Arrow keys · R reset · E end</div>
+        </div>
+    </div>
+    
+    <div class="overlay top-right">
+        <div class="panel">
+            <div class="scale-name" id="layerName">Your Message</div>
+            <div class="scale-display" id="layerDisplay">INPUT</div>
+            <div class="scale-desc" id="layerDesc">Text entering Claude's processing pipeline</div>
+        </div>
+    </div>
+    
+    <div class="overlay bottom-left">
+        <div class="panel crr-panel">
+            <div class="crr-header">CRR ↔ TRANSFORMER MAPPING</div>
+            <div class="crr-equation" id="crrEquation">C(text) → δ(tokenize) → R(tokens)</div>
+            <div class="crr-row"><span class="crr-label">CRR Operation</span><span class="crr-value" id="crrOp">Coherence</span></div>
+            <div class="crr-row"><span class="crr-label">Transformer Op</span><span class="crr-value" id="tfOp">Input processing</span></div>
+            <div class="crr-row"><span class="crr-label">Symmetry</span><span class="crr-value" id="symDisplay">Continuous</span></div>
+            <div class="crr-row"><span class="crr-label">Ω</span><span class="crr-value" id="omegaDisplay">—</span></div>
+            <div class="crr-row"><span class="crr-label">exp(C/Ω)</span><span class="crr-value metric-value" id="expDisplay">—</span></div>
+            <div class="depth-track"><div class="depth-fill" id="depthFill" style="width:0%"></div></div>
+            <div class="depth-labels"><span>Text</span><span>Tokens</span><span>Embed</span><span>Attn</span><span>FFN</span><span>Output</span></div>
+        </div>
+    </div>
+    
+    <div class="overlay bottom-right">
+        <div class="panel">
+            <div class="crr-header">LIVE PROCESSING</div>
+            <div class="metric-row"><span>Tokens processed</span><span class="metric-value" id="tokensProcessed">0</span></div>
+            <div class="metric-row"><span>Attention ops</span><span class="metric-value" id="attnOps">0</span></div>
+            <div class="metric-row"><span>Coherence C</span><span class="metric-value" id="coherenceC">0.000</span></div>
+            <div class="metric-row"><span>Layer depth</span><span class="metric-value" id="layerDepth">0/80</span></div>
+        </div>
+    </div>
+    
+    <div class="overlay bottom-center">
+        <div class="panel" style="padding:8px 15px;">
+            <div class="layer-chain" id="layerChain"></div>
+        </div>
+    </div>
+
+    <script>
+    // =================================================================
+    // CRR-LLM CONSTANTS
+    // =================================================================
+    const OMEGA_Z2 = 1 / Math.PI;
+    const OMEGA_SO2 = 1 / (2 * Math.PI);
+    const EXP_PI = Math.exp(Math.PI);
+    
+    // Architecture constants (Claude-scale)
+    const VOCAB_SIZE = 100000;
+    const EMBED_DIM = 8192;
+    const NUM_HEADS = 64;
+    const HEAD_DIM = 128;
+    const NUM_LAYERS = 80;
+    const FFN_DIM = 32768;
+    const CONTEXT_LEN = 200000;
+    
+    // The message we're processing (meta!)
+    const INPUT_TEXT = "Coffee and Claude time?";
+    const TOKENS = ["Coffee", " and", " Claude", " time", "?"];
+    
+    // =================================================================
+    // LAYER DEFINITIONS
+    // =================================================================
+    const LAYERS = [
+        {
+            name: "Your Message",
+            display: "INPUT TEXT",
+            desc: `"${INPUT_TEXT}" — continuous character stream`,
+            crrOp: "Pre-coherence",
+            tfOp: "Raw input",
+            symmetry: "Continuous",
+            omega: null,
+            equation: "text → characters",
+            depth: 0
+        },
+        {
+            name: "Tokenization",
+            display: "BPE TOKENS",
+            desc: `${TOKENS.length} tokens from ${VOCAB_SIZE.toLocaleString()} vocabulary`,
+            crrOp: "RUPTURE δ",
+            tfOp: "Byte-pair encoding",
+            symmetry: "Z₂",
+            omega: OMEGA_Z2,
+            equation: "δ(boundaries) → discrete tokens",
+            depth: 0.08
+        },
+        {
+            name: "Token Embedding",
+            display: `${EMBED_DIM}D VECTORS`,
+            desc: "Each token → point in high-dimensional semantic space",
+            crrOp: "Z₂ → SO(N)",
+            tfOp: "Embedding lookup",
+            symmetry: "Z₂→SO(N)",
+            omega: OMEGA_SO2,
+            equation: "token_id → embedding[id]",
+            depth: 0.15
+        },
+        {
+            name: "Positional Encoding",
+            display: "POSITION INFO",
+            desc: "Rotary embeddings encode sequence position",
+            crrOp: "Coherence marking",
+            tfOp: "RoPE encoding",
+            symmetry: "SO(2)",
+            omega: OMEGA_SO2,
+            equation: "pos → rotation in embedding space",
+            depth: 0.2
+        },
+        {
+            name: "Q, K, V Projection",
+            display: "ATTENTION PREP",
+            desc: `Split into ${NUM_HEADS} heads × ${HEAD_DIM}D each`,
+            crrOp: "Coherence decomposition",
+            tfOp: "Linear projections",
+            symmetry: "SO(N)",
+            omega: OMEGA_SO2,
+            equation: "x → Wq·x, Wk·x, Wv·x",
+            depth: 0.28
+        },
+        {
+            name: "Attention Scores",
+            display: "QK^T/√d",
+            desc: "Computing coherence between all token pairs",
+            crrOp: "COHERENCE C(q,k)",
+            tfOp: "Dot product attention",
+            symmetry: "SO(N)",
+            omega: 1/Math.sqrt(HEAD_DIM),
+            equation: "C(i,j) = Qi · Kj / √d",
+            depth: 0.38
+        },
+        {
+            name: "Softmax",
+            display: "PROBABILITY",
+            desc: "Attention scores → probability distribution",
+            crrOp: "RUPTURE δ",
+            tfOp: "Softmax normalization",
+            symmetry: "SO(N)→Z₂",
+            omega: OMEGA_Z2,
+            equation: "exp(C/Ω) / Σexp(C/Ω)",
+            depth: 0.48
+        },
+        {
+            name: "Value Weighting",
+            display: "ATTENTION OUT",
+            desc: "Weighted sum of values = memory retrieval",
+            crrOp: "REGENERATION R",
+            tfOp: "Σ(attention × V)",
+            symmetry: "Mixed",
+            omega: OMEGA_SO2,
+            equation: "R = Σ αij · Vj",
+            depth: 0.55
+        },
+        {
+            name: "Feed-Forward",
+            display: `${FFN_DIM}D EXPANSION`,
+            desc: "Nonlinear transformation via GELU activation",
+            crrOp: "Soft rupture",
+            tfOp: "GELU(xW₁)W₂",
+            symmetry: "SO(2)↔Z₂",
+            omega: (OMEGA_Z2 + OMEGA_SO2) / 2,
+            equation: "GELU: smooth → saturated",
+            depth: 0.65
+        },
+        {
+            name: "Layer Norm",
+            display: "NORMALIZE",
+            desc: "Prevent coherence explosion, enable deep stacking",
+            crrOp: "Coherence reset",
+            tfOp: "(x-μ)/σ × γ + β",
+            symmetry: "SO(N)",
+            omega: OMEGA_SO2,
+            equation: "‖x‖ → 1 (unit sphere)",
+            depth: 0.72
+        },
+        {
+            name: "Residual Stream",
+            display: `×${NUM_LAYERS} LAYERS`,
+            desc: "Information flows through 80 transformer blocks",
+            crrOp: "Iterated CRR",
+            tfOp: "x + Attention(x) + FFN(x)",
+            symmetry: "Mixed",
+            omega: OMEGA_Z2,
+            equation: "C → δ → R → C → δ → R → ...",
+            depth: 0.8
+        },
+        {
+            name: "Output Projection",
+            display: `${VOCAB_SIZE.toLocaleString()} LOGITS`,
+            desc: "Final hidden state → score for every token",
+            crrOp: "Final coherence",
+            tfOp: "hidden @ W_out",
+            symmetry: "SO(N)",
+            omega: OMEGA_SO2,
+            equation: "logit[t] = coherence score",
+            depth: 0.88
+        },
+        {
+            name: "Temperature Sampling",
+            display: "TOKEN BIRTH",
+            desc: "Temperature T = Ω controls creativity vs determinism",
+            crrOp: "RUPTURE + REGEN",
+            tfOp: "softmax(logits/T)",
+            symmetry: "SO(N)→Z₂",
+            omega: "T (tunable)",
+            equation: "P(t) = exp(logit/T) / Σexp",
+            depth: 0.95
+        },
+        {
+            name: "Next Token",
+            display: "OUTPUT",
+            desc: "One token emerges — the cycle completes",
+            crrOp: "Regeneration complete",
+            tfOp: "Sample from P(t)",
+            symmetry: "Z₂",
+            omega: OMEGA_Z2,
+            equation: "token ~ P(t) → append → iterate",
+            depth: 1.0
+        }
+    ];
+    
+    const LAYER_NAMES = LAYERS.map(l => l.name.split(' ')[0]);
+    
+    // =================================================================
+    // STATE
+    // =================================================================
+    let canvas, ctx, width, height;
+    let currentDepth = 0;
+    let targetDepth = 0;
+    let startTime = Date.now();
+    let coherence = 0;
+    let paused = false;
+    let floatingWords = [];
+    
+    // Word bank for the embedding/attention visualization
+    const WORD_BANK = [
+        "coffee", "morning", "Claude", "time", "think", "process", "token",
+        "attention", "memory", "coherence", "rupture", "regenerate", "embed",
+        "vector", "dimension", "softmax", "probability", "transform", "layer",
+        "neural", "semantic", "context", "meaning", "understand", "generate",
+        "language", "model", "intelligence", "pattern", "learn", "weight",
+        "activate", "compute", "flow", "residual", "normalize", "project"
+    ];
+    
+    // =================================================================
+    // INITIALIZATION
+    // =================================================================
+    function init() {
+        canvas = document.getElementById('mainCanvas');
+        ctx = canvas.getContext('2d');
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Attach scroll to window for robust capture
+        window.addEventListener('wheel', e => {
+            e.preventDefault();
+            // Scroll forward = zoom in (increase depth)
+            if (e.deltaY > 0) {
+                targetDepth = Math.max(0, targetDepth - 0.05);
+            } else {
+                targetDepth = Math.min(1, targetDepth + 0.05);
+            }
+        }, { passive: false });
+        
+        // Also support touch for mobile
+        let touchStartY = 0;
+        window.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        window.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touchY = e.touches[0].clientY;
+            const delta = touchStartY - touchY;
+            // Swipe up = zoom in (deeper)
+            targetDepth += delta * 0.001;
+            targetDepth = Math.max(0, Math.min(1, targetDepth));
+            touchStartY = touchY;
+        }, { passive: false });
+        
+        // Click to advance, right-click to go back
+        canvas.addEventListener('click', e => {
+            targetDepth = Math.min(1, targetDepth + 0.08);
+        });
+        
+        canvas.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            targetDepth = Math.max(0, targetDepth - 0.08);
+        });
+        
+        document.addEventListener('keydown', e => {
+            if (e.key === 'r' || e.key === 'R') targetDepth = 0;
+            if (e.key === 'e' || e.key === 'E') targetDepth = 1; // E for end
+            if (e.key === ' ') { e.preventDefault(); paused = !paused; }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') targetDepth = Math.min(1, targetDepth + 0.05);
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') targetDepth = Math.max(0, targetDepth - 0.05);
+        });
+        
+        // Build layer chain
+        document.getElementById('layerChain').innerHTML = LAYER_NAMES.map((n, i) =>
+            `<span class="layer-node" id="lnode-${i}">${n}</span>${i < LAYER_NAMES.length - 1 ? '<span class="layer-arrow">→</span>' : ''}`
+        ).join('');
+        
+        // Initialize floating words
+        for (let i = 0; i < 50; i++) {
+            floatingWords.push({
+                word: WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)],
+                x: Math.random() * 2 - 0.5,
+                y: Math.random() * 2 - 0.5,
+                z: Math.random(),
+                vx: (Math.random() - 0.5) * 0.001,
+                vy: (Math.random() - 0.5) * 0.001,
+                size: 10 + Math.random() * 20,
+                hue: Math.random() * 60 + 150
+            });
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    
+    // =================================================================
+    // GET CURRENT LAYER
+    // =================================================================
+    function getCurrentLayer() {
+        for (let i = LAYERS.length - 1; i >= 0; i--) {
+            if (currentDepth >= LAYERS[i].depth) return LAYERS[i];
+        }
+        return LAYERS[0];
+    }
+    
+    function getLayerIndex() {
+        for (let i = LAYERS.length - 1; i >= 0; i--) {
+            if (currentDepth >= LAYERS[i].depth) return i;
+        }
+        return 0;
+    }
+    
+    // =================================================================
+    // RENDERING
+    // =================================================================
+    function render(t) {
+        const layer = getCurrentLayer();
+        const layerIdx = getLayerIndex();
+        
+        // Dynamic background based on depth
+        const hue = 220 + currentDepth * 40;
+        const sat = 30 + currentDepth * 20;
+        const light = 5 + currentDepth * 3;
+        ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Route to appropriate renderer
+        if (currentDepth < 0.08) renderInputText(t);
+        else if (currentDepth < 0.15) renderTokenization(t);
+        else if (currentDepth < 0.28) renderEmbedding(t);
+        else if (currentDepth < 0.55) renderAttention(t);
+        else if (currentDepth < 0.72) renderFFN(t);
+        else if (currentDepth < 0.88) renderResidual(t);
+        else if (currentDepth < 0.95) renderOutput(t);
+        else renderSampling(t);
+        
+        // Draw floating words in embedding/attention layers
+        if (currentDepth > 0.15 && currentDepth < 0.8) {
+            drawFloatingWords(t);
+        }
+    }
+    
+    function renderInputText(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // The message appearing
+        ctx.fillStyle = '#f5f0e6';
+        ctx.font = `bold ${height * 0.08}px Georgia`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Typing effect
+        const chars = Math.floor(t * 5) % (INPUT_TEXT.length + 20);
+        const displayText = INPUT_TEXT.slice(0, Math.min(chars, INPUT_TEXT.length));
+        ctx.fillText(displayText, cx, cy);
+        
+        // Cursor blink
+        if (chars <= INPUT_TEXT.length && Math.floor(t * 3) % 2 === 0) {
+            const textWidth = ctx.measureText(displayText).width;
+            ctx.fillRect(cx + textWidth / 2 + 5, cy - height * 0.04, 3, height * 0.08);
+        }
+        
+        // Character stream visualization
+        ctx.font = '14px Courier New';
+        ctx.fillStyle = 'rgba(122, 255, 218, 0.3)';
+        for (let i = 0; i < INPUT_TEXT.length; i++) {
+            const x = cx - (INPUT_TEXT.length * 15) / 2 + i * 15;
+            const y = cy + 80 + Math.sin(t * 3 + i * 0.5) * 10;
+            ctx.fillText(INPUT_TEXT[i], x, y);
+        }
+    }
+    
+    function renderTokenization(t) {
+        const cx = width / 2, cy = height / 2;
+        const tokenWidth = 120;
+        const totalWidth = TOKENS.length * tokenWidth;
+        
+        // Show tokens separating
+        ctx.font = 'bold 24px Courier New';
+        ctx.textAlign = 'center';
+        
+        TOKENS.forEach((token, i) => {
+            const baseX = cx - totalWidth / 2 + i * tokenWidth + tokenWidth / 2;
+            const separation = (currentDepth - 0.08) / 0.07 * 30;
+            const x = baseX + (i - TOKENS.length / 2) * separation;
+            const y = cy + Math.sin(t * 2 + i) * 10;
+            
+            // Token box
+            ctx.fillStyle = `hsla(${150 + i * 30}, 60%, 40%, 0.8)`;
+            ctx.fillRect(x - 50, y - 20, 100, 40);
+            
+            // Token text
+            ctx.fillStyle = '#fff';
+            ctx.fillText(token, x, y + 8);
+            
+            // Token ID
+            ctx.font = '10px Courier New';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText(`id: ${Math.floor(Math.random() * 50000 + i * 10000)}`, x, y + 30);
+            ctx.font = 'bold 24px Courier New';
+        });
+        
+        // Z₂ rupture visualization - boundaries
+        ctx.strokeStyle = '#ff9a7a';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        for (let i = 1; i < TOKENS.length; i++) {
+            const x = cx - totalWidth / 2 + i * tokenWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, cy - 60);
+            ctx.lineTo(x, cy + 60);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+    
+    function renderEmbedding(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // High-dimensional space visualization
+        // Project tokens as points in 3D-ish space
+        TOKENS.forEach((token, i) => {
+            const angle = (i / TOKENS.length) * Math.PI * 2 + t * 0.5;
+            const radius = 100 + Math.sin(t + i) * 20;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius * 0.6;
+            const z = Math.sin(angle + t) * 0.5 + 0.5;
+            
+            // Embedding vector visualization
+            const vecLen = 50 + z * 30;
+            ctx.strokeStyle = `hsla(${150 + i * 40}, 70%, 60%, ${0.3 + z * 0.4})`;
+            ctx.lineWidth = 2;
+            
+            // Draw multiple dimension lines
+            for (let d = 0; d < 8; d++) {
+                const da = d * Math.PI / 4 + t * 0.3;
+                const dx = Math.cos(da) * vecLen * 0.3;
+                const dy = Math.sin(da) * vecLen * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + dx, y + dy);
+                ctx.stroke();
+            }
+            
+            // Token point
+            ctx.fillStyle = `hsla(${150 + i * 40}, 70%, 60%, 0.9)`;
+            ctx.beginPath();
+            ctx.arc(x, y, 8 + z * 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Label
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(token, x, y - 25);
+        });
+        
+        // Dimension indicator
+        ctx.fillStyle = 'rgba(122, 255, 218, 0.5)';
+        ctx.font = '14px Courier New';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${EMBED_DIM} dimensions`, 20, height - 100);
+        ctx.fillText(`avg distance: √(2×${EMBED_DIM}) ≈ ${Math.sqrt(2 * EMBED_DIM).toFixed(0)}`, 20, height - 80);
+    }
+    
+    function renderAttention(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // Attention matrix visualization
+        const gridSize = Math.min(width, height) * 0.6;
+        const cellSize = gridSize / TOKENS.length;
+        const startX = cx - gridSize / 2;
+        const startY = cy - gridSize / 2;
+        
+        // Draw attention weights
+        for (let i = 0; i < TOKENS.length; i++) {
+            for (let j = 0; j < TOKENS.length; j++) {
+                // Simulated attention weight
+                const coherence = Math.cos((i - j) * 0.5 + t) * 0.3 + 0.5;
+                const attention = Math.exp(coherence * 3) / (TOKENS.length * 2);
+                
+                const x = startX + j * cellSize;
+                const y = startY + i * cellSize;
+                
+                // Cell color based on attention
+                ctx.fillStyle = `hsla(${180 - attention * 60}, 70%, ${30 + attention * 40}%, ${0.3 + attention * 0.7})`;
+                ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+                
+                // Attention value
+                if (cellSize > 40) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(attention.toFixed(2), x + cellSize/2, y + cellSize/2 + 4);
+                }
+            }
+        }
+        
+        // Row/column labels
+        ctx.fillStyle = '#7affda';
+        ctx.font = '12px Courier New';
+        TOKENS.forEach((token, i) => {
+            ctx.textAlign = 'right';
+            ctx.fillText(token, startX - 10, startY + i * cellSize + cellSize/2 + 4);
+            ctx.textAlign = 'center';
+            ctx.fillText(token, startX + i * cellSize + cellSize/2, startY - 10);
+        });
+        
+        // QK^T/√d annotation
+        ctx.fillStyle = '#ff9a7a';
+        ctx.font = 'italic 16px Times New Roman';
+        ctx.textAlign = 'center';
+        ctx.fillText('Attention = softmax(QK^T/√d) = exp(C/Ω) / Σexp(C/Ω)', cx, startY + gridSize + 40);
+        
+        // Flowing attention lines
+        ctx.strokeStyle = 'rgba(122, 255, 218, 0.2)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 20; i++) {
+            const fromIdx = Math.floor(Math.random() * TOKENS.length);
+            const toIdx = Math.floor(Math.random() * TOKENS.length);
+            const progress = (t * 0.5 + i * 0.1) % 1;
+            
+            const x1 = startX + fromIdx * cellSize + cellSize/2;
+            const y1 = startY + fromIdx * cellSize + cellSize/2;
+            const x2 = startX + toIdx * cellSize + cellSize/2;
+            const y2 = startY + toIdx * cellSize + cellSize/2;
+            
+            const px = x1 + (x2 - x1) * progress;
+            const py = y1 + (y2 - y1) * progress;
+            
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    function renderFFN(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // GELU activation visualization
+        const graphWidth = width * 0.6;
+        const graphHeight = height * 0.4;
+        const startX = cx - graphWidth / 2;
+        const startY = cy - graphHeight / 2;
+        
+        // Draw GELU curve
+        ctx.strokeStyle = '#aa88ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        for (let px = 0; px < graphWidth; px++) {
+            const x = (px / graphWidth - 0.5) * 6; // -3 to 3
+            const gelu = x * 0.5 * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x * x * x)));
+            const py = startY + graphHeight / 2 - gelu * graphHeight / 6;
+            
+            if (px === 0) ctx.moveTo(startX + px, py);
+            else ctx.lineTo(startX + px, py);
+        }
+        ctx.stroke();
+        
+        // Axes
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(startX, cy);
+        ctx.lineTo(startX + graphWidth, cy);
+        ctx.moveTo(cx, startY);
+        ctx.lineTo(cx, startY + graphHeight);
+        ctx.stroke();
+        
+        // Neurons firing
+        const numNeurons = 30;
+        for (let i = 0; i < numNeurons; i++) {
+            const x = startX + (i / numNeurons) * graphWidth;
+            const inputVal = Math.sin(t * 2 + i * 0.3) * 2;
+            const gelu = inputVal * 0.5 * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (inputVal + 0.044715 * inputVal ** 3)));
+            const y = cy - gelu * graphHeight / 6;
+            
+            const activation = Math.abs(gelu) / 3;
+            ctx.fillStyle = `hsla(${280 - activation * 60}, 70%, ${40 + activation * 30}%, ${0.5 + activation * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 5 + activation * 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Labels
+        ctx.fillStyle = '#aa88ff';
+        ctx.font = '14px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('GELU(x) — Soft Rupture Function', cx, startY - 20);
+        ctx.fillText('SO(2) ↔ Z₂ transition', cx, startY + graphHeight + 30);
+        
+        ctx.font = '12px Courier New';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText(`${FFN_DIM.toLocaleString()} intermediate neurons`, cx, startY + graphHeight + 50);
+    }
+    
+    function renderResidual(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // Show layers stacking
+        const layerHeight = 40;
+        const layerWidth = 200;
+        const visibleLayers = 15;
+        const startLayer = Math.floor((currentDepth - 0.72) / 0.08 * (NUM_LAYERS - visibleLayers));
+        
+        for (let i = 0; i < visibleLayers; i++) {
+            const layerNum = startLayer + i;
+            const y = height * 0.2 + i * layerHeight;
+            const x = cx - layerWidth / 2;
+            
+            // Layer box
+            const progress = (layerNum / NUM_LAYERS);
+            ctx.fillStyle = `hsla(${200 + progress * 60}, 50%, ${25 + progress * 15}%, 0.8)`;
+            ctx.fillRect(x, y, layerWidth, layerHeight - 5);
+            
+            // Layer label
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Layer ${layerNum + 1}`, cx, y + layerHeight / 2);
+            
+            // Residual connection arrow
+            if (i < visibleLayers - 1) {
+                ctx.strokeStyle = 'rgba(122, 255, 218, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, y + layerHeight - 5);
+                ctx.lineTo(cx, y + layerHeight + 5);
+                ctx.stroke();
+                
+                // Skip connection
+                ctx.strokeStyle = 'rgba(255, 154, 122, 0.3)';
+                ctx.beginPath();
+                ctx.moveTo(x + layerWidth + 10, y + layerHeight / 2);
+                ctx.bezierCurveTo(
+                    x + layerWidth + 40, y + layerHeight / 2,
+                    x + layerWidth + 40, y + layerHeight * 1.5,
+                    x + layerWidth + 10, y + layerHeight * 1.5
+                );
+                ctx.stroke();
+            }
+        }
+        
+        // Iterated CRR annotation
+        ctx.fillStyle = '#ff9a7a';
+        ctx.font = 'italic 14px Times New Roman';
+        ctx.textAlign = 'center';
+        ctx.fillText('C → δ → R → C → δ → R → ... (×80 layers)', cx, height * 0.85);
+    }
+    
+    function renderOutput(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // Logit distribution visualization
+        const barWidth = 6;
+        const maxHeight = height * 0.5;
+        const numBars = 100;
+        const startX = cx - (numBars * barWidth) / 2;
+        
+        // Generate fake logit distribution
+        const logits = [];
+        for (let i = 0; i < numBars; i++) {
+            // Create a peaked distribution around a few tokens
+            let logit = -5 + Math.random() * 2;
+            if (i === 30) logit = 3 + Math.sin(t) * 0.5; // "the"
+            if (i === 45) logit = 2.5 + Math.cos(t) * 0.5; // high prob
+            if (i === 67) logit = 2 + Math.sin(t * 1.5) * 0.5;
+            logits.push(logit);
+        }
+        
+        // Softmax
+        const maxLogit = Math.max(...logits);
+        const expLogits = logits.map(l => Math.exp(l - maxLogit));
+        const sumExp = expLogits.reduce((a, b) => a + b, 0);
+        const probs = expLogits.map(e => e / sumExp);
+        
+        // Draw bars
+        probs.forEach((p, i) => {
+            const barHeight = p * maxHeight * 10;
+            const x = startX + i * barWidth;
+            const y = cy + maxHeight / 2 - barHeight;
+            
+            const hue = 120 + p * 100;
+            ctx.fillStyle = `hsla(${hue}, 70%, ${40 + p * 40}%, 0.8)`;
+            ctx.fillRect(x, y, barWidth - 1, barHeight);
+        });
+        
+        // Labels for top tokens
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(`P(next) = softmax(logits/T)`, cx, cy - maxHeight / 2 - 30);
+        
+        ctx.fillStyle = '#7affda';
+        ctx.fillText('Temperature T = Ω (creativity dial)', cx, cy + maxHeight / 2 + 30);
+        ctx.fillText('Low T → sharp peaks | High T → flat distribution', cx, cy + maxHeight / 2 + 50);
+    }
+    
+    function renderSampling(t) {
+        const cx = width / 2, cy = height / 2;
+        
+        // Token emerging from probability cloud
+        const cloudRadius = 150;
+        
+        // Probability cloud
+        for (let i = 0; i < 100; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = Math.random() * cloudRadius;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            
+            ctx.fillStyle = `hsla(${180 + Math.random() * 60}, 60%, 50%, ${0.1 + Math.random() * 0.2})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 3 + Math.random() * 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // The chosen token emerging
+        const emergeFactor = Math.min(1, (currentDepth - 0.95) / 0.05 * 2);
+        const tokenY = cy - emergeFactor * 100;
+        
+        // Glow
+        const gradient = ctx.createRadialGradient(cx, tokenY, 0, cx, tokenY, 80);
+        gradient.addColorStop(0, `rgba(122, 255, 218, ${emergeFactor * 0.8})`);
+        gradient.addColorStop(1, 'rgba(122, 255, 218, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(cx, tokenY, 80, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // The token
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${30 + emergeFactor * 20}px Georgia`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const outputToken = TOKENS[Math.floor(t) % TOKENS.length];
+        ctx.fillText(outputToken, cx, tokenY);
+        
+        // Append arrow
+        if (emergeFactor > 0.5) {
+            ctx.strokeStyle = '#7affda';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, tokenY + 40);
+            ctx.lineTo(cx, tokenY + 80);
+            ctx.lineTo(cx - 10, tokenY + 70);
+            ctx.moveTo(cx, tokenY + 80);
+            ctx.lineTo(cx + 10, tokenY + 70);
+            ctx.stroke();
+            
+            ctx.font = '14px Courier New';
+            ctx.fillStyle = '#7affda';
+            ctx.fillText('→ append to context → iterate', cx, tokenY + 110);
+        }
+        
+        // CRR cycle complete
+        ctx.fillStyle = '#ff9a7a';
+        ctx.font = 'italic 16px Times New Roman';
+        ctx.fillText('RUPTURE (softmax) → REGENERATION (sample)', cx, height - 60);
+    }
+    
+    function drawFloatingWords(t) {
+        floatingWords.forEach(word => {
+            // Update position
+            word.x += word.vx;
+            word.y += word.vy;
+            
+            // Wrap around
+            if (word.x < -0.5) word.x = 1.5;
+            if (word.x > 1.5) word.x = -0.5;
+            if (word.y < -0.5) word.y = 1.5;
+            if (word.y > 1.5) word.y = -0.5;
+            
+            // Depth-based visibility
+            const depthMatch = Math.abs(word.z - currentDepth) < 0.3;
+            if (!depthMatch) return;
+            
+            const x = word.x * width;
+            const y = word.y * height;
+            const alpha = 0.1 + (1 - Math.abs(word.z - currentDepth) / 0.3) * 0.3;
+            
+            ctx.fillStyle = `hsla(${word.hue}, 60%, 60%, ${alpha})`;
+            ctx.font = `${word.size}px Georgia`;
+            ctx.textAlign = 'center';
+            ctx.fillText(word.word, x, y);
+        });
+    }
+    
+    // =================================================================
+    // UPDATE UI
+    // =================================================================
+    function updateUI(t) {
+        const layer = getCurrentLayer();
+        const layerIdx = getLayerIndex();
+        
+        document.getElementById('layerName').textContent = layer.name;
+        document.getElementById('layerDisplay').textContent = layer.display;
+        document.getElementById('layerDesc').textContent = layer.desc;
+        
+        document.getElementById('crrEquation').textContent = layer.equation;
+        document.getElementById('crrOp').textContent = layer.crrOp;
+        document.getElementById('tfOp').textContent = layer.tfOp;
+        
+        const symClass = layer.symmetry.includes('Z₂') ? 'symmetry-z2' : 
+                        layer.symmetry.includes('SO') ? 'symmetry-so2' : 'symmetry-mixed';
+        document.getElementById('symDisplay').innerHTML = `<span class="${symClass}">${layer.symmetry}</span>`;
+        
+        document.getElementById('omegaDisplay').textContent = 
+            layer.omega === null ? '—' : 
+            typeof layer.omega === 'string' ? layer.omega :
+            layer.omega.toFixed(5);
+        
+        const expVal = layer.omega && typeof layer.omega === 'number' ? 
+            Math.exp(coherence / layer.omega) : '—';
+        document.getElementById('expDisplay').textContent = 
+            typeof expVal === 'number' ? expVal.toFixed(4) : expVal;
+        
+        document.getElementById('depthFill').style.width = (currentDepth * 100) + '%';
+        
+        document.getElementById('tokensProcessed').textContent = Math.floor(t * 50);
+        document.getElementById('attnOps').textContent = Math.floor(t * 50 * NUM_HEADS).toLocaleString();
+        document.getElementById('coherenceC').textContent = coherence.toFixed(3);
+        document.getElementById('layerDepth').textContent = `${Math.floor(currentDepth * NUM_LAYERS)}/${NUM_LAYERS}`;
+        
+        // Update layer chain
+        LAYER_NAMES.forEach((_, i) => {
+            const el = document.getElementById(`lnode-${i}`);
+            el.classList.remove('active', 'current');
+            if (i < layerIdx) el.classList.add('active');
+            if (i === layerIdx) el.classList.add('current');
+        });
+    }
+    
+    // =================================================================
+    // ANIMATION LOOP
+    // =================================================================
+    function animate(ts) {
+        const t = (Date.now() - startTime) / 1000;
+        
+        if (!paused) {
+            // Smoother easing with faster response
+            const diff = targetDepth - currentDepth;
+            currentDepth += diff * 0.12;
+            
+            // Snap when very close
+            if (Math.abs(diff) < 0.001) currentDepth = targetDepth;
+            
+            coherence += 0.01;
+        }
+        
+        render(t);
+        updateUI(t);
+        
+        // Draw zoom indicator when actively zooming
+        if (Math.abs(targetDepth - currentDepth) > 0.005) {
+            ctx.fillStyle = 'rgba(122, 255, 218, 0.8)';
+            ctx.font = 'bold 16px Courier New';
+            ctx.textAlign = 'center';
+            const direction = targetDepth > currentDepth ? '▼ DEEPER' : '▲ SHALLOWER';
+            ctx.fillText(direction, width / 2, 50);
+            
+            // Progress bar
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(width/2 - 100, 60, 200, 6);
+            ctx.fillStyle = 'rgba(122, 255, 218, 0.8)';
+            ctx.fillRect(width/2 - 100, 60, currentDepth * 200, 6);
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    window.onload = init;
+    </script>
+</body>
+</html>
