@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Screen-to-Perception: A Meta Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0 30px;
+            border-bottom: 1px solid rgba(202, 168, 126, 0.3);
+        }
+        
+        h1 {
+            font-size: 1.6em;
+            font-weight: 300;
+            color: #caa87e;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #7a8a9a;
+            font-size: 0.8em;
+            letter-spacing: 2px;
+        }
+        
+        .meta-note {
+            color: #5a6a7a;
+            font-size: 0.7em;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Simulation Canvas Container */
+        .simulation-container {
+            background: #000;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            min-height: 500px;
+            overflow: hidden;
+            border: 1px solid #2a2a3a;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 460px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        #mainCanvas {
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        .zoom-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.75em;
+            color: #caa87e;
+            border: 1px solid #3a3a4a;
+        }
+        
+        .scale-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.65em;
+            color: #8a9aaa;
+        }
+        
+        .scale-bar-line {
+            width: 50px;
+            height: 2px;
+            background: #caa87e;
+            margin-top: 4px;
+        }
+        
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            background: rgba(202, 168, 126, 0.2);
+            border: 1px solid #caa87e;
+            color: #caa87e;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.75em;
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(202, 168, 126, 0.4);
+        }
+        
+        /* Zoom Slider */
+        .zoom-control {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 10px;
+            border-radius: 8px;
+        }
+        
+        .zoom-slider {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 20px;
+            height: 150px;
+            cursor: pointer;
+        }
+        
+        .zoom-label {
+            font-size: 0.6em;
+            color: #7a8a9a;
+            text-align: center;
+        }
+        
+        /* Right Panel */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .panel {
+            background: #0a0a14;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #1a1a3a;
+        }
+        
+        .panel-header {
+            color: #8a9aba;
+            font-size: 0.65em;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1a1a3a;
+        }
+        
+        /* CRR Equations */
+        .crr-equation {
+            background: #0f0f1a;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-family: 'Times New Roman', serif;
+            font-size: 0.95em;
+            text-align: center;
+            color: #a0b0d0;
+            border-left: 3px solid #caa87e;
+        }
+        
+        .crr-equation .small {
+            font-size: 0.8em;
+            color: #7a8a9a;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        /* Layer Info */
+        .layer-info {
+            background: #080810;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .layer-name {
+            color: #caa87e;
+            font-size: 0.8em;
+            margin-bottom: 6px;
+        }
+        
+        .layer-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7em;
+            padding: 3px 0;
+            border-bottom: 1px solid #151525;
+        }
+        
+        .layer-row:last-child {
+            border-bottom: none;
+        }
+        
+        .layer-label {
+            color: #5a6a8a;
+        }
+        
+        .layer-value {
+            color: #a0b0c0;
+        }
+        
+        .symmetry-z2 {
+            color: #ff9a7a;
+        }
+        
+        .symmetry-so2 {
+            color: #7affda;
+        }
+        
+        /* Live Values */
+        .live-section {
+            margin-top: 10px;
+        }
+        
+        .live-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.75em;
+            border-bottom: 1px solid #151525;
+        }
+        
+        .live-value {
+            color: #7affaa;
+            font-weight: bold;
+            transition: color 0.1s;
+        }
+        
+        .live-value.flash {
+            color: #ffffff;
+        }
+        
+        /* Zoom Level Buttons */
+        .zoom-levels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .zoom-btn {
+            background: #0f0f1a;
+            border: 1px solid #2a2a4a;
+            color: #8a9aaa;
+            padding: 8px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.6em;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .zoom-btn:hover {
+            background: #1a1a2a;
+            border-color: #caa87e;
+            color: #caa87e;
+        }
+        
+        .zoom-btn.active {
+            background: rgba(202, 168, 126, 0.2);
+            border-color: #caa87e;
+            color: #caa87e;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 25px 0;
+            margin-top: 30px;
+            border-top: 1px solid #1a1a3a;
+            font-size: 0.7em;
+            color: #4a5a6a;
+        }
+        
+        footer a {
+            color: #caa87e;
+            text-decoration: none;
+        }
+        
+        /* Perception chain */
+        .perception-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .chain-node {
+            background: #0f0f1a;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.6em;
+            color: #6a7a8a;
+        }
+        
+        .chain-node.active {
+            background: rgba(202, 168, 126, 0.3);
+            color: #caa87e;
+        }
+        
+        .chain-arrow {
+            color: #3a4a5a;
+            font-size: 0.8em;
+        }
+        
+        /* Coffee stain decoration */
+        .coffee-stain {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, 
+                rgba(139, 90, 43, 0.1) 0%,
+                rgba(139, 90, 43, 0.05) 50%,
+                transparent 70%);
+            pointer-events: none;
+            top: 100px;
+            right: 50px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="coffee-stain"></div>
+    
+    <div class="container">
+        <header>
+            <h1>☀ CRR SCREEN-TO-PERCEPTION</h1>
+            <div class="subtitle">FROM PHOTON TO PHENOMENOLOGY</div>
+            <div class="meta-note">A meta-simulation: Using CRR to render the very screen you're viewing CRR through</div>
+        </header>
+        
+        <div class="main-content">
+            <!-- Main Simulation -->
+            <div class="simulation-container">
+                <div class="canvas-wrapper">
+                    <canvas id="mainCanvas" width="700" height="460"></canvas>
+                </div>
+                
+                <div class="zoom-indicator">
+                    <div>ZOOM: <span id="zoomLevel">Screen</span></div>
+                    <div style="font-size: 0.9em; color: #7a8a9a; margin-top: 3px;">
+                        Scale: <span id="scaleDisplay">40cm</span>
+                    </div>
+                </div>
+                
+                <div class="scale-bar">
+                    <span id="scaleText">10cm</span>
+                    <div class="scale-bar-line" id="scaleBarLine"></div>
+                </div>
+                
+                <div class="zoom-control">
+                    <div class="zoom-label">+</div>
+                    <input type="range" id="zoomSlider" class="zoom-slider" 
+                           min="0" max="8" value="1" step="0.1" orient="vertical">
+                    <div class="zoom-label">−</div>
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="toggleAnimation()">
+                        <span id="animBtn">⏸ Pause</span>
+                    </button>
+                    <button class="control-btn" onclick="resetView()">⟲ Reset</button>
+                </div>
+            </div>
+            
+            <!-- Info Panel -->
+            <div class="info-panel">
+                <!-- Current Layer CRR -->
+                <div class="panel">
+                    <div class="panel-header">ACTIVE CRR LAYER</div>
+                    
+                    <div class="crr-equation">
+                        R = ∫φ(x,τ) exp(C/Ω) Θ(...) dτ
+                        <span class="small">Regeneration with memory weighting</span>
+                    </div>
+                    
+                    <div class="layer-info" id="activeLayer">
+                        <div class="layer-name">LCD PIXEL (Z₂)</div>
+                        <div class="layer-row">
+                            <span class="layer-label">Symmetry</span>
+                            <span class="layer-value symmetry-z2">Z₂ (discrete)</span>
+                        </div>
+                        <div class="layer-row">
+                            <span class="layer-label">Ω</span>
+                            <span class="layer-value">1/π = 0.31831</span>
+                        </div>
+                        <div class="layer-row">
+                            <span class="layer-label">τ (period)</span>
+                            <span class="layer-value">16.67 ms</span>
+                        </div>
+                        <div class="layer-row">
+                            <span class="layer-label">exp(C/Ω)</span>
+                            <span class="layer-value live-value" id="memoryWeight">1.0538</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Zoom Levels -->
+                <div class="panel">
+                    <div class="panel-header">ZOOM TO SCALE</div>
+                    <div class="zoom-levels">
+                        <button class="zoom-btn" onclick="setZoom(0)">Room View</button>
+                        <button class="zoom-btn active" onclick="setZoom(1)">Screen</button>
+                        <button class="zoom-btn" onclick="setZoom(2)">Text</button>
+                        <button class="zoom-btn" onclick="setZoom(3)">Letter</button>
+                        <button class="zoom-btn" onclick="setZoom(4)">Pixel Grid</button>
+                        <button class="zoom-btn" onclick="setZoom(5)">Single Pixel</button>
+                        <button class="zoom-btn" onclick="setZoom(6)">Subpixel</button>
+                        <button class="zoom-btn" onclick="setZoom(7)">LC Molecules</button>
+                        <button class="zoom-btn" onclick="setZoom(8)">Photon λ</button>
+                    </div>
+                </div>
+                
+                <!-- Live Metrics -->
+                <div class="panel">
+                    <div class="panel-header">LIVE CRR METRICS</div>
+                    <div class="live-section">
+                        <div class="live-row">
+                            <span>Pixel Ruptures (60Hz)</span>
+                            <span class="live-value" id="pixelRuptures">0</span>
+                        </div>
+                        <div class="live-row">
+                            <span>Retinal Cycles (10Hz)</span>
+                            <span class="live-value" id="retinalCycles">0</span>
+                        </div>
+                        <div class="live-row">
+                            <span>Gamma Oscillations (40Hz)</span>
+                            <span class="live-value" id="gammaCycles">0</span>
+                        </div>
+                        <div class="live-row">
+                            <span>Session Coherence C</span>
+                            <span class="live-value" id="sessionC">0.0000</span>
+                        </div>
+                        <div class="live-row">
+                            <span>Photon Cycles (visible λ)</span>
+                            <span class="live-value" id="photonCycles">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Perception Chain -->
+                <div class="panel">
+                    <div class="panel-header">PERCEPTION CHAIN</div>
+                    <div class="perception-chain">
+                        <span class="chain-node" id="chain-pixel">Pixel</span>
+                        <span class="chain-arrow">→</span>
+                        <span class="chain-node" id="chain-photon">Photon</span>
+                        <span class="chain-arrow">→</span>
+                        <span class="chain-node" id="chain-path">60cm</span>
+                        <span class="chain-arrow">→</span>
+                        <span class="chain-node" id="chain-retina">Retina</span>
+                        <span class="chain-arrow">→</span>
+                        <span class="chain-node" id="chain-v1">V1</span>
+                        <span class="chain-arrow">→</span>
+                        <span class="chain-node active" id="chain-conscious">You</span>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px; font-size: 0.65em; color: #5a6a7a;">
+                        Total latency: ~720ms from pixel to perception
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            CRR Framework © 2025 Alexander Sabine · <a href="https://cohere.org.uk">cohere.org.uk</a><br>
+            <span style="color: #2a3a5a;">Ω = 1/π (Z₂) · Ω = 1/2π (SO(2)) · CV = Ω/2 · e^π ≈ 23.14</span>
+        </footer>
+    </div>
+    
+    <script>
+        // =================================================================
+        // CRR CONSTANTS (from Python calculations)
+        // =================================================================
+        const OMEGA_Z2 = 1 / Math.PI;           // 0.31831
+        const OMEGA_SO2 = 1 / (2 * Math.PI);    // 0.15915
+        const EXP_PI = Math.exp(Math.PI);       // 23.1407
+        const C_LIGHT = 299792458;              // m/s
+        
+        // Timescales
+        const TAU_PIXEL = 1/60;                 // 16.67ms
+        const TAU_RETINAL = 0.1;                // 100ms
+        const TAU_GAMMA = 0.025;                // 25ms
+        const FREQ_RED = 4.797e14;              // Hz
+        
+        // =================================================================
+        // ZOOM LEVELS CONFIGURATION
+        // =================================================================
+        const ZOOM_LEVELS = [
+            {
+                name: "Room View",
+                scale: 2.0,                     // meters
+                description: "You at your desk, 60cm from screen",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: 0.1,
+                layer: "CONSCIOUS PERCEPTION",
+                color: "#caa87e"
+            },
+            {
+                name: "Screen",
+                scale: 0.4,
+                description: "Full laptop/monitor display",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: TAU_PIXEL,
+                layer: "LCD PIXEL ARRAY",
+                color: "#f5f0e6"
+            },
+            {
+                name: "Text Area",
+                scale: 0.12,
+                description: "☀ Coffee and Claude time?",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: TAU_PIXEL,
+                layer: "GLYPH RENDERING",
+                color: "#4a4a4a"
+            },
+            {
+                name: "Letter",
+                scale: 0.012,
+                description: "Single character 'C'",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: TAU_PIXEL,
+                layer: "CHARACTER MATRIX",
+                color: "#4a4a4a"
+            },
+            {
+                name: "Pixel Grid",
+                scale: 0.002,
+                description: "~20 pixels visible",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: TAU_PIXEL,
+                layer: "PIXEL BOUNDARY",
+                color: "#303030"
+            },
+            {
+                name: "Single Pixel",
+                scale: 0.0004,
+                description: "One RGB pixel triad",
+                symmetry: "Z₂",
+                omega: OMEGA_Z2,
+                tau: TAU_PIXEL,
+                layer: "RGB SUBPIXELS",
+                color: "#000000"
+            },
+            {
+                name: "Subpixel",
+                scale: 0.0001,
+                description: "Individual R, G, or B element",
+                symmetry: "SO(2)",
+                omega: OMEGA_SO2,
+                tau: 1/1000,
+                layer: "LIQUID CRYSTAL",
+                color: "#ff3333"
+            },
+            {
+                name: "LC Molecules",
+                scale: 0.00001,
+                description: "Liquid crystal alignment",
+                symmetry: "SO(2)",
+                omega: OMEGA_SO2,
+                tau: 1e-6,
+                layer: "MOLECULAR ROTATION",
+                color: "#6666ff"
+            },
+            {
+                name: "Photon λ",
+                scale: 6e-7,
+                description: "~600nm visible light wavelength",
+                symmetry: "SO(2)",
+                omega: OMEGA_SO2,
+                tau: 1/FREQ_RED,
+                layer: "ELECTROMAGNETIC WAVE",
+                color: "#ffaa00"
+            }
+        ];
+        
+        // =================================================================
+        // STATE
+        // =================================================================
+        let canvas, ctx;
+        let currentZoom = 1;
+        let targetZoom = 1;
+        let animating = true;
+        let startTime = Date.now();
+        let sessionCoherence = 0;
+        let pixelRuptures = 0;
+        let retinalCycles = 0;
+        let gammaCycles = 0;
+        let photonCycles = 0;
+        let lastFrameTime = 0;
+        
+        // Animation phases
+        let pixelPhase = 0;
+        let wavePhase = 0;
+        let breathPhase = 0;
+        
+        // =================================================================
+        // INITIALIZATION
+        // =================================================================
+        function init() {
+            canvas = document.getElementById('mainCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set up zoom slider
+            document.getElementById('zoomSlider').addEventListener('input', (e) => {
+                targetZoom = parseFloat(e.target.value);
+            });
+            
+            // Click to zoom
+            canvas.addEventListener('click', (e) => {
+                if (targetZoom < 8) {
+                    targetZoom = Math.min(8, targetZoom + 1);
+                    document.getElementById('zoomSlider').value = targetZoom;
+                }
+            });
+            
+            // Right-click to zoom out
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (targetZoom > 0) {
+                    targetZoom = Math.max(0, targetZoom - 1);
+                    document.getElementById('zoomSlider').value = targetZoom;
+                }
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // =================================================================
+        // DRAWING FUNCTIONS FOR EACH ZOOM LEVEL
+        // =================================================================
+        
+        function drawRoomView(t) {
+            // Background - room ambiance
+            ctx.fillStyle = '#1a1815';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Desk surface
+            ctx.fillStyle = '#2a2520';
+            ctx.fillRect(50, 320, canvas.width - 100, 140);
+            
+            // Monitor/laptop screen
+            const screenX = 180;
+            const screenY = 80;
+            const screenW = 340;
+            const screenH = 220;
+            
+            // Screen bezel
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(screenX - 15, screenY - 15, screenW + 30, screenH + 30);
+            
+            // Screen glow
+            ctx.fillStyle = '#f5f0e6';
+            ctx.fillRect(screenX, screenY, screenW, screenH);
+            
+            // Screen content - the Coffee and Claude message!
+            ctx.fillStyle = '#4a4a4a';
+            ctx.font = '16px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('☀ Coffee and Claude time?', screenX + screenW/2, screenY + screenH/2);
+            
+            // Coffee mug
+            ctx.fillStyle = '#8b5a2b';
+            ctx.beginPath();
+            ctx.ellipse(550, 350, 25, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#6b4423';
+            ctx.fillRect(525, 350, 50, 40);
+            ctx.beginPath();
+            ctx.ellipse(550, 390, 25, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Steam - CRR oscillation!
+            ctx.strokeStyle = `rgba(200, 200, 200, ${0.3 + 0.2 * Math.sin(t * 2)})`;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(540 + i * 15, 340);
+                ctx.bezierCurveTo(
+                    535 + i * 15, 320 + Math.sin(t * 3 + i) * 5,
+                    545 + i * 15, 300 + Math.sin(t * 3 + i + 1) * 5,
+                    540 + i * 15, 280
+                );
+                ctx.stroke();
+            }
+            
+            // Viewing distance indicator
+            ctx.strokeStyle = '#caa87e';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(350, 300);
+            ctx.lineTo(350, 420);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#caa87e';
+            ctx.font = '10px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('60cm', 350, 440);
+            ctx.fillText('(2ns photon flight)', 350, 452);
+        }
+        
+        function drawScreen(t) {
+            // Claude-like interface background
+            ctx.fillStyle = '#f5f0e6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Subtle texture
+            ctx.fillStyle = 'rgba(0,0,0,0.02)';
+            for (let i = 0; i < 50; i++) {
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+            }
+            
+            // Header area
+            ctx.fillStyle = '#f8f5ef';
+            ctx.fillRect(0, 0, canvas.width, 60);
+            
+            // The message!
+            ctx.fillStyle = '#caa87e';
+            ctx.font = '14px Georgia';
+            ctx.textAlign = 'left';
+            ctx.fillText('☀', 50, 220);
+            
+            ctx.fillStyle = '#4a4a4a';
+            ctx.font = '32px Georgia';
+            ctx.fillText('Coffee and Claude time?', 75, 225);
+            
+            // Pixel refresh visualization - subtle scan line
+            const scanY = (t * 100) % canvas.height;
+            ctx.fillStyle = 'rgba(202, 168, 126, 0.1)';
+            ctx.fillRect(0, scanY, canvas.width, 2);
+            
+            // CRR annotation
+            ctx.fillStyle = '#9a8a7a';
+            ctx.font = '10px Courier New';
+            ctx.fillText(`Pixel refresh: 60Hz (τ = 16.67ms)`, 50, 400);
+            ctx.fillText(`Coherence accumulating: C = ${sessionCoherence.toFixed(4)}`, 50, 415);
+        }
+        
+        function drawTextArea(t) {
+            ctx.fillStyle = '#f5f0e6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Large text
+            ctx.fillStyle = '#caa87e';
+            ctx.font = '40px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('☀', 100, 250);
+            
+            ctx.fillStyle = '#4a4a4a';
+            ctx.font = '80px Georgia';
+            ctx.fillText('Coffee and Claude time?', canvas.width/2, 260);
+            
+            // Show individual letter boundaries
+            ctx.strokeStyle = 'rgba(202, 168, 126, 0.3)';
+            ctx.lineWidth = 1;
+            const text = 'Coffee and Claude time?';
+            let xPos = 85;
+            ctx.font = '80px Georgia';
+            for (let char of text) {
+                const w = ctx.measureText(char).width;
+                ctx.strokeRect(xPos, 170, w, 100);
+                xPos += w;
+            }
+            
+            // Annotation
+            ctx.fillStyle = '#9a8a7a';
+            ctx.font = '11px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText('Each glyph: discrete rupture in visual field', 50, 400);
+            ctx.fillText('Z₂ symmetry: character present/absent', 50, 420);
+        }
+        
+        function drawLetter(t) {
+            ctx.fillStyle = '#f5f0e6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Giant 'C' from Coffee
+            ctx.fillStyle = '#4a4a4a';
+            ctx.font = 'bold 400px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText('C', canvas.width/2, 380);
+            
+            // Show pixel hint
+            ctx.strokeStyle = 'rgba(202, 168, 126, 0.4)';
+            ctx.lineWidth = 0.5;
+            const gridSize = 20;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#9a8a7a';
+            ctx.font = '11px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText('Character rendered via pixel matrix', 50, 440);
+            ctx.fillText(`Approx ${Math.floor(300/0.3)} pixels tall`, 50, 455);
+        }
+        
+        function drawPixelGrid(t) {
+            const pixelSize = 35;
+            const cols = Math.ceil(canvas.width / pixelSize);
+            const rows = Math.ceil(canvas.height / pixelSize);
+            
+            // Draw pixel grid with slight color variation
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    // Simulate part of the 'C' letter edge
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    const px = x * pixelSize + pixelSize/2;
+                    const py = y * pixelSize + pixelSize/2;
+                    const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+                    
+                    // C-shaped region
+                    const inC = dist > 100 && dist < 200 && (px < cx + 50 || Math.abs(py - cy) > 80);
+                    
+                    if (inC) {
+                        ctx.fillStyle = '#4a4a4a';
+                    } else {
+                        ctx.fillStyle = '#f5f0e6';
+                    }
+                    
+                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize - 1, pixelSize - 1);
+                    
+                    // Pixel boundary
+                    ctx.strokeStyle = '#2a2a2a';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x * pixelSize, y * pixelSize, pixelSize - 1, pixelSize - 1);
+                }
+            }
+            
+            // Highlight one pixel with refresh animation
+            const highlightX = Math.floor(cols/2) * pixelSize;
+            const highlightY = Math.floor(rows/2) * pixelSize;
+            ctx.strokeStyle = `rgba(202, 168, 126, ${0.5 + 0.5 * Math.sin(t * Math.PI * 2 * 60)})`;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(highlightX, highlightY, pixelSize - 1, pixelSize - 1);
+            
+            ctx.fillStyle = '#caa87e';
+            ctx.font = '10px Courier New';
+            ctx.fillText('Refresh pulse: 60Hz', highlightX + 40, highlightY + 20);
+        }
+        
+        function drawSinglePixel(t) {
+            // One pixel = RGB triad
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const subpixelW = canvas.width / 3;
+            const margin = 40;
+            
+            // Red subpixel
+            const rIntensity = 0.3 + 0.05 * Math.sin(t * 10);
+            ctx.fillStyle = `rgb(${Math.floor(255 * rIntensity)}, 0, 0)`;
+            ctx.fillRect(margin, margin, subpixelW - 20, canvas.height - margin * 2);
+            
+            // Green subpixel
+            const gIntensity = 0.3 + 0.05 * Math.sin(t * 10 + 1);
+            ctx.fillStyle = `rgb(0, ${Math.floor(255 * gIntensity)}, 0)`;
+            ctx.fillRect(margin + subpixelW, margin, subpixelW - 20, canvas.height - margin * 2);
+            
+            // Blue subpixel
+            const bIntensity = 0.25 + 0.05 * Math.sin(t * 10 + 2);
+            ctx.fillStyle = `rgb(0, 0, ${Math.floor(255 * bIntensity)})`;
+            ctx.fillRect(margin + subpixelW * 2, margin, subpixelW - 20, canvas.height - margin * 2);
+            
+            // Labels
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '14px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('R', margin + subpixelW/2 - 10, canvas.height - 15);
+            ctx.fillText('G', margin + subpixelW * 1.5 - 10, canvas.height - 15);
+            ctx.fillText('B', margin + subpixelW * 2.5 - 10, canvas.height - 15);
+            
+            ctx.fillText('625nm', margin + subpixelW/2 - 10, 25);
+            ctx.fillText('530nm', margin + subpixelW * 1.5 - 10, 25);
+            ctx.fillText('470nm', margin + subpixelW * 2.5 - 10, 25);
+            
+            // Mixed color preview
+            ctx.fillStyle = `rgb(${Math.floor(255*rIntensity)}, ${Math.floor(255*gIntensity)}, ${Math.floor(255*bIntensity)})`;
+            ctx.fillRect(canvas.width - 80, 10, 70, 40);
+            ctx.strokeStyle = '#444';
+            ctx.strokeRect(canvas.width - 80, 10, 70, 40);
+            ctx.fillStyle = '#888';
+            ctx.font = '9px Courier New';
+            ctx.fillText('Mixed', canvas.width - 45, 60);
+        }
+        
+        function drawSubpixel(t) {
+            // Deep into a single R subpixel - liquid crystal
+            ctx.fillStyle = '#200000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // LC molecule visualization - rotating dipoles
+            const numMolecules = 40;
+            const moleculeSize = 30;
+            
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 3;
+            
+            for (let i = 0; i < numMolecules; i++) {
+                const x = 50 + (i % 8) * 80;
+                const y = 50 + Math.floor(i / 8) * 90;
+                
+                // SO(2) rotation - electric field alignment
+                const angle = Math.sin(t * 5 + i * 0.3) * 0.5 + Math.PI/4;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle);
+                
+                // Elongated molecule
+                ctx.beginPath();
+                ctx.ellipse(0, 0, moleculeSize, 5, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Dipole arrow
+                ctx.fillStyle = '#ff6666';
+                ctx.beginPath();
+                ctx.moveTo(moleculeSize - 5, 0);
+                ctx.lineTo(moleculeSize - 10, -4);
+                ctx.lineTo(moleculeSize - 10, 4);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            // Electric field indicator
+            ctx.strokeStyle = '#ffaa00';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(20, 0);
+            ctx.lineTo(20, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '10px Courier New';
+            ctx.save();
+            ctx.translate(12, canvas.height/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('E-field', 0, 0);
+            ctx.restore();
+            
+            ctx.fillStyle = '#ff8888';
+            ctx.font = '11px Courier New';
+            ctx.fillText('Liquid Crystal molecules: SO(2) rotational symmetry', 50, canvas.height - 40);
+            ctx.fillText('Ω = 1/2π = 0.15915', 50, canvas.height - 20);
+        }
+        
+        function drawLCMolecules(t) {
+            // Even deeper - molecular structure
+            ctx.fillStyle = '#000020';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Molecular orbital cloud visualization
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            // Draw electron cloud
+            for (let r = 150; r > 10; r -= 10) {
+                const alpha = (150 - r) / 150 * 0.5;
+                const hue = 200 + (150 - r);
+                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                // Orbital shape oscillating
+                const distortion = 1 + 0.2 * Math.sin(t * 8 + r * 0.1);
+                ctx.ellipse(cx, cy, r * distortion, r / distortion, t * 0.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Central nucleus
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Electron positions (probability clouds)
+            for (let i = 0; i < 6; i++) {
+                const angle = t * 2 + i * Math.PI / 3;
+                const radius = 60 + 20 * Math.sin(t * 5 + i);
+                const ex = cx + Math.cos(angle) * radius;
+                const ey = cy + Math.sin(angle) * radius;
+                
+                ctx.fillStyle = `rgba(100, 200, 255, ${0.5 + 0.3 * Math.sin(t * 10 + i)})`;
+                ctx.beginPath();
+                ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Wave function visualization
+            ctx.strokeStyle = 'rgba(255, 150, 0, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x += 2) {
+                const wave = 20 * Math.sin(x * 0.05 + t * 10) * Math.exp(-Math.abs(x - cx) / 200);
+                ctx.lineTo(x, canvas.height - 60 + wave);
+            }
+            ctx.stroke();
+            
+            ctx.fillStyle = '#8888ff';
+            ctx.font = '11px Courier New';
+            ctx.fillText('Quantum mechanical probability clouds', 50, canvas.height - 30);
+            ctx.fillText('Transition to photon emission...', 50, canvas.height - 12);
+        }
+        
+        function drawPhotonWavelength(t) {
+            // Electromagnetic wave at visible light scale
+            ctx.fillStyle = '#000005';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const amplitude = 80;
+            const wavelength = 100; // pixels representing ~600nm
+            const speed = 200; // pixels per second
+            
+            // E-field (vertical oscillation) - RED
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x < canvas.width; x++) {
+                const phase = (x - t * speed) * (2 * Math.PI / wavelength);
+                const y = canvas.height/2 + amplitude * Math.sin(phase);
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            // B-field (into/out of screen, shown as circles) - BLUE
+            ctx.strokeStyle = '#4444ff';
+            ctx.lineWidth = 2;
+            for (let x = 50; x < canvas.width; x += wavelength/4) {
+                const phase = (x - t * speed) * (2 * Math.PI / wavelength);
+                const bField = Math.cos(phase);
+                const radius = Math.abs(bField) * 15;
+                
+                ctx.beginPath();
+                ctx.arc(x, canvas.height/2, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Dot or cross for direction
+                if (bField > 0.1) {
+                    ctx.fillStyle = '#4444ff';
+                    ctx.beginPath();
+                    ctx.arc(x, canvas.height/2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (bField < -0.1) {
+                    ctx.beginPath();
+                    ctx.moveTo(x - 4, canvas.height/2 - 4);
+                    ctx.lineTo(x + 4, canvas.height/2 + 4);
+                    ctx.moveTo(x + 4, canvas.height/2 - 4);
+                    ctx.lineTo(x - 4, canvas.height/2 + 4);
+                    ctx.stroke();
+                }
+            }
+            
+            // Wavelength indicator
+            ctx.strokeStyle = '#ffaa00';
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(100, 100);
+            ctx.lineTo(100 + wavelength, 100);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '12px Courier New';
+            ctx.fillText('λ ≈ 600nm', 100 + wavelength/2 - 25, 90);
+            
+            // Frequency calculation
+            ctx.fillStyle = '#aaaaaa';
+            ctx.font = '11px Courier New';
+            ctx.fillText(`f = c/λ = ${(C_LIGHT / 600e-9).toExponential(2)} Hz`, 50, canvas.height - 60);
+            ctx.fillText(`τ = 1/f = ${(1 / (C_LIGHT / 600e-9)).toExponential(2)} s`, 50, canvas.height - 40);
+            ctx.fillText('SO(2) symmetry: continuous E-B rotation', 50, canvas.height - 20);
+            
+            // Labels
+            ctx.fillStyle = '#ff6666';
+            ctx.fillText('E-field', 30, canvas.height/2 - amplitude - 10);
+            ctx.fillStyle = '#6666ff';
+            ctx.fillText('B-field (⊙/⊗)', 30, canvas.height/2 + amplitude + 20);
+            
+            // The fundamental CRR insight
+            ctx.fillStyle = '#caa87e';
+            ctx.font = 'bold 12px Courier New';
+            ctx.fillText('Each oscillation is a CRR cycle: C→δ→R', 400, 50);
+            ctx.fillText(`~10¹⁵ ruptures per second!`, 400, 70);
+        }
+        
+        // =================================================================
+        // MAIN RENDER FUNCTION
+        // =================================================================
+        function render(t) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const zoomIndex = Math.round(currentZoom);
+            const level = ZOOM_LEVELS[zoomIndex];
+            
+            // Draw appropriate view
+            switch(zoomIndex) {
+                case 0: drawRoomView(t); break;
+                case 1: drawScreen(t); break;
+                case 2: drawTextArea(t); break;
+                case 3: drawLetter(t); break;
+                case 4: drawPixelGrid(t); break;
+                case 5: drawSinglePixel(t); break;
+                case 6: drawSubpixel(t); break;
+                case 7: drawLCMolecules(t); break;
+                case 8: drawPhotonWavelength(t); break;
+            }
+            
+            // Transition effect between zoom levels
+            const zoomFrac = currentZoom - zoomIndex;
+            if (zoomFrac > 0.1 && zoomIndex < 8) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${zoomFrac * 0.7})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        
+        // =================================================================
+        // UPDATE UI
+        // =================================================================
+        function updateUI() {
+            const zoomIndex = Math.round(currentZoom);
+            const level = ZOOM_LEVELS[zoomIndex];
+            
+            // Update zoom indicator
+            document.getElementById('zoomLevel').textContent = level.name;
+            document.getElementById('scaleDisplay').textContent = formatScale(level.scale);
+            document.getElementById('scaleText').textContent = formatScale(level.scale / 7);
+            
+            // Update active layer info
+            const symmetryClass = level.symmetry === 'Z₂' ? 'symmetry-z2' : 'symmetry-so2';
+            document.getElementById('activeLayer').innerHTML = `
+                <div class="layer-name">${level.layer} (${level.symmetry})</div>
+                <div class="layer-row">
+                    <span class="layer-label">Symmetry</span>
+                    <span class="layer-value ${symmetryClass}">${level.symmetry} (${level.symmetry === 'Z₂' ? 'discrete' : 'continuous'})</span>
+                </div>
+                <div class="layer-row">
+                    <span class="layer-label">Ω</span>
+                    <span class="layer-value">${level.symmetry === 'Z₂' ? '1/π' : '1/2π'} = ${level.omega.toFixed(5)}</span>
+                </div>
+                <div class="layer-row">
+                    <span class="layer-label">τ (period)</span>
+                    <span class="layer-value">${formatTime(level.tau)}</span>
+                </div>
+                <div class="layer-row">
+                    <span class="layer-label">exp(C/Ω)</span>
+                    <span class="layer-value live-value">${Math.exp(Math.min(sessionCoherence / level.omega, 10)).toFixed(4)}</span>
+                </div>
+            `;
+            
+            // Update zoom buttons
+            document.querySelectorAll('.zoom-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === zoomIndex);
+            });
+            
+            // Update live metrics
+            document.getElementById('pixelRuptures').textContent = pixelRuptures.toLocaleString();
+            document.getElementById('retinalCycles').textContent = retinalCycles.toLocaleString();
+            document.getElementById('gammaCycles').textContent = gammaCycles.toLocaleString();
+            document.getElementById('sessionC').textContent = sessionCoherence.toFixed(4);
+            document.getElementById('photonCycles').textContent = photonCycles.toExponential(2);
+            
+            // Update perception chain highlighting
+            const chainNodes = ['pixel', 'photon', 'path', 'retina', 'v1', 'conscious'];
+            const activeChainIndex = Math.min(5, Math.max(0, 5 - Math.floor(zoomIndex / 1.5)));
+            chainNodes.forEach((node, i) => {
+                const el = document.getElementById(`chain-${node}`);
+                el.classList.toggle('active', i >= activeChainIndex);
+            });
+        }
+        
+        function formatScale(meters) {
+            if (meters >= 1) return meters.toFixed(1) + 'm';
+            if (meters >= 0.01) return (meters * 100).toFixed(1) + 'cm';
+            if (meters >= 0.001) return (meters * 1000).toFixed(1) + 'mm';
+            if (meters >= 1e-6) return (meters * 1e6).toFixed(1) + 'μm';
+            return (meters * 1e9).toFixed(0) + 'nm';
+        }
+        
+        function formatTime(seconds) {
+            if (seconds >= 1) return seconds.toFixed(2) + 's';
+            if (seconds >= 0.001) return (seconds * 1000).toFixed(2) + 'ms';
+            if (seconds >= 1e-6) return (seconds * 1e6).toFixed(2) + 'μs';
+            if (seconds >= 1e-9) return (seconds * 1e9).toFixed(2) + 'ns';
+            if (seconds >= 1e-12) return (seconds * 1e12).toFixed(2) + 'ps';
+            return seconds.toExponential(2) + 's';
+        }
+        
+        // =================================================================
+        // ANIMATION LOOP
+        // =================================================================
+        function animate(timestamp) {
+            const dt = (timestamp - lastFrameTime) / 1000;
+            lastFrameTime = timestamp;
+            const t = (Date.now() - startTime) / 1000;
+            
+            if (animating) {
+                // Smooth zoom transition
+                currentZoom += (targetZoom - currentZoom) * 0.1;
+                
+                // Accumulate coherence
+                sessionCoherence += dt;
+                
+                // Count ruptures
+                pixelRuptures = Math.floor(t / TAU_PIXEL);
+                retinalCycles = Math.floor(t / TAU_RETINAL);
+                gammaCycles = Math.floor(t / TAU_GAMMA);
+                photonCycles = t * FREQ_RED;
+                
+                render(t);
+                updateUI();
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // =================================================================
+        // CONTROLS
+        // =================================================================
+        function setZoom(level) {
+            targetZoom = level;
+            document.getElementById('zoomSlider').value = level;
+        }
+        
+        function toggleAnimation() {
+            animating = !animating;
+            document.getElementById('animBtn').textContent = animating ? '⏸ Pause' : '▶ Play';
+        }
+        
+        function resetView() {
+            targetZoom = 1;
+            currentZoom = 1;
+            document.getElementById('zoomSlider').value = 1;
+            sessionCoherence = 0;
+            startTime = Date.now();
+        }
+        
+        // Initialize
+        window.onload = init;
+        
+        // Console verification
+        console.log('CRR Screen-to-Perception Simulation');
+        console.log('====================================');
+        console.log('Ω (Z₂) = 1/π =', OMEGA_Z2.toFixed(5));
+        console.log('Ω (SO(2)) = 1/2π =', OMEGA_SO2.toFixed(5));
+        console.log('e^π =', EXP_PI.toFixed(4));
+        console.log('');
+        console.log('Click to zoom in, right-click to zoom out');
+        console.log('Or use the slider / buttons');
+    </script>
+</body>
+</html>
