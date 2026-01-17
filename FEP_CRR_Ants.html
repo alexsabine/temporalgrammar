@@ -547,7 +547,15 @@ function generatePiContour() {
 }
 generatePiContour();
 
-// ═══ ANTS ═══
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANT DATA STRUCTURE
+// ═══════════════════════════════════════════════════════════════════════════════
+// Each ant is a TRUE CRR agent with:
+//   - C_local (A_C): coherence that accumulates and resets at rupture
+//   - Ω (A_OMEGA): personal variance/capacity threshold
+//   - Rupture occurs when C_local >= Ω
+//   - Memory history preserved in antMemory[] for regeneration
+// ═══════════════════════════════════════════════════════════════════════════════
 const MAX_ANTS = 100;
 const ANT_STRIDE = 26;
 const antData = new Float32Array(MAX_ANTS * ANT_STRIDE);
@@ -556,12 +564,26 @@ let antCount = 0;
 const A_X=0,A_Y=1,A_ANGLE=2,A_SPEED=3,A_STATE=4,A_PATH_IDX=5,A_DIR=6,A_LEG_PHASE=7;
 const A_SIZE=8,A_C=9,A_JITTER=10,A_CARRY=11,A_HOME=12,A_WANDER=13,A_TX=14,A_TY=15;
 const A_WOBBLE=16,A_SLOT=17,A_OMEGA=18,A_RUPTURE_TIMER=19,A_DEMO_GROUP=20;
-const A_COHERENCE_DISPLAY=21,A_TRAIL_IDX=22;
+const A_COHERENCE_DISPLAY=21,A_TRAIL_IDX=22,A_RUPTURE_COUNT=23,A_LAST_SUCCESS_SYM=24;
 
 const ST_PATROL=0,ST_TUNNEL=1,ST_FORAGE=2,ST_CARRY=3,ST_RETURN=4,ST_CONSUME=5,ST_SWEEP=6,ST_DEMO=7;
+const ST_RUPTURE=8; // New state: ant is in rupture (brief disorganization)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRR MEMORY SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+// Each ant maintains a memory history of past coherence peaks.
+// During regeneration, past patterns are weighted by exp(C/Ω).
+// Higher coherence moments are MORE accessible - they shaped the ant more.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Memory structure: { coherence: float, symbol: string, success: bool }
+const antMemory = [];  // Array of arrays, one per ant
+for (let i = 0; i < MAX_ANTS; i++) antMemory[i] = [];
 
 let totalCoherence = 0, fepComplete = 0, crrComplete = 0;
 let fepAllFilled = false;
+let totalAntRuptures = 0; // Track individual ant ruptures
 
 function initAnts() {
   for (let i = 0; i < 28; i++) {
@@ -745,11 +767,23 @@ function updateAnts() {
     const a = i * ANT_STRIDE;
     const state = antData[a+A_STATE] | 0;
     const speed = antData[a+A_SPEED];
+    const omega = antData[a+A_OMEGA];
     
     antData[a+A_LEG_PHASE] += speed * 0.3;
     antData[a+A_WOBBLE] += 0.06;
-    antData[a+A_C] += 0.002;
     
+    // ═══════════════════════════════════════════════════════════════════════
+    // CRR COHERENCE: Only accumulates through ADAPTIVE WORK (successful actions)
+    // ═══════════════════════════════════════════════════════════════════════
+    // NO passive accumulation - coherence comes from doing meaningful work
+    // This matches CRR theory: C = ∫ L(τ) dτ where L is the LIVING function
+    // L represents actual adaptive work, not just existing
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    // Individual ant rupture is checked in updateCarry after successful placement
+    // This keeps rupture tied to actual achievement, not random timing
+    
+    // State-specific updates
     if (state === ST_PATROL) updatePatrol(a, speed);
     else if (state === ST_TUNNEL) updateTunnel(a, speed);
     else if (state === ST_FORAGE) updateForage(a, speed);
@@ -767,7 +801,8 @@ function updatePatrol(a, speed) {
   if (dx*dx + dy*dy < 9) antData[a+A_PATH_IDX] = (idx + dir + piContour.length) % piContour.length;
   else { antData[a+A_ANGLE] = Math.atan2(dy, dx); antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed; }
   const j = antData[a+A_JITTER]; antData[a+A_X] += sinT(t*2.5+j)*0.1; antData[a+A_Y] += cosT(t*2+j)*0.07;
-  if (antData[a+A_C] > Ω_Z2*5 && Math.random() < 0.004) { antData[a+A_STATE] = ST_TUNNEL; antData[a+A_C] = 0; antData[a+A_HOME] = Math.floor(Math.random()*nests.length); }
+  // Random chance to switch to tunnel state
+  if (Math.random() < 0.002) { antData[a+A_STATE] = ST_TUNNEL; antData[a+A_HOME] = Math.floor(Math.random()*nests.length); }
 }
 
 function updateTunnel(a, speed) {
@@ -781,7 +816,8 @@ function updateTunnel(a, speed) {
   carveTunnel(antData[a+A_X], antData[a+A_Y], 3);
   const dn = Math.sqrt(Math.pow(antData[a+A_X]-nest.x,2)+Math.pow(antData[a+A_Y]-nest.y,2));
   if (dn > radius) antData[a+A_WANDER] = Math.atan2(nest.y-antData[a+A_Y], nest.x-antData[a+A_X]) + (Math.random()-0.5)*0.5;
-  if (antData[a+A_C] > Ω_Z2*4 && Math.random() < 0.01) { antData[a+A_STATE] = ST_FORAGE; antData[a+A_C] = 0; }
+  // Random chance to switch to forage state
+  if (Math.random() < 0.005) { antData[a+A_STATE] = ST_FORAGE; }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -894,11 +930,22 @@ function updateForage(a, speed) {
   
   if (currentPhase <= PHASE_FEP) carveTunnel(antData[a+A_X], antData[a+A_Y], 2);
   
-  // ACTION SELECTION VIA EXPECTED FREE ENERGY MINIMIZATION
-  // ────────────────────────────────────────────────────────
-  // When coherence threshold reached, select action by minimizing G(a)
-  if (antData[a+A_C] > Ω_Z2*2 && Math.random() < 0.025) {
-    // Find unfilled slots within perception range
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CRR REGENERATION-WEIGHTED ACTION SELECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+  // When selecting which symbol to carry, we use BOTH:
+  //   1. Active Inference (EFE minimization) - for slot selection
+  //   2. CRR Regeneration - past coherence weights symbol preference
+  //
+  // The regeneration integral R = ∫ φ(x,τ) exp(C(τ)/Ω) dτ means:
+  //   - Past moments with higher coherence are MORE accessible
+  //   - Symbols that led to high coherence are preferred
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  const omega = antData[a+A_OMEGA];
+  
+  // Random chance to decide to pick up a symbol
+  if (Math.random() < 0.02) {
     const antX = antData[a+A_X], antY = antData[a+A_Y];
     const visibleSlots = [];
     
@@ -910,11 +957,36 @@ function updateForage(a, speed) {
     }
     
     if (visibleSlots.length > 0) {
-      // Pick a symbol (prefer symbols we have skill in)
+      // ═══════════════════════════════════════════════════════════════════════
+      // REGENERATION: Weight symbols by past coherence using exp(C/Ω)
+      // ═══════════════════════════════════════════════════════════════════════
+      // Memory entries have { coherence, symbolIdx, time }
+      // Higher coherence = higher weight = more likely to influence choice
+      // This is the exp(C/Ω) memory selection mechanism from CRR
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      const memory = antMemory[antIdx] || [];
+      const memoryWeights = {}; // symbolIdx -> total weight
+      
+      for (const mem of memory) {
+        // exp(C/Ω) weighting - higher coherence = stronger memory
+        const weight = Math.exp(mem.coherence / omega);
+        memoryWeights[mem.symbolIdx] = (memoryWeights[mem.symbolIdx] || 0) + weight;
+      }
+      
+      // Combine memory weights with skill and slot availability
       const symbolScores = allSymbols.map((sym, idx) => {
         const skill = antSkills[antIdx]?.[sym] || 0;
         const matchingSlots = visibleSlots.filter(si => activeSlots[si].symbol === sym);
-        return { sym, idx, score: (0.3 + skill) * (matchingSlots.length > 0 ? 2 : 0.5) };
+        
+        // Base score from skill and availability
+        let score = (0.3 + skill) * (matchingSlots.length > 0 ? 2 : 0.3);
+        
+        // REGENERATION BOOST: Add memory weight (exp(C/Ω) from past successes)
+        const memBoost = memoryWeights[idx] || 0;
+        score += memBoost * 0.5; // Memory influences but doesn't dominate
+        
+        return { sym, idx, score };
       });
       
       // Softmax over symbols
@@ -941,7 +1013,9 @@ function updateForage(a, speed) {
           antData[a+A_STATE] = ST_CARRY;
           antData[a+A_TX] = best.slot.x;
           antData[a+A_TY] = best.slot.y;
-          antData[a+A_C] = 0;
+          
+          // Boost coherence for taking action (adaptive work)
+          antData[a+A_C] += 0.05;
         }
       }
     }
@@ -955,24 +1029,56 @@ function updateCarry(a, speed) {
   if (dist < 8) {
     const slotIdx = antData[a+A_SLOT]|0, symIdx = antData[a+A_CARRY]|0, slot = activeSlots[slotIdx];
     const symbol = allSymbols[symIdx];
+    const omega = antData[a+A_OMEGA];
     
     if (!slot.filled && symbol === slot.symbol) {
-      // SUCCESS! Slot matches symbol
+      // ═══════════════════════════════════════════════════════════════════════
+      // SUCCESS! This is ADAPTIVE WORK - adds to coherence
+      // ═══════════════════════════════════════════════════════════════════════
       slot.filled = true;
-      totalCoherence += slot.reward || 0.5;
+      const reward = slot.reward || 0.5;
+      totalCoherence += reward;
+      
+      // COHERENCE BOOST: Successful action is adaptive work
+      // This directly feeds C(t) = ∫ L(τ) dτ where L is the living function
+      antData[a+A_C] += reward;
+      
+      // Record this symbol as last success (for memory storage at rupture)
+      antData[a+A_LAST_SUCCESS_SYM] = symIdx;
       
       // Update skill via exponential learning curve
-      // skill_new = skill_old + (1 - skill_old) × LEARNING_RATE
       updateAntSkill(antIdx, symbol, true);
       
       if (currentPhase === PHASE_FEP) fepComplete++;
       else if (currentPhase === PHASE_BUILD_CRR) crrComplete++;
       
       // Success particles
-      spawnParticles(antData[a+A_TX], antData[a+A_TY], 8, 50);
+      spawnParticles(antData[a+A_TX], antData[a+A_TY], 6, 50);
+      
+      // ═══════════════════════════════════════════════════════════════════════
+      // CRR INDIVIDUAL RUPTURE CHECK (after coherence accumulated)
+      // ═══════════════════════════════════════════════════════════════════════
+      // Rupture when C >= Ω (coherence reaches capacity from adaptive work)
+      // This is meaningful rupture - tied to actual achievement
+      // ═══════════════════════════════════════════════════════════════════════
+      if (antData[a+A_C] >= omega) {
+        // Store coherence peak in memory (nonlocal preservation)
+        if (antMemory[antIdx] && antMemory[antIdx].length < 20) {
+          antMemory[antIdx].push({
+            coherence: antData[a+A_C],
+            symbolIdx: symIdx,
+            time: t
+          });
+        }
+        
+        // Reset local coherence
+        antData[a+A_C] = 0;
+        antData[a+A_RUPTURE_COUNT] = (antData[a+A_RUPTURE_COUNT] || 0) + 1;
+        totalAntRuptures++;
+      }
+      
     } else if (!slot.filled) {
       // FAILURE - wrong symbol for slot
-      // Still learn something from the attempt
       updateAntSkill(antIdx, symbol, false);
     }
     
