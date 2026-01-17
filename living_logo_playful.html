@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>π | Active Inference Institute</title>
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{min-height:100vh;display:flex;justify-content:center;align-items:center;overflow:hidden;background:#000}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// LIVING π — Sakura Edition with Rainbow Text
+// CRR-efficient blossoms with authentic Japanese color variation
+// ═══════════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const S = Math.min(innerWidth, innerHeight, 900);
+const D = devicePixelRatio || 1;
+canvas.width = S * D;
+canvas.height = S * D;
+canvas.style.width = canvas.style.height = S + 'px';
+ctx.scale(D, D);
+
+const W = S, H = S, CX = W/2, CY = H/2;
+const PI = Math.PI, TAU = PI * 2;
+
+// ═══ HORIZON ═══
+const HORIZON_Y = CY - W * 0.14;
+
+// ═══ CRR CONSTANTS ═══
+const φ = 1.618033988749895;
+const ψ = 0.618033988749895;
+const BREATH = PI * PI;
+const Ω = 1 / TAU;
+
+// ═══ LOOKUP TABLES ═══
+const TABLE_SIZE = 1024;
+const TABLE_MASK = TABLE_SIZE - 1;
+const SIN_TABLE = new Float32Array(TABLE_SIZE);
+const COS_TABLE = new Float32Array(TABLE_SIZE);
+for (let i = 0; i < TABLE_SIZE; i++) {
+  SIN_TABLE[i] = Math.sin((i / TABLE_SIZE) * TAU);
+  COS_TABLE[i] = Math.cos((i / TABLE_SIZE) * TAU);
+}
+const sinT = (a) => SIN_TABLE[((a % TAU + TAU) * TABLE_SIZE / TAU) & TABLE_MASK];
+const cosT = (a) => COS_TABLE[((a % TAU + TAU) * TABLE_SIZE / TAU) & TABLE_MASK];
+
+const GROW_SIZE = 1024;
+const GROW_TABLE = new Float32Array(GROW_SIZE);
+for (let i = 0; i < GROW_SIZE; i++) GROW_TABLE[i] = 1 - Math.exp(-(i / GROW_SIZE) * 3 * TAU);
+const grow = (C) => GROW_TABLE[Math.min(GROW_SIZE - 1, (C * GROW_SIZE / 3) | 0)];
+
+// ═══ DEPTH LOOKUP TABLES ═══
+const MAX_DEPTH = 8;
+const PSI_D = new Float32Array(MAX_DEPTH);
+const PSI_D08 = new Float32Array(MAX_DEPTH);
+const PSI_D025 = new Float32Array(MAX_DEPTH);
+const SWAY_AMP = new Float32Array(MAX_DEPTH);
+const LINE_WIDTH = new Float32Array(MAX_DEPTH);
+const BRANCH_COLORS = [];
+for (let d = 0; d < MAX_DEPTH; d++) {
+  PSI_D[d] = Math.pow(ψ, d);
+  PSI_D08[d] = Math.pow(ψ, d * 0.8);
+  PSI_D025[d] = Math.pow(ψ, d * 0.25);
+  SWAY_AMP[d] = 0.012 / (1 + d * ψ);
+  LINE_WIDTH[d] = Math.max(0.4, 2 * PSI_D08[d]);
+  BRANCH_COLORS[d] = `hsl(32,20%,${26 + d * 4}%)`;
+}
+
+// ═══ SEASONAL TIMING ═══
+const CYCLE_DURATION = 80;
+const getSeason = (t) => {
+  const ct = t % CYCLE_DURATION;
+  if (ct < 20) return 0;  // Spring
+  if (ct < 40) return 1;  // Summer
+  if (ct < 60) return 2;  // Autumn
+  return 3;               // Winter
+};
+
+// ═══ JAPANESE SAKURA COLOR PALETTE ═══
+const SAKURA_HUES = [
+  { h: 330, s: 65, l: 75 },   // Deep magenta
+  { h: 338, s: 60, l: 80 },   // Magenta-pink
+  { h: 345, s: 55, l: 85 },   // Classic sakura pink
+  { h: 350, s: 45, l: 88 },   // Soft pink
+  { h: 355, s: 35, l: 92 },   // Pale blush
+  { h: 0, s: 30, l: 94 },     // Almost white with pink
+  { h: 8, s: 50, l: 88 },     // Peachy pink
+  { h: 15, s: 55, l: 85 },    // Peach
+];
+
+// ═══ RAINBOW COLORS (for text effect) ═══
+const RAINBOW_COLORS = [
+  { h: 0, s: 85, l: 55 },     // Red
+  { h: 35, s: 95, l: 52 },    // Orange
+  { h: 55, s: 90, l: 50 },    // Yellow
+  { h: 120, s: 65, l: 45 },   // Green
+  { h: 175, s: 70, l: 45 },   // Cyan
+  { h: 210, s: 75, l: 55 },   // Blue
+  { h: 270, s: 70, l: 60 },   // Violet
+];
+
+// ═══ SUBTLE CLOUDS ═══
+const MAX_CLOUDS = 5;
+const CLOUD_STRIDE = 6;
+const cloudData = new Float32Array(MAX_CLOUDS * CLOUD_STRIDE);
+let cloudCount = 0;
+const CL_X = 0, CL_Y = 1, CL_SIZE = 2, CL_SPEED = 3, CL_OPACITY = 4, CL_PHASE = 5;
+
+function spawnCloud() {
+  if (cloudCount >= MAX_CLOUDS) return;
+  const c = cloudCount++ * CLOUD_STRIDE;
+  cloudData[c + CL_X] = -50;
+  cloudData[c + CL_Y] = 20 + Math.random() * (HORIZON_Y - 60);
+  cloudData[c + CL_SIZE] = 20 + Math.random() * 25;
+  cloudData[c + CL_SPEED] = 0.04 + Math.random() * 0.06;
+  cloudData[c + CL_OPACITY] = 0;
+  cloudData[c + CL_PHASE] = Math.random() * TAU;
+}
+
+function updateClouds() {
+  for (let i = 0; i < cloudCount; i++) {
+    const c = i * CLOUD_STRIDE;
+    cloudData[c + CL_X] += cloudData[c + CL_SPEED];
+    // Fade in/out
+    if (cloudData[c + CL_X] < 100) {
+      cloudData[c + CL_OPACITY] = Math.min(0.12, cloudData[c + CL_OPACITY] + 0.001);
+    } else if (cloudData[c + CL_X] > W - 100) {
+      cloudData[c + CL_OPACITY] *= 0.98;
+    }
+    // Reset when off screen
+    if (cloudData[c + CL_X] > W + 80) {
+      cloudData[c + CL_X] = -50;
+      cloudData[c + CL_Y] = 20 + Math.random() * (HORIZON_Y - 60);
+      cloudData[c + CL_OPACITY] = 0;
+    }
+  }
+  // Occasionally spawn new cloud
+  if (cloudCount < MAX_CLOUDS && Math.random() < 0.002) spawnCloud();
+}
+
+function drawClouds(time) {
+  for (let i = 0; i < cloudCount; i++) {
+    const c = i * CLOUD_STRIDE;
+    const x = cloudData[c + CL_X];
+    const y = cloudData[c + CL_Y];
+    const size = cloudData[c + CL_SIZE];
+    const opacity = cloudData[c + CL_OPACITY];
+    const phase = cloudData[c + CL_PHASE];
+    
+    if (opacity < 0.01 || y + size > HORIZON_Y) continue;
+    
+    // Simple soft cloud puffs
+    ctx.fillStyle = `rgba(245,247,250,${opacity})`;
+    const wobble = sinT(time * 0.1 + phase) * 2;
+    
+    ctx.beginPath();
+    ctx.arc(x - size * 0.4, y + wobble, size * 0.5, 0, TAU);
+    ctx.arc(x, y - size * 0.1 + wobble, size * 0.6, 0, TAU);
+    ctx.arc(x + size * 0.5, y + wobble, size * 0.45, 0, TAU);
+    ctx.fill();
+  }
+}
+
+// ═══ DATA STRUCTURES ═══
+const MAX_BRANCHES = 600;
+const MAX_BLOSSOMS = 400;
+const MAX_PETALS = 150;
+const MAX_MICRO_TWIGS = 1200;
+
+// Branch data
+const BRANCH_STRIDE = 13;
+const branchData = new Float32Array(MAX_BRANCHES * BRANCH_STRIDE);
+const BRANCH_META_STRIDE = 10;
+const branchMeta = new Int16Array(MAX_BRANCHES * BRANCH_META_STRIDE);
+let branchCount = 0;
+
+const B_X = 0, B_Y = 1, B_BASE_ANGLE = 2, B_ANGLE = 3, B_LENGTH = 4, B_CURVE = 5;
+const B_GROWTH = 6, B_C = 7, B_END_X = 8, B_END_Y = 9, B_PHASE = 10, B_DELAY = 11, B_SEED = 12;
+const BM_DEPTH = 0, BM_MAX_DEPTH = 1, BM_SPAWNED = 2, BM_PARENT = 3;
+const BM_CHILD_START = 4, BM_CHILD_COUNT = 5, BM_BLOSSOM_START = 8, BM_BLOSSOM_COUNT = 9;
+
+// Blossom data
+const BLOSSOM_STRIDE = 8;
+const blossomData = new Float32Array(MAX_BLOSSOMS * BLOSSOM_STRIDE);
+let blossomCount = 0;
+const BL_X = 0, BL_Y = 1, BL_SIZE = 2, BL_COLOR = 3, BL_OPEN = 4, BL_C = 5, BL_BRANCH = 6, BL_ACTIVE = 7;
+
+// Falling petals
+const PETAL_STRIDE = 12;
+const petalData = new Float32Array(MAX_PETALS * PETAL_STRIDE);
+let activePetals = 0;
+const P_X = 0, P_Y = 1, P_VX = 2, P_VY = 3, P_ROT = 4, P_ROT_SPEED = 5;
+const P_SIZE = 6, P_HUE = 7, P_SAT = 8, P_LUM = 9, P_ALPHA = 10, P_ACTIVE = 11;
+
+// Micro-twigs
+const MICRO_STRIDE = 5;
+const microTwigData = new Float32Array(MAX_MICRO_TWIGS * MICRO_STRIDE);
+let microTwigCount = 0;
+const MT_X1 = 0, MT_Y1 = 1, MT_X2 = 2, MT_Y2 = 3, MT_ALPHA = 4;
+
+// ═══ PI CONTOUR ═══
+const piPoints = [];
+function generatePiContour() {
+  const sc = W * 0.32;
+  const add = (x, y, tx, ty) => {
+    const len = Math.hypot(tx, ty) || 1;
+    let nx = -ty / len, ny = tx / len;
+    const px = CX + x * sc, py = CY + y * sc;
+    if (nx * (CX - px) + ny * (CY - py) > 0) { nx = -nx; ny = -ny; }
+    piPoints.push({ x: px, y: py, nx, ny });
+  };
+  
+  const quad = (ax, ay, bx, by, cx, cy, steps) => {
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps, m = 1 - u;
+      add(m*m*ax + 2*m*u*bx + u*u*cx, m*m*ay + 2*m*u*by + u*u*cy,
+          2*m*(bx-ax) + 2*u*(cx-bx), 2*m*(by-ay) + 2*u*(cy-by));
+    }
+  };
+  const cubic = (ax, ay, bx, by, cx, cy, dx, dy, steps) => {
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps, m = 1 - u, m2 = m*m, m3 = m2*m, u2 = u*u, u3 = u2*u;
+      add(m3*ax + 3*m2*u*bx + 3*m*u2*cx + u3*dx, m3*ay + 3*m2*u*by + 3*m*u2*cy + u3*dy,
+          3*m2*(bx-ax) + 6*m*u*(cx-bx) + 3*u2*(dx-cx), 3*m2*(by-ay) + 6*m*u*(cy-by) + 3*u2*(dy-cy));
+    }
+  };
+  
+  quad(-.52, -.28, -.50, -.42, -.38, -.44, 5);
+  cubic(-.38, -.44, -.15, -.45, .25, -.44, .42, -.44, 15);
+  quad(.42, -.44, .54, -.43, .56, -.30, 5);
+  cubic(-.18, -.38, -.22, -.12, -.36, .12, -.42, .38, 12);
+  cubic(-.42, .38, -.46, .50, -.43, .58, -.36, .62, 8);
+  cubic(.30, -.36, .26, -.08, .20, .15, .18, .38, 12);
+  cubic(.18, .38, .16, .48, .18, .56, .24, .58, 8);
+  cubic(-.36, .62, -.30, .66, -.24, .62, -.26, .55, 6);
+  cubic(.18, .62, .24, .66, .28, .62, .26, .55, 6);
+}
+
+// ═══ CREATE FUNCTIONS ═══
+function createBranch(x, y, angle, length, depth, maxDepth, delay, parentIdx) {
+  if (branchCount >= MAX_BRANCHES) return -1;
+  const idx = branchCount++;
+  const d = idx * BRANCH_STRIDE, m = idx * BRANCH_META_STRIDE;
+  const seed = Math.random();
+  
+  branchData[d + B_X] = x;
+  branchData[d + B_Y] = y;
+  branchData[d + B_BASE_ANGLE] = angle;
+  branchData[d + B_ANGLE] = angle;
+  branchData[d + B_LENGTH] = length;
+  branchData[d + B_CURVE] = (seed - 0.5) * 0.25;
+  branchData[d + B_GROWTH] = 0;
+  branchData[d + B_C] = 0;
+  branchData[d + B_END_X] = x;
+  branchData[d + B_END_Y] = y;
+  branchData[d + B_PHASE] = seed * TAU;
+  branchData[d + B_DELAY] = delay;
+  branchData[d + B_SEED] = seed;
+  
+  branchMeta[m + BM_DEPTH] = depth;
+  branchMeta[m + BM_MAX_DEPTH] = maxDepth;
+  branchMeta[m + BM_SPAWNED] = 0;
+  branchMeta[m + BM_PARENT] = parentIdx;
+  branchMeta[m + BM_CHILD_START] = -1;
+  branchMeta[m + BM_CHILD_COUNT] = 0;
+  branchMeta[m + BM_BLOSSOM_START] = -1;
+  branchMeta[m + BM_BLOSSOM_COUNT] = 0;
+  
+  return idx;
+}
+
+function createBlossom(branchIdx) {
+  if (blossomCount >= MAX_BLOSSOMS) return -1;
+  const idx = blossomCount++;
+  const bl = idx * BLOSSOM_STRIDE;
+  
+  blossomData[bl + BL_X] = 0;
+  blossomData[bl + BL_Y] = 0;
+  blossomData[bl + BL_SIZE] = 0;
+  blossomData[bl + BL_COLOR] = (Math.random() * SAKURA_HUES.length) | 0;
+  blossomData[bl + BL_OPEN] = 0;
+  blossomData[bl + BL_C] = Math.random() * 0.05;
+  blossomData[bl + BL_BRANCH] = branchIdx;
+  blossomData[bl + BL_ACTIVE] = 1;
+  
+  return idx;
+}
+
+function spawnPetal(x, y, colorIdx) {
+  let slot = -1;
+  for (let i = 0; i < MAX_PETALS; i++) {
+    if (petalData[i * PETAL_STRIDE + P_ACTIVE] < 0.5) { slot = i; break; }
+  }
+  if (slot < 0) return;
+  
+  const p = slot * PETAL_STRIDE;
+  const color = SAKURA_HUES[colorIdx];
+  
+  petalData[p + P_X] = x + (Math.random() - 0.5) * 8;
+  petalData[p + P_Y] = y + (Math.random() - 0.5) * 4;
+  petalData[p + P_VX] = (Math.random() - 0.5) * 0.8;
+  petalData[p + P_VY] = 0.2 + Math.random() * 0.3;
+  petalData[p + P_ROT] = Math.random() * TAU;
+  petalData[p + P_ROT_SPEED] = (Math.random() - 0.5) * 0.08;
+  petalData[p + P_SIZE] = 2.5 + Math.random() * 2;
+  petalData[p + P_HUE] = color.h;
+  petalData[p + P_SAT] = color.s;
+  petalData[p + P_LUM] = color.l;
+  petalData[p + P_ALPHA] = 0.9;
+  petalData[p + P_ACTIVE] = 1;
+  activePetals++;
+}
+
+function createMicroTwigs(x, y, baseAngle, baseLength, seed) {
+  const count = 2 + ((seed * 3) | 0);
+  for (let i = 0; i < count; i++) {
+    if (microTwigCount >= MAX_MICRO_TWIGS) return;
+    const mt = microTwigCount++ * MICRO_STRIDE;
+    const spreadAngle = (i / (count - 1 || 1) - 0.5) * PI * 0.6;
+    const angle = baseAngle + spreadAngle + (Math.random() - 0.5) * 0.3;
+    const len = baseLength * (0.2 + Math.random() * 0.25);
+    
+    microTwigData[mt + MT_X1] = x;
+    microTwigData[mt + MT_Y1] = y;
+    microTwigData[mt + MT_X2] = x + cosT(angle) * len;
+    microTwigData[mt + MT_Y2] = y + sinT(angle) * len;
+    microTwigData[mt + MT_ALPHA] = 0.5 + Math.random() * 0.3;
+  }
+}
+
+function initBranches() {
+  branchCount = 0;
+  blossomCount = 0;
+  microTwigCount = 0;
+  
+  let lastX = -1e9, lastY = -1e9, rootIdx = 0;
+  for (const pt of piPoints) {
+    if (Math.hypot(pt.x - lastX, pt.y - lastY) >= 10) {
+      createBranch(pt.x, pt.y, Math.atan2(pt.ny, pt.nx), 18 + Math.random() * 10, 0, 7, rootIdx * 0.04 + Math.random(), -1);
+      lastX = pt.x; lastY = pt.y; rootIdx++;
+    }
+  }
+}
+
+// ═══ STATE ═══
+let t = 0, season = 0, prevSeason = 0, breathMod = 0;
+let rainbowPhase = 0;  // For text effect
+
+// ═══ UPDATE BRANCHES ═══
+function updateBranches(time) {
+  const breathIdx = ((time * TAU / BREATH % TAU + TAU) * TABLE_SIZE / TAU) & TABLE_MASK;
+  breathMod = SIN_TABLE[breathIdx] * 0.02;
+  const swayTime = time * TAU / (BREATH * 0.5);
+  
+  for (let i = 0; i < branchCount; i++) {
+    const d = i * BRANCH_STRIDE, m = i * BRANCH_META_STRIDE;
+    const depth = branchMeta[m + BM_DEPTH];
+    const maxDepth = branchMeta[m + BM_MAX_DEPTH];
+    const delay = branchData[d + B_DELAY];
+    const seed = branchData[d + B_SEED];
+    const phase = branchData[d + B_PHASE];
+    
+    const parentIdx = branchMeta[m + BM_PARENT];
+    if (parentIdx >= 0) {
+      const pd = parentIdx * BRANCH_STRIDE;
+      branchData[d + B_X] = branchData[pd + B_END_X];
+      branchData[d + B_Y] = branchData[pd + B_END_Y];
+    }
+    
+    if (time > delay) {
+      branchData[d + B_C] += 0.00045 * (1 + breathMod * 7.5);
+      branchData[d + B_GROWTH] = grow(branchData[d + B_C]);
+    }
+    
+    const growth = branchData[d + B_GROWTH];
+    const length = branchData[d + B_LENGTH];
+    const curve = branchData[d + B_CURVE];
+    const baseAngle = branchData[d + B_BASE_ANGLE];
+    
+    if (growth > 0.1) {
+      const swayIdx = ((swayTime + phase) % TAU + TAU) * TABLE_SIZE / TAU & TABLE_MASK;
+      branchData[d + B_ANGLE] = baseAngle + SIN_TABLE[swayIdx] * SWAY_AMP[depth] * growth;
+    }
+    
+    const angle = branchData[d + B_ANGLE];
+    const curveG = curve * growth;
+    const len = length * growth;
+    const midA = angle + curveG * 0.5, endA = angle + curveG;
+    branchData[d + B_END_X] = branchData[d + B_X] + cosT(midA) * len * 0.5 + cosT(endA) * len * 0.5;
+    branchData[d + B_END_Y] = branchData[d + B_Y] + sinT(midA) * len * 0.5 + sinT(endA) * len * 0.5;
+    
+    let spawned = branchMeta[m + BM_SPAWNED];
+    
+    // Children
+    if (growth > 0.5 && !(spawned & 1) && depth < maxDepth) {
+      spawned |= 1;
+      branchMeta[m + BM_SPAWNED] = spawned;
+      const n = depth < 2 ? (seed > 0.3 ? 3 : 2) : (seed > 0.5 ? 2 : 1);
+      const spread = (PI / 4.5) / (1 + depth * 0.12);
+      const childLen = length * ψ * (0.75 + seed * 0.3);
+      if (childLen > 1.2) {
+        branchMeta[m + BM_CHILD_START] = branchCount;
+        for (let j = 0; j < n; j++) {
+          const tt = n > 1 ? j / (n - 1) : 0.5;
+          createBranch(branchData[d + B_END_X], branchData[d + B_END_Y],
+            angle + (tt - 0.5) * spread * 2 + (seed - 0.5) * 0.2,
+            childLen, depth + 1, maxDepth, delay + BREATH * 0.1 * (1 + seed * 0.3), i);
+        }
+        branchMeta[m + BM_CHILD_COUNT] = n;
+      }
+    }
+    
+    // Micro-twigs
+    if (growth > 0.85 && !(spawned & 32) && depth >= 4) {
+      spawned |= 32;
+      branchMeta[m + BM_SPAWNED] = spawned;
+      createMicroTwigs(branchData[d + B_END_X], branchData[d + B_END_Y], angle, length * growth, seed);
+    }
+    
+    // Blossoms - spring reset
+    if (season === 0 && prevSeason === 3) {
+      spawned &= ~4;
+      branchMeta[m + BM_SPAWNED] = spawned;
+    }
+    
+    // Spawn blossoms in spring/early summer
+    if (growth > 0.7 && !(spawned & 4) && depth >= 2 && season < 2) {
+      spawned |= 4;
+      branchMeta[m + BM_SPAWNED] = spawned;
+      const n = depth >= 4 ? 3 : 2;
+      branchMeta[m + BM_BLOSSOM_START] = blossomCount;
+      for (let j = 0; j < n; j++) createBlossom(i);
+      branchMeta[m + BM_BLOSSOM_COUNT] = n;
+    }
+  }
+}
+
+// ═══ UPDATE BLOSSOMS & PETALS ═══
+function updateBlossoms(time) {
+  for (let i = 0; i < blossomCount; i++) {
+    const bl = i * BLOSSOM_STRIDE;
+    if (blossomData[bl + BL_ACTIVE] < 0.5) continue;
+    
+    const branchIdx = blossomData[bl + BL_BRANCH] | 0;
+    const bd = branchIdx * BRANCH_STRIDE;
+    const seed = branchData[bd + B_SEED];
+    
+    const ox = (seed - 0.5) * 8 + ((i % 3) - 1) * 5;
+    const oy = (seed - 0.5) * 6 - 2 + ((i % 2) - 0.5) * 4;
+    blossomData[bl + BL_X] = branchData[bd + B_END_X] + ox;
+    blossomData[bl + BL_Y] = branchData[bd + B_END_Y] + oy;
+    
+    if (season < 2) {
+      blossomData[bl + BL_C] += 0.001;
+      const g = grow(blossomData[bl + BL_C] * 1.5);
+      blossomData[bl + BL_SIZE] = (4 + seed * 3) * g;
+      blossomData[bl + BL_OPEN] = Math.min(1, g * 1.2);
+    } else if (season === 2) {
+      if (blossomData[bl + BL_OPEN] > 0.1 && Math.random() < 0.008) {
+        spawnPetal(blossomData[bl + BL_X], blossomData[bl + BL_Y], blossomData[bl + BL_COLOR] | 0);
+        blossomData[bl + BL_SIZE] *= 0.92;
+        blossomData[bl + BL_OPEN] *= 0.92;
+      }
+      if (blossomData[bl + BL_SIZE] < 0.5) blossomData[bl + BL_ACTIVE] = 0;
+    } else {
+      blossomData[bl + BL_SIZE] *= 0.98;
+      blossomData[bl + BL_OPEN] *= 0.98;
+      if (blossomData[bl + BL_SIZE] < 0.3) blossomData[bl + BL_ACTIVE] = 0;
+    }
+  }
+  
+  // Reactivate blossoms in spring
+  if (season === 0 && prevSeason === 3) {
+    for (let i = 0; i < blossomCount; i++) {
+      const bl = i * BLOSSOM_STRIDE;
+      blossomData[bl + BL_ACTIVE] = 1;
+      blossomData[bl + BL_SIZE] = 0;
+      blossomData[bl + BL_OPEN] = 0;
+      blossomData[bl + BL_C] = Math.random() * 0.1;
+      blossomData[bl + BL_COLOR] = (Math.random() * SAKURA_HUES.length) | 0;
+    }
+  }
+}
+
+function updatePetals(time) {
+  for (let i = 0; i < MAX_PETALS; i++) {
+    const p = i * PETAL_STRIDE;
+    if (petalData[p + P_ACTIVE] < 0.5) continue;
+    
+    petalData[p + P_VY] += 0.012;
+    const driftIdx = ((time * 1.5 + i * 0.5) % TAU + TAU) * TABLE_SIZE / TAU & TABLE_MASK;
+    petalData[p + P_VX] += SIN_TABLE[driftIdx] * 0.015;
+    petalData[p + P_VX] *= 0.99;
+    
+    petalData[p + P_X] += petalData[p + P_VX];
+    petalData[p + P_Y] += petalData[p + P_VY];
+    petalData[p + P_ROT] += petalData[p + P_ROT_SPEED];
+    petalData[p + P_ALPHA] -= 0.002;
+    
+    if (petalData[p + P_Y] > H + 20 || petalData[p + P_ALPHA] < 0.05) {
+      petalData[p + P_ACTIVE] = 0;
+      activePetals--;
+    }
+  }
+}
+
+// ═══ DRAW FUNCTIONS ═══
+function drawBranches() {
+  ctx.lineCap = 'round';
+  for (let depth = 0; depth < MAX_DEPTH; depth++) {
+    ctx.beginPath();
+    ctx.strokeStyle = BRANCH_COLORS[depth];
+    ctx.lineWidth = LINE_WIDTH[depth];
+    
+    for (let i = 0; i < branchCount; i++) {
+      const m = i * BRANCH_META_STRIDE;
+      if (branchMeta[m + BM_DEPTH] !== depth) continue;
+      const d = i * BRANCH_STRIDE;
+      const growth = branchData[d + B_GROWTH];
+      if (growth < 0.02) continue;
+      
+      const x = branchData[d + B_X], y = branchData[d + B_Y];
+      const angle = branchData[d + B_ANGLE], curve = branchData[d + B_CURVE], length = branchData[d + B_LENGTH];
+      const len = length * growth, cpA = angle + curve * growth * 0.5;
+      const cpX = x + cosT(cpA) * len * 0.5, cpY = y + sinT(cpA) * len * 0.5;
+      
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(cpX, cpY, branchData[d + B_END_X], branchData[d + B_END_Y]);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawMicroTwigs() {
+  if (microTwigCount === 0) return;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'hsl(32, 18%, 38%)';
+  ctx.lineWidth = 0.4;
+  ctx.beginPath();
+  for (let i = 0; i < microTwigCount; i++) {
+    const mt = i * MICRO_STRIDE;
+    ctx.moveTo(microTwigData[mt + MT_X1], microTwigData[mt + MT_Y1]);
+    ctx.lineTo(microTwigData[mt + MT_X2], microTwigData[mt + MT_Y2]);
+  }
+  ctx.stroke();
+}
+
+function drawBlossoms() {
+  for (let i = 0; i < blossomCount; i++) {
+    const bl = i * BLOSSOM_STRIDE;
+    if (blossomData[bl + BL_ACTIVE] < 0.5) continue;
+    
+    const size = blossomData[bl + BL_SIZE];
+    if (size < 0.8) continue;
+    
+    const open = blossomData[bl + BL_OPEN];
+    const px = blossomData[bl + BL_X];
+    const py = blossomData[bl + BL_Y];
+    const colorIdx = blossomData[bl + BL_COLOR] | 0;
+    const color = SAKURA_HUES[colorIdx];
+    
+    const baseRot = i * 1.2;
+    ctx.save();
+    ctx.translate(px, py);
+    
+    const pLen = size * (0.5 + open * 0.4);
+    const pWid = size * (0.2 + open * 0.12);
+    
+    ctx.fillStyle = `hsla(${color.h},${color.s}%,${color.l}%,${Math.min(0.85, open * 1.2)})`;
+    for (let j = 0; j < 5; j++) {
+      const a = baseRot + j * TAU / 5 + (1 - open) * 0.3;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.ellipse(0, pLen * 0.35, pWid, pLen * 0.5, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    ctx.fillStyle = `hsla(${color.h},${color.s * 0.5}%,${Math.min(96, color.l + 8)}%,${open * 0.8})`;
+    for (let j = 0; j < 5; j++) {
+      const a = baseRot + j * TAU / 5 + (1 - open) * 0.3;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.ellipse(0, pLen * 0.25, pWid * 0.5, pLen * 0.3, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    if (open > 0.5) {
+      ctx.fillStyle = `hsla(45,70%,55%,${(open - 0.3) * 1.2})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.15 * open, 0, TAU);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  }
+}
+
+function drawPetals() {
+  if (activePetals === 0) return;
+  
+  for (let i = 0; i < MAX_PETALS; i++) {
+    const p = i * PETAL_STRIDE;
+    if (petalData[p + P_ACTIVE] < 0.5) continue;
+    
+    const x = petalData[p + P_X], y = petalData[p + P_Y];
+    const rot = petalData[p + P_ROT], size = petalData[p + P_SIZE];
+    const h = petalData[p + P_HUE], s = petalData[p + P_SAT], l = petalData[p + P_LUM];
+    const alpha = petalData[p + P_ALPHA];
+    
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = `hsla(${h},${s}%,${l}%,${alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.4, size, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ═══ DRAW π SYMBOL ═══
+function drawPi() {
+  const sc = W * 0.32;
+  ctx.fillStyle = '#000';
+  
+  ctx.beginPath();
+  ctx.moveTo(CX - 0.52*sc, CY - 0.28*sc);
+  ctx.quadraticCurveTo(CX - 0.50*sc, CY - 0.42*sc, CX - 0.38*sc, CY - 0.44*sc);
+  ctx.bezierCurveTo(CX - 0.15*sc, CY - 0.45*sc, CX + 0.25*sc, CY - 0.44*sc, CX + 0.42*sc, CY - 0.44*sc);
+  ctx.quadraticCurveTo(CX + 0.54*sc, CY - 0.43*sc, CX + 0.56*sc, CY - 0.30*sc);
+  ctx.quadraticCurveTo(CX + 0.50*sc, CY - 0.36*sc, CX + 0.38*sc, CY - 0.36*sc);
+  ctx.lineTo(CX - 0.32*sc, CY - 0.36*sc);
+  ctx.quadraticCurveTo(CX - 0.44*sc, CY - 0.36*sc, CX - 0.52*sc, CY - 0.28*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX - 0.18*sc, CY - 0.38*sc);
+  ctx.bezierCurveTo(CX - 0.22*sc, CY - 0.12*sc, CX - 0.36*sc, CY + 0.12*sc, CX - 0.42*sc, CY + 0.38*sc);
+  ctx.bezierCurveTo(CX - 0.46*sc, CY + 0.50*sc, CX - 0.43*sc, CY + 0.58*sc, CX - 0.36*sc, CY + 0.62*sc);
+  ctx.quadraticCurveTo(CX - 0.30*sc, CY + 0.66*sc, CX - 0.26*sc, CY + 0.58*sc);
+  ctx.bezierCurveTo(CX - 0.30*sc, CY + 0.48*sc, CX - 0.28*sc, CY + 0.32*sc, CX - 0.26*sc, CY + 0.22*sc);
+  ctx.bezierCurveTo(CX - 0.22*sc, CY + 0.05*sc, CX - 0.12*sc, CY - 0.18*sc, CX - 0.06*sc, CY - 0.36*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX + 0.22*sc, CY - 0.38*sc);
+  ctx.bezierCurveTo(CX + 0.18*sc, CY - 0.12*sc, CX + 0.14*sc, CY + 0.12*sc, CX + 0.10*sc, CY + 0.38*sc);
+  ctx.bezierCurveTo(CX + 0.06*sc, CY + 0.52*sc, CX + 0.10*sc, CY + 0.60*sc, CX + 0.18*sc, CY + 0.62*sc);
+  ctx.quadraticCurveTo(CX + 0.24*sc, CY + 0.65*sc, CX + 0.26*sc, CY + 0.56*sc);
+  ctx.bezierCurveTo(CX + 0.20*sc, CY + 0.46*sc, CX + 0.18*sc, CY + 0.32*sc, CX + 0.20*sc, CY + 0.18*sc);
+  ctx.bezierCurveTo(CX + 0.22*sc, CY + 0.02*sc, CX + 0.28*sc, CY - 0.16*sc, CX + 0.32*sc, CY - 0.36*sc);
+  ctx.fill();
+}
+
+// ═══ DRAW RAINBOW (distant, above horizon) ═══
+function drawRainbow() {
+  // Rainbow builds up during spring bloom
+  const springIntensity = season === 0 ? Math.min(1, t % CYCLE_DURATION / 15) : 
+                          season === 1 ? Math.max(0, 1 - (t % CYCLE_DURATION - 20) / 10) : 0;
+  
+  if (springIntensity < 0.05) return;
+  
+  const arcCenterY = H * 1.4;
+  const baseRadius = H * 1.25;
+  const bandWidth = W * 0.007;
+  const totalWidth = bandWidth * RAINBOW_COLORS.length;
+  const visibility = springIntensity * 0.32;
+  
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, HORIZON_Y);
+  ctx.clip();
+  
+  for (let i = 0; i < RAINBOW_COLORS.length; i++) {
+    const col = RAINBOW_COLORS[i];
+    const radius = baseRadius - totalWidth + (i + 0.5) * bandWidth;
+    const alpha = visibility * (0.5 + sinT(t * 0.3 + i * 0.15) * 0.05);
+    
+    ctx.strokeStyle = `hsla(${col.h},${col.s}%,${col.l}%,${alpha})`;
+    ctx.lineWidth = bandWidth;
+    ctx.beginPath();
+    ctx.arc(CX, arcCenterY, radius, PI, TAU);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+  
+  return springIntensity;
+}
+
+// ═══ DRAW TEXT WITH ADVANCED CRR RAINBOW PHYSICS ═══
+function drawText(rainbowIntensity) {
+  const textY = H - 75;  // Higher up
+  const text1 = 'Active Inference Institute';
+  const text2 = '2026';
+  
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // CRR Rainbow Physics: Coherence builds → Rupture disperses light → Regeneration creates spectrum
+  if (rainbowIntensity > 0.05) {
+    const shimmerAmount = Math.pow(rainbowIntensity, 0.7) * 0.95;  // Non-linear for punch
+    
+    ctx.font = '600 52px "Times New Roman", Times, serif';  // Larger
+    const textWidth = ctx.measureText(text1).width;
+    const textHeight = 52;
+    
+    // CRR wave parameters - multiple harmonics for organic shimmer
+    const waveSpeed1 = t * 0.8;
+    const waveSpeed2 = t * 1.3;
+    const waveSpeed3 = t * 0.5;
+    
+    // Draw each letter with individual prismatic color
+    const chars1 = text1.split('');
+    let xPos = CX - textWidth / 2;
+    
+    for (let i = 0; i < chars1.length; i++) {
+      const char = chars1[i];
+      const charWidth = ctx.measureText(char).width;
+      const charCenter = xPos + charWidth / 2;
+      
+      // CRR coherence field - position along text creates phase
+      const normalizedPos = (charCenter - (CX - textWidth/2)) / textWidth;
+      
+      // Multi-harmonic wave for smooth, organic color flow
+      const wave1 = sinT(normalizedPos * TAU * 2 + waveSpeed1);
+      const wave2 = sinT(normalizedPos * TAU * 3 + waveSpeed2) * 0.5;
+      const wave3 = sinT(normalizedPos * TAU + waveSpeed3) * 0.3;
+      const combinedWave = (wave1 + wave2 + wave3) / 1.8;
+      
+      // Map wave to rainbow spectrum (0-360 hue)
+      const hue = ((combinedWave + 1) * 0.5 * 270 + t * 20) % 360;
+      
+      // CRR intensity modulation - peaks create brighter colors
+      const intensityMod = 0.7 + Math.abs(combinedWave) * 0.3;
+      const saturation = 75 + intensityMod * 20;
+      const lightness = 45 + intensityMod * 15;
+      
+      // Subtle vertical shimmer
+      const yOffset = sinT(normalizedPos * TAU * 4 + t * 2) * shimmerAmount * 1.5;
+      
+      ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${shimmerAmount * intensityMod})`;
+      ctx.fillText(char, charCenter, textY - 22 + yOffset);
+      
+      xPos += charWidth;
+    }
+    
+    // Year text with same effect but phase-shifted
+    ctx.font = '400 34px "Times New Roman", Times, serif';  // Larger
+    const text2Width = ctx.measureText(text2).width;
+    const chars2 = text2.split('');
+    xPos = CX - text2Width / 2;
+    
+    for (let i = 0; i < chars2.length; i++) {
+      const char = chars2[i];
+      const charWidth = ctx.measureText(char).width;
+      const charCenter = xPos + charWidth / 2;
+      const normalizedPos = (charCenter - (CX - text2Width/2)) / text2Width;
+      
+      const wave = sinT(normalizedPos * TAU * 2 + waveSpeed1 + PI);
+      const hue = ((wave + 1) * 0.5 * 270 + t * 20 + 180) % 360;
+      const yOffset = sinT(normalizedPos * TAU * 3 + t * 2.5) * shimmerAmount * 1;
+      
+      ctx.fillStyle = `hsla(${hue}, 80%, 50%, ${shimmerAmount * 0.9})`;
+      ctx.fillText(char, charCenter, textY + 28 + yOffset);
+      
+      xPos += charWidth;
+    }
+    
+    // Prismatic glow layer underneath (drawn first next frame via composite)
+    ctx.globalCompositeOperation = 'destination-over';
+    const glowHue = (t * 40) % 360;
+    ctx.shadowColor = `hsla(${glowHue}, 80%, 55%, ${shimmerAmount * 0.4})`;
+    ctx.shadowBlur = 15 * shimmerAmount;
+    ctx.font = '600 52px "Times New Roman", Times, serif';
+    ctx.fillStyle = `hsla(${glowHue}, 70%, 60%, ${shimmerAmount * 0.15})`;
+    ctx.fillText(text1, CX, textY - 22);
+    ctx.font = '400 34px "Times New Roman", Times, serif';
+    ctx.fillText(text2, CX, textY + 28);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.shadowBlur = 0;
+  }
+  
+  // Main black text (fades smoothly as rainbow appears)
+  const mainAlpha = Math.max(0.08, 1 - Math.pow(rainbowIntensity, 0.6) * 0.92);
+  
+  ctx.font = '600 52px "Times New Roman", Times, serif';  // Larger
+  ctx.fillStyle = `rgba(0,0,0,${mainAlpha})`;
+  ctx.fillText(text1, CX, textY - 22);
+  
+  ctx.font = '400 34px "Times New Roman", Times, serif';  // Larger
+  ctx.fillStyle = `rgba(34,34,34,${mainAlpha})`;
+  ctx.fillText(text2, CX, textY + 28);
+}
+
+// ═══ FPS ═══
+let frames = 0, lastFpsTime = performance.now(), fps = 60;
+function drawFPS() {
+  frames++;
+  const now = performance.now();
+  if (now - lastFpsTime >= 1000) { fps = frames; frames = 0; lastFpsTime = now; }
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(8, 8, 55, 22);
+  ctx.fillStyle = fps >= 50 ? '#4f4' : fps >= 30 ? '#ff4' : '#f44';
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${fps} FPS`, 14, 24);
+}
+
+// ═══ MAIN LOOP ═══
+function animate() {
+  t += 0.016;
+  prevSeason = season;
+  season = getSeason(t);
+  
+  updateBranches(t);
+  updateBlossoms(t);
+  updatePetals(t);
+  updateClouds();
+  
+  // White background
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Rainbow (returns intensity for text effect)
+  const rainbowIntensity = drawRainbow() || 0;
+  
+  // Subtle clouds (above horizon only)
+  drawClouds(t);
+  
+  // π symbol
+  drawPi();
+  
+  // Trees
+  drawBranches();
+  drawMicroTwigs();
+  drawBlossoms();
+  drawPetals();
+  
+  // Text with rainbow shimmer
+  drawText(rainbowIntensity);
+  
+  // Border
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(0, 0, W, H);
+  
+  drawFPS();
+  
+  requestAnimationFrame(animate);
+}
+
+// ═══ INIT ═══
+generatePiContour();
+initBranches();
+// Spawn initial clouds
+for (let i = 0; i < 3; i++) spawnCloud();
+animate();
+</script>
+</body>
+</html>
