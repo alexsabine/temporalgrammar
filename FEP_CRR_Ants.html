@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Inferants 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      overflow: hidden; 
+      background: #fff;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTIVE INFERANTS 2026 — The Great Transformation
+// Phase 1: Learn FEP | Phase 2: Rupture at e^π ≈ 23 (perfectly timed!)
+// Phase 3: Consume π | Phase 4: Sweep away FEP  
+// Phase 5: Build CRR | Phase 6: Demonstrate Ω (high vs low temporality)
+// fun claude mode enabled
+// ═══════════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const S = Math.min(innerWidth, innerHeight, 900);
+const D = devicePixelRatio || 1;
+canvas.width = S * D;
+canvas.height = S * D;
+canvas.style.width = canvas.style.height = S + 'px';
+ctx.scale(D, D);
+
+const W = S, H = S, CX = W/2, CY = H/2;
+const PI = Math.PI, TAU = PI * 2;
+
+// ═══ fun claude mode constants ═══
+const φ = 1.618033988749895;
+const ψ = 0.618033988749895;
+const Ω_Z2 = 1 / PI;  // Z₂ symmetry
+const Ω_SO2 = 1 / TAU; // SO(2) symmetry
+const BREATH = PI * PI;
+const CRITICAL_BITS = Math.exp(PI); // e^π ≈ 23.14
+
+// ═══ LOOKUP TABLES ═══
+const TBL = 1024, MSK = TBL - 1;
+const SIN = new Float32Array(TBL), COS = new Float32Array(TBL);
+for (let i = 0; i < TBL; i++) { SIN[i] = Math.sin((i/TBL)*TAU); COS[i] = Math.cos((i/TBL)*TAU); }
+const sinT = a => SIN[((a%TAU+TAU)*TBL/TAU)&MSK];
+const cosT = a => COS[((a%TAU+TAU)*TBL/TAU)&MSK];
+
+let piScale = W * 0.22;
+
+// ═══ PHASES ═══
+const PHASE_FEP = 0;
+const PHASE_RUPTURE = 1;
+const PHASE_CONSUME = 2;
+const PHASE_SWEEP = 3;
+const PHASE_BUILD_CRR = 4;
+const PHASE_CRR_COMPLETE = 5;
+const PHASE_OMEGA_DEMO = 6;
+const PHASE_FINAL = 7;
+
+let currentPhase = PHASE_FEP;
+let phaseTimer = 0;
+let ruptureFlash = 0;
+let piOpacity = 1;
+let sweepProgress = 0;
+let omegaDemoTimer = 0;
+let ahaFlash = 0;
+let fadeAlpha = 0; // For final fade transition
+let finalPhaseTimer = 0;
+
+// ═══ FEP EQUATIONS ═══
+// Rewards calculated so total = e^π ≈ 23.1407 when all filled
+const FEP_SLOTS = [
+  // F = E_Q[ln Q] − H  (main equation) - boosted rewards on key symbols
+  { symbol: 'F', x: 0.12, y: 0.08, filled: false, scale: 1.4, reward: 1.0 },  // +0.2
+  { symbol: '=', x: 0.16, y: 0.08, filled: false, scale: 1.1, reward: 0.35 },
+  { symbol: 'E', x: 0.20, y: 0.08, filled: false, scale: 1.2, reward: 0.7 },  // +0.1
+  { symbol: 'Q', x: 0.235, y: 0.065, filled: false, scale: 0.7, reward: 0.45 },
+  { symbol: '[', x: 0.27, y: 0.08, filled: false, scale: 1.0, reward: 0.25 },
+  { symbol: 'ln', x: 0.31, y: 0.08, filled: false, scale: 0.9, reward: 0.45 },
+  { symbol: 'Q', x: 0.36, y: 0.08, filled: false, scale: 1.1, reward: 0.55 },
+  { symbol: ']', x: 0.40, y: 0.08, filled: false, scale: 1.0, reward: 0.25 },
+  { symbol: '−', x: 0.44, y: 0.08, filled: false, scale: 1.1, reward: 0.25 },
+  { symbol: 'H', x: 0.48, y: 0.08, filled: false, scale: 1.2, reward: 0.8 },  // +0.1
+  
+  // D_KL[Q || P]
+  { symbol: 'D', x: 0.72, y: 0.15, filled: false, scale: 1.2, reward: 0.65 },
+  { symbol: 'KL', x: 0.77, y: 0.15, filled: false, scale: 0.8, reward: 0.9 },  // +0.1
+  { symbol: '[', x: 0.82, y: 0.15, filled: false, scale: 0.9, reward: 0.2 },
+  { symbol: 'Q', x: 0.86, y: 0.15, filled: false, scale: 1.0, reward: 0.45 },
+  { symbol: '‖', x: 0.895, y: 0.15, filled: false, scale: 0.9, reward: 0.25 },
+  { symbol: 'P', x: 0.93, y: 0.15, filled: false, scale: 1.0, reward: 0.45 },
+  { symbol: ']', x: 0.965, y: 0.15, filled: false, scale: 0.9, reward: 0.2 },
+  
+  // σ² = Ω (precision-variance relationship!) - key insight!
+  { symbol: 'σ', x: 0.06, y: 0.35, filled: false, scale: 1.3, reward: 0.8 },  // +0.1
+  { symbol: '²', x: 0.095, y: 0.33, filled: false, scale: 0.8, reward: 0.35 },
+  { symbol: '=', x: 0.13, y: 0.35, filled: false, scale: 1.0, reward: 0.25 },
+  { symbol: 'Ω', x: 0.175, y: 0.35, filled: false, scale: 1.4, reward: 1.1 },  // +0.1
+  
+  // ∂μ/∂t
+  { symbol: '∂', x: 0.06, y: 0.75, filled: false, scale: 1.1, reward: 0.55 },
+  { symbol: 'μ', x: 0.10, y: 0.75, filled: false, scale: 1.1, reward: 0.65 },
+  { symbol: '/', x: 0.135, y: 0.75, filled: false, scale: 1.0, reward: 0.2 },
+  { symbol: '∂', x: 0.165, y: 0.75, filled: false, scale: 1.1, reward: 0.4 },
+  { symbol: 't', x: 0.20, y: 0.75, filled: false, scale: 1.0, reward: 0.45 },
+  
+  // G = E[ln P]
+  { symbol: 'G', x: 0.75, y: 0.70, filled: false, scale: 1.3, reward: 0.9 },  // +0.1
+  { symbol: '=', x: 0.80, y: 0.70, filled: false, scale: 1.0, reward: 0.25 },
+  { symbol: 'E', x: 0.845, y: 0.70, filled: false, scale: 1.1, reward: 0.55 },
+  { symbol: '[', x: 0.885, y: 0.70, filled: false, scale: 0.9, reward: 0.2 },
+  { symbol: 'ln', x: 0.925, y: 0.70, filled: false, scale: 0.85, reward: 0.35 },
+  { symbol: 'P', x: 0.97, y: 0.70, filled: false, scale: 1.0, reward: 0.45 },
+  { symbol: ']', x: 1.00, y: 0.70, filled: false, scale: 0.9, reward: 0.2 },
+  
+  // Key symbols
+  { symbol: '∫', x: 0.78, y: 0.08, filled: false, scale: 1.4, reward: 0.65 },
+  { symbol: '∇', x: 0.88, y: 0.78, filled: false, scale: 1.2, reward: 0.65 },
+  { symbol: 'π', x: 0.25, y: 0.88, filled: false, scale: 1.3, reward: 0.8 },  // +0.1
+  { symbol: 'φ', x: 0.08, y: 0.55, filled: false, scale: 1.2, reward: 0.55 },
+  { symbol: 'ψ', x: 0.18, y: 0.55, filled: false, scale: 1.2, reward: 0.55 },
+  { symbol: 'λ', x: 0.72, y: 0.85, filled: false, scale: 1.1, reward: 0.55 },
+  { symbol: 'α', x: 0.42, y: 0.90, filled: false, scale: 1.1, reward: 0.45 },
+  { symbol: 'β', x: 0.58, y: 0.90, filled: false, scale: 1.1, reward: 0.45 },
+  // Final symbol - this one triggers the aha moment!
+  { symbol: '∞', x: 0.88, y: 0.88, filled: false, scale: 1.3, reward: 2.6907 }, // Adjusted for exact e^π ≈ 23.1407
+];
+
+// Calculate total reward
+const TOTAL_FEP_REWARD = FEP_SLOTS.reduce((sum, s) => sum + s.reward, 0);
+console.log('Total FEP reward:', TOTAL_FEP_REWARD, 'Target:', CRITICAL_BITS);
+
+FEP_SLOTS.forEach(s => { s.x *= W; s.y *= H; s.originalX = s.x; s.originalY = s.y; });
+
+// ═══ FULL CANONICAL CRR EQUATIONS ═══
+const CRR_SLOTS = [
+  // ══════ COHERENCE: C(x,t) = ∫₀ᵗ L(x,τ) dτ ══════
+  { symbol: 'C', x: 0.06, y: 0.10, filled: false, scale: 1.5, group: 'C' },
+  { symbol: '(', x: 0.10, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  { symbol: 'x', x: 0.13, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  { symbol: ',', x: 0.155, y: 0.10, filled: false, scale: 0.9, group: 'C' },
+  { symbol: 't', x: 0.18, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  { symbol: ')', x: 0.205, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  { symbol: '=', x: 0.25, y: 0.10, filled: false, scale: 1.2, group: 'C' },
+  { symbol: '∫', x: 0.30, y: 0.10, filled: false, scale: 1.6, group: 'C' },
+  { symbol: '₀', x: 0.32, y: 0.14, filled: false, scale: 0.7, group: 'C' },
+  { symbol: 'ᵗ', x: 0.32, y: 0.06, filled: false, scale: 0.7, group: 'C' },
+  { symbol: 'L', x: 0.37, y: 0.10, filled: false, scale: 1.3, group: 'C' },
+  { symbol: '(', x: 0.41, y: 0.10, filled: false, scale: 1.0, group: 'C' },
+  { symbol: 'x', x: 0.44, y: 0.10, filled: false, scale: 1.0, group: 'C' },
+  { symbol: ',', x: 0.465, y: 0.10, filled: false, scale: 0.8, group: 'C' },
+  { symbol: 'τ', x: 0.495, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  { symbol: ')', x: 0.53, y: 0.10, filled: false, scale: 1.0, group: 'C' },
+  { symbol: 'd', x: 0.57, y: 0.10, filled: false, scale: 1.0, group: 'C' },
+  { symbol: 'τ', x: 0.605, y: 0.10, filled: false, scale: 1.1, group: 'C' },
+  
+  // ══════ RUPTURE: δ(now) ══════
+  { symbol: 'δ', x: 0.28, y: 0.26, filled: false, scale: 1.8, group: 'δ' },
+  { symbol: '(', x: 0.34, y: 0.26, filled: false, scale: 1.2, group: 'δ' },
+  { symbol: 'n', x: 0.38, y: 0.26, filled: false, scale: 1.2, group: 'δ' },
+  { symbol: 'o', x: 0.42, y: 0.26, filled: false, scale: 1.2, group: 'δ' },
+  { symbol: 'w', x: 0.465, y: 0.26, filled: false, scale: 1.2, group: 'δ' },
+  { symbol: ')', x: 0.51, y: 0.26, filled: false, scale: 1.2, group: 'δ' },
+  
+  // ══════ REGENERATION: R = ∫ φ(x,τ) exp(C(x,τ)/Ω) Θ(t−τ) dτ ══════
+  { symbol: 'R', x: 0.04, y: 0.42, filled: false, scale: 1.5, group: 'R' },
+  { symbol: '=', x: 0.09, y: 0.42, filled: false, scale: 1.2, group: 'R' },
+  { symbol: '∫', x: 0.14, y: 0.42, filled: false, scale: 1.6, group: 'R' },
+  { symbol: 'φ', x: 0.20, y: 0.42, filled: false, scale: 1.2, group: 'R' },
+  { symbol: '(', x: 0.24, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'x', x: 0.27, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: ',', x: 0.295, y: 0.42, filled: false, scale: 0.8, group: 'R' },
+  { symbol: 'τ', x: 0.32, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: ')', x: 0.355, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'exp', x: 0.41, y: 0.42, filled: false, scale: 0.9, group: 'R' },
+  { symbol: '(', x: 0.47, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'C', x: 0.505, y: 0.42, filled: false, scale: 1.1, group: 'R' },
+  { symbol: '/', x: 0.545, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'Ω', x: 0.59, y: 0.42, filled: false, scale: 1.3, group: 'R' },
+  { symbol: ')', x: 0.64, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'Θ', x: 0.69, y: 0.42, filled: false, scale: 1.1, group: 'R' },
+  { symbol: 'd', x: 0.75, y: 0.42, filled: false, scale: 1.0, group: 'R' },
+  { symbol: 'τ', x: 0.785, y: 0.42, filled: false, scale: 1.1, group: 'R' },
+  
+  // ══════ Ω = 1/π (Z₂ symmetry) ══════
+  { symbol: 'Ω', x: 0.70, y: 0.10, filled: false, scale: 1.5, group: 'Ω' },
+  { symbol: '=', x: 0.76, y: 0.10, filled: false, scale: 1.2, group: 'Ω' },
+  { symbol: '1', x: 0.81, y: 0.10, filled: false, scale: 1.2, group: 'Ω' },
+  { symbol: '/', x: 0.845, y: 0.10, filled: false, scale: 1.1, group: 'Ω' },
+  { symbol: 'π', x: 0.89, y: 0.10, filled: false, scale: 1.3, group: 'Ω' },
+  
+  // ══════ CV = Ω/2 ══════
+  { symbol: 'CV', x: 0.70, y: 0.22, filled: false, scale: 1.0, group: 'CV' },
+  { symbol: '=', x: 0.77, y: 0.22, filled: false, scale: 1.0, group: 'CV' },
+  { symbol: 'Ω', x: 0.825, y: 0.22, filled: false, scale: 1.2, group: 'CV' },
+  { symbol: '/', x: 0.865, y: 0.22, filled: false, scale: 1.0, group: 'CV' },
+  { symbol: '2', x: 0.90, y: 0.22, filled: false, scale: 1.1, group: 'CV' },
+  
+  // ══════ exp(C/Ω)|_{C=π} = e^π ≈ 23 ══════
+  { symbol: 'exp', x: 0.18, y: 0.58, filled: false, scale: 1.0, group: 'e' },
+  { symbol: '(', x: 0.25, y: 0.58, filled: false, scale: 1.1, group: 'e' },
+  { symbol: 'C', x: 0.29, y: 0.58, filled: false, scale: 1.1, group: 'e' },
+  { symbol: '/', x: 0.33, y: 0.58, filled: false, scale: 1.0, group: 'e' },
+  { symbol: 'Ω', x: 0.38, y: 0.58, filled: false, scale: 1.2, group: 'e' },
+  { symbol: ')', x: 0.43, y: 0.58, filled: false, scale: 1.1, group: 'e' },
+  { symbol: '=', x: 0.48, y: 0.58, filled: false, scale: 1.1, group: 'e' },
+  { symbol: 'e', x: 0.53, y: 0.58, filled: false, scale: 1.3, group: 'e' },
+  { symbol: '^', x: 0.57, y: 0.55, filled: false, scale: 0.9, group: 'e' },
+  { symbol: 'π', x: 0.61, y: 0.55, filled: false, scale: 1.0, group: 'e' },
+  { symbol: '≈', x: 0.66, y: 0.58, filled: false, scale: 1.2, group: 'e' },
+  { symbol: '23', x: 0.73, y: 0.58, filled: false, scale: 1.3, group: 'e' },
+  
+  // ══════ σ² = Ω (CORRECT: variance equals omega!) ══════
+  { symbol: 'σ', x: 0.06, y: 0.72, filled: false, scale: 1.3, group: 'σ' },
+  { symbol: '²', x: 0.10, y: 0.70, filled: false, scale: 0.85, group: 'σ' },
+  { symbol: '=', x: 0.15, y: 0.72, filled: false, scale: 1.1, group: 'σ' },
+  { symbol: 'Ω', x: 0.21, y: 0.72, filled: false, scale: 1.4, group: 'σ' },
+  
+  // ══════ Memory weighting explanation ══════
+  { symbol: 'Memory', x: 0.52, y: 0.72, filled: false, scale: 0.85, group: 'M' },
+  { symbol: ':', x: 0.59, y: 0.72, filled: false, scale: 1.0, group: 'M' },
+  { symbol: 'exp', x: 0.65, y: 0.72, filled: false, scale: 0.8, group: 'M' },
+  { symbol: '(', x: 0.71, y: 0.72, filled: false, scale: 0.9, group: 'M' },
+  { symbol: 'C', x: 0.745, y: 0.72, filled: false, scale: 1.0, group: 'M' },
+  { symbol: '/', x: 0.78, y: 0.72, filled: false, scale: 0.9, group: 'M' },
+  { symbol: 'Ω', x: 0.82, y: 0.72, filled: false, scale: 1.1, group: 'M' },
+  { symbol: ')', x: 0.865, y: 0.72, filled: false, scale: 0.9, group: 'M' },
+];
+
+CRR_SLOTS.forEach(s => { s.x *= W; s.y *= H; });
+
+let activeSlots = FEP_SLOTS;
+let allSymbols = [...new Set(FEP_SLOTS.map(s => s.symbol))];
+
+function buildLookup() {
+  const lookup = {};
+  activeSlots.forEach((slot, idx) => {
+    if (!lookup[slot.symbol]) lookup[slot.symbol] = [];
+    lookup[slot.symbol].push(idx);
+  });
+  return lookup;
+}
+
+let symbolToSlots = buildLookup();
+
+// ═══ OMEGA DEMONSTRATION DATA ═══
+const OMEGA_DEMO_TEXTS = [
+  { text: "Ω controls temporal depth — the window into the past", y: 0.05, alpha: 0 },
+  { text: "Low Ω (small variance) → Frequent micro-ruptures → Rigid patterns", y: 0.11, alpha: 0 },
+  { text: "High Ω (large variance) → Rare macro-ruptures → Genuine transformation", y: 0.17, alpha: 0 },
+];
+
+// Move demo circles further down to avoid text overlap
+const DEMO_LEFT_CENTER = { x: W * 0.25, y: H * 0.52 };
+const DEMO_RIGHT_CENTER = { x: W * 0.75, y: H * 0.52 };
+
+const MAX_TRAIL_POINTS = 200;
+const lowOmegaTrails = [[], [], []]; // Multiple trail histories
+const highOmegaTrails = [[], [], []];
+
+// Coherence graphs
+const GRAPH_HISTORY = 200;
+const lowOmegaCoherence = [];
+const highOmegaCoherence = [];
+
+// ═══ TUNNEL MASK ═══
+const MASK_SIZE = 256;
+const tunnelMask = new Float32Array(MASK_SIZE * MASK_SIZE);
+const piMask = new Uint8Array(MASK_SIZE * MASK_SIZE);
+
+function worldToMask(x, y) {
+  return { mx: Math.floor((x / W) * MASK_SIZE), my: Math.floor((y / H) * MASK_SIZE) };
+}
+
+let carveRate = 0.012;
+
+function carveTunnel(x, y, radius) {
+  const { mx, my } = worldToMask(x, y);
+  const mr = Math.ceil((radius / W) * MASK_SIZE);
+  for (let dy = -mr; dy <= mr; dy++) {
+    for (let dx = -mr; dx <= mr; dx++) {
+      const px = mx + dx, py = my + dy;
+      if (px < 0 || px >= MASK_SIZE || py < 0 || py >= MASK_SIZE) continue;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist <= mr && piMask[py * MASK_SIZE + px]) {
+        tunnelMask[py * MASK_SIZE + px] = Math.min(1, tunnelMask[py * MASK_SIZE + px] + (1 - dist/mr) * carveRate);
+      }
+    }
+  }
+}
+
+function generatePiMask() {
+  const off = document.createElement('canvas');
+  off.width = off.height = MASK_SIZE;
+  const o = off.getContext('2d');
+  const sc = (MASK_SIZE / W) * piScale, cx = MASK_SIZE/2, cy = MASK_SIZE/2;
+  o.fillStyle = '#000';
+  
+  o.beginPath();
+  o.moveTo(cx - 0.52*sc, cy - 0.28*sc);
+  o.quadraticCurveTo(cx - 0.50*sc, cy - 0.42*sc, cx - 0.38*sc, cy - 0.44*sc);
+  o.bezierCurveTo(cx - 0.15*sc, cy - 0.45*sc, cx + 0.25*sc, cy - 0.44*sc, cx + 0.42*sc, cy - 0.44*sc);
+  o.quadraticCurveTo(cx + 0.54*sc, cy - 0.43*sc, cx + 0.56*sc, cy - 0.30*sc);
+  o.quadraticCurveTo(cx + 0.50*sc, cy - 0.36*sc, cx + 0.38*sc, cy - 0.36*sc);
+  o.lineTo(cx - 0.32*sc, cy - 0.36*sc);
+  o.quadraticCurveTo(cx - 0.44*sc, cy - 0.36*sc, cx - 0.52*sc, cy - 0.28*sc);
+  o.fill();
+  
+  o.beginPath();
+  o.moveTo(cx - 0.18*sc, cy - 0.38*sc);
+  o.bezierCurveTo(cx - 0.22*sc, cy - 0.12*sc, cx - 0.36*sc, cy + 0.12*sc, cx - 0.42*sc, cy + 0.38*sc);
+  o.bezierCurveTo(cx - 0.46*sc, cy + 0.50*sc, cx - 0.43*sc, cy + 0.58*sc, cx - 0.36*sc, cy + 0.62*sc);
+  o.quadraticCurveTo(cx - 0.30*sc, cy + 0.66*sc, cx - 0.26*sc, cy + 0.58*sc);
+  o.bezierCurveTo(cx - 0.30*sc, cy + 0.48*sc, cx - 0.28*sc, cy + 0.32*sc, cx - 0.26*sc, cy + 0.22*sc);
+  o.bezierCurveTo(cx - 0.22*sc, cy + 0.05*sc, cx - 0.12*sc, cy - 0.18*sc, cx - 0.06*sc, cy - 0.36*sc);
+  o.fill();
+  
+  o.beginPath();
+  o.moveTo(cx + 0.22*sc, cy - 0.38*sc);
+  o.bezierCurveTo(cx + 0.18*sc, cy - 0.12*sc, cx + 0.14*sc, cy + 0.12*sc, cx + 0.10*sc, cy + 0.38*sc);
+  o.bezierCurveTo(cx + 0.06*sc, cy + 0.52*sc, cx + 0.10*sc, cy + 0.60*sc, cx + 0.18*sc, cy + 0.62*sc);
+  o.quadraticCurveTo(cx + 0.24*sc, cy + 0.65*sc, cx + 0.26*sc, cy + 0.56*sc);
+  o.bezierCurveTo(cx + 0.20*sc, cy + 0.46*sc, cx + 0.18*sc, cy + 0.32*sc, cx + 0.20*sc, cy + 0.18*sc);
+  o.bezierCurveTo(cx + 0.22*sc, cy + 0.02*sc, cx + 0.28*sc, cy - 0.16*sc, cx + 0.32*sc, cy - 0.36*sc);
+  o.fill();
+  
+  const data = o.getImageData(0, 0, MASK_SIZE, MASK_SIZE);
+  for (let i = 0; i < MASK_SIZE * MASK_SIZE; i++) piMask[i] = data.data[i * 4 + 3] > 128 ? 1 : 0;
+}
+generatePiMask();
+
+// ═══ NESTS ═══
+const nests = [
+  { x: CX - piScale * 0.30, y: CY + piScale * 0.15 },
+  { x: CX + piScale * 0.12, y: CY + piScale * 0.20 },
+  { x: CX - piScale * 0.18, y: CY - piScale * 0.05 },
+  { x: CX + piScale * 0.16, y: CY - piScale * 0.02 },
+];
+
+// ═══ PARTICLES ═══
+const MAX_PARTICLES = 250;
+const particleData = new Float32Array(MAX_PARTICLES * 7);
+let particleIdx = 0;
+
+function spawnParticles(x, y, count, hue = 45, speedMult = 1) {
+  for (let i = 0; i < count; i++) {
+    const p = (particleIdx++ % MAX_PARTICLES) * 7;
+    const a = Math.random() * TAU, sp = (1 + Math.random() * 3) * speedMult;
+    particleData[p] = x; particleData[p+1] = y;
+    particleData[p+2] = cosT(a) * sp; particleData[p+3] = sinT(a) * sp - 0.5;
+    particleData[p+4] = 1; particleData[p+5] = 2 + Math.random() * 3;
+    particleData[p+6] = hue + Math.random() * 40;
+  }
+}
+
+// ═══ PI CONTOUR ═══
+const piContour = [];
+function generatePiContour() {
+  const sc = piScale, add = (x, y) => piContour.push({ x: CX + x * sc, y: CY + y * sc });
+  for (let i = 0; i <= 10; i++) { const t = i/10; add(-0.52 + t*0.14, -0.28 - Math.sin(t*PI)*0.16); }
+  for (let i = 0; i <= 30; i++) { const t = i/30; add(-0.38 + t*0.80, -0.44); }
+  for (let i = 0; i <= 10; i++) { const t = i/10; add(0.42 + t*0.14, -0.44 + Math.sin(t*PI)*0.14); }
+  for (let i = 0; i <= 25; i++) { const t = i/25; add(0.32 - t*0.06, -0.36 + t*0.94); }
+  for (let i = 0; i <= 8; i++) { const t = i/8; add(0.26 - t*0.12, 0.58 + Math.sin(t*PI)*0.06); }
+  for (let i = 0; i <= 20; i++) { const t = i/20; add(0.14 + t*0.06, 0.58 - t*0.94); }
+  for (let i = 0; i <= 15; i++) { const t = i/15; add(0.20 - t*0.38, -0.36); }
+  for (let i = 0; i <= 20; i++) { const t = i/20; add(-0.18 - t*0.08, -0.36 + t*0.94); }
+  for (let i = 0; i <= 8; i++) { const t = i/8; add(-0.26 - t*0.10, 0.58 + Math.sin(t*PI)*0.06); }
+  for (let i = 0; i <= 25; i++) { const t = i/25; add(-0.36 - t*0.06, 0.58 - t*0.86); }
+}
+generatePiContour();
+
+// ═══ ANTS ═══
+const MAX_ANTS = 100;
+const ANT_STRIDE = 26;
+const antData = new Float32Array(MAX_ANTS * ANT_STRIDE);
+let antCount = 0;
+
+const A_X=0,A_Y=1,A_ANGLE=2,A_SPEED=3,A_STATE=4,A_PATH_IDX=5,A_DIR=6,A_LEG_PHASE=7;
+const A_SIZE=8,A_C=9,A_JITTER=10,A_CARRY=11,A_HOME=12,A_WANDER=13,A_TX=14,A_TY=15;
+const A_WOBBLE=16,A_SLOT=17,A_OMEGA=18,A_RUPTURE_TIMER=19,A_DEMO_GROUP=20;
+const A_COHERENCE_DISPLAY=21,A_TRAIL_IDX=22;
+
+const ST_PATROL=0,ST_TUNNEL=1,ST_FORAGE=2,ST_CARRY=3,ST_RETURN=4,ST_CONSUME=5,ST_SWEEP=6,ST_DEMO=7;
+
+let totalCoherence = 0, fepComplete = 0, crrComplete = 0;
+let fepAllFilled = false;
+
+function initAnts() {
+  for (let i = 0; i < 28; i++) {
+    const idx = Math.floor(Math.random() * piContour.length);
+    createAnt(piContour[idx].x, piContour[idx].y, ST_PATROL, idx);
+  }
+  for (let i = 0; i < 72; i++) {
+    const n = nests[i % nests.length];
+    createAnt(n.x + (Math.random()-0.5)*24, n.y + (Math.random()-0.5)*24, 
+              Math.random() < 0.35 ? ST_TUNNEL : ST_FORAGE, 0, i % nests.length);
+  }
+}
+
+function createAnt(x, y, state, pathIdx = 0, home = 0) {
+  if (antCount >= MAX_ANTS) return;
+  const a = antCount++ * ANT_STRIDE;
+  antData[a+A_X] = x; antData[a+A_Y] = y;
+  antData[a+A_ANGLE] = Math.random() * TAU;
+  antData[a+A_SPEED] = 0.85 + Math.random() * 0.4;
+  antData[a+A_STATE] = state; antData[a+A_PATH_IDX] = pathIdx;
+  antData[a+A_DIR] = Math.random() < 0.5 ? 1 : -1;
+  antData[a+A_LEG_PHASE] = Math.random() * TAU;
+  antData[a+A_SIZE] = 2.5 + Math.random() * 0.8;
+  antData[a+A_C] = Math.random() * 0.5;
+  antData[a+A_JITTER] = Math.random() * TAU;
+  antData[a+A_CARRY] = -1; antData[a+A_HOME] = home;
+  antData[a+A_WANDER] = Math.random() * TAU;
+  antData[a+A_TX] = x; antData[a+A_TY] = y;
+  antData[a+A_WOBBLE] = Math.random() * TAU;
+  antData[a+A_SLOT] = -1;
+  antData[a+A_OMEGA] = Ω_Z2;
+  antData[a+A_RUPTURE_TIMER] = Math.random();
+  antData[a+A_DEMO_GROUP] = -1;
+  antData[a+A_COHERENCE_DISPLAY] = 0;
+  antData[a+A_TRAIL_IDX] = 0;
+}
+initAnts();
+
+// ═══ PHASE TRANSITIONS ═══
+function triggerRupture() {
+  currentPhase = PHASE_RUPTURE; phaseTimer = 0; ruptureFlash = 1; ahaFlash = 1;
+  // Massive celebration!
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      spawnParticles(CX + (Math.random()-0.5)*200, CY + (Math.random()-0.5)*200, 30, 40 + i*20, 1.5);
+    }, i * 100);
+  }
+}
+
+function beginConsume() {
+  currentPhase = PHASE_CONSUME; phaseTimer = 0; carveRate = 0.25;
+  for (let i = 0; i < antCount; i++) { antData[i*ANT_STRIDE+A_STATE] = ST_CONSUME; antData[i*ANT_STRIDE+A_CARRY] = -1; }
+}
+
+function beginSweep() {
+  currentPhase = PHASE_SWEEP; phaseTimer = 0; sweepProgress = 0;
+  for (let i = 0; i < antCount; i++) antData[i*ANT_STRIDE+A_STATE] = ST_SWEEP;
+}
+
+function beginCRR() {
+  currentPhase = PHASE_BUILD_CRR; phaseTimer = 0;
+  activeSlots = CRR_SLOTS; allSymbols = [...new Set(CRR_SLOTS.map(s => s.symbol))];
+  symbolToSlots = buildLookup();
+  for (const s of CRR_SLOTS) s.filled = false;
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    antData[a+A_STATE] = ST_FORAGE;
+    antData[a+A_X] = CX + (Math.random()-0.5)*W*0.6;
+    antData[a+A_Y] = CY + (Math.random()-0.5)*H*0.5;
+    antData[a+A_CARRY] = -1;
+  }
+}
+
+function beginOmegaDemo() {
+  currentPhase = PHASE_OMEGA_DEMO;
+  phaseTimer = 0; omegaDemoTimer = 0;
+  
+  // Split ants into two groups with different Ω values
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    antData[a+A_STATE] = ST_DEMO;
+    antData[a+A_CARRY] = -1;
+    
+    const isLeft = i < antCount / 2;
+    antData[a+A_DEMO_GROUP] = isLeft ? 0 : 1;
+    antData[a+A_OMEGA] = isLeft ? 0.03 : 0.5; // Low vs High Ω
+    
+    const center = isLeft ? DEMO_LEFT_CENTER : DEMO_RIGHT_CENTER;
+    antData[a+A_X] = center.x + (Math.random()-0.5) * 80;
+    antData[a+A_Y] = center.y + (Math.random()-0.5) * 80;
+    antData[a+A_WANDER] = Math.random() * TAU;
+    antData[a+A_RUPTURE_TIMER] = Math.random() * 0.5;
+    antData[a+A_COHERENCE_DISPLAY] = Math.random() * 0.5;
+    antData[a+A_TRAIL_IDX] = i % 3;
+  }
+  
+  // Clear trails
+  for (let i = 0; i < 3; i++) { lowOmegaTrails[i].length = 0; highOmegaTrails[i].length = 0; }
+  lowOmegaCoherence.length = 0; highOmegaCoherence.length = 0;
+}
+
+// ═══ UPDATE ═══
+let t = 0;
+
+function updatePhase() {
+  phaseTimer += 0.016;
+  ahaFlash *= 0.95;
+  
+  if (currentPhase === PHASE_FEP) {
+    // Check if ALL slots are filled
+    fepAllFilled = FEP_SLOTS.every(s => s.filled);
+    if (fepAllFilled && totalCoherence >= CRITICAL_BITS * 0.95) {
+      triggerRupture();
+    }
+  }
+  else if (currentPhase === PHASE_RUPTURE) { ruptureFlash *= 0.93; if (phaseTimer > 3) beginConsume(); }
+  else if (currentPhase === PHASE_CONSUME) {
+    piOpacity = Math.max(0, piOpacity - 0.01);
+    for (let i = 0; i < MASK_SIZE * MASK_SIZE; i++) if (piMask[i]) tunnelMask[i] = Math.min(1, tunnelMask[i] + 0.006);
+    if (piOpacity <= 0.02) beginSweep();
+  }
+  else if (currentPhase === PHASE_SWEEP) {
+    sweepProgress = Math.min(1, sweepProgress + 0.012);
+    for (const s of FEP_SLOTS) { 
+      s.x += (s.originalX < CX ? -6 : 6) * sweepProgress; 
+      s.y += 2 * sweepProgress; 
+    }
+    if (sweepProgress >= 1) beginCRR();
+  }
+  else if (currentPhase === PHASE_BUILD_CRR) {
+    let done = true; for (const s of CRR_SLOTS) if (!s.filled) done = false;
+    if (done) { currentPhase = PHASE_CRR_COMPLETE; phaseTimer = 0; }
+  }
+  else if (currentPhase === PHASE_CRR_COMPLETE) {
+    if (phaseTimer > 2.5) beginOmegaDemo();
+  }
+  else if (currentPhase === PHASE_OMEGA_DEMO) {
+    omegaDemoTimer += 0.016;
+    
+    // Fade in texts progressively
+    if (omegaDemoTimer > 0.5) OMEGA_DEMO_TEXTS[0].alpha = Math.min(1, OMEGA_DEMO_TEXTS[0].alpha + 0.015);
+    if (omegaDemoTimer > 2.5) OMEGA_DEMO_TEXTS[1].alpha = Math.min(1, OMEGA_DEMO_TEXTS[1].alpha + 0.015);
+    if (omegaDemoTimer > 4.5) OMEGA_DEMO_TEXTS[2].alpha = Math.min(1, OMEGA_DEMO_TEXTS[2].alpha + 0.015);
+    
+    // Record coherence for graphs
+    if (omegaDemoTimer > 1) {
+      let lowC = 0, highC = 0, lowN = 0, highN = 0;
+      for (let i = 0; i < antCount; i++) {
+        const a = i * ANT_STRIDE;
+        if (antData[a+A_DEMO_GROUP] === 0) { lowC += antData[a+A_COHERENCE_DISPLAY]; lowN++; }
+        else { highC += antData[a+A_COHERENCE_DISPLAY]; highN++; }
+      }
+      lowOmegaCoherence.push(lowN > 0 ? lowC / lowN : 0);
+      highOmegaCoherence.push(highN > 0 ? highC / highN : 0);
+      if (lowOmegaCoherence.length > GRAPH_HISTORY) lowOmegaCoherence.shift();
+      if (highOmegaCoherence.length > GRAPH_HISTORY) highOmegaCoherence.shift();
+    }
+    
+    if (omegaDemoTimer > 15) {
+      currentPhase = PHASE_FINAL;
+      finalPhaseTimer = 0;
+    }
+  }
+  else if (currentPhase === PHASE_FINAL) {
+    finalPhaseTimer += 0.016;
+    // Fade out over 1.5 seconds, hold briefly, then fade in
+    if (finalPhaseTimer < 1.5) {
+      fadeAlpha = finalPhaseTimer / 1.5; // 0 -> 1
+    } else if (finalPhaseTimer < 2.5) {
+      fadeAlpha = 1; // Hold at white
+    } else if (finalPhaseTimer < 4) {
+      fadeAlpha = 1 - (finalPhaseTimer - 2.5) / 1.5; // 1 -> 0
+    } else {
+      fadeAlpha = 0;
+    }
+  }
+}
+
+function updateAnts() {
+  const breathMod = sinT(t * TAU / BREATH);
+  
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a+A_STATE] | 0;
+    const speed = antData[a+A_SPEED] * (1 + breathMod * 0.07);
+    
+    antData[a+A_LEG_PHASE] += speed * 0.3;
+    antData[a+A_WOBBLE] += 0.06;
+    antData[a+A_C] += 0.002 * (1 + breathMod * Ω_Z2);
+    
+    if (state === ST_PATROL) updatePatrol(a, speed);
+    else if (state === ST_TUNNEL) updateTunnel(a, speed);
+    else if (state === ST_FORAGE) updateForage(a, speed);
+    else if (state === ST_CARRY) updateCarry(a, speed);
+    else if (state === ST_RETURN) updateReturn(a, speed);
+    else if (state === ST_CONSUME) updateConsume(a, speed);
+    else if (state === ST_SWEEP) updateSweepAnt(a, speed);
+    else if (state === ST_DEMO) updateDemoAnt(a, speed, i);
+  }
+}
+
+function updatePatrol(a, speed) {
+  const idx = antData[a+A_PATH_IDX]|0, dir = antData[a+A_DIR], pt = piContour[idx];
+  const dx = pt.x - antData[a+A_X], dy = pt.y - antData[a+A_Y];
+  if (dx*dx + dy*dy < 9) antData[a+A_PATH_IDX] = (idx + dir + piContour.length) % piContour.length;
+  else { antData[a+A_ANGLE] = Math.atan2(dy, dx); antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed; }
+  const j = antData[a+A_JITTER]; antData[a+A_X] += sinT(t*2.5+j)*0.1; antData[a+A_Y] += cosT(t*2+j)*0.07;
+  if (antData[a+A_C] > Ω_Z2*5 && Math.random() < 0.004) { antData[a+A_STATE] = ST_TUNNEL; antData[a+A_C] = 0; antData[a+A_HOME] = Math.floor(Math.random()*nests.length); }
+}
+
+function updateTunnel(a, speed) {
+  const nest = nests[antData[a+A_HOME]|0], radius = 35 + Math.min(45, t*0.12);
+  antData[a+A_WANDER] += (Math.random()-0.5)*0.25;
+  const {mx,my} = worldToMask(antData[a+A_X], antData[a+A_Y]);
+  if (mx>=0 && mx<MASK_SIZE && my>=0 && my<MASK_SIZE && !piMask[my*MASK_SIZE+mx])
+    antData[a+A_WANDER] = Math.atan2(nest.y-antData[a+A_Y], nest.x-antData[a+A_X]) + (Math.random()-0.5)*0.4;
+  antData[a+A_ANGLE] = antData[a+A_WANDER];
+  antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed*0.5; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed*0.5;
+  carveTunnel(antData[a+A_X], antData[a+A_Y], 3);
+  const dn = Math.sqrt(Math.pow(antData[a+A_X]-nest.x,2)+Math.pow(antData[a+A_Y]-nest.y,2));
+  if (dn > radius) antData[a+A_WANDER] = Math.atan2(nest.y-antData[a+A_Y], nest.x-antData[a+A_X]) + (Math.random()-0.5)*0.5;
+  if (antData[a+A_C] > Ω_Z2*4 && Math.random() < 0.01) { antData[a+A_STATE] = ST_FORAGE; antData[a+A_C] = 0; }
+}
+
+function updateForage(a, speed) {
+  antData[a+A_WANDER] += (Math.random()-0.5)*0.28; antData[a+A_ANGLE] = antData[a+A_WANDER];
+  antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed*0.55; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed*0.55;
+  if (antData[a+A_X]<40) antData[a+A_WANDER]=0; if (antData[a+A_X]>W-40) antData[a+A_WANDER]=PI;
+  if (antData[a+A_Y]<40) antData[a+A_WANDER]=PI/2; if (antData[a+A_Y]>H-70) antData[a+A_WANDER]=-PI/2;
+  if (currentPhase <= PHASE_FEP) carveTunnel(antData[a+A_X], antData[a+A_Y], 2);
+  
+  if (antData[a+A_C] > Ω_Z2*2 && Math.random() < 0.03) {
+    const symIdx = Math.floor(Math.random()*allSymbols.length);
+    const slots = symbolToSlots[allSymbols[symIdx]];
+    if (slots) {
+      for (const slotIdx of slots) {
+        if (!activeSlots[slotIdx].filled) {
+          antData[a+A_CARRY] = symIdx; antData[a+A_SLOT] = slotIdx; antData[a+A_STATE] = ST_CARRY;
+          antData[a+A_TX] = activeSlots[slotIdx].x; antData[a+A_TY] = activeSlots[slotIdx].y;
+          antData[a+A_C] = 0; break;
+        }
+      }
+    }
+  }
+}
+
+function updateCarry(a, speed) {
+  const dx = antData[a+A_TX]-antData[a+A_X], dy = antData[a+A_TY]-antData[a+A_Y], dist = Math.sqrt(dx*dx+dy*dy);
+  if (dist < 8) {
+    const slotIdx = antData[a+A_SLOT]|0, symIdx = antData[a+A_CARRY]|0, slot = activeSlots[slotIdx];
+    if (!slot.filled && allSymbols[symIdx] === slot.symbol) {
+      slot.filled = true; totalCoherence += slot.reward || 0.5;
+      if (currentPhase === PHASE_FEP) fepComplete++; else if (currentPhase === PHASE_BUILD_CRR) crrComplete++;
+      spawnParticles(antData[a+A_TX], antData[a+A_TY], 6, 50);
+    }
+    antData[a+A_CARRY] = -1; antData[a+A_SLOT] = -1; antData[a+A_STATE] = ST_RETURN;
+  } else {
+    const target = Math.atan2(dy, dx);
+    antData[a+A_ANGLE] += Math.sin(target - antData[a+A_ANGLE]) * 0.12;
+    antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed*1.1; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed*1.1;
+  }
+}
+
+function updateReturn(a, speed) {
+  const nest = nests[antData[a+A_HOME]|0];
+  const dx = nest.x-antData[a+A_X], dy = nest.y-antData[a+A_Y];
+  if (dx*dx+dy*dy < 200) antData[a+A_STATE] = Math.random()<0.3 ? ST_TUNNEL : ST_FORAGE;
+  else { antData[a+A_ANGLE] += (Math.atan2(dy,dx) - antData[a+A_ANGLE])*0.08; antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed*0.8; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed*0.8; }
+}
+
+function updateConsume(a, speed) {
+  antData[a+A_WANDER] += (Math.random()-0.5)*0.6; antData[a+A_ANGLE] = antData[a+A_WANDER];
+  antData[a+A_X] += cosT(antData[a+A_ANGLE])*speed*1.8; antData[a+A_Y] += sinT(antData[a+A_ANGLE])*speed*1.8;
+  const dx = CX-antData[a+A_X], dy = CY-antData[a+A_Y];
+  if (dx*dx+dy*dy > piScale*piScale*2.5) antData[a+A_WANDER] = Math.atan2(dy,dx) + (Math.random()-0.5);
+  carveTunnel(antData[a+A_X], antData[a+A_Y], 6);
+}
+
+function updateSweepAnt(a, speed) {
+  antData[a+A_WANDER] += (Math.random()-0.5)*0.4;
+  antData[a+A_X] += cosT(antData[a+A_WANDER])*speed*1.2; antData[a+A_Y] += sinT(antData[a+A_WANDER])*speed*1.2;
+  if (antData[a+A_X]<30 || antData[a+A_X]>W-30) antData[a+A_WANDER] = PI - antData[a+A_WANDER];
+  if (antData[a+A_Y]<30 || antData[a+A_Y]>H-60) antData[a+A_WANDER] = -antData[a+A_WANDER];
+  antData[a+A_ANGLE] = antData[a+A_WANDER];
+}
+
+function updateDemoAnt(a, speed, antIdx) {
+  const group = antData[a+A_DEMO_GROUP]|0;
+  const omega = antData[a+A_OMEGA];
+  const center = group === 0 ? DEMO_LEFT_CENTER : DEMO_RIGHT_CENTER;
+  const trails = group === 0 ? lowOmegaTrails : highOmegaTrails;
+  const trailIdx = antData[a+A_TRAIL_IDX]|0;
+  const radius = 60; // Smaller to match circle size
+  
+  // Coherence accumulates - but rate differs!
+  // Low Ω: slow accumulation (can't build much before rupture)
+  // High Ω: faster accumulation (can reach high coherence)
+  const accumulationRate = group === 0 ? 0.003 : 0.012;
+  antData[a+A_COHERENCE_DISPLAY] += accumulationRate;
+  antData[a+A_RUPTURE_TIMER] += 0.016;
+  
+  // Rupture dynamics based on Ω
+  // Low Ω: rupture period ~0.18s (very frequent!)
+  // High Ω: rupture period ~2.8s (rare but transformative)
+  const rupturePeriod = group === 0 ? 0.18 : 2.8;
+  
+  if (antData[a+A_RUPTURE_TIMER] > rupturePeriod) {
+    antData[a+A_RUPTURE_TIMER] = 0;
+    
+    if (group === 0) {
+      // LOW Ω: Micro-rupture - coherence drops to baseline, same pattern continues
+      antData[a+A_WANDER] += (Math.random() - 0.5) * 0.3;
+      antData[a+A_COHERENCE_DISPLAY] = 0.05 + Math.random() * 0.1; // Reset to low baseline
+      if (Math.random() < 0.4) spawnParticles(antData[a+A_X], antData[a+A_Y], 1, 0, 0.4);
+    } else {
+      // HIGH Ω: Macro-rupture - full coherence reset, genuine transformation!
+      antData[a+A_WANDER] += (Math.random() - 0.5) * PI * 1.5;
+      antData[a+A_COHERENCE_DISPLAY] = 0; // Full reset - transformation!
+      spawnParticles(antData[a+A_X], antData[a+A_Y], 15, 200, 1.3);
+    }
+  }
+  
+  // Cap coherence display for visualization
+  antData[a+A_COHERENCE_DISPLAY] = Math.min(antData[a+A_COHERENCE_DISPLAY], 1.0);
+  
+  // Movement patterns
+  if (group === 0) {
+    // LOW Ω: Tight, repetitive circles - same pattern reconstituted
+    antData[a+A_WANDER] += 0.04; // Constant rotation = trapped in loop
+  } else {
+    // HIGH Ω: Exploratory, flowing - genuinely novel paths
+    antData[a+A_WANDER] += sinT(t * 0.3 + antIdx * 0.7) * 0.03 + (Math.random() - 0.5) * 0.08;
+  }
+  
+  antData[a+A_ANGLE] = antData[a+A_WANDER];
+  const moveSpeed = group === 0 ? speed * 0.7 : speed * 1.0;
+  antData[a+A_X] += cosT(antData[a+A_ANGLE]) * moveSpeed;
+  antData[a+A_Y] += sinT(antData[a+A_ANGLE]) * moveSpeed;
+  
+  // Constrain to demo area
+  const dx = antData[a+A_X] - center.x;
+  const dy = antData[a+A_Y] - center.y;
+  if (dx*dx + dy*dy > radius * radius) {
+    antData[a+A_WANDER] = Math.atan2(-dy, -dx) + (Math.random() - 0.5) * 0.4;
+  }
+  
+  // Record trails (for first few ants of each group)
+  if (antIdx < 6 || (antIdx >= 50 && antIdx < 56)) {
+    const trail = trails[trailIdx];
+    trail.push({ x: antData[a+A_X], y: antData[a+A_Y], c: antData[a+A_COHERENCE_DISPLAY] });
+    if (trail.length > MAX_TRAIL_POINTS) trail.shift();
+  }
+}
+
+function updateParticles() {
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    const p = i * 7;
+    if (particleData[p+4] <= 0) continue;
+    particleData[p+3] += 0.02;
+    particleData[p] += particleData[p+2]; particleData[p+1] += particleData[p+3];
+    particleData[p+4] -= 0.012;
+  }
+}
+
+// ═══ DRAW ═══
+function drawBackground() {
+  // Aha flash effect
+  const flashIntensity = ahaFlash * 0.3;
+  const r = Math.floor(255 + (255 - 255) * ruptureFlash);
+  const g = Math.floor(255 - 25 * ruptureFlash - 20 * flashIntensity);
+  const b = Math.floor(255 - 55 * ruptureFlash - 40 * flashIntensity);
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawSlots() {
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const slots = currentPhase >= PHASE_BUILD_CRR && currentPhase < PHASE_OMEGA_DEMO ? CRR_SLOTS : 
+                currentPhase >= PHASE_OMEGA_DEMO ? [] : FEP_SLOTS;
+  const alpha = currentPhase === PHASE_SWEEP ? (1 - sweepProgress) : 1;
+  
+  for (const slot of slots) {
+    ctx.globalAlpha = alpha;
+    const size = 13 * (slot.scale || 1);
+    if (slot.filled) { 
+      ctx.font = `${size}px Georgia, serif`; 
+      ctx.fillStyle = '#1a1a1a'; 
+      ctx.fillText(slot.symbol, slot.x, slot.y); 
+    }
+    else if (currentPhase !== PHASE_SWEEP) {
+      ctx.font = `${size}px Georgia, serif`; 
+      ctx.fillStyle = 'rgba(170,150,120,0.18)'; 
+      ctx.fillText(slot.symbol, slot.x, slot.y);
+      ctx.strokeStyle = 'rgba(170,150,120,0.1)'; 
+      ctx.lineWidth = 1; 
+      ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.arc(slot.x, slot.y, size*0.65, 0, TAU); ctx.stroke(); 
+      ctx.setLineDash([]);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawPi() {
+  if (piOpacity <= 0.01) return;
+  const sc = piScale;
+  ctx.save(); ctx.globalAlpha = piOpacity; ctx.fillStyle = '#1a1a1a';
+  ctx.shadowColor = `rgba(0,0,0,${0.05*piOpacity})`; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+  
+  ctx.beginPath();
+  ctx.moveTo(CX-0.52*sc, CY-0.28*sc);
+  ctx.quadraticCurveTo(CX-0.50*sc, CY-0.42*sc, CX-0.38*sc, CY-0.44*sc);
+  ctx.bezierCurveTo(CX-0.15*sc, CY-0.45*sc, CX+0.25*sc, CY-0.44*sc, CX+0.42*sc, CY-0.44*sc);
+  ctx.quadraticCurveTo(CX+0.54*sc, CY-0.43*sc, CX+0.56*sc, CY-0.30*sc);
+  ctx.quadraticCurveTo(CX+0.50*sc, CY-0.36*sc, CX+0.38*sc, CY-0.36*sc);
+  ctx.lineTo(CX-0.32*sc, CY-0.36*sc);
+  ctx.quadraticCurveTo(CX-0.44*sc, CY-0.36*sc, CX-0.52*sc, CY-0.28*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX-0.18*sc, CY-0.38*sc);
+  ctx.bezierCurveTo(CX-0.22*sc, CY-0.12*sc, CX-0.36*sc, CY+0.12*sc, CX-0.42*sc, CY+0.38*sc);
+  ctx.bezierCurveTo(CX-0.46*sc, CY+0.50*sc, CX-0.43*sc, CY+0.58*sc, CX-0.36*sc, CY+0.62*sc);
+  ctx.quadraticCurveTo(CX-0.30*sc, CY+0.66*sc, CX-0.26*sc, CY+0.58*sc);
+  ctx.bezierCurveTo(CX-0.30*sc, CY+0.48*sc, CX-0.28*sc, CY+0.32*sc, CX-0.26*sc, CY+0.22*sc);
+  ctx.bezierCurveTo(CX-0.22*sc, CY+0.05*sc, CX-0.12*sc, CY-0.18*sc, CX-0.06*sc, CY-0.36*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX+0.22*sc, CY-0.38*sc);
+  ctx.bezierCurveTo(CX+0.18*sc, CY-0.12*sc, CX+0.14*sc, CY+0.12*sc, CX+0.10*sc, CY+0.38*sc);
+  ctx.bezierCurveTo(CX+0.06*sc, CY+0.52*sc, CX+0.10*sc, CY+0.60*sc, CX+0.18*sc, CY+0.62*sc);
+  ctx.quadraticCurveTo(CX+0.24*sc, CY+0.65*sc, CX+0.26*sc, CY+0.56*sc);
+  ctx.bezierCurveTo(CX+0.20*sc, CY+0.46*sc, CX+0.18*sc, CY+0.32*sc, CX+0.20*sc, CY+0.18*sc);
+  ctx.bezierCurveTo(CX+0.22*sc, CY+0.02*sc, CX+0.28*sc, CY-0.16*sc, CX+0.32*sc, CY-0.36*sc);
+  ctx.fill();
+  
+  ctx.shadowBlur = 0; ctx.restore();
+  
+  if (currentPhase <= PHASE_CONSUME) {
+    const cw = W/MASK_SIZE, ch = H/MASK_SIZE;
+    ctx.fillStyle = '#fff'; ctx.beginPath();
+    for (let my = 0; my < MASK_SIZE; my += 2) {
+      for (let mx = 0; mx < MASK_SIZE; mx += 2) {
+        const v = tunnelMask[my*MASK_SIZE+mx];
+        if (v > 0.1 && piMask[my*MASK_SIZE+mx]) { ctx.moveTo(mx*cw + cw*v*2, my*ch); ctx.arc(mx*cw, my*ch, cw*v*2, 0, TAU); }
+      }
+    }
+    ctx.fill();
+  }
+}
+
+function drawParticles() {
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    const p = i * 7, life = particleData[p+4];
+    if (life <= 0) continue;
+    ctx.fillStyle = `hsla(${particleData[p+6]},70%,55%,${life*0.8})`;
+    ctx.beginPath(); ctx.arc(particleData[p], particleData[p+1], particleData[p+5]*life, 0, TAU); ctx.fill();
+  }
+}
+
+function drawOmegaDemo() {
+  if (currentPhase !== PHASE_OMEGA_DEMO) return;
+  
+  // Draw explanatory texts
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  
+  for (const txt of OMEGA_DEMO_TEXTS) {
+    if (txt.alpha > 0) {
+      ctx.globalAlpha = txt.alpha;
+      ctx.font = '600 18px "Cormorant Garamond", Georgia, serif';
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillText(txt.text, CX, txt.y * H);
+    }
+  }
+  ctx.globalAlpha = 1;
+  
+  // Draw demo area labels - positioned above circles with good spacing
+  ctx.font = '600 18px "Cormorant Garamond", Georgia, serif';
+  
+  // Left: Low Ω
+  ctx.fillStyle = 'rgba(160, 50, 50, 0.95)';
+  ctx.fillText('Low Ω = σ² small', DEMO_LEFT_CENTER.x, DEMO_LEFT_CENTER.y - 95);
+  ctx.font = '400 11px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = 'rgba(120, 40, 40, 0.85)';
+  ctx.fillText('Frequent micro-ruptures (~0.2s)', DEMO_LEFT_CENTER.x, DEMO_LEFT_CENTER.y - 78);
+  ctx.fillText('Coherence never builds', DEMO_LEFT_CENTER.x, DEMO_LEFT_CENTER.y - 65);
+  ctx.fillText('Same patterns reconstituted', DEMO_LEFT_CENTER.x, DEMO_LEFT_CENTER.y - 52);
+  
+  // Right: High Ω
+  ctx.font = '600 18px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = 'rgba(50, 90, 160, 0.95)';
+  ctx.fillText('High Ω = σ² large', DEMO_RIGHT_CENTER.x, DEMO_RIGHT_CENTER.y - 95);
+  ctx.font = '400 11px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = 'rgba(40, 70, 140, 0.85)';
+  ctx.fillText('Rare macro-ruptures (~2.8s)', DEMO_RIGHT_CENTER.x, DEMO_RIGHT_CENTER.y - 78);
+  ctx.fillText('Coherence accumulates deeply', DEMO_RIGHT_CENTER.x, DEMO_RIGHT_CENTER.y - 65);
+  ctx.fillText('Genuine transformation possible', DEMO_RIGHT_CENTER.x, DEMO_RIGHT_CENTER.y - 52);
+  
+  // Draw trails with coherence coloring
+  ctx.lineWidth = 2;
+  
+  for (let ti = 0; ti < 3; ti++) {
+    // Low Ω trails (always low coherence = red)
+    const lowTrail = lowOmegaTrails[ti];
+    if (lowTrail.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(lowTrail[0].x, lowTrail[0].y);
+      for (let i = 1; i < lowTrail.length; i++) {
+        const alpha = (i / lowTrail.length) * 0.5;
+        ctx.strokeStyle = `rgba(180, 60, 60, ${alpha})`;
+        ctx.lineTo(lowTrail[i].x, lowTrail[i].y);
+      }
+      ctx.stroke();
+    }
+    
+    // High Ω trails (coherence varies = color shifts)
+    const highTrail = highOmegaTrails[ti];
+    if (highTrail.length > 1) {
+      for (let i = 1; i < highTrail.length; i++) {
+        const alpha = (i / highTrail.length) * 0.6;
+        const c = Math.min(1, highTrail[i].c);
+        const hue = 200 + c * 60; // Blue to cyan as coherence builds
+        ctx.strokeStyle = `hsla(${hue}, 70%, 50%, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(highTrail[i-1].x, highTrail[i-1].y);
+        ctx.lineTo(highTrail[i].x, highTrail[i].y);
+        ctx.stroke();
+      }
+    }
+  }
+  
+  // Draw demo area circles (slightly smaller)
+  ctx.strokeStyle = 'rgba(160, 50, 50, 0.25)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(DEMO_LEFT_CENTER.x, DEMO_LEFT_CENTER.y, 65, 0, TAU); ctx.stroke();
+  
+  ctx.strokeStyle = 'rgba(50, 90, 160, 0.25)';
+  ctx.beginPath(); ctx.arc(DEMO_RIGHT_CENTER.x, DEMO_RIGHT_CENTER.y, 65, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // Draw coherence graphs - positioned below circles
+  const graphW = 100, graphH = 30;
+  const graphY = DEMO_LEFT_CENTER.y + 80;
+  
+  // Low Ω graph (flat, low)
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillRect(DEMO_LEFT_CENTER.x - graphW/2, graphY, graphW, graphH);
+  ctx.strokeStyle = 'rgba(160, 50, 50, 0.3)';
+  ctx.strokeRect(DEMO_LEFT_CENTER.x - graphW/2, graphY, graphW, graphH);
+  
+  if (lowOmegaCoherence.length > 1) {
+    ctx.strokeStyle = 'rgba(160, 50, 50, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < lowOmegaCoherence.length; i++) {
+      const x = DEMO_LEFT_CENTER.x - graphW/2 + (i / GRAPH_HISTORY) * graphW;
+      const y = graphY + graphH - Math.min(1, lowOmegaCoherence[i]) * graphH * 0.9;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#666';
+  ctx.textAlign = 'center';
+  ctx.fillText('Coherence over time', DEMO_LEFT_CENTER.x, graphY + graphH + 12);
+  
+  // High Ω graph (builds up, then resets)
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillRect(DEMO_RIGHT_CENTER.x - graphW/2, graphY, graphW, graphH);
+  ctx.strokeStyle = 'rgba(50, 90, 160, 0.3)';
+  ctx.strokeRect(DEMO_RIGHT_CENTER.x - graphW/2, graphY, graphW, graphH);
+  
+  if (highOmegaCoherence.length > 1) {
+    ctx.strokeStyle = 'rgba(50, 90, 160, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < highOmegaCoherence.length; i++) {
+      const x = DEMO_RIGHT_CENTER.x - graphW/2 + (i / GRAPH_HISTORY) * graphW;
+      const y = graphY + graphH - Math.min(1, highOmegaCoherence[i]) * graphH * 0.9;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.fillText('Coherence over time', DEMO_RIGHT_CENTER.x, graphY + graphH + 12);
+}
+
+function drawAnt(x, y, angle, size, legPhase, carry = -1, wobble = 0, alpha = 1, tint = null) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(angle); ctx.globalAlpha = alpha;
+  
+  const body = tint || '#1a0a00', leg = tint ? tint : '#2a1500';
+  
+  ctx.strokeStyle = leg; ctx.lineWidth = 0.65; ctx.lineCap = 'round';
+  for (let i = 0; i < 3; i++) {
+    const off = (i-1)*size*0.5, p1 = legPhase+i*0.8, p2 = p1+PI;
+    ctx.beginPath(); ctx.moveTo(off, 0);
+    ctx.lineTo(off + cosT(-PI/2-0.3+sinT(p1)*0.3)*size*1.15, sinT(-PI/2-0.3+sinT(p1)*0.3)*size*1.15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(off, 0);
+    ctx.lineTo(off + cosT(PI/2+0.3+sinT(p2)*0.3)*size*1.15, sinT(PI/2+0.3+sinT(p2)*0.3)*size*1.15); ctx.stroke();
+  }
+  
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(-size*0.75, 0, size*0.65, size*0.45, 0, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 0, size*0.38, size*0.32, 0, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(size*0.55, 0, size*0.32, size*0.27, 0, 0, TAU); ctx.fill();
+  
+  ctx.strokeStyle = leg; ctx.lineWidth = 0.55;
+  const aw = sinT(legPhase*0.5)*0.18;
+  ctx.beginPath(); ctx.moveTo(size*0.75, -size*0.13); ctx.quadraticCurveTo(size, -size*0.38+aw, size*1.2, -size*0.45); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(size*0.75, size*0.13); ctx.quadraticCurveTo(size, size*0.38-aw, size*1.2, size*0.45); ctx.stroke();
+  
+  ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(size*0.82, -size*0.09); ctx.lineTo(size*0.95, -size*0.18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(size*0.82, size*0.09); ctx.lineTo(size*0.95, size*0.18); ctx.stroke();
+  
+  if (carry >= 0) {
+    ctx.save();
+    ctx.translate(size*1.4 + sinT(wobble)*1.3, cosT(wobble*1.3)*0.8);
+    ctx.rotate(sinT(wobble*0.7)*0.1);
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.beginPath(); ctx.arc(0, 0, size*0.6, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#2a2a2a'; ctx.font = `bold ${size*2.6}px Georgia, serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(allSymbols[carry] || '?', 0, 0);
+    ctx.restore();
+  }
+  
+  ctx.restore();
+}
+
+function drawAnts() {
+  // Don't draw ants during final screen fade-in
+  if (currentPhase === PHASE_FINAL && finalPhaseTimer > 1.5) return;
+  
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a+A_STATE]|0;
+    
+    let alpha = 1, tint = null;
+    
+    if (state === ST_TUNNEL && currentPhase <= PHASE_CONSUME) {
+      const {mx,my} = worldToMask(antData[a+A_X], antData[a+A_Y]);
+      const inPi = mx>=0 && mx<MASK_SIZE && my>=0 && my<MASK_SIZE && piMask[my*MASK_SIZE+mx];
+      const tv = inPi ? tunnelMask[my*MASK_SIZE+mx] : 1;
+      alpha = Math.min(1, 0.3 + tv*0.8);
+      if (tv < 0.12 && inPi) continue;
+    }
+    
+    if (state === ST_DEMO) {
+      const group = antData[a+A_DEMO_GROUP]|0;
+      tint = group === 0 ? '#6a2525' : '#2a4570';
+    }
+    
+    drawAnt(antData[a+A_X], antData[a+A_Y], antData[a+A_ANGLE], antData[a+A_SIZE],
+            antData[a+A_LEG_PHASE], antData[a+A_CARRY]|0, antData[a+A_WOBBLE], alpha, tint);
+  }
+}
+
+function drawText() {
+  // Don't draw title during final screen
+  if (currentPhase === PHASE_FINAL && finalPhaseTimer > 1.5) return;
+  
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '600 36px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText('Active Inferants 2026', CX, H - 42);
+  ctx.font = '400 13px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('— A Free Energy Playground —', CX, H - 18);
+}
+
+function drawStats() {
+  // Don't draw stats during final screen
+  if (currentPhase === PHASE_FINAL && finalPhaseTimer > 1.5) return;
+  
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillRect(W-155, 8, 147, 62);
+  ctx.font = '10px monospace'; ctx.fillStyle = '#555'; ctx.textAlign = 'right';
+  
+  const phases = ['Learning FEP', 'RUPTURE! 💡', 'Consuming π', 'Sweeping', 'Building CRR', 'CRR Complete', 'Ω Demo', 'Complete'];
+  ctx.fillText(`Phase: ${phases[currentPhase]}`, W-12, 20);
+  ctx.fillText(`Coherence: ${totalCoherence.toFixed(2)} / ${CRITICAL_BITS.toFixed(2)}`, W-12, 34);
+  
+  if (currentPhase <= PHASE_FEP) ctx.fillText(`FEP Slots: ${fepComplete}/${FEP_SLOTS.length}`, W-12, 48);
+  else if (currentPhase >= PHASE_BUILD_CRR && currentPhase < PHASE_OMEGA_DEMO) ctx.fillText(`CRR Slots: ${crrComplete}/${CRR_SLOTS.length}`, W-12, 48);
+  else if (currentPhase >= PHASE_OMEGA_DEMO) ctx.fillText('Demonstrating σ² = Ω', W-12, 48);
+  
+  ctx.fillStyle = '#ddd'; ctx.fillRect(W-150, 56, 135, 8);
+  const prog = currentPhase <= PHASE_FEP ? totalCoherence/CRITICAL_BITS : 
+               currentPhase >= PHASE_BUILD_CRR && currentPhase < PHASE_OMEGA_DEMO ? crrComplete/CRR_SLOTS.length : 
+               currentPhase >= PHASE_OMEGA_DEMO ? 1 : (currentPhase-1)/4;
+  ctx.fillStyle = currentPhase === PHASE_RUPTURE ? '#f80' : currentPhase >= PHASE_OMEGA_DEMO ? '#48a' : '#c90';
+  ctx.fillRect(W-150, 56, 135*Math.min(1,prog), 8);
+}
+
+let frames = 0, lastFps = performance.now(), fps = 60;
+function drawFPS() {
+  frames++; const now = performance.now();
+  if (now - lastFps >= 1000) { fps = frames; frames = 0; lastFps = now; }
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(8, 8, 50, 18);
+  ctx.fillStyle = fps >= 50 ? '#4a4' : fps >= 30 ? '#aa4' : '#a44';
+  ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
+  ctx.fillText(`${fps} FPS`, 13, 20);
+}
+
+function drawFadeOverlay() {
+  if (fadeAlpha <= 0) return;
+  ctx.fillStyle = `rgba(255, 255, 255, ${fadeAlpha})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawFinalScreen() {
+  if (currentPhase !== PHASE_FINAL || finalPhaseTimer < 2.5) return;
+  
+  const alpha = Math.min(1, (finalPhaseTimer - 2.5) / 1.5);
+  ctx.globalAlpha = alpha;
+  
+  // Draw centered CRR title
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '600 38px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText('Coherence — Rupture — Regeneration', CX, H * 0.12);
+  
+  // Draw the three core equations with better spacing
+  ctx.font = '500 24px Georgia, serif';
+  ctx.fillStyle = '#2a2a2a';
+  
+  // C(x,t) = ∫ L(x,τ) dτ
+  ctx.fillText('C(x,t) = ∫₀ᵗ L(x,τ) dτ', CX, H * 0.28);
+  ctx.font = '400 13px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('Coherence accumulates through lived experience', CX, H * 0.33);
+  
+  // δ(now)
+  ctx.font = '500 24px Georgia, serif';
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillText('δ(now)', CX, H * 0.46);
+  ctx.font = '400 13px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('Rupture marks the scale-invariant present moment', CX, H * 0.51);
+  
+  // R = ∫ φ exp(C/Ω) dτ
+  ctx.font = '500 24px Georgia, serif';
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillText('R = ∫ φ(x,τ) exp(C/Ω) Θ dτ', CX, H * 0.64);
+  ctx.font = '400 13px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('Regeneration weighted by coherence memory', CX, H * 0.69);
+  
+  // Key insight - σ² = Ω
+  ctx.font = '600 22px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText('σ² = Ω', CX, H * 0.82);
+  ctx.font = '400 12px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('Variance is the temporal window — the depth of accessible memory', CX, H * 0.87);
+  
+  ctx.globalAlpha = 1;
+}
+
+function animate() {
+  t += 0.016;
+  
+  updatePhase(); updateAnts(); updateParticles();
+  
+  drawBackground(); drawSlots(); drawPi(); drawOmegaDemo(); drawParticles(); drawAnts(); drawText(); drawStats();
+  
+  // Final phase: fade and show summary
+  drawFadeOverlay();
+  drawFinalScreen();
+  
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1; ctx.strokeRect(0, 0, W, H);
+  if (currentPhase !== PHASE_FINAL || finalPhaseTimer < 2.5) drawFPS();
+  
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
