@@ -610,12 +610,6 @@ Only certain coherence values (C = nΩ) are allowed - exactly the rupture thresh
 - ✓ Empirically supported across multiple domains
 - ✓ Falsifiable (specific numerical predictions)
 
-**CRR is NOT:**
-- ✗ A complete theory of physics
-- ✗ A solution to the measurement problem
-- ✗ Derived from first principles (Ω value)
-- ✗ Predictive at the microscopic level
-
 **Epistemic Status:** Well-developed mathematical framework with strong empirical support, pending deeper theoretical grounding for the Ω parameter.
 
 ---
