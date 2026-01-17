@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Inferants 2026</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      overflow: hidden; 
+      background: #fff;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTIVE INFERANTS 2026 — Living Logo with Active Inference Learning
+// Ants learn to place FEP symbols in correct equation positions
+// fun claude mode enabled
+// ═══════════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const S = Math.min(innerWidth, innerHeight, 900);
+const D = devicePixelRatio || 1;
+canvas.width = S * D;
+canvas.height = S * D;
+canvas.style.width = canvas.style.height = S + 'px';
+ctx.scale(D, D);
+
+const W = S, H = S, CX = W/2, CY = H/2;
+const PI = Math.PI, TAU = PI * 2;
+
+// ═══ fun claude mode constants ═══
+const φ = 1.618033988749895;
+const ψ = 0.618033988749895;
+const Ω = 1 / PI;
+const BREATH = PI * PI;
+
+// ═══ LOOKUP TABLES ═══
+const TBL = 1024, MSK = TBL - 1;
+const SIN = new Float32Array(TBL), COS = new Float32Array(TBL);
+for (let i = 0; i < TBL; i++) { SIN[i] = Math.sin((i/TBL)*TAU); COS[i] = Math.cos((i/TBL)*TAU); }
+const sinT = a => SIN[((a%TAU+TAU)*TBL/TAU)&MSK];
+const cosT = a => COS[((a%TAU+TAU)*TBL/TAU)&MSK];
+
+const piScale = W * 0.26;
+
+// ═══ FEP EQUATION TARGETS ═══
+// These are the "correct" positions for symbols - ants get rewarded for placing here
+// Building: F = E[ln Q(s)] - E[ln P(o,s)] = Energy - Entropy
+// And: F = D_KL[Q||P] + complexity terms
+
+const EQUATION_SLOTS = [
+  // Main Free Energy equation (top)
+  { symbol: 'F', x: CX - piScale * 1.6, y: CY - piScale * 1.1, filled: false, scale: 1.4, reward: 10 },
+  { symbol: '=', x: CX - piScale * 1.35, y: CY - piScale * 1.1, filled: false, scale: 1.2, reward: 5 },
+  { symbol: 'E', x: CX - piScale * 1.1, y: CY - piScale * 1.1, filled: false, scale: 1.3, reward: 8 },
+  { symbol: '[', x: CX - piScale * 0.9, y: CY - piScale * 1.1, filled: false, scale: 1.0, reward: 3 },
+  { symbol: 'ln', x: CX - piScale * 0.7, y: CY - piScale * 1.1, filled: false, scale: 1.0, reward: 5 },
+  { symbol: 'Q', x: CX - piScale * 0.45, y: CY - piScale * 1.1, filled: false, scale: 1.2, reward: 8 },
+  { symbol: ']', x: CX - piScale * 0.25, y: CY - piScale * 1.1, filled: false, scale: 1.0, reward: 3 },
+  { symbol: '−', x: CX - piScale * 0.05, y: CY - piScale * 1.1, filled: false, scale: 1.2, reward: 4 },
+  { symbol: 'H', x: CX + piScale * 0.2, y: CY - piScale * 1.1, filled: false, scale: 1.3, reward: 8 },
+  
+  // KL Divergence (right side)
+  { symbol: 'D', x: CX + piScale * 1.4, y: CY - piScale * 0.5, filled: false, scale: 1.2, reward: 8 },
+  { symbol: 'KL', x: CX + piScale * 1.6, y: CY - piScale * 0.5, filled: false, scale: 0.9, reward: 10 },
+  { symbol: '[', x: CX + piScale * 1.8, y: CY - piScale * 0.5, filled: false, scale: 1.0, reward: 3 },
+  { symbol: 'Q', x: CX + piScale * 1.95, y: CY - piScale * 0.5, filled: false, scale: 1.1, reward: 6 },
+  { symbol: '||', x: CX + piScale * 2.1, y: CY - piScale * 0.5, filled: false, scale: 0.9, reward: 4 },
+  { symbol: 'P', x: CX + piScale * 2.25, y: CY - piScale * 0.5, filled: false, scale: 1.1, reward: 6 },
+  { symbol: ']', x: CX + piScale * 2.4, y: CY - piScale * 0.5, filled: false, scale: 1.0, reward: 3 },
+  
+  // Precision/variance (left side)
+  { symbol: 'σ', x: CX - piScale * 1.8, y: CY + piScale * 0.1, filled: false, scale: 1.3, reward: 7 },
+  { symbol: '²', x: CX - piScale * 1.6, y: CY + piScale * 0.0, filled: false, scale: 0.9, reward: 4 },
+  { symbol: '=', x: CX - piScale * 1.4, y: CY + piScale * 0.1, filled: false, scale: 1.1, reward: 3 },
+  { symbol: '1', x: CX - piScale * 1.2, y: CY + piScale * 0.1, filled: false, scale: 1.1, reward: 4 },
+  { symbol: '/', x: CX - piScale * 1.05, y: CY + piScale * 0.1, filled: false, scale: 1.1, reward: 3 },
+  { symbol: 'π', x: CX - piScale * 0.9, y: CY + piScale * 0.1, filled: false, scale: 1.3, reward: 9 },
+  
+  // Belief update (bottom left)
+  { symbol: '∂', x: CX - piScale * 1.5, y: CY + piScale * 0.8, filled: false, scale: 1.2, reward: 7 },
+  { symbol: 'μ', x: CX - piScale * 1.3, y: CY + piScale * 0.8, filled: false, scale: 1.2, reward: 8 },
+  { symbol: '/', x: CX - piScale * 1.1, y: CY + piScale * 0.8, filled: false, scale: 1.0, reward: 3 },
+  { symbol: '∂', x: CX - piScale * 0.95, y: CY + piScale * 0.8, filled: false, scale: 1.2, reward: 5 },
+  { symbol: 't', x: CX - piScale * 0.8, y: CY + piScale * 0.8, filled: false, scale: 1.1, reward: 5 },
+  
+  // Expected free energy (bottom right)
+  { symbol: 'G', x: CX + piScale * 1.2, y: CY + piScale * 0.6, filled: false, scale: 1.4, reward: 9 },
+  { symbol: '=', x: CX + piScale * 1.45, y: CY + piScale * 0.6, filled: false, scale: 1.1, reward: 3 },
+  { symbol: '−', x: CX + piScale * 1.65, y: CY + piScale * 0.6, filled: false, scale: 1.1, reward: 3 },
+  { symbol: 'E', x: CX + piScale * 1.85, y: CY + piScale * 0.6, filled: false, scale: 1.2, reward: 6 },
+  { symbol: '[', x: CX + piScale * 2.05, y: CY + piScale * 0.6, filled: false, scale: 1.0, reward: 2 },
+  { symbol: 'ln', x: CX + piScale * 2.2, y: CY + piScale * 0.6, filled: false, scale: 0.9, reward: 4 },
+  { symbol: 'P', x: CX + piScale * 2.4, y: CY + piScale * 0.6, filled: false, scale: 1.1, reward: 6 },
+  { symbol: ']', x: CX + piScale * 2.55, y: CY + piScale * 0.6, filled: false, scale: 1.0, reward: 2 },
+  
+  // Scattered important symbols
+  { symbol: '∫', x: CX + piScale * 1.7, y: CY - piScale * 1.0, filled: false, scale: 1.5, reward: 8 },
+  { symbol: '∞', x: CX + piScale * 2.1, y: CY - piScale * 0.9, filled: false, scale: 1.3, reward: 7 },
+  { symbol: 'Ω', x: CX - piScale * 1.7, y: CY - piScale * 0.5, filled: false, scale: 1.4, reward: 10 },
+  { symbol: '∇', x: CX + piScale * 0.9, y: CY + piScale * 1.0, filled: false, scale: 1.3, reward: 8 },
+  { symbol: 'α', x: CX - piScale * 0.8, y: CY + piScale * 1.1, filled: false, scale: 1.2, reward: 6 },
+  { symbol: 'β', x: CX + piScale * 0.5, y: CY + piScale * 1.1, filled: false, scale: 1.2, reward: 6 },
+  { symbol: 'γ', x: CX - piScale * 0.2, y: CY + piScale * 1.2, filled: false, scale: 1.2, reward: 6 },
+  { symbol: 'λ', x: CX + piScale * 1.5, y: CY + piScale * 1.0, filled: false, scale: 1.2, reward: 7 },
+  { symbol: 'ε', x: CX - piScale * 1.3, y: CY + piScale * 1.1, filled: false, scale: 1.2, reward: 7 },
+  { symbol: 'φ', x: CX + piScale * 2.0, y: CY + piScale * 0.2, filled: false, scale: 1.3, reward: 8 },
+  { symbol: 'ψ', x: CX + piScale * 2.2, y: CY + piScale * 1.0, filled: false, scale: 1.3, reward: 8 },
+];
+
+// Create lookup for which symbols go where
+const symbolToSlots = {};
+EQUATION_SLOTS.forEach((slot, idx) => {
+  if (!symbolToSlots[slot.symbol]) symbolToSlots[slot.symbol] = [];
+  symbolToSlots[slot.symbol].push(idx);
+});
+
+// All available symbols ants can carry
+const ALL_SYMBOLS = [...new Set(EQUATION_SLOTS.map(s => s.symbol))];
+
+// ═══ TUNNEL CARVING SYSTEM ═══
+const MASK_SIZE = 350;
+const tunnelMask = new Float32Array(MASK_SIZE * MASK_SIZE);
+const piMask = new Uint8Array(MASK_SIZE * MASK_SIZE);
+
+function worldToMask(x, y) {
+  return {
+    mx: Math.floor((x / W) * MASK_SIZE),
+    my: Math.floor((y / H) * MASK_SIZE)
+  };
+}
+
+let carveRate = 0.02;
+
+function carveTunnel(x, y, radius) {
+  const { mx, my } = worldToMask(x, y);
+  const mr = Math.ceil((radius / W) * MASK_SIZE);
+  
+  for (let dy = -mr; dy <= mr; dy++) {
+    for (let dx = -mr; dx <= mr; dx++) {
+      const px = mx + dx, py = my + dy;
+      if (px < 0 || px >= MASK_SIZE || py < 0 || py >= MASK_SIZE) continue;
+      
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist <= mr && piMask[py * MASK_SIZE + px]) {
+        const idx = py * MASK_SIZE + px;
+        const carve = Math.max(0, 1 - dist / mr);
+        tunnelMask[idx] = Math.min(1, tunnelMask[idx] + carve * carveRate);
+      }
+    }
+  }
+}
+
+function generatePiMask() {
+  const offscreen = document.createElement('canvas');
+  offscreen.width = MASK_SIZE;
+  offscreen.height = MASK_SIZE;
+  const octx = offscreen.getContext('2d');
+  
+  const sc = (MASK_SIZE / W) * piScale;
+  const cx = MASK_SIZE / 2, cy = MASK_SIZE / 2;
+  
+  octx.fillStyle = '#000';
+  
+  octx.beginPath();
+  octx.moveTo(cx - 0.52*sc, cy - 0.28*sc);
+  octx.quadraticCurveTo(cx - 0.50*sc, cy - 0.42*sc, cx - 0.38*sc, cy - 0.44*sc);
+  octx.bezierCurveTo(cx - 0.15*sc, cy - 0.45*sc, cx + 0.25*sc, cy - 0.44*sc, cx + 0.42*sc, cy - 0.44*sc);
+  octx.quadraticCurveTo(cx + 0.54*sc, cy - 0.43*sc, cx + 0.56*sc, cy - 0.30*sc);
+  octx.quadraticCurveTo(cx + 0.50*sc, cy - 0.36*sc, cx + 0.38*sc, cy - 0.36*sc);
+  octx.lineTo(cx - 0.32*sc, cy - 0.36*sc);
+  octx.quadraticCurveTo(cx - 0.44*sc, cy - 0.36*sc, cx - 0.52*sc, cy - 0.28*sc);
+  octx.fill();
+  
+  octx.beginPath();
+  octx.moveTo(cx - 0.18*sc, cy - 0.38*sc);
+  octx.bezierCurveTo(cx - 0.22*sc, cy - 0.12*sc, cx - 0.36*sc, cy + 0.12*sc, cx - 0.42*sc, cy + 0.38*sc);
+  octx.bezierCurveTo(cx - 0.46*sc, cy + 0.50*sc, cx - 0.43*sc, cy + 0.58*sc, cx - 0.36*sc, cy + 0.62*sc);
+  octx.quadraticCurveTo(cx - 0.30*sc, cy + 0.66*sc, cx - 0.26*sc, cy + 0.58*sc);
+  octx.bezierCurveTo(cx - 0.30*sc, cy + 0.48*sc, cx - 0.28*sc, cy + 0.32*sc, cx - 0.26*sc, cy + 0.22*sc);
+  octx.bezierCurveTo(cx - 0.22*sc, cy + 0.05*sc, cx - 0.12*sc, cy - 0.18*sc, cx - 0.06*sc, cy - 0.36*sc);
+  octx.fill();
+  
+  octx.beginPath();
+  octx.moveTo(cx + 0.22*sc, cy - 0.38*sc);
+  octx.bezierCurveTo(cx + 0.18*sc, cy - 0.12*sc, cx + 0.14*sc, cy + 0.12*sc, cx + 0.10*sc, cy + 0.38*sc);
+  octx.bezierCurveTo(cx + 0.06*sc, cy + 0.52*sc, cx + 0.10*sc, cy + 0.60*sc, cx + 0.18*sc, cy + 0.62*sc);
+  octx.quadraticCurveTo(cx + 0.24*sc, cy + 0.65*sc, cx + 0.26*sc, cy + 0.56*sc);
+  octx.bezierCurveTo(cx + 0.20*sc, cy + 0.46*sc, cx + 0.18*sc, cy + 0.32*sc, cx + 0.20*sc, cy + 0.18*sc);
+  octx.bezierCurveTo(cx + 0.22*sc, cy + 0.02*sc, cx + 0.28*sc, cy - 0.16*sc, cx + 0.32*sc, cy - 0.36*sc);
+  octx.fill();
+  
+  const imageData = octx.getImageData(0, 0, MASK_SIZE, MASK_SIZE);
+  for (let i = 0; i < MASK_SIZE * MASK_SIZE; i++) {
+    piMask[i] = imageData.data[i * 4 + 3] > 128 ? 1 : 0;
+  }
+}
+
+generatePiMask();
+
+// ═══ NEST SITES (inside pi) ═══
+const nests = [
+  { x: CX - piScale * 0.32, y: CY + piScale * 0.20 },
+  { x: CX + piScale * 0.15, y: CY + piScale * 0.25 },
+  { x: CX - piScale * 0.22, y: CY - piScale * 0.05 },
+  { x: CX + piScale * 0.20, y: CY - piScale * 0.02 },
+];
+
+// ═══ REWARD PARTICLES ═══
+const MAX_PARTICLES = 100;
+const PART_STRIDE = 7;
+const particleData = new Float32Array(MAX_PARTICLES * PART_STRIDE);
+let particleCount = 0;
+const PT_X = 0, PT_Y = 1, PT_VX = 2, PT_VY = 3, PT_LIFE = 4, PT_SIZE = 5, PT_HUE = 6;
+
+function spawnRewardParticles(x, y, reward) {
+  const count = Math.min(reward * 2, 15);
+  for (let i = 0; i < count; i++) {
+    if (particleCount >= MAX_PARTICLES) particleCount = 0;
+    const p = particleCount++ * PART_STRIDE;
+    const angle = Math.random() * TAU;
+    const speed = 1 + Math.random() * 2;
+    particleData[p + PT_X] = x;
+    particleData[p + PT_Y] = y;
+    particleData[p + PT_VX] = cosT(angle) * speed;
+    particleData[p + PT_VY] = sinT(angle) * speed - 1;
+    particleData[p + PT_LIFE] = 1;
+    particleData[p + PT_SIZE] = 2 + reward * 0.3;
+    particleData[p + PT_HUE] = 45 + Math.random() * 30; // Golden
+  }
+}
+
+// ═══ PI CONTOUR ═══
+const piContour = [];
+
+function generatePiContour() {
+  const sc = piScale;
+  const add = (x, y) => piContour.push({ x: CX + x * sc, y: CY + y * sc });
+  
+  for (let i = 0; i <= 12; i++) { const t = i/12; add(-0.52 + t*0.14, -0.28 - Math.sin(t*PI)*0.16); }
+  for (let i = 0; i <= 35; i++) { const t = i/35; add(-0.38 + t*0.80, -0.44); }
+  for (let i = 0; i <= 12; i++) { const t = i/12; add(0.42 + t*0.14, -0.44 + Math.sin(t*PI)*0.14); }
+  for (let i = 0; i <= 30; i++) { const t = i/30; add(0.32 - t*0.06, -0.36 + t*0.94); }
+  for (let i = 0; i <= 10; i++) { const t = i/10; add(0.26 - t*0.12, 0.58 + Math.sin(t*PI)*0.06); }
+  for (let i = 0; i <= 25; i++) { const t = i/25; add(0.14 + t*0.06, 0.58 - t*0.94); }
+  for (let i = 0; i <= 18; i++) { const t = i/18; add(0.20 - t*0.38, -0.36); }
+  for (let i = 0; i <= 25; i++) { const t = i/25; add(-0.18 - t*0.08, -0.36 + t*0.94); }
+  for (let i = 0; i <= 10; i++) { const t = i/10; add(-0.26 - t*0.10, 0.58 + Math.sin(t*PI)*0.06); }
+  for (let i = 0; i <= 30; i++) { const t = i/30; add(-0.36 - t*0.06, 0.58 - t*0.86); }
+}
+
+generatePiContour();
+
+// ═══ ANT DATA ═══
+const MAX_ANTS = 85;
+const ANT_STRIDE = 28;
+const antData = new Float32Array(MAX_ANTS * ANT_STRIDE);
+let antCount = 0;
+
+const A_X = 0, A_Y = 1, A_ANGLE = 2, A_SPEED = 3;
+const A_STATE = 4, A_PATH_IDX = 5, A_DIR = 6, A_LEG_PHASE = 7;
+const A_SIZE = 8, A_C = 9, A_JITTER = 10, A_CARRY_SYMBOL = 11;
+const A_HOME_NEST = 12, A_WANDER_ANGLE = 13, A_TARGET_X = 14, A_TARGET_Y = 15;
+const A_SYMBOL_WOBBLE = 16, A_REWARD_MEMORY = 17, A_EXPLORE_RADIUS = 18;
+const A_SLOT_TARGET = 19, A_LEARNING_RATE = 20, A_LAST_REWARD = 21;
+const A_PREFERRED_SYMBOL = 22, A_SYMBOL_SKILL = 23;
+
+// States
+const STATE_PATROL = 0;
+const STATE_TUNNEL = 1;
+const STATE_FORAGE = 2;
+const STATE_CARRY_TO_SLOT = 3;
+const STATE_RETURN = 4;
+
+// ═══ COLONY STATISTICS ═══
+let totalReward = 0;
+let slotsCompleted = 0;
+
+// ═══ INITIALIZE ═══
+function initAnts() {
+  // Patrol ants
+  for (let i = 0; i < 30; i++) {
+    const pathIdx = Math.floor(Math.random() * piContour.length);
+    const pt = piContour[pathIdx];
+    createAnt(pt.x, pt.y, STATE_PATROL, pathIdx);
+  }
+  
+  // Worker ants
+  for (let i = 0; i < 55; i++) {
+    const nestIdx = i % nests.length;
+    const nest = nests[nestIdx];
+    const angle = Math.random() * TAU;
+    const r = Math.random() * 15;
+    createAnt(
+      nest.x + cosT(angle) * r,
+      nest.y + sinT(angle) * r,
+      Math.random() < 0.4 ? STATE_TUNNEL : STATE_FORAGE,
+      0,
+      nestIdx
+    );
+  }
+}
+
+function createAnt(x, y, state, pathIdx = 0, homeNest = 0) {
+  if (antCount >= MAX_ANTS) return;
+  
+  const a = antCount++ * ANT_STRIDE;
+  antData[a + A_X] = x;
+  antData[a + A_Y] = y;
+  antData[a + A_ANGLE] = Math.random() * TAU;
+  antData[a + A_SPEED] = 0.9 + Math.random() * 0.4;
+  antData[a + A_STATE] = state;
+  antData[a + A_PATH_IDX] = pathIdx;
+  antData[a + A_DIR] = Math.random() < 0.5 ? 1 : -1;
+  antData[a + A_LEG_PHASE] = Math.random() * TAU;
+  antData[a + A_SIZE] = 2.8 + Math.random() * 1.0;
+  antData[a + A_C] = Math.random() * 0.5;
+  antData[a + A_JITTER] = Math.random() * TAU;
+  antData[a + A_CARRY_SYMBOL] = -1;
+  antData[a + A_HOME_NEST] = Math.max(0, homeNest);
+  antData[a + A_WANDER_ANGLE] = Math.random() * TAU;
+  antData[a + A_TARGET_X] = x;
+  antData[a + A_TARGET_Y] = y;
+  antData[a + A_SYMBOL_WOBBLE] = Math.random() * TAU;
+  antData[a + A_REWARD_MEMORY] = 0;
+  antData[a + A_EXPLORE_RADIUS] = 30 + Math.random() * 25;
+  antData[a + A_SLOT_TARGET] = -1;
+  antData[a + A_LEARNING_RATE] = 0.1 + Math.random() * 0.2;
+  antData[a + A_LAST_REWARD] = 0;
+  antData[a + A_PREFERRED_SYMBOL] = Math.floor(Math.random() * ALL_SYMBOLS.length);
+  antData[a + A_SYMBOL_SKILL] = Math.random() * 0.5;
+}
+
+initAnts();
+
+// ═══ STATE ═══
+let t = 0;
+let globalExploreBonus = 0;
+
+// ═══ ACTIVE INFERENCE: Find best slot for symbol ═══
+function findBestSlotForSymbol(symbolIdx) {
+  const symbol = ALL_SYMBOLS[symbolIdx];
+  const slots = symbolToSlots[symbol];
+  
+  if (!slots) return -1;
+  
+  // Find unfilled slot with highest expected reward
+  let bestSlot = -1;
+  let bestReward = 0;
+  
+  for (const slotIdx of slots) {
+    const slot = EQUATION_SLOTS[slotIdx];
+    if (!slot.filled && slot.reward > bestReward) {
+      bestReward = slot.reward;
+      bestSlot = slotIdx;
+    }
+  }
+  
+  return bestSlot;
+}
+
+// ═══ ACTIVE INFERENCE: Expected free energy calculation ═══
+function calculateExpectedFreeEnergy(antIdx, symbolIdx, slotIdx) {
+  const a = antIdx * ANT_STRIDE;
+  
+  if (slotIdx < 0) return Infinity; // No valid slot
+  
+  const slot = EQUATION_SLOTS[slotIdx];
+  const dist = Math.sqrt(
+    Math.pow(slot.x - antData[a + A_X], 2) + 
+    Math.pow(slot.y - antData[a + A_Y], 2)
+  );
+  
+  // Expected free energy = ambiguity + risk - expected reward
+  const ambiguity = dist * 0.01; // Cost of travel
+  const risk = slot.filled ? 1000 : 0; // Already filled = high risk
+  const expectedReward = slot.reward * (1 + antData[a + A_SYMBOL_SKILL]);
+  
+  return ambiguity + risk - expectedReward;
+}
+
+// ═══ UPDATE ═══
+function updateAnts() {
+  const breathMod = sinT(t * TAU / BREATH);
+  
+  carveRate = 0.012 + Math.min(0.06, t * 0.00015);
+  globalExploreBonus = Math.min(60, t * 0.2);
+  
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a + A_STATE] | 0;
+    const speed = antData[a + A_SPEED] * (1 + breathMod * 0.08);
+    
+    antData[a + A_LEG_PHASE] += speed * 0.3;
+    antData[a + A_SYMBOL_WOBBLE] += 0.06;
+    antData[a + A_C] += 0.002 * (1 + breathMod * Ω);
+    
+    // Decay reward memory (fun claude mode: exponential memory weighting)
+    antData[a + A_REWARD_MEMORY] *= 0.999;
+    
+    if (state === STATE_PATROL) updatePatrolAnt(a, speed);
+    else if (state === STATE_TUNNEL) updateTunnelAnt(a, speed);
+    else if (state === STATE_FORAGE) updateForageAnt(a, speed, i);
+    else if (state === STATE_CARRY_TO_SLOT) updateCarryToSlotAnt(a, speed, i);
+    else if (state === STATE_RETURN) updateReturnAnt(a, speed);
+  }
+}
+
+function updatePatrolAnt(a, speed) {
+  const pathIdx = antData[a + A_PATH_IDX] | 0;
+  const dir = antData[a + A_DIR];
+  const pt = piContour[pathIdx];
+  
+  const dx = pt.x - antData[a + A_X];
+  const dy = pt.y - antData[a + A_Y];
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  
+  if (dist < 3) {
+    antData[a + A_PATH_IDX] = (pathIdx + dir + piContour.length) % piContour.length;
+  } else {
+    antData[a + A_ANGLE] = Math.atan2(dy, dx);
+    antData[a + A_X] += cosT(antData[a + A_ANGLE]) * speed * 1.1;
+    antData[a + A_Y] += sinT(antData[a + A_ANGLE]) * speed * 1.1;
+  }
+  
+  const j = antData[a + A_JITTER];
+  antData[a + A_X] += sinT(t * 2.5 + j) * 0.12;
+  antData[a + A_Y] += cosT(t * 2 + j) * 0.08;
+  
+  if (antData[a + A_C] > Ω * 5 && Math.random() < 0.003) {
+    antData[a + A_STATE] = STATE_TUNNEL;
+    antData[a + A_C] = 0;
+    antData[a + A_HOME_NEST] = Math.floor(Math.random() * nests.length);
+  }
+}
+
+function updateTunnelAnt(a, speed) {
+  const homeNest = antData[a + A_HOME_NEST] | 0;
+  const nest = nests[homeNest];
+  const exploreRadius = antData[a + A_EXPLORE_RADIUS] + globalExploreBonus;
+  
+  antData[a + A_WANDER_ANGLE] += (Math.random() - 0.5) * 0.25;
+  
+  const { mx, my } = worldToMask(antData[a + A_X], antData[a + A_Y]);
+  if (mx >= 0 && mx < MASK_SIZE && my >= 0 && my < MASK_SIZE) {
+    if (!piMask[my * MASK_SIZE + mx]) {
+      const toNestAngle = Math.atan2(nest.y - antData[a + A_Y], nest.x - antData[a + A_X]);
+      antData[a + A_WANDER_ANGLE] = toNestAngle + (Math.random() - 0.5) * 0.4;
+    }
+  }
+  
+  antData[a + A_ANGLE] = antData[a + A_WANDER_ANGLE];
+  antData[a + A_X] += cosT(antData[a + A_ANGLE]) * speed * 0.55;
+  antData[a + A_Y] += sinT(antData[a + A_ANGLE]) * speed * 0.55;
+  
+  carveTunnel(antData[a + A_X], antData[a + A_Y], 3 + Math.random() * 2);
+  
+  const dxn = antData[a + A_X] - nest.x;
+  const dyn = antData[a + A_Y] - nest.y;
+  if (dxn*dxn + dyn*dyn > exploreRadius * exploreRadius) {
+    antData[a + A_WANDER_ANGLE] = Math.atan2(-dyn, -dxn) + (Math.random() - 0.5) * 0.6;
+  }
+  
+  if (antData[a + A_C] > Ω * 4 && Math.random() < 0.008) {
+    antData[a + A_STATE] = STATE_FORAGE;
+    antData[a + A_C] = 0;
+  }
+}
+
+function updateForageAnt(a, speed, antIdx) {
+  const homeNest = antData[a + A_HOME_NEST] | 0;
+  const nest = nests[homeNest];
+  const exploreRadius = antData[a + A_EXPLORE_RADIUS] + globalExploreBonus * 0.4;
+  
+  antData[a + A_WANDER_ANGLE] += (Math.random() - 0.5) * 0.35;
+  antData[a + A_ANGLE] = antData[a + A_WANDER_ANGLE];
+  
+  antData[a + A_X] += cosT(antData[a + A_ANGLE]) * speed * 0.65;
+  antData[a + A_Y] += sinT(antData[a + A_ANGLE]) * speed * 0.65;
+  
+  carveTunnel(antData[a + A_X], antData[a + A_Y], 2);
+  
+  const dxn = antData[a + A_X] - nest.x;
+  const dyn = antData[a + A_Y] - nest.y;
+  if (dxn*dxn + dyn*dyn > exploreRadius * exploreRadius) {
+    antData[a + A_WANDER_ANGLE] = Math.atan2(-dyn, -dxn) + (Math.random() - 0.5);
+  }
+  
+  // ACTIVE INFERENCE: Pick up symbol and find best slot
+  if (antData[a + A_C] > Ω * 2 && Math.random() < 0.02) {
+    // Prefer symbols ant is skilled with (learned preference)
+    const preferredIdx = antData[a + A_PREFERRED_SYMBOL] | 0;
+    const usePreferred = Math.random() < 0.3 + antData[a + A_SYMBOL_SKILL];
+    const symbolIdx = usePreferred ? preferredIdx : Math.floor(Math.random() * ALL_SYMBOLS.length);
+    
+    // Find best slot using active inference
+    const bestSlot = findBestSlotForSymbol(symbolIdx);
+    
+    if (bestSlot >= 0) {
+      // Calculate expected free energy
+      const efe = calculateExpectedFreeEnergy(antIdx, symbolIdx, bestSlot);
+      
+      // Only pick up if expected free energy is favorable
+      if (efe < 50) {
+        antData[a + A_CARRY_SYMBOL] = symbolIdx;
+        antData[a + A_SLOT_TARGET] = bestSlot;
+        antData[a + A_STATE] = STATE_CARRY_TO_SLOT;
+        antData[a + A_TARGET_X] = EQUATION_SLOTS[bestSlot].x;
+        antData[a + A_TARGET_Y] = EQUATION_SLOTS[bestSlot].y;
+        antData[a + A_C] = 0;
+      }
+    }
+  }
+}
+
+function updateCarryToSlotAnt(a, speed, antIdx) {
+  const targetX = antData[a + A_TARGET_X];
+  const targetY = antData[a + A_TARGET_Y];
+  const slotIdx = antData[a + A_SLOT_TARGET] | 0;
+  
+  const dx = targetX - antData[a + A_X];
+  const dy = targetY - antData[a + A_Y];
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  
+  if (dist < 12) {
+    // Check if slot still available
+    const slot = EQUATION_SLOTS[slotIdx];
+    const symbolIdx = antData[a + A_CARRY_SYMBOL] | 0;
+    
+    if (!slot.filled && ALL_SYMBOLS[symbolIdx] === slot.symbol) {
+      // SUCCESS! Place symbol and get reward
+      slot.filled = true;
+      const reward = slot.reward;
+      
+      // Update ant's learning
+      antData[a + A_REWARD_MEMORY] += reward;
+      antData[a + A_LAST_REWARD] = reward;
+      antData[a + A_SYMBOL_SKILL] = Math.min(1, antData[a + A_SYMBOL_SKILL] + reward * 0.02);
+      
+      // Colony statistics
+      totalReward += reward;
+      slotsCompleted++;
+      
+      // Spawn reward particles
+      spawnRewardParticles(targetX, targetY, reward);
+      
+      // If this was a high reward, prefer this symbol more
+      if (reward > 6) {
+        antData[a + A_PREFERRED_SYMBOL] = symbolIdx;
+      }
+    }
+    
+    antData[a + A_CARRY_SYMBOL] = -1;
+    antData[a + A_SLOT_TARGET] = -1;
+    antData[a + A_STATE] = STATE_RETURN;
+    antData[a + A_C] = 0;
+  } else {
+    // Move toward target with some exploration
+    const targetAngle = Math.atan2(dy, dx);
+    const angleDiff = targetAngle - antData[a + A_ANGLE];
+    antData[a + A_ANGLE] += Math.sin(angleDiff) * 0.12;
+    antData[a + A_ANGLE] += (Math.random() - 0.5) * 0.08;
+    
+    antData[a + A_X] += cosT(antData[a + A_ANGLE]) * speed * 1.0;
+    antData[a + A_Y] += sinT(antData[a + A_ANGLE]) * speed * 1.0;
+  }
+}
+
+function updateReturnAnt(a, speed) {
+  const homeNest = antData[a + A_HOME_NEST] | 0;
+  const nest = nests[homeNest];
+  
+  const dx = nest.x - antData[a + A_X];
+  const dy = nest.y - antData[a + A_Y];
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  
+  if (dist < 15) {
+    antData[a + A_STATE] = Math.random() < 0.3 ? STATE_TUNNEL : STATE_FORAGE;
+  } else {
+    const targetAngle = Math.atan2(dy, dx);
+    antData[a + A_ANGLE] += (targetAngle - antData[a + A_ANGLE]) * 0.1;
+    antData[a + A_X] += cosT(antData[a + A_ANGLE]) * speed * 0.9;
+    antData[a + A_Y] += sinT(antData[a + A_ANGLE]) * speed * 0.9;
+  }
+  
+  carveTunnel(antData[a + A_X], antData[a + A_Y], 2);
+}
+
+function updateParticles() {
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    const p = i * PART_STRIDE;
+    if (particleData[p + PT_LIFE] <= 0) continue;
+    
+    particleData[p + PT_VY] += 0.03;
+    particleData[p + PT_X] += particleData[p + PT_VX];
+    particleData[p + PT_Y] += particleData[p + PT_VY];
+    particleData[p + PT_LIFE] -= 0.02;
+  }
+}
+
+// ═══ DRAW ═══
+function drawBackground() {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawEquationSlots() {
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  for (const slot of EQUATION_SLOTS) {
+    const size = 14 * slot.scale;
+    
+    if (slot.filled) {
+      // Filled slot - solid symbol
+      ctx.font = `${size}px Georgia, serif`;
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillText(slot.symbol, slot.x, slot.y);
+    } else {
+      // Empty slot - ghosted target
+      ctx.font = `${size}px Georgia, serif`;
+      ctx.fillStyle = 'rgba(200, 180, 150, 0.25)';
+      ctx.fillText(slot.symbol, slot.x, slot.y);
+      
+      // Subtle target circle
+      ctx.strokeStyle = 'rgba(200, 180, 150, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(slot.x, slot.y, size * 0.8, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+function drawPiWithTunnels() {
+  const sc = piScale;
+  
+  ctx.save();
+  ctx.fillStyle = '#1a1a1a';
+  ctx.shadowColor = 'rgba(0,0,0,0.06)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 5;
+  
+  ctx.beginPath();
+  ctx.moveTo(CX - 0.52*sc, CY - 0.28*sc);
+  ctx.quadraticCurveTo(CX - 0.50*sc, CY - 0.42*sc, CX - 0.38*sc, CY - 0.44*sc);
+  ctx.bezierCurveTo(CX - 0.15*sc, CY - 0.45*sc, CX + 0.25*sc, CY - 0.44*sc, CX + 0.42*sc, CY - 0.44*sc);
+  ctx.quadraticCurveTo(CX + 0.54*sc, CY - 0.43*sc, CX + 0.56*sc, CY - 0.30*sc);
+  ctx.quadraticCurveTo(CX + 0.50*sc, CY - 0.36*sc, CX + 0.38*sc, CY - 0.36*sc);
+  ctx.lineTo(CX - 0.32*sc, CY - 0.36*sc);
+  ctx.quadraticCurveTo(CX - 0.44*sc, CY - 0.36*sc, CX - 0.52*sc, CY - 0.28*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX - 0.18*sc, CY - 0.38*sc);
+  ctx.bezierCurveTo(CX - 0.22*sc, CY - 0.12*sc, CX - 0.36*sc, CY + 0.12*sc, CX - 0.42*sc, CY + 0.38*sc);
+  ctx.bezierCurveTo(CX - 0.46*sc, CY + 0.50*sc, CX - 0.43*sc, CY + 0.58*sc, CX - 0.36*sc, CY + 0.62*sc);
+  ctx.quadraticCurveTo(CX - 0.30*sc, CY + 0.66*sc, CX - 0.26*sc, CY + 0.58*sc);
+  ctx.bezierCurveTo(CX - 0.30*sc, CY + 0.48*sc, CX - 0.28*sc, CY + 0.32*sc, CX - 0.26*sc, CY + 0.22*sc);
+  ctx.bezierCurveTo(CX - 0.22*sc, CY + 0.05*sc, CX - 0.12*sc, CY - 0.18*sc, CX - 0.06*sc, CY - 0.36*sc);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.moveTo(CX + 0.22*sc, CY - 0.38*sc);
+  ctx.bezierCurveTo(CX + 0.18*sc, CY - 0.12*sc, CX + 0.14*sc, CY + 0.12*sc, CX + 0.10*sc, CY + 0.38*sc);
+  ctx.bezierCurveTo(CX + 0.06*sc, CY + 0.52*sc, CX + 0.10*sc, CY + 0.60*sc, CX + 0.18*sc, CY + 0.62*sc);
+  ctx.quadraticCurveTo(CX + 0.24*sc, CY + 0.65*sc, CX + 0.26*sc, CY + 0.56*sc);
+  ctx.bezierCurveTo(CX + 0.20*sc, CY + 0.46*sc, CX + 0.18*sc, CY + 0.32*sc, CX + 0.20*sc, CY + 0.18*sc);
+  ctx.bezierCurveTo(CX + 0.22*sc, CY + 0.02*sc, CX + 0.28*sc, CY - 0.16*sc, CX + 0.32*sc, CY - 0.36*sc);
+  ctx.fill();
+  
+  ctx.shadowBlur = 0;
+  ctx.restore();
+  
+  // Tunnel reveals
+  const cellW = W / MASK_SIZE;
+  const cellH = H / MASK_SIZE;
+  
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  for (let my = 0; my < MASK_SIZE; my += 2) {
+    for (let mx = 0; mx < MASK_SIZE; mx += 2) {
+      const idx = my * MASK_SIZE + mx;
+      const val = tunnelMask[idx];
+      if (val > 0.15 && piMask[idx]) {
+        const wx = mx * cellW, wy = my * cellH;
+        const size = cellW * 1.8 * Math.min(1, val * 1.2);
+        ctx.moveTo(wx + size, wy);
+        ctx.arc(wx, wy, size, 0, TAU);
+      }
+    }
+  }
+  ctx.fill();
+  
+  ctx.fillStyle = 'rgba(60, 45, 30, 0.1)';
+  ctx.beginPath();
+  for (let my = 0; my < MASK_SIZE; my += 3) {
+    for (let mx = 0; mx < MASK_SIZE; mx += 3) {
+      const idx = my * MASK_SIZE + mx;
+      const val = tunnelMask[idx];
+      if (val > 0.1 && val < 0.7 && piMask[idx]) {
+        const wx = mx * cellW, wy = my * cellH;
+        ctx.moveTo(wx + 1.5, wy);
+        ctx.arc(wx, wy, 1.5, 0, TAU);
+      }
+    }
+  }
+  ctx.fill();
+}
+
+function drawParticles() {
+  for (let i = 0; i < MAX_PARTICLES; i++) {
+    const p = i * PART_STRIDE;
+    const life = particleData[p + PT_LIFE];
+    if (life <= 0) continue;
+    
+    const x = particleData[p + PT_X];
+    const y = particleData[p + PT_Y];
+    const size = particleData[p + PT_SIZE] * life;
+    const hue = particleData[p + PT_HUE];
+    
+    ctx.fillStyle = `hsla(${hue}, 80%, 55%, ${life * 0.8})`;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, TAU);
+    ctx.fill();
+  }
+}
+
+function drawAnt(x, y, angle, size, legPhase, carrySymbol = -1, symbolWobble = 0, alpha = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.globalAlpha = alpha;
+  
+  const bodyColor = '#1a0a00';
+  const legColor = '#2a1500';
+  
+  ctx.strokeStyle = legColor;
+  ctx.lineWidth = 0.7;
+  ctx.lineCap = 'round';
+  
+  for (let i = 0; i < 3; i++) {
+    const legOffset = (i - 1) * size * 0.5;
+    const phase1 = legPhase + i * 0.8;
+    const phase2 = legPhase + i * 0.8 + PI;
+    
+    const leftAngle = -PI/2 - 0.3 + sinT(phase1) * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(legOffset, 0);
+    ctx.lineTo(legOffset + cosT(leftAngle) * size * 1.2, sinT(leftAngle) * size * 1.2);
+    ctx.stroke();
+    
+    const rightAngle = PI/2 + 0.3 + sinT(phase2) * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(legOffset, 0);
+    ctx.lineTo(legOffset + cosT(rightAngle) * size * 1.2, sinT(rightAngle) * size * 1.2);
+    ctx.stroke();
+  }
+  
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.8, 0, size * 0.7, size * 0.5, 0, 0, TAU);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.4, size * 0.35, 0, 0, TAU);
+  ctx.fill();
+  
+  ctx.beginPath();
+  ctx.ellipse(size * 0.6, 0, size * 0.35, size * 0.3, 0, 0, TAU);
+  ctx.fill();
+  
+  ctx.strokeStyle = legColor;
+  ctx.lineWidth = 0.6;
+  const antWave = sinT(legPhase * 0.5) * 0.2;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.8, -size * 0.15);
+  ctx.quadraticCurveTo(size * 1.1, -size * 0.4 + antWave, size * 1.3, -size * 0.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.8, size * 0.15);
+  ctx.quadraticCurveTo(size * 1.1, size * 0.4 - antWave, size * 1.3, size * 0.5);
+  ctx.stroke();
+  
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.9, -size * 0.1);
+  ctx.lineTo(size * 1.05, -size * 0.2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size * 0.9, size * 0.1);
+  ctx.lineTo(size * 1.05, size * 0.2);
+  ctx.stroke();
+  
+  if (carrySymbol >= 0) {
+    ctx.save();
+    const wobbleX = sinT(symbolWobble) * 1.5;
+    const wobbleY = cosT(symbolWobble * 1.3) * 1;
+    const wobbleRot = sinT(symbolWobble * 0.7) * 0.12;
+    
+    ctx.translate(size * 1.5 + wobbleX, wobbleY);
+    ctx.rotate(wobbleRot);
+    
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.65, 0, TAU);
+    ctx.fill();
+    
+    ctx.fillStyle = '#2a2a2a';
+    ctx.font = `bold ${size * 2.8}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ALL_SYMBOLS[carrySymbol], 0, 0);
+    
+    ctx.restore();
+  }
+  
+  ctx.restore();
+}
+
+function drawAnts() {
+  // Inside ants
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a + A_STATE] | 0;
+    
+    if (state === STATE_TUNNEL || state === STATE_FORAGE || state === STATE_RETURN) {
+      const { mx, my } = worldToMask(antData[a + A_X], antData[a + A_Y]);
+      const inPi = mx >= 0 && mx < MASK_SIZE && my >= 0 && my < MASK_SIZE && piMask[my * MASK_SIZE + mx];
+      const tunnelVal = inPi ? tunnelMask[my * MASK_SIZE + mx] : 1;
+      
+      if (tunnelVal > 0.2 || !inPi) {
+        drawAnt(
+          antData[a + A_X], antData[a + A_Y],
+          antData[a + A_ANGLE], antData[a + A_SIZE],
+          antData[a + A_LEG_PHASE],
+          antData[a + A_CARRY_SYMBOL] | 0,
+          antData[a + A_SYMBOL_WOBBLE],
+          Math.min(1, 0.4 + tunnelVal * 0.8)
+        );
+      }
+    }
+  }
+  
+  // Carrying ants (always visible, on top)
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a + A_STATE] | 0;
+    
+    if (state === STATE_CARRY_TO_SLOT) {
+      drawAnt(
+        antData[a + A_X], antData[a + A_Y],
+        antData[a + A_ANGLE], antData[a + A_SIZE],
+        antData[a + A_LEG_PHASE],
+        antData[a + A_CARRY_SYMBOL] | 0,
+        antData[a + A_SYMBOL_WOBBLE],
+        1
+      );
+    }
+  }
+  
+  // Patrol ants
+  for (let i = 0; i < antCount; i++) {
+    const a = i * ANT_STRIDE;
+    const state = antData[a + A_STATE] | 0;
+    
+    if (state === STATE_PATROL) {
+      drawAnt(
+        antData[a + A_X], antData[a + A_Y],
+        antData[a + A_ANGLE], antData[a + A_SIZE],
+        antData[a + A_LEG_PHASE], -1, 0, 1
+      );
+    }
+  }
+}
+
+function drawText() {
+  const textY = H - 55;
+  
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  ctx.font = '600 40px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText('Active Inferants 2026', CX, textY - 12);
+  
+  ctx.font = '400 14px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('— A Free Energy Playground —', CX, textY + 18);
+}
+
+function drawStats() {
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(W - 95, 8, 87, 38);
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#666';
+  ctx.textAlign = 'right';
+  ctx.fillText(`Slots: ${slotsCompleted}/${EQUATION_SLOTS.length}`, W - 12, 22);
+  ctx.fillText(`Reward: ${totalReward.toFixed(0)}`, W - 12, 36);
+}
+
+let frames = 0, lastFpsTime = performance.now(), fps = 60;
+function drawFPS() {
+  frames++;
+  const now = performance.now();
+  if (now - lastFpsTime >= 1000) { fps = frames; frames = 0; lastFpsTime = now; }
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(8, 8, 52, 20);
+  ctx.fillStyle = fps >= 50 ? '#4a4' : fps >= 30 ? '#aa4' : '#a44';
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${fps} FPS`, 14, 22);
+}
+
+function animate() {
+  t += 0.016;
+  
+  updateAnts();
+  updateParticles();
+  
+  drawBackground();
+  drawEquationSlots();
+  drawPiWithTunnels();
+  drawParticles();
+  drawAnts();
+  drawText();
+  drawStats();
+  
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, W, H);
+  
+  drawFPS();
+  
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
