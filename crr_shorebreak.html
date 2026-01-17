@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shore Break — Pure CRR</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=JetBrains+Mono:wght@300&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        
+        #canvas { display: block; }
+        
+        .ui {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            width: 90%;
+            max-width: 800px;
+        }
+        
+        .count {
+            font-size: 48px;
+            font-weight: 300;
+            color: rgba(200, 220, 255, 0.9);
+            letter-spacing: 2px;
+        }
+        
+        .count-label {
+            font-size: 11px;
+            letter-spacing: 4px;
+            color: rgba(150, 180, 210, 0.5);
+            margin-bottom: 20px;
+        }
+        
+        #slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, 
+                rgba(80,120,180,0.3), rgba(150,200,255,0.5));
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        #slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(200,220,255,0.5);
+            cursor: pointer;
+        }
+        
+        .marks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: rgba(150, 180, 210, 0.4);
+            letter-spacing: 1px;
+        }
+        
+        .marks span { cursor: pointer; }
+        .marks span:hover { color: rgba(200, 220, 255, 0.8); }
+        
+        .title {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 100;
+        }
+        
+        .title h1 {
+            font-size: 22px;
+            font-weight: 300;
+            letter-spacing: 5px;
+            color: rgba(200, 220, 255, 0.85);
+        }
+        
+        .title p {
+            font-size: 11px;
+            color: rgba(150, 180, 210, 0.5);
+            font-style: italic;
+            margin-top: 5px;
+        }
+        
+        .stats {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            text-align: right;
+            z-index: 100;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: rgba(150, 180, 210, 0.6);
+            line-height: 2;
+        }
+        
+        .stats .val { color: rgba(200, 220, 255, 0.9); }
+        
+        .sound-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 30px;
+            z-index: 100;
+            padding: 15px 25px;
+            background: rgba(0, 40, 80, 0.5);
+            border: 1px solid rgba(100, 150, 200, 0.3);
+            border-radius: 6px;
+            color: rgba(200, 220, 255, 0.8);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            letter-spacing: 2px;
+            cursor: pointer;
+        }
+        
+        .sound-btn.on {
+            background: rgba(60, 100, 150, 0.5);
+            border-color: rgba(150, 200, 255, 0.5);
+        }
+        
+        .omega-control {
+            position: fixed;
+            bottom: 40px;
+            left: 30px;
+            z-index: 100;
+            width: 200px;
+        }
+        
+        .omega-label {
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: rgba(150, 180, 210, 0.5);
+        }
+        
+        .omega-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            color: rgba(200, 220, 255, 0.9);
+            margin: 8px 0;
+        }
+        
+        .omega-control input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, 
+                rgba(255,100,100,0.4), 
+                rgba(150,180,255,0.4), 
+                rgba(100,255,150,0.4));
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        .omega-control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(200,220,255,0.5);
+        }
+        
+        .omega-marks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            color: rgba(150, 180, 210, 0.4);
+            margin-top: 8px;
+        }
+        
+        .omega-marks span { cursor: pointer; }
+        .omega-marks span:hover { color: rgba(200, 220, 255, 0.8); }
+        
+        .waveform {
+            position: fixed;
+            left: 30px;
+            bottom: 160px;
+            z-index: 100;
+        }
+        
+        .waveform canvas {
+            background: rgba(0, 20, 40, 0.5);
+            border-radius: 4px;
+        }
+        
+        .waveform-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(150, 180, 210, 0.4);
+            margin-top: 5px;
+        }
+        
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(200, 220, 255, 0.7);
+            font-size: 18px;
+            letter-spacing: 2px;
+            z-index: 200;
+        }
+        
+        .instructions.hidden { display: none; }
+        .instructions small {
+            display: block;
+            margin-top: 15px;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="instructions" id="instructions">
+        Click to begin
+        <small>Every sound is a bubble. Every bubble is CRR.</small>
+    </div>
+    
+    <div class="title">
+        <h1>SHORE BREAK</h1>
+        <p>Pure diegetic CRR</p>
+    </div>
+    
+    <div class="stats">
+        <div>Bubbles: <span class="val" id="statBubbles">0</span></div>
+        <div>Active bells: <span class="val" id="statBells">0</span></div>
+        <div>Ruptures/sec: <span class="val" id="statRuptures">0</span></div>
+    </div>
+    
+    <div class="ui">
+        <div class="count-label">BUBBLE COUNT</div>
+        <div class="count" id="count">1</div>
+        <input type="range" id="slider" min="1" max="2000" value="1">
+        <div class="marks">
+            <span onclick="setCount(1)">1</span>
+            <span onclick="setCount(25)">25</span>
+            <span onclick="setCount(100)">100</span>
+            <span onclick="setCount(300)">300</span>
+            <span onclick="setCount(600)">600</span>
+            <span onclick="setCount(1000)">1000</span>
+            <span onclick="setCount(1500)">1500</span>
+            <span onclick="setCount(2000)">2000</span>
+        </div>
+    </div>
+    
+    <div class="omega-control">
+        <div class="omega-label">Ω MODULATION</div>
+        <div class="omega-value" id="omegaDisplay">Ω = 1/π</div>
+        <input type="range" id="omegaSlider" min="0.05" max="1.0" step="0.01" value="0.318">
+        <div class="omega-marks">
+            <span onclick="setOmega(0.08)">LOW</span>
+            <span onclick="setOmega(0.318)">1/π</span>
+            <span onclick="setOmega(0.5)">1/2</span>
+            <span onclick="setOmega(1.0)">HIGH</span>
+        </div>
+    </div>
+    
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">
+        🔇 SOUND OFF
+    </button>
+    
+    <div class="waveform">
+        <canvas id="waveCanvas" width="250" height="80"></canvas>
+        <div class="waveform-label">SUMMED WAVEFORM</div>
+    </div>
+
+    <script>
+    // =========================================================
+    // OPTIMIZED PURE CRR DIEGETIC SHORE BREAK
+    // Same visual/audio quality, lower CPU cost
+    // =========================================================
+    
+    const GAMMA = 1.4;
+    const P_ATM = 101325;
+    const RHO = 1000;
+    const TWO_PI = Math.PI * 2;
+    
+    // Pre-computed Minnaert constant: (1/2π) * √(3γP/ρ)
+    const MINNAERT_K = (1 / TWO_PI) * Math.sqrt(3 * GAMMA * P_ATM / RHO);
+    
+    function minnaertFreq(R) {
+        return MINNAERT_K / R;
+    }
+    
+    // --- AUDIO (optimized) ---
+    let audioCtx = null;
+    let processor = null;
+    let masterGain = null;
+    let soundOn = false;
+    
+    // Pre-allocated bell array with pool
+    const MAX_BELLS = 1500;
+    let bells = new Float64Array(MAX_BELLS * 5); // freq, phase, amp, decay, t
+    let bellCount = 0;
+    
+    let rupturesPerSec = 0;
+    let ruptureTimestamps = new Float64Array(2000);
+    let ruptureHead = 0;
+    let ruptureTail = 0;
+    
+    let waveformData = new Float32Array(250);
+    let waveIdx = 0;
+    
+    // Pre-computed sin lookup table (2048 entries for one cycle)
+    const SIN_TABLE_SIZE = 2048;
+    const SIN_TABLE = new Float32Array(SIN_TABLE_SIZE);
+    for (let i = 0; i < SIN_TABLE_SIZE; i++) {
+        SIN_TABLE[i] = Math.sin(i * TWO_PI / SIN_TABLE_SIZE);
+    }
+    
+    function fastSin(phase) {
+        const idx = ((phase % TWO_PI) / TWO_PI * SIN_TABLE_SIZE) | 0;
+        return SIN_TABLE[idx & (SIN_TABLE_SIZE - 1)];
+    }
+    
+    // === CLUSTERING SYSTEM ===
+    // Above threshold, bubbles are grouped into clusters
+    // Each cluster rings as one aggregate bell
+    // This is physically accurate: bubble clouds have collective modes
+    
+    const CLUSTER_THRESHOLD = 600;  // Below this: individual bells
+    const NUM_CLUSTERS = 16;        // Frequency bands for clustering
+    
+    // Cluster accumulators: [count, totalRadius, totalEnergy]
+    const clusterData = new Float32Array(NUM_CLUSTERS * 3);
+    
+    function resetClusters() {
+        clusterData.fill(0);
+    }
+    
+    function addToCluster(radiusMeters) {
+        // Assign to cluster based on frequency band
+        let freq = minnaertFreq(radiusMeters);
+        freq = freq > 5000 ? 100 + (freq - 5000) * 0.05 : freq;
+        freq = freq < 100 ? 100 : freq > 4000 ? 4000 : freq;
+        
+        // Map frequency to cluster index (log scale)
+        const logFreq = Math.log(freq / 100) / Math.log(4000 / 100);
+        const clusterIdx = Math.min(NUM_CLUSTERS - 1, (logFreq * NUM_CLUSTERS) | 0);
+        
+        const base = clusterIdx * 3;
+        clusterData[base] += 1;                              // count
+        clusterData[base + 1] += radiusMeters;               // total radius
+        clusterData[base + 2] += radiusMeters * radiusMeters; // energy (∝ r²)
+    }
+    
+    function ringClusters() {
+        if (!soundOn) return;
+        
+        for (let i = 0; i < NUM_CLUSTERS; i++) {
+            const base = i * 3;
+            const count = clusterData[base];
+            
+            if (count < 1) continue;
+            
+            const avgRadius = clusterData[base + 1] / count;
+            const energy = clusterData[base + 2];
+            
+            // Cluster frequency from average radius
+            let freq = minnaertFreq(avgRadius);
+            freq = freq > 5000 ? 100 + (freq - 5000) * 0.05 : freq;
+            freq = freq < 100 ? 100 : freq > 4000 ? 4000 : freq;
+            
+            // Slight detune for texture
+            freq *= (0.96 + Math.random() * 0.08);
+            
+            // Strong amplitude - this is the shore break energy!
+            const amp = 0.035 * Math.sqrt(energy * 800000) / Math.sqrt(count * 0.4 + 1);
+            
+            // Quick decay keeps it punchy
+            const decay = 5 + 10 / (avgRadius * 1000);
+            
+            if (bellCount < MAX_BELLS) {
+                const bellBase = bellCount * 5;
+                bells[bellBase] = freq;
+                bells[bellBase + 1] = Math.random() * TWO_PI;
+                bells[bellBase + 2] = amp;
+                bells[bellBase + 3] = decay;
+                bells[bellBase + 4] = 0;
+                bellCount++;
+            }
+        }
+    }
+    
+    let clusterAccumulator = 0;  // Accumulate ruptures, ring clusters periodically
+    
+    function initAudio() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        processor = audioCtx.createScriptProcessor(2048, 0, 1);
+        
+        processor.onaudioprocess = (e) => {
+            const out = e.outputBuffer.getChannelData(0);
+            const sr = audioCtx.sampleRate;
+            const dt = 1 / sr;
+            const len = out.length;
+            const bufferDuration = len * dt;
+            
+            // Clear output
+            for (let i = 0; i < len; i++) out[i] = 0;
+            
+            let writeIdx = 0;
+            
+            for (let i = 0; i < bellCount; i++) {
+                const base = i * 5;
+                const freq = bells[base];
+                let phase = bells[base + 1];
+                const amp = bells[base + 2];
+                const decay = bells[base + 3];
+                let t = bells[base + 4];
+                
+                const envelope = amp * Math.exp(-decay * t);
+                
+                if (envelope < 0.0008) continue;
+                
+                const envelopeEnd = amp * Math.exp(-decay * (t + bufferDuration));
+                const alive = envelopeEnd >= 0.0008;
+                
+                const phaseInc = TWO_PI * freq * dt;
+                
+                for (let j = 0; j < len; j++) {
+                    out[j] += envelope * fastSin(phase);
+                    phase += phaseInc;
+                }
+                
+                phase = phase % TWO_PI;
+                t += bufferDuration;
+                
+                if (alive) {
+                    const writeBase = writeIdx * 5;
+                    bells[writeBase] = freq;
+                    bells[writeBase + 1] = phase;
+                    bells[writeBase + 2] = amp;
+                    bells[writeBase + 3] = decay;
+                    bells[writeBase + 4] = t;
+                    writeIdx++;
+                }
+            }
+            
+            bellCount = writeIdx;
+            
+            // Normalize - just prevent clipping, don't squash dynamics
+            const normFactor = bellCount > 1 ? 1 / Math.sqrt(bellCount * 0.35 + 0.65) : 1;
+            
+            for (let i = 0; i < len; i++) {
+                let s = out[i] * normFactor;
+                
+                // Only clip the hard peaks, preserve texture
+                if (s > 1) s = 1;
+                else if (s < -1) s = -1;
+                
+                out[i] = s;
+            }
+            
+            // Capture waveform
+            const mid = len >> 1;
+            for (let i = 0; i < 32; i++) {
+                waveformData[waveIdx] = out[mid + i * 8];
+                waveIdx = (waveIdx + 1) % 250;
+            }
+        };
+        
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0;
+        processor.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+    }
+    
+    function toggleSound() {
+        if (!audioCtx) initAudio();
+        soundOn = !soundOn;
+        const btn = document.getElementById('soundBtn');
+        if (soundOn) {
+            audioCtx.resume();
+            masterGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+            btn.textContent = '🔊 SOUND ON';
+            btn.classList.add('on');
+        } else {
+            masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            btn.textContent = '🔇 SOUND OFF';
+            btn.classList.remove('on');
+        }
+    }
+    
+    function trackRupture() {
+        const now = performance.now();
+        ruptureTimestamps[ruptureHead] = now;
+        ruptureHead = (ruptureHead + 1) % 2000;
+        if (ruptureHead === ruptureTail) {
+            ruptureTail = (ruptureTail + 1) % 2000;
+        }
+        // Count ruptures in last second
+        const cutoff = now - 1000;
+        while (ruptureTail !== ruptureHead && ruptureTimestamps[ruptureTail] < cutoff) {
+            ruptureTail = (ruptureTail + 1) % 2000;
+        }
+        rupturesPerSec = (ruptureHead - ruptureTail + 2000) % 2000;
+    }
+    
+    function ringBell(radiusMeters) {
+        trackRupture();
+        if (!soundOn) return;
+        
+        // === CLUSTERING MODE ===
+        if (targetCount > CLUSTER_THRESHOLD) {
+            addToCluster(radiusMeters);
+            clusterAccumulator++;
+            
+            // Frequent small batches for continuous texture
+            const batchSize = Math.max(3, (targetCount / 200) | 0);
+            
+            if (clusterAccumulator >= batchSize) {
+                ringClusters();
+                resetClusters();
+                clusterAccumulator = 0;
+            }
+            return;
+        }
+        
+        // === INDIVIDUAL MODE ===
+        if (bellCount >= MAX_BELLS) return;
+        
+        if (bellCount > 350 && Math.random() > (MAX_BELLS - bellCount) / (MAX_BELLS - 350)) return;
+        
+        let freq = minnaertFreq(radiusMeters);
+        freq = freq > 5000 ? 100 + (freq - 5000) * 0.05 : freq;
+        freq = freq < 100 ? 100 : freq > 4000 ? 4000 : freq;
+        
+        const rmm = radiusMeters * 1000;
+        
+        // Full amplitude for punchy bells
+        const amp = 0.045 * Math.sqrt(rmm);
+        
+        // Quick decay for definition
+        const decay = 6 + 14 / rmm;
+        
+        const base = bellCount * 5;
+        bells[base] = freq;
+        bells[base + 1] = Math.random() * TWO_PI;
+        bells[base + 2] = amp;
+        bells[base + 3] = decay;
+        bells[base + 4] = 0;
+        bellCount++;
+    }
+    
+    // --- VISUALS (optimized) ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const waveCanvas = document.getElementById('waveCanvas');
+    const waveCtx = waveCanvas.getContext('2d');
+    
+    let W, H;
+    
+    // Pre-allocated bubble pool
+    const MAX_BUBBLES = 5000;
+    const bubblePool = {
+        x: new Float32Array(MAX_BUBBLES),
+        y: new Float32Array(MAX_BUBBLES),
+        vx: new Float32Array(MAX_BUBBLES),
+        vy: new Float32Array(MAX_BUBBLES),
+        radius: new Float32Array(MAX_BUBBLES),
+        displayR: new Float32Array(MAX_BUBBLES),
+        coherence: new Float32Array(MAX_BUBBLES),
+        cycleTime: new Float32Array(MAX_BUBBLES),
+        baseCycleLen: new Float32Array(MAX_BUBBLES),
+        wobble: new Float32Array(MAX_BUBBLES),
+        alpha: new Float32Array(MAX_BUBBLES),
+        phase: new Uint8Array(MAX_BUBBLES), // 0=coherence, 1=rupture, 2=regen
+        hasRung: new Uint8Array(MAX_BUBBLES),
+        ruptureT: new Float32Array(MAX_BUBBLES),
+        active: new Uint8Array(MAX_BUBBLES)
+    };
+    let bubbleCount = 0;
+    
+    // Spray particles - simple parallel arrays
+    const MAX_SPRAY = 500;
+    const sprayPool = {
+        x: new Float32Array(MAX_SPRAY),
+        y: new Float32Array(MAX_SPRAY),
+        vx: new Float32Array(MAX_SPRAY),
+        vy: new Float32Array(MAX_SPRAY),
+        alpha: new Float32Array(MAX_SPRAY),
+        active: new Uint8Array(MAX_SPRAY)
+    };
+    let sprayCount = 0;
+    
+    let targetCount = 1;
+    let time = 0;
+    let running = false;
+    let omega = 1 / Math.PI;
+    
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    
+    function spawnBubble() {
+        if (bubbleCount >= MAX_BUBBLES) return;
+        
+        const i = bubbleCount;
+        const p = bubblePool;
+        
+        p.x[i] = W * 0.2 + Math.random() * W * 0.6;
+        p.y[i] = H * 0.65 + Math.random() * H * 0.3;
+        
+        const logR = Math.random() * 3.2 - 7.6;
+        p.radius[i] = Math.exp(logR);
+        p.displayR[i] = Math.min(40, Math.max(2, p.radius[i] * 5000));
+        
+        p.vx[i] = (Math.random() - 0.5) * 15;
+        p.vy[i] = -10 - Math.random() * 20 - p.displayR[i] * 0.5;
+        
+        p.coherence[i] = 0;
+        p.cycleTime[i] = Math.random() * 2;
+        p.baseCycleLen[i] = 0.3 + p.radius[i] * 60;
+        p.wobble[i] = Math.random() * TWO_PI;
+        p.alpha[i] = 0;
+        p.phase[i] = 0;
+        p.hasRung[i] = 0;
+        p.ruptureT[i] = 0;
+        p.active[i] = 1;
+        
+        bubbleCount++;
+    }
+    
+    function spawnSpray(x, y, angle) {
+        if (sprayCount >= MAX_SPRAY) return;
+        
+        const i = sprayCount;
+        const s = sprayPool;
+        
+        const speed = 30 + Math.random() * 50;
+        const spread = (Math.random() - 0.5) * 2.5;
+        
+        s.x[i] = x;
+        s.y[i] = y;
+        s.vx[i] = Math.cos(angle + spread) * speed;
+        s.vy[i] = Math.sin(angle + spread) * speed - 20;
+        s.alpha[i] = 0.6 + Math.random() * 0.4;
+        s.active[i] = 1;
+        
+        sprayCount++;
+    }
+    
+    function updateBubbles(dt) {
+        const p = bubblePool;
+        const cycleOmegaFactor = 0.4 + omega * 2;
+        const rupturePoint = 0.55 + omega * 0.3;
+        const ruptureEnd = rupturePoint + 0.08;
+        
+        let writeIdx = 0;
+        
+        for (let i = 0; i < bubbleCount; i++) {
+            if (!p.active[i]) continue;
+            
+            // Fade in
+            if (p.alpha[i] < 1) {
+                p.alpha[i] += dt * 4;
+                if (p.alpha[i] > 1) p.alpha[i] = 1;
+            }
+            
+            // Physics
+            const buoyancy = 15 + 30 * (p.displayR[i] / 40);
+            p.vy[i] -= buoyancy * dt;
+            p.vy[i] *= 0.97;
+            p.vx[i] *= 0.98;
+            p.vx[i] += Math.sin(time * 2 + p.y[i] * 0.01) * 5 * dt;
+            
+            p.x[i] += p.vx[i] * dt;
+            p.y[i] += p.vy[i] * dt;
+            p.wobble[i] += (3 + p.displayR[i] * 0.1) * dt;
+            
+            // CRR cycle
+            const cycleLen = p.baseCycleLen[i] * cycleOmegaFactor;
+            p.cycleTime[i] += dt;
+            const cyclePhase = (p.cycleTime[i] % cycleLen) / cycleLen;
+            
+            if (cyclePhase < rupturePoint) {
+                p.phase[i] = 0;
+                p.coherence[i] = cyclePhase / rupturePoint;
+                p.hasRung[i] = 0;
+            } else if (cyclePhase < ruptureEnd) {
+                p.phase[i] = 1;
+                p.coherence[i] = 0;
+                p.ruptureT[i] = (cyclePhase - rupturePoint) / (ruptureEnd - rupturePoint);
+                
+                if (!p.hasRung[i]) {
+                    p.hasRung[i] = 1;
+                    ringBell(p.radius[i]);
+                    // Spawn spray
+                    const angle = Math.random() * TWO_PI;
+                    const count = Math.min(4, 1 + (p.displayR[i] * 0.15) | 0);
+                    for (let j = 0; j < count; j++) {
+                        spawnSpray(p.x[i], p.y[i], angle + j * 1.5);
+                    }
+                }
+            } else {
+                p.phase[i] = 2;
+                p.coherence[i] = ((cyclePhase - ruptureEnd) / (1 - ruptureEnd)) * 0.6;
+            }
+            
+            // Fade out
+            if (p.y[i] < -30 || p.x[i] < -50 || p.x[i] > W + 50) {
+                p.alpha[i] -= dt * 3;
+            }
+            
+            // Keep or remove
+            if (p.alpha[i] > 0) {
+                if (writeIdx !== i) {
+                    // Compact
+                    p.x[writeIdx] = p.x[i];
+                    p.y[writeIdx] = p.y[i];
+                    p.vx[writeIdx] = p.vx[i];
+                    p.vy[writeIdx] = p.vy[i];
+                    p.radius[writeIdx] = p.radius[i];
+                    p.displayR[writeIdx] = p.displayR[i];
+                    p.coherence[writeIdx] = p.coherence[i];
+                    p.cycleTime[writeIdx] = p.cycleTime[i];
+                    p.baseCycleLen[writeIdx] = p.baseCycleLen[i];
+                    p.wobble[writeIdx] = p.wobble[i];
+                    p.alpha[writeIdx] = p.alpha[i];
+                    p.phase[writeIdx] = p.phase[i];
+                    p.hasRung[writeIdx] = p.hasRung[i];
+                    p.ruptureT[writeIdx] = p.ruptureT[i];
+                    p.active[writeIdx] = 1;
+                }
+                writeIdx++;
+            }
+        }
+        
+        bubbleCount = writeIdx;
+    }
+    
+    function updateSpray(dt) {
+        const s = sprayPool;
+        let writeIdx = 0;
+        
+        for (let i = 0; i < sprayCount; i++) {
+            s.vy[i] += 80 * dt;
+            s.x[i] += s.vx[i] * dt;
+            s.y[i] += s.vy[i] * dt;
+            s.alpha[i] -= dt * 2.5;
+            
+            if (s.alpha[i] > 0) {
+                if (writeIdx !== i) {
+                    s.x[writeIdx] = s.x[i];
+                    s.y[writeIdx] = s.y[i];
+                    s.vx[writeIdx] = s.vx[i];
+                    s.vy[writeIdx] = s.vy[i];
+                    s.alpha[writeIdx] = s.alpha[i];
+                }
+                writeIdx++;
+            }
+        }
+        
+        sprayCount = writeIdx;
+    }
+    
+    // Pre-create reusable gradients (updated per frame for position)
+    let bubbleGrad, highlightGrad, glowGrad;
+    
+    function drawBubbles() {
+        const p = bubblePool;
+        
+        for (let i = 0; i < bubbleCount; i++) {
+            const x = p.x[i];
+            const y = p.y[i];
+            const r = p.displayR[i];
+            const alpha = p.alpha[i];
+            const phase = p.phase[i];
+            const coherence = p.coherence[i];
+            
+            if (alpha <= 0) continue;
+            
+            ctx.globalAlpha = alpha;
+            
+            // Wobble
+            const wobbleAmt = 0.08 * Math.sin(p.wobble[i]);
+            const rx = r * (1 + wobbleAmt);
+            const ry = r * (1 - wobbleAmt);
+            
+            // === RUPTURE ===
+            if (phase === 1) {
+                const t = p.ruptureT[i];
+                const fragmentR = r * (1 - t * 0.7);
+                const spread = t * r * 2;
+                
+                ctx.strokeStyle = `rgba(255,255,255,${0.3 * (1 - t)})`;
+                ctx.lineWidth = 1;
+                
+                for (let j = 0; j < 4; j++) {
+                    const angle = j * 1.57 + i * 0.5;
+                    const fx = x + Math.cos(angle) * spread;
+                    const fy = y + Math.sin(angle) * spread;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, fragmentR * 0.4, 0, TWO_PI);
+                    ctx.stroke();
+                }
+                
+                if (t < 0.3) {
+                    const flashAlpha = (0.3 - t) / 0.3 * 0.5;
+                    glowGrad = ctx.createRadialGradient(x, y, 0, x, y, r * 2);
+                    glowGrad.addColorStop(0, `rgba(255,255,255,${flashAlpha})`);
+                    glowGrad.addColorStop(0.5, `rgba(200,230,255,${flashAlpha * 0.3})`);
+                    glowGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * 2, 0, TWO_PI);
+                    ctx.fill();
+                }
+                
+                continue;
+            }
+            
+            // === NORMAL BUBBLE ===
+            
+            // Outer glow (simple)
+            ctx.fillStyle = 'rgba(100,160,220,0.03)';
+            ctx.beginPath();
+            ctx.arc(x, y, r * 1.6, 0, TWO_PI);
+            ctx.fill();
+            
+            // Main body
+            const hue = 200 + coherence * 40;
+            const sat = 20 + coherence * 30;
+            
+            bubbleGrad = ctx.createRadialGradient(x - rx * 0.3, y - ry * 0.3, 0, x, y, rx);
+            bubbleGrad.addColorStop(0, `hsla(${hue},${sat}%,95%,0.35)`);
+            bubbleGrad.addColorStop(0.4, `hsla(${hue + 20},${sat}%,80%,0.15)`);
+            bubbleGrad.addColorStop(0.7, `hsla(${hue + 40},${sat + 10}%,70%,0.08)`);
+            bubbleGrad.addColorStop(1, 'rgba(100,150,200,0.03)');
+            
+            ctx.fillStyle = bubbleGrad;
+            ctx.beginPath();
+            ctx.ellipse(x, y, rx, ry, 0, 0, TWO_PI);
+            ctx.fill();
+            
+            // Edge
+            ctx.strokeStyle = `rgba(200,230,255,${0.15 + coherence * 0.15})`;
+            ctx.lineWidth = r > 10 ? 1 : 0.5;
+            ctx.stroke();
+            
+            // Highlight
+            const hlX = x - rx * 0.35;
+            const hlY = y - ry * 0.35;
+            const hlR = r * 0.35;
+            
+            highlightGrad = ctx.createRadialGradient(hlX, hlY, 0, hlX, hlY, hlR);
+            highlightGrad.addColorStop(0, 'rgba(255,255,255,0.7)');
+            highlightGrad.addColorStop(0.4, 'rgba(255,255,255,0.25)');
+            highlightGrad.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = highlightGrad;
+            ctx.beginPath();
+            ctx.ellipse(hlX, hlY, hlR, hlR * 0.6, -0.5, 0, TWO_PI);
+            ctx.fill();
+            
+            // Secondary highlight for larger bubbles
+            if (r > 10) {
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.beginPath();
+                ctx.ellipse(x - rx * 0.15, y - ry * 0.55, r * 0.07, r * 0.035, -0.3, 0, TWO_PI);
+                ctx.fill();
+            }
+        }
+        
+        ctx.globalAlpha = 1;
+    }
+    
+    function drawSpray() {
+        const s = sprayPool;
+        ctx.fillStyle = 'rgba(200,230,255,0.8)';
+        
+        for (let i = 0; i < sprayCount; i++) {
+            ctx.globalAlpha = s.alpha[i];
+            ctx.beginPath();
+            ctx.arc(s.x[i], s.y[i], 1.5, 0, TWO_PI);
+            ctx.fill();
+        }
+        
+        ctx.globalAlpha = 1;
+    }
+    
+    function drawOcean() {
+        // Simple gradient background
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, '#040d18');
+        grad.addColorStop(0.4, '#081620');
+        grad.addColorStop(0.7, '#0c1e30');
+        grad.addColorStop(1, '#0e2238');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        
+        // Light rays (simplified - just 3)
+        ctx.fillStyle = 'rgba(80,150,220,0.02)';
+        for (let i = 0; i < 3; i++) {
+            const rayX = W * 0.25 + i * W * 0.25 + Math.sin(time * 0.2 + i) * 20;
+            ctx.beginPath();
+            ctx.moveTo(rayX, 0);
+            ctx.lineTo(rayX + 120, H);
+            ctx.lineTo(rayX + 40, H);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+    
+    function drawWaveform() {
+        waveCtx.fillStyle = 'rgba(0,15,30,0.85)';
+        waveCtx.fillRect(0, 0, 250, 80);
+        
+        waveCtx.strokeStyle = 'rgba(150,200,255,0.7)';
+        waveCtx.lineWidth = 1.5;
+        waveCtx.beginPath();
+        
+        for (let i = 0; i < 250; i++) {
+            const y = 40 - waveformData[(waveIdx + i) % 250] * 30;
+            if (i === 0) waveCtx.moveTo(i, y);
+            else waveCtx.lineTo(i, y);
+        }
+        waveCtx.stroke();
+    }
+    
+    function updateStats() {
+        document.getElementById('statBubbles').textContent = bubbleCount;
+        document.getElementById('statBells').textContent = bellCount;
+        document.getElementById('statRuptures').textContent = rupturesPerSec;
+    }
+    
+    // --- MAIN LOOP ---
+    let lastT = 0;
+    
+    function frame(ts) {
+        const dt = Math.min((ts - lastT) / 1000, 0.05);
+        lastT = ts;
+        
+        if (running) time += dt;
+        
+        drawOcean();
+        
+        // Spawn
+        if (running) {
+            const spawnRate = Math.max(1, (targetCount * 0.08) | 0);
+            for (let i = 0; i < spawnRate && bubbleCount < targetCount; i++) {
+                spawnBubble();
+            }
+        }
+        
+        // Trim excess
+        while (bubbleCount > targetCount * 1.2) {
+            bubbleCount--;
+        }
+        
+        updateSpray(dt);
+        updateBubbles(dt);
+        
+        drawSpray();
+        drawBubbles();
+        
+        drawWaveform();
+        updateStats();
+        
+        requestAnimationFrame(frame);
+    }
+    
+    // --- CONTROLS ---
+    function setCount(n) {
+        targetCount = n;
+        document.getElementById('slider').value = n;
+        document.getElementById('count').textContent = n;
+    }
+    
+    function setOmega(val) {
+        omega = val;
+        document.getElementById('omegaSlider').value = val;
+        updateOmegaDisplay();
+    }
+    
+    function updateOmegaDisplay() {
+        let display;
+        if (Math.abs(omega - 1/Math.PI) < 0.02) display = 'Ω = 1/π';
+        else if (Math.abs(omega - 0.5) < 0.02) display = 'Ω = 1/2';
+        else display = 'Ω = ' + omega.toFixed(2);
+        document.getElementById('omegaDisplay').textContent = display;
+    }
+    
+    document.getElementById('slider').addEventListener('input', (e) => {
+        targetCount = parseInt(e.target.value);
+        document.getElementById('count').textContent = targetCount;
+    });
+    
+    document.getElementById('omegaSlider').addEventListener('input', (e) => {
+        omega = parseFloat(e.target.value);
+        updateOmegaDisplay();
+    });
+    
+    canvas.addEventListener('click', () => {
+        if (!running) {
+            running = true;
+            document.getElementById('instructions').classList.add('hidden');
+            initAudio();
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            toggleSound();
+        }
+    });
+    
+    frame(0);
+    </script>
+</body>
+</html>
