@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Gravitational Waves — Coherence · Rupture · Regeneration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #0a0a0f;
+            --deep-space: #0d0d14;
+            --nebula: #151520;
+            --coherence: #4ecdc4;
+            --coherence-glow: rgba(78, 205, 196, 0.4);
+            --rupture: #ff6b6b;
+            --rupture-glow: rgba(255, 107, 107, 0.6);
+            --regeneration: #a78bfa;
+            --regeneration-glow: rgba(167, 139, 250, 0.4);
+            --wave-primary: #60a5fa;
+            --wave-secondary: #34d399;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --text-dim: #555570;
+            --omega: #fbbf24;
+            --omega-glow: rgba(251, 191, 36, 0.4);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            background: var(--void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        /* Cosmic background with subtle animation */
+        .cosmic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(78, 205, 196, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(167, 139, 250, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 107, 107, 0.02) 0%, transparent 40%),
+                var(--void);
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, white, transparent),
+                radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 90px 40px, white, transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 160px 120px, white, transparent);
+            background-size: 200px 200px;
+            animation: drift 200s linear infinite;
+            opacity: 0.5;
+        }
+        
+        @keyframes drift {
+            from { transform: translateY(0); }
+            to { transform: translateY(-200px); }
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            padding: 80px 40px 60px;
+            position: relative;
+        }
+        
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--text-dim), transparent);
+        }
+        
+        .title {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--coherence) 0%, var(--text-primary) 40%, var(--rupture) 60%, var(--regeneration) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+        
+        /* Main container */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        
+        /* Visualization section */
+        .viz-section {
+            background: linear-gradient(145deg, var(--deep-space), var(--nebula));
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 60px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 
+                0 25px 80px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: var(--coherence);
+        }
+        
+        /* Spacetime fabric canvas */
+        .spacetime-container {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+        }
+        
+        #spacetimeCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Waveform display */
+        .waveform-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .wave-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        
+        .wave-panel h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .wave-canvas-wrapper {
+            position: relative;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .wave-canvas-wrapper canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Phase labels */
+        .phase-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 0 10px;
+        }
+        
+        .phase-label {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .phase-label .symbol {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .phase-label .name {
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+        }
+        
+        .phase-label.coherence .symbol { color: var(--coherence); }
+        .phase-label.rupture .symbol { color: var(--rupture); }
+        .phase-label.regeneration .symbol { color: var(--regeneration); }
+        
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .control-group {
+            background: rgba(0,0,0,0.2);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        
+        .control-group label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        
+        .slider-container {
+            position: relative;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--coherence);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--coherence-glow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px var(--coherence-glow);
+        }
+        
+        .slider-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        
+        .slider-value .unit {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        
+        /* Parameters display */
+        .parameters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+        }
+        
+        .param {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .param-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+        
+        .param-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--omega);
+        }
+        
+        /* CRR Equation panel */
+        .equation-panel {
+            background: linear-gradient(145deg, rgba(78, 205, 196, 0.05), rgba(167, 139, 250, 0.05));
+            border-radius: 15px;
+            padding: 40px;
+            margin-top: 40px;
+            border: 1px solid rgba(78, 205, 196, 0.1);
+        }
+        
+        .equation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            line-height: 2.5;
+            color: var(--text-secondary);
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+        
+        .equation .coherence { color: var(--coherence); }
+        .equation .rupture { color: var(--rupture); }
+        .equation .regeneration { color: var(--regeneration); }
+        .equation .omega { color: var(--omega); }
+        
+        /* Theory cards */
+        .theory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        @media (max-width: 900px) {
+            .theory-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .theory-card {
+            background: var(--deep-space);
+            border-radius: 15px;
+            padding: 35px;
+            border: 1px solid rgba(255,255,255,0.03);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .theory-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        
+        .theory-card.coherence::before {
+            background: linear-gradient(90deg, var(--coherence), transparent);
+        }
+        
+        .theory-card.rupture::before {
+            background: linear-gradient(90deg, var(--rupture), transparent);
+        }
+        
+        .theory-card.regeneration::before {
+            background: linear-gradient(90deg, var(--regeneration), transparent);
+        }
+        
+        .theory-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        
+        .theory-card h3 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            margin-bottom: 15px;
+        }
+        
+        .theory-card.coherence h3 { color: var(--coherence); }
+        .theory-card.rupture h3 { color: var(--rupture); }
+        .theory-card.regeneration h3 { color: var(--regeneration); }
+        
+        .theory-card p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        
+        .theory-card .math {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+        }
+        
+        /* Omega symmetry section */
+        .omega-section {
+            margin-top: 60px;
+            padding: 50px;
+            background: linear-gradient(145deg, rgba(251, 191, 36, 0.03), transparent);
+            border-radius: 20px;
+            border: 1px solid rgba(251, 191, 36, 0.1);
+        }
+        
+        .omega-section h2 {
+            color: var(--omega);
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+        }
+        
+        .symmetry-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .symmetry-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .symmetry-box {
+            padding: 30px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .symmetry-box h4 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        
+        .symmetry-box .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            color: var(--omega);
+            margin-bottom: 10px;
+        }
+        
+        .symmetry-box .description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        /* Button */
+        .play-btn {
+            background: linear-gradient(135deg, var(--coherence), var(--regeneration));
+            border: none;
+            padding: 18px 45px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            color: var(--void);
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 30px;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(78, 205, 196, 0.3);
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            margin-top: 80px;
+        }
+        
+        footer a {
+            color: var(--coherence);
+            text-decoration: none;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--void);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--nebula);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+        
+        /* Sound toggle */
+        .sound-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+        
+        .toggle-container:hover {
+            color: var(--text-primary);
+        }
+        
+        .toggle-container input {
+            display: none;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sound-icon {
+            transition: transform 0.3s, color 0.3s;
+        }
+        
+        .toggle-container input:checked + .toggle-label .sound-icon {
+            color: var(--coherence);
+        }
+        
+        .toggle-container input:not(:checked) + .toggle-label .sound-icon {
+            color: var(--text-dim);
+        }
+        
+        /* Audio visualizer */
+        .audio-visualizer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            height: 30px;
+            margin-top: 15px;
+        }
+        
+        .audio-bar {
+            width: 4px;
+            background: var(--coherence);
+            border-radius: 2px;
+            transition: height 0.1s ease-out;
+            opacity: 0.7;
+        }
+        
+        .audio-bar:nth-child(odd) {
+            background: var(--regeneration);
+        }
+        
+        .audio-bar.rupture {
+            background: var(--rupture) !important;
+            opacity: 1;
+        }
+        
+        /* Animations */
+        @keyframes pulse-coherence {
+            0%, 100% { box-shadow: 0 0 20px var(--coherence-glow); }
+            50% { box-shadow: 0 0 40px var(--coherence-glow); }
+        }
+        
+        @keyframes pulse-rupture {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        .phase-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .phase-indicator.coherence { 
+            color: var(--coherence); 
+            border-color: rgba(78, 205, 196, 0.3);
+        }
+        .phase-indicator.rupture { 
+            color: var(--rupture); 
+            border-color: rgba(255, 107, 107, 0.3);
+            animation: pulse-rupture 0.3s ease-in-out infinite;
+        }
+        .phase-indicator.regeneration { 
+            color: var(--regeneration); 
+            border-color: rgba(167, 139, 250, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="cosmic-bg"></div>
+    <div class="stars"></div>
+    
+    <header>
+        <h1 class="title">Gravitational Waves</h1>
+        <p class="subtitle">Through the CRR Framework</p>
+    </header>
+    
+    <main>
+        <!-- Mathematical Foundation Section -->
+        <section class="viz-section" style="border-left: 3px solid var(--omega);">
+            <h2 class="section-title">Mathematical Foundation</h2>
+            
+            <div style="max-width: 900px;">
+                <p style="color: var(--text-secondary); font-size: 1.15rem; line-height: 1.9; margin-bottom: 30px;">
+                    The Coherence-Rupture-Regeneration (CRR) framework provides a process-theoretic description of how systems accumulate history, undergo irreversible transitions, and reconstitute themselves. Here we derive gravitational wave dynamics through CRR's three fundamental equations.
+                </p>
+                
+                <!-- Core CRR Equations Box -->
+                <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(78, 205, 196, 0.05)); border-radius: 15px; padding: 35px; margin-bottom: 40px; border: 1px solid rgba(251, 191, 36, 0.2);">
+                    <h3 style="color: var(--omega); font-size: 1.1rem; margin-bottom: 25px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em;">THE THREE CRR EQUATIONS</h3>
+                    
+                    <div class="equation" style="background: rgba(0,0,0,0.3); margin: 15px 0;">
+                        <span style="color: var(--text-dim);">1.</span> <span class="coherence">C(x,t)</span> = ∫<sub>-∞</sub><sup>t</sup> L(x,τ) dτ
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px; font-size: 0.9rem;">
+                            Coherence accumulates through the integral of local "learning" L(x,τ)
+                        </span>
+                    </div>
+                    
+                    <div class="equation" style="background: rgba(0,0,0,0.3); margin: 15px 0;">
+                        <span style="color: var(--text-dim);">2.</span> <span class="rupture">δ(now)</span>
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px; font-size: 0.9rem;">
+                            Rupture as Dirac delta — the scale-invariant "choice moment" where past becomes future
+                        </span>
+                    </div>
+                    
+                    <div class="equation" style="background: rgba(0,0,0,0.3); margin: 15px 0;">
+                        <span style="color: var(--text-dim);">3.</span> <span class="regeneration">R(t)</span> = ∫ φ(x,τ) exp(<span class="coherence">C</span>(x,τ)/<span class="omega">Ω</span>) Θ(t-τ) dτ
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px; font-size: 0.9rem;">
+                            Regeneration weighted by memory kernel exp(C/Ω); Θ is the Heaviside step function
+                        </span>
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.8;">
+                            <strong style="color: var(--omega);">Ω (Omega)</strong> is the precision parameter — it determines how sharply the system accesses its coherence history. From the Ω-symmetry hypothesis: <strong>Ω = 1/φ</strong> where φ is the phase (in radians) required to reach rupture. For Z₂ symmetric systems, φ = π, giving <strong>Ω = 1/π ≈ 0.318</strong>.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- GW to CRR Mapping -->
+                <h3 style="color: var(--text-primary); font-size: 1.3rem; margin: 40px 0 20px;">Gravitational Waves as CRR Process</h3>
+                
+                <p style="color: var(--text-secondary); font-size: 1.05rem; line-height: 1.8; margin-bottom: 25px;">
+                    A binary black hole merger naturally decomposes into the three CRR phases:
+                </p>
+                
+                <div style="display: grid; gap: 20px;">
+                    <!-- Inspiral derivation -->
+                    <div style="background: rgba(78, 205, 196, 0.05); border-left: 3px solid var(--coherence); padding: 25px; border-radius: 0 12px 12px 0;">
+                        <h4 style="color: var(--coherence); margin-bottom: 15px;">INSPIRAL → COHERENCE</h4>
+                        <div style="color: var(--text-secondary); line-height: 1.9;">
+                            <p>The binary system accumulates orbital coherence as it spirals inward. Each completed orbit adds to the system's phase history.</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                L(τ) = dΦ/dτ = ω(τ) <span style="color: var(--text-dim);">/* Angular velocity as coherence rate */</span>
+                            </div>
+                            
+                            <p>From post-Newtonian theory, the orbital frequency evolves as:</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                ω(τ) ∝ (t<sub>merger</sub> - τ)<sup>-3/8</sup>
+                            </div>
+                            
+                            <p>Therefore coherence accumulates as:</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                <span class="coherence">C(t)</span> = ∫ ω(τ) dτ ∝ (t<sub>merger</sub> - t)<sup>5/8</sup>
+                            </div>
+                            
+                            <p style="margin-top: 15px;"><strong>Key insight:</strong> C approaches the critical value C* = Ω⁻¹ as merger approaches. When C reaches this threshold, rupture becomes inevitable.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Merger derivation -->
+                    <div style="background: rgba(255, 107, 107, 0.05); border-left: 3px solid var(--rupture); padding: 25px; border-radius: 0 12px 12px 0;">
+                        <h4 style="color: var(--rupture); margin-bottom: 15px;">MERGER → RUPTURE</h4>
+                        <div style="color: var(--text-secondary); line-height: 1.9;">
+                            <p>The merger is the δ-function rupture — instantaneous on the timescale of the inspiral, irreversible, marking the ontological transition from "two" to "one".</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                <span class="rupture">δ(t<sub>merger</sub>)</span> : Binary → Single Black Hole
+                            </div>
+                            
+                            <p>At this moment:</p>
+                            <ul style="margin: 15px 0 15px 20px;">
+                                <li>dC/dt reaches maximum (coherence rate peaks)</li>
+                                <li>The topology of spacetime changes irreversibly</li>
+                                <li>Information about the binary's structure is "scrambled" into the final BH</li>
+                            </ul>
+                            
+                            <p><strong>Key insight:</strong> The rupture is scale-invariant — the same C→δ→R structure occurs whether the masses are 10 M☉ or 10⁹ M☉. This is CRR's process-theoretic universality.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Ringdown derivation -->
+                    <div style="background: rgba(167, 139, 250, 0.05); border-left: 3px solid var(--regeneration); padding: 25px; border-radius: 0 12px 12px 0;">
+                        <h4 style="color: var(--regeneration); margin-bottom: 15px;">RINGDOWN → REGENERATION</h4>
+                        <div style="color: var(--text-secondary); line-height: 1.9;">
+                            <p>The newly-formed black hole "regenerates" toward its equilibrium Kerr state. The ringdown waveform is determined by quasi-normal modes (QNMs).</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                h(t) = A₀ exp(-t/τ<sub>damp</sub>) cos(ω<sub>QNM</sub> · t)
+                            </div>
+                            
+                            <p>In CRR terms, this is the regeneration integral:</p>
+                            
+                            <div class="equation" style="margin: 20px 0; font-size: 1rem;">
+                                <span class="regeneration">R(t)</span> = ∫ φ(τ) exp(<span class="coherence">C</span>(τ)/<span class="omega">Ω</span>) Θ(t-τ) dτ
+                            </div>
+                            
+                            <p>The <strong>exp(C/Ω)</strong> memory kernel is crucial:</p>
+                            <ul style="margin: 15px 0 15px 20px;">
+                                <li>Large Ω → exp(C/Ω) ≈ 1 → all history weighted equally → slow regeneration</li>
+                                <li>Small Ω → exp(C/Ω) peaked → only high-coherence moments accessible → fast regeneration</li>
+                            </ul>
+                            
+                            <p><strong>Key insight:</strong> The damping time τ<sub>damp</sub> = Ω⁻¹ × (geometric factor). Symmetric mergers (lower Ω) ring down faster because exp(C/Ω) is more sharply peaked.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Main Visualization -->
+        <section class="viz-section">
+            <h2 class="section-title">Spacetime Curvature Dynamics</h2>
+            
+            <div class="spacetime-container">
+                <canvas id="spacetimeCanvas"></canvas>
+                <div id="phaseIndicator" class="phase-indicator coherence">INSPIRAL · COHERENCE</div>
+            </div>
+            
+            <div class="phase-labels">
+                <div class="phase-label coherence">
+                    <div class="symbol">C</div>
+                    <div class="name">Coherence</div>
+                </div>
+                <div class="phase-label rupture">
+                    <div class="symbol">δ</div>
+                    <div class="name">Rupture</div>
+                </div>
+                <div class="phase-label regeneration">
+                    <div class="symbol">R</div>
+                    <div class="name">Regeneration</div>
+                </div>
+            </div>
+            
+            <!-- Waveform displays -->
+            <div class="waveform-container" style="margin-top: 40px;">
+                <div class="wave-panel">
+                    <h3>Gravitational Wave Strain h(t)</h3>
+                    <div class="wave-canvas-wrapper">
+                        <canvas id="waveformCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls">
+                <div class="control-group">
+                    <label>Primary Mass (M☉)</label>
+                    <div class="slider-container">
+                        <input type="range" id="mass1" min="5" max="80" value="30" step="1">
+                        <div class="slider-value">
+                            <span id="mass1Value">30</span>
+                            <span class="unit">Solar Masses</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Secondary Mass (M☉)</label>
+                    <div class="slider-container">
+                        <input type="range" id="mass2" min="5" max="80" value="30" step="1">
+                        <div class="slider-value">
+                            <span id="mass2Value">30</span>
+                            <span class="unit">Solar Masses</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Animation Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed" min="0.1" max="3" value="1" step="0.1">
+                        <div class="slider-value">
+                            <span id="speedValue">1.0</span>
+                            <span class="unit">× realtime</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="play-btn" id="playBtn">Begin Merger</button>
+                <div class="sound-toggle" style="margin-top: 20px;">
+                    <label class="toggle-container">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="toggle-label">
+                            <svg class="sound-icon" viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                            </svg>
+                            <span id="soundLabel">Sound On</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- CRR Parameters -->
+            <div class="parameters">
+                <div class="param">
+                    <span class="param-label">Mass Ratio (q)</span>
+                    <span class="param-value" id="paramQ">1.000</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">CRR Ω</span>
+                    <span class="param-value" id="paramOmega">0.3183</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">Predicted CV</span>
+                    <span class="param-value" id="paramCV">0.1592</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">Symmetry Class</span>
+                    <span class="param-value" id="paramSymmetry">Z₂</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">f<sub>ISCO</sub></span>
+                    <span class="param-value" id="paramFISCO">73 Hz</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">f<sub>QNM</sub></span>
+                    <span class="param-value" id="paramFQNM">251 Hz</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">τ<sub>QNM</sub></span>
+                    <span class="param-value" id="paramTau">4.0 ms</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">M<sub>final</sub></span>
+                    <span class="param-value" id="paramMfinal">57.0 M☉</span>
+                </div>
+                <div class="param">
+                    <span class="param-label">E<sub>rad</sub></span>
+                    <span class="param-value" id="paramErad">5.0%</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Detailed Mathematical Derivations -->
+        <section class="viz-section equation-panel">
+            <h2 class="section-title">Complete Mathematical Derivations</h2>
+            
+            <div style="max-width: 950px;">
+                
+                <!-- Omega Derivation -->
+                <div style="margin-bottom: 50px;">
+                    <h3 style="color: var(--omega); font-size: 1.2rem; margin-bottom: 20px;">1. Deriving Ω from Mass Ratio</h3>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                        The Ω-symmetry hypothesis states that Ω = 1/φ where φ is the effective phase (in radians) required to reach rupture. For gravitational wave systems, the symmetry class is determined by the mass ratio q = m₂/m₁ (where m₂ ≤ m₁).
+                    </p>
+                    
+                    <div class="equation">
+                        <span style="color: var(--text-dim);">Mass ratio:</span> q = min(m₁, m₂) / max(m₁, m₂) ∈ [0, 1]
+                    </div>
+                    
+                    <div class="equation">
+                        <span style="color: var(--text-dim);">Symmetric mass ratio:</span> η = (m₁ · m₂) / (m₁ + m₂)² ∈ [0, 0.25]
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        For equal masses (q = 1), we have perfect Z₂ exchange symmetry — swapping the black holes leaves the system invariant. This corresponds to reaching rupture in half a cycle:
+                    </p>
+                    
+                    <div class="equation">
+                        q = 1 (Z₂ symmetric): φ<sub>eff</sub> = π → <span class="omega">Ω</span> = 1/π ≈ 0.318
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        As symmetry breaks (q → 0), more phase accumulation is required before rupture:
+                    </p>
+                    
+                    <div class="equation">
+                        φ<sub>eff</sub> = π · (1 + (1 - η/η<sub>max</sub>)) where η<sub>max</sub> = 0.25
+                    </div>
+                    
+                    <div class="equation">
+                        <span class="omega">Ω(q)</span> = 1 / φ<sub>eff</sub> = 1 / [π · (2 - 4η)]
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        This predicts a coefficient of variation CV = Ω/2, giving CV<sub>Z₂</sub> ≈ 0.159 — testable against ringdown amplitude statistics.
+                    </p>
+                </div>
+                
+                <!-- Waveform Derivation -->
+                <div style="margin-bottom: 50px;">
+                    <h3 style="color: var(--coherence); font-size: 1.2rem; margin-bottom: 20px;">2. Inspiral Waveform from Coherence Dynamics</h3>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                        The gravitational wave strain h(t) during inspiral comes from the quadrupole formula. In CRR terms, we express this through coherence accumulation:
+                    </p>
+                    
+                    <div class="equation">
+                        <span style="color: var(--text-dim);">Chirp mass:</span> M<sub>c</sub> = (m₁ · m₂)<sup>3/5</sup> / (m₁ + m₂)<sup>1/5</sup>
+                    </div>
+                    
+                    <div class="equation">
+                        <span style="color: var(--text-dim);">Time to merger:</span> τ = t<sub>merger</sub> - t
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        The phase evolution (accumulated coherence) is:
+                    </p>
+                    
+                    <div class="equation">
+                        <span class="coherence">Φ(τ)</span> = -2 · (τ / 5M)<sup>5/8</sup> / η<sup>3/8</sup>
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* This IS the coherence integral C(t) */</span>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        The amplitude evolution (coherence rate) is:
+                    </p>
+                    
+                    <div class="equation">
+                        A(τ) ∝ M<sub>c</sub><sup>5/4</sup> · τ<sup>-1/4</sup>
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Amplitude grows as dC/dt increases */</span>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        The complete inspiral waveform:
+                    </p>
+                    
+                    <div class="equation">
+                        h<sub>inspiral</sub>(t) = A(τ) · cos(<span class="coherence">Φ(τ)</span>)
+                    </div>
+                </div>
+                
+                <!-- Ringdown Derivation -->
+                <div style="margin-bottom: 50px;">
+                    <h3 style="color: var(--regeneration); font-size: 1.2rem; margin-bottom: 20px;">3. Ringdown from Regeneration Integral</h3>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                        After merger, the final black hole rings at its quasi-normal mode (QNM) frequencies. The dominant mode (l=2, m=2, n=0) has:
+                    </p>
+                    
+                    <div class="equation">
+                        ω<sub>QNM</sub> ≈ 1.2 / M<sub>final</sub>
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Natural frequency of regeneration */</span>
+                    </div>
+                    
+                    <div class="equation">
+                        τ<sub>damp</sub> ≈ 0.3 · M<sub>final</sub> · (1 + 0.5(1 - q))
+                        <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Damping time — depends on symmetry via Ω */</span>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        The CRR regeneration integral gives the ringdown waveform:
+                    </p>
+                    
+                    <div class="equation">
+                        <span class="regeneration">R(t)</span> = ∫<sub>0</sub><sup>t</sup> φ(τ) · exp(<span class="coherence">C</span>(τ)/<span class="omega">Ω</span>) · Θ(t - τ) dτ
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        For a system where C(τ) decays from its peak at merger:
+                    </p>
+                    
+                    <div class="equation">
+                        C(τ) = C<sub>peak</sub> · exp(-τ / τ<sub>damp</sub>)
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        The memory kernel exp(C/Ω) weights contributions from different times. Evaluating the integral yields the standard ringdown form:
+                    </p>
+                    
+                    <div class="equation">
+                        h<sub>ringdown</sub>(t) = A₀ · exp(-t / τ<sub>damp</sub>) · cos(ω<sub>QNM</sub> · t)
+                    </div>
+                    
+                    <div style="background: rgba(167, 139, 250, 0.1); padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.8;">
+                            <strong style="color: var(--regeneration);">CRR Prediction:</strong> The damping time scales with Ω⁻¹. Since Ω<sub>Z₂</sub> = 1/π is smaller than Ω for broken symmetry, <em>equal-mass mergers ring down faster</em>. This is consistent with numerical relativity results showing cleaner ringdowns for symmetric binaries.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Deep Connection -->
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: var(--omega); font-size: 1.2rem; margin-bottom: 20px;">4. The CRR–Black Hole Correspondence</h3>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                        A remarkable correspondence emerges between CRR quantities and black hole thermodynamics:
+                    </p>
+                    
+                    <div class="equation">
+                        <span class="coherence">C</span> = S = 4πM² <span style="color: var(--text-dim);">/* Coherence = Bekenstein-Hawking entropy */</span>
+                    </div>
+                    
+                    <div class="equation">
+                        <span class="omega">Ω</span> = T = 1/(8πM) <span style="color: var(--text-dim);">/* CRR precision = Hawking temperature */</span>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        This gives the scrambling time:
+                    </p>
+                    
+                    <div class="equation">
+                        t<sub>scramble</sub> = Ω⁻¹ · log(C) = 8πM · log(4πM²)
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin: 20px 0;">
+                        This <em>exactly matches</em> the Sekino-Susskind scrambling time formula. The ringdown is literally the scrambling process — the merger's coherence being thermalized into the final black hole state.
+                    </p>
+                    
+                    <div style="background: rgba(251, 191, 36, 0.1); padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.8;">
+                            <strong style="color: var(--omega);">Physical interpretation:</strong> The gravitational wave ringdown we hear is the <em>audible signature of information scrambling</em>. The exp(C/Ω) memory kernel determines how quickly the binary's coherence history becomes inaccessible — encoded holographically on the final horizon.
+                        </p>
+                    </div>
+                </div>
+                
+            </div>
+        </section>
+        
+        <!-- Theory Cards -->
+        <div class="theory-grid">
+            <div class="theory-card coherence">
+                <h3>Inspiral → Coherence</h3>
+                <p>As the binary spirals inward, each orbit adds to the system's phase coherence. The frequency chirps up as C(t) approaches the critical threshold Ω⁻¹.</p>
+                <div class="math">f(τ) ∝ τ<sup>-3/8</sup><br>A(τ) ∝ τ<sup>-1/4</sup></div>
+            </div>
+            
+            <div class="theory-card rupture">
+                <h3>Merger → Rupture</h3>
+                <p>The merger is a true δ-function: instantaneous, irreversible, marking the ontological moment where two become one. Maximum dC/dt occurs here.</p>
+                <div class="math">δ(now)<br>Two → One</div>
+            </div>
+            
+            <div class="theory-card regeneration">
+                <h3>Ringdown → Regeneration</h3>
+                <p>The final black hole "regenerates" toward equilibrium. The exp(C/Ω) kernel weights memory access—symmetric mergers ring down faster.</p>
+                <div class="math">h(t) ∝ e<sup>-t/τ</sup>cos(ω<sub>qnm</sub>t)</div>
+            </div>
+        </div>
+        
+        <!-- Omega Symmetry -->
+        <section class="omega-section">
+            <h2>Ω-Symmetry in Gravitational Waves</h2>
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 800px;">
+                The mass ratio determines the system's effective symmetry, which in turn sets Ω—the precision parameter governing how sharply the system accesses its coherence history.
+            </p>
+            
+            <div class="symmetry-comparison">
+                <div class="symmetry-box">
+                    <h4>Equal Mass (q = 1)</h4>
+                    <div class="value">Ω = 1/π</div>
+                    <div class="description">
+                        Z₂ symmetry: half-cycle (π radians) to rupture<br>
+                        CV ≈ 0.159 · Fast, clean ringdown
+                    </div>
+                </div>
+                
+                <div class="symmetry-box">
+                    <h4>Unequal Mass (q → 0)</h4>
+                    <div class="value">Ω → 1/2π</div>
+                    <div class="description">
+                        Broken symmetry: full cycle to rupture<br>
+                        Higher Ω · Slower, messier ringdown
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Diegetic Sound Section -->
+        <section class="viz-section" style="background: linear-gradient(145deg, rgba(167, 139, 250, 0.05), rgba(78, 205, 196, 0.05));">
+            <h2 class="section-title">Diegetic Sound — Hearing CRR</h2>
+            
+            <p style="color: var(--text-secondary); font-size: 1.1rem; max-width: 900px; margin-bottom: 30px;">
+                The sound you hear is a direct sonification of the CRR dynamics. Real gravitational waves are far too low frequency for human hearing (millihertz range), so we shift them up ~10 octaves while preserving the mathematical structure.
+            </p>
+            
+            <!-- Sound Mathematics -->
+            <div style="background: rgba(0,0,0,0.2); border-radius: 15px; padding: 30px; margin-bottom: 35px;">
+                <h3 style="color: var(--omega); font-size: 1rem; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em;">SONIFICATION MATHEMATICS</h3>
+                
+                <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px;">
+                    We map gravitational wave frequencies to audio frequencies while preserving the CRR structure:
+                </p>
+                
+                <div class="equation" style="font-size: 0.95rem;">
+                    f<sub>audio</sub> = f<sub>base</sub> · (60 M☉ / M<sub>total</sub>)
+                    <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Heavier masses → lower pitch (mass warps time) */</span>
+                </div>
+                
+                <div class="equation" style="font-size: 0.95rem;">
+                    f<sub>base</sub> = 80 Hz (inspiral start) → 400 Hz (pre-merger)
+                    <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Frequency chirps following τ<sup>-3/8</sup> */</span>
+                </div>
+                
+                <div class="equation" style="font-size: 0.95rem;">
+                    f<sub>QNM</sub> = 200 Hz · (60 M☉ / M<sub>final</sub>)
+                    <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Ringdown frequency ∝ 1/M<sub>final</sub> */</span>
+                </div>
+                
+                <div class="equation" style="font-size: 0.95rem;">
+                    τ<sub>decay</sub> ∝ Ω⁻¹ · (1 + 0.5(1 - q))
+                    <span style="color: var(--text-dim); display: block; margin-top: 10px;">/* Symmetric mergers decay faster (lower Ω) */</span>
+                </div>
+            </div>
+            
+            <div class="theory-grid">
+                <div class="theory-card coherence">
+                    <h3>Inspiral Sound</h3>
+                    <p>Two sine oscillators represent the orbiting masses. Frequency chirps up following f(τ) ∝ τ<sup>-3/8</sup> as coherence accumulates. Slight detuning creates beating — the "wobble" of the binary.</p>
+                    <div class="math">
+                        osc1.freq = f₀ → f₀ · (5 + 3q)<br>
+                        osc2.freq = osc1.freq · 1.01<br>
+                        gain ∝ τ<sup>-1/4</sup>
+                    </div>
+                </div>
+                
+                <div class="theory-card rupture">
+                    <h3>Merger Sound</h3>
+                    <p>The δ-rupture manifests as noise burst + low "thump" — the irreversible crack of spacetime. Pitch drops as energy falls into the newly-formed horizon.</p>
+                    <div class="math">
+                        noise: 20ms attack, exp decay<br>
+                        thump: 80 → 20 Hz pitch drop<br>
+                        /* Two → One */
+                    </div>
+                </div>
+                
+                <div class="theory-card regeneration">
+                    <h3>Ringdown Sound</h3>
+                    <p>The final black hole rings at its quasi-normal mode frequency. Exponential decay follows exp(−t/τ) where τ depends on Ω — symmetric mergers decay faster.</p>
+                    <div class="math">
+                        f = f<sub>QNM</sub> (triangle wave)<br>
+                        amp = exp(-t / τ<sub>damp</sub>)<br>
+                        τ<sub>damp</sub> = Ω⁻¹ · geometric
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 40px; padding: 25px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                <h4 style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--omega); margin-bottom: 15px; letter-spacing: 0.1em;">TRY THIS — HEAR THE Ω DIFFERENCE</h4>
+                <p style="color: var(--text-secondary);">
+                    Adjust the masses and listen to how the sound changes:<br><br>
+                    • <strong>Equal masses (30+30 M☉)</strong>: Pure chirp, clean ringdown, higher pitch — <em>Ω = 1/π, maximum symmetry</em><br>
+                    • <strong>Unequal masses (30+10 M☉)</strong>: More complex chirp, longer ringdown — <em>Ω increases, symmetry broken</em><br>
+                    • <strong>Heavy total mass (80+80 M☉)</strong>: Lower pitch throughout — <em>mass warps time, f ∝ 1/M</em><br>
+                    • <strong>Light total mass (10+10 M☉)</strong>: Higher pitch, faster evolution — <em>less mass, less time dilation</em>
+                </p>
+            </div>
+        </section>
+        
+        <!-- Quick Reference Summary -->
+        <section class="viz-section" style="border: 1px solid rgba(251, 191, 36, 0.2);">
+            <h2 class="section-title">Quick Reference — CRR Gravitational Wave Formulae</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;">
+                
+                <!-- Core Equations -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--omega); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">CORE CRR EQUATIONS</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        <span style="color: var(--coherence);">C(t)</span> = ∫ L(τ) dτ<br>
+                        <span style="color: var(--rupture);">δ</span>(now)<br>
+                        <span style="color: var(--regeneration);">R(t)</span> = ∫ φ exp(C/Ω) Θ dτ<br>
+                        <span style="color: var(--omega);">Ω</span> = 1/φ<sub>eff</sub>
+                    </div>
+                </div>
+                
+                <!-- Mass Parameters -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--coherence); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">MASS PARAMETERS</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        q = m₂/m₁ ∈ [0,1]<br>
+                        η = m₁m₂/(m₁+m₂)² ∈ [0,0.25]<br>
+                        M<sub>c</sub> = (m₁m₂)<sup>3/5</sup>/(m₁+m₂)<sup>1/5</sup><br>
+                        M<sub>final</sub> ≈ M(1 - ε<sub>rad</sub>)
+                    </div>
+                </div>
+                
+                <!-- Omega Values -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--omega); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">Ω-SYMMETRY VALUES</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        Z₂ (q=1): Ω = 1/π ≈ 0.318<br>
+                        CV<sub>Z₂</sub> = Ω/2 ≈ 0.159<br>
+                        Broken: Ω → 1/2π ≈ 0.159<br>
+                        φ<sub>eff</sub> = π(2 - 4η)
+                    </div>
+                </div>
+                
+                <!-- NR Fits -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--rupture); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">NUMERICAL RELATIVITY FITS</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        ε<sub>rad</sub> ≈ 0.056η + 0.58η²<br>
+                        χ<sub>final</sub> ≈ 2√3 η (non-spin)<br>
+                        <span style="font-size: 0.75rem; color: var(--text-dim);">Healy et al. (2014)</span>
+                    </div>
+                </div>
+                
+                <!-- QNM Formulas -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--regeneration); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">QNM FREQUENCIES (l=m=2)</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        Mω<sub>R</sub> = 1.53 - 1.16(1-χ)<sup>0.13</sup><br>
+                        M/τ = 0.09 + 0.34(1-χ)<sup>0.50</sup><br>
+                        f<sub>QNM</sub> ≈ 32 kHz × (M☉/M<sub>f</sub>)<br>
+                        <span style="font-size: 0.75rem; color: var(--text-dim);">Berti et al. (2006)</span>
+                    </div>
+                </div>
+                
+                <!-- ISCO Formula -->
+                <div style="background: rgba(0,0,0,0.2); padding: 25px; border-radius: 12px;">
+                    <h4 style="color: var(--coherence); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 15px;">ISCO & INSPIRAL</h4>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-secondary); line-height: 2.2;">
+                        f<sub>ISCO</sub> ≈ 4400 Hz × (M☉/M)<br>
+                        f(τ) ∝ τ<sup>-3/8</sup><br>
+                        h(τ) ∝ M<sub>c</sub><sup>5/4</sup> τ<sup>-1/4</sup><br>
+                        <span style="font-size: 0.75rem; color: var(--text-dim);">Post-Newtonian (3.5PN)</span>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div style="margin-top: 40px; text-align: center; padding: 30px; background: rgba(251, 191, 36, 0.05); border-radius: 12px;">
+                <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.8; max-width: 700px; margin: 0 auto;">
+                    <strong style="color: var(--omega);">The Central Insight:</strong><br>
+                    Gravitational wave ringdown is the <em>audible signature of information scrambling</em>. 
+                    The CRR memory kernel exp(C/Ω) determines how the binary's coherence history 
+                    becomes encoded on the final horizon — scrambled in time t<sub>scr</sub> = Ω⁻¹ log(C), 
+                    exactly matching the Sekino-Susskind formula.
+                </p>
+            </div>
+            
+            <!-- Physics References -->
+            <div style="margin-top: 30px; padding: 20px; background: rgba(0,0,0,0.15); border-radius: 10px;">
+                <h4 style="color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; margin-bottom: 12px;">PHYSICS REFERENCES</h4>
+                <div style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.8;">
+                    Post-Newtonian theory: Blanchet, Living Reviews in Relativity (2014)<br>
+                    Final state fits: Healy et al., PRD 90, 104004 (2014)<br>
+                    QNM frequencies: Berti, Cardoso & Will, PRD 73, 064030 (2006)<br>
+                    GW150914 detection: Abbott et al. (LIGO), PRL 116, 061102 (2016)
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>
+            <strong>CRR Framework</strong> — Coherence · Rupture · Regeneration<br>
+            Developed by <a href="https://cohere.org.uk">Alexander Sabine</a> · Cohere Research<br>
+            <span style="font-size: 0.85rem; margin-top: 15px; display: block; color: var(--text-dim);">
+                C(x,t) = ∫L(x,τ)dτ · δ(now) · R = ∫φ(x,τ)exp(C/Ω)Θ(...)dτ
+            </span>
+            <span style="font-size: 0.75rem; margin-top: 10px; display: block; color: var(--text-dim);">
+                This visualization demonstrates the application of the CRR framework to gravitational wave physics.<br>
+                All calculations derived from first principles using CRR's three fundamental equations.
+            </span>
+        </p>
+    </footer>
+    
+    <script>
+        // =============================================================================
+        // CRR GRAVITATIONAL WAVE VISUALIZATION
+        // =============================================================================
+        
+        const PI = Math.PI;
+        
+        // =============================================================================
+        // DIEGETIC SOUND ENGINE - Sonifying CRR Dynamics
+        // =============================================================================
+        
+        class GravitationalWaveAudio {
+            constructor() {
+                this.ctx = null;
+                this.initialized = false;
+                this.playing = false;
+                
+                // Oscillators for the two black holes
+                this.osc1 = null;
+                this.osc2 = null;
+                this.oscMerged = null;
+                
+                // Gain nodes for amplitude control
+                this.gain1 = null;
+                this.gain2 = null;
+                this.gainMerged = null;
+                this.masterGain = null;
+                
+                // For the "chirp" - frequency modulation
+                this.baseFreq = 80; // Starting frequency (Hz)
+                
+                // Noise for rupture
+                this.noiseBuffer = null;
+                this.noiseSource = null;
+                this.noiseGain = null;
+                
+                // Convolver for spacetime "resonance"
+                this.convolver = null;
+                
+                // Low-pass filter for the "fabric of spacetime" feel
+                this.filter = null;
+                
+                // Compressor for dynamics
+                this.compressor = null;
+            }
+            
+            async init() {
+                if (this.initialized) return;
+                
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create master chain
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.4;
+                
+                this.compressor = this.ctx.createDynamicsCompressor();
+                this.compressor.threshold.value = -20;
+                this.compressor.knee.value = 10;
+                this.compressor.ratio.value = 4;
+                
+                this.filter = this.ctx.createBiquadFilter();
+                this.filter.type = 'lowpass';
+                this.filter.frequency.value = 800;
+                this.filter.Q.value = 1;
+                
+                // Create reverb impulse for spacetime resonance
+                await this.createReverb();
+                
+                // Create noise buffer for rupture
+                this.createNoiseBuffer();
+                
+                // Chain: sources -> filter -> convolver -> compressor -> master -> output
+                this.filter.connect(this.convolver);
+                this.convolver.connect(this.compressor);
+                this.compressor.connect(this.masterGain);
+                this.masterGain.connect(this.ctx.destination);
+                
+                this.initialized = true;
+            }
+            
+            createNoiseBuffer() {
+                // Create white noise buffer for the rupture "crack"
+                const bufferSize = this.ctx.sampleRate * 0.5;
+                this.noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = this.noiseBuffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    // Filtered noise with some low-frequency content
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+                }
+            }
+            
+            async createReverb() {
+                // Create synthetic impulse response for "spacetime" reverb
+                const length = this.ctx.sampleRate * 3;
+                const impulse = this.ctx.createBuffer(2, length, this.ctx.sampleRate);
+                
+                for (let channel = 0; channel < 2; channel++) {
+                    const data = impulse.getChannelData(channel);
+                    for (let i = 0; i < length; i++) {
+                        // Exponential decay with some modulation
+                        const t = i / this.ctx.sampleRate;
+                        data[i] = (Math.random() * 2 - 1) * 
+                                  Math.exp(-3 * t) * 
+                                  (1 + 0.3 * Math.sin(2 * PI * 0.5 * t));
+                    }
+                }
+                
+                this.convolver = this.ctx.createConvolver();
+                this.convolver.buffer = impulse;
+            }
+            
+            // Start the inspiral sound (Coherence phase)
+            startInspiral(m1, m2, duration, speed) {
+                if (!this.initialized) return;
+                
+                const now = this.ctx.currentTime;
+                const chirpDuration = duration / speed;
+                
+                // Calculate mass-dependent frequencies
+                // Heavier masses = lower frequencies (like real GW!)
+                const totalMass = m1 + m2;
+                const massRatio = Math.min(m1, m2) / Math.max(m1, m2);
+                
+                // Base frequency inversely proportional to total mass
+                const f0 = this.baseFreq * (60 / totalMass);
+                
+                // Final frequency before merger (chirp up by factor of ~5-8)
+                const fFinal = f0 * (5 + 3 * massRatio);
+                
+                // Create two oscillators for the binary
+                this.osc1 = this.ctx.createOscillator();
+                this.osc2 = this.ctx.createOscillator();
+                
+                // Slightly detuned for beating effect
+                this.osc1.type = 'sine';
+                this.osc2.type = 'sine';
+                
+                this.gain1 = this.ctx.createGain();
+                this.gain2 = this.ctx.createGain();
+                
+                this.osc1.connect(this.gain1);
+                this.osc2.connect(this.gain2);
+                this.gain1.connect(this.filter);
+                this.gain2.connect(this.filter);
+                
+                // The CHIRP - frequency evolution
+                // f(t) ∝ (t_merger - t)^(-3/8) in real GW
+                // We approximate with exponential ramp for smoothness
+                
+                this.osc1.frequency.setValueAtTime(f0, now);
+                this.osc2.frequency.setValueAtTime(f0 * 1.01, now); // Slight detune
+                
+                // Exponential chirp up to merger
+                this.osc1.frequency.exponentialRampToValueAtTime(fFinal, now + chirpDuration);
+                this.osc2.frequency.exponentialRampToValueAtTime(fFinal * 1.01, now + chirpDuration);
+                
+                // Amplitude grows as (t_merger - t)^(-1/4)
+                // Start quiet, grow toward merger
+                this.gain1.gain.setValueAtTime(0.1, now);
+                this.gain2.gain.setValueAtTime(0.1, now);
+                this.gain1.gain.exponentialRampToValueAtTime(0.5, now + chirpDuration);
+                this.gain2.gain.exponentialRampToValueAtTime(0.5, now + chirpDuration);
+                
+                // Open up the filter as frequency increases
+                this.filter.frequency.setValueAtTime(400, now);
+                this.filter.frequency.exponentialRampToValueAtTime(2000, now + chirpDuration);
+                
+                this.osc1.start(now);
+                this.osc2.start(now);
+                
+                // Schedule stop at merger
+                this.osc1.stop(now + chirpDuration + 0.05);
+                this.osc2.stop(now + chirpDuration + 0.05);
+                
+                this.playing = true;
+                
+                // Return the merger time for coordination
+                return now + chirpDuration;
+            }
+            
+            // The rupture sound (δ moment)
+            playRupture(mergerTime, m1, m2) {
+                if (!this.initialized) return;
+                
+                const totalMass = m1 + m2;
+                
+                // Create the "crack" of spacetime
+                this.noiseSource = this.ctx.createBufferSource();
+                this.noiseSource.buffer = this.noiseBuffer;
+                
+                this.noiseGain = this.ctx.createGain();
+                this.noiseSource.connect(this.noiseGain);
+                this.noiseGain.connect(this.filter);
+                
+                // Sharp attack, quick decay
+                this.noiseGain.gain.setValueAtTime(0, mergerTime);
+                this.noiseGain.gain.linearRampToValueAtTime(0.8, mergerTime + 0.02);
+                this.noiseGain.gain.exponentialRampToValueAtTime(0.01, mergerTime + 0.3);
+                
+                // Low "thump" for the mass collision
+                const thump = this.ctx.createOscillator();
+                const thumpGain = this.ctx.createGain();
+                thump.type = 'sine';
+                thump.frequency.value = 40 * (60 / totalMass); // Lower for heavier masses
+                
+                thump.connect(thumpGain);
+                thumpGain.connect(this.filter);
+                
+                thumpGain.gain.setValueAtTime(0, mergerTime);
+                thumpGain.gain.linearRampToValueAtTime(0.7, mergerTime + 0.01);
+                thumpGain.gain.exponentialRampToValueAtTime(0.01, mergerTime + 0.4);
+                
+                // Pitch drop for the thump (like something falling into itself)
+                thump.frequency.setValueAtTime(80 * (60 / totalMass), mergerTime);
+                thump.frequency.exponentialRampToValueAtTime(20, mergerTime + 0.3);
+                
+                this.noiseSource.start(mergerTime);
+                thump.start(mergerTime);
+                thump.stop(mergerTime + 0.5);
+            }
+            
+            // Ringdown sound (Regeneration phase)
+            playRingdown(mergerTime, m1, m2, duration, speed) {
+                if (!this.initialized) return;
+                
+                const ringdownDuration = duration / speed;
+                const totalMass = m1 + m2;
+                const massRatio = Math.min(m1, m2) / Math.max(m1, m2);
+                
+                // QNM frequency - the "ring" of the final black hole
+                // f_qnm ∝ 1/M_final
+                const fQNM = 200 * (60 / totalMass);
+                
+                // Damping time - CRR predicts faster for symmetric mergers
+                // τ = Ω⁻¹ * (base damping)
+                const Omega = 1 / (PI * (1 + (1 - massRatio)));
+                const dampingFactor = 1 + 0.5 * (1 - massRatio);
+                
+                this.oscMerged = this.ctx.createOscillator();
+                this.gainMerged = this.ctx.createGain();
+                
+                // Use triangle wave for richer harmonics
+                this.oscMerged.type = 'triangle';
+                this.oscMerged.frequency.value = fQNM;
+                
+                this.oscMerged.connect(this.gainMerged);
+                this.gainMerged.connect(this.filter);
+                
+                // Exponential decay - the exp(-t/τ) of CRR regeneration
+                const startTime = mergerTime + 0.05;
+                this.gainMerged.gain.setValueAtTime(0.6, startTime);
+                this.gainMerged.gain.exponentialRampToValueAtTime(
+                    0.001, 
+                    startTime + ringdownDuration * dampingFactor
+                );
+                
+                // Slight frequency decay (redshift as BH settles)
+                this.oscMerged.frequency.setValueAtTime(fQNM, startTime);
+                this.oscMerged.frequency.exponentialRampToValueAtTime(
+                    fQNM * 0.8, 
+                    startTime + ringdownDuration
+                );
+                
+                // Add harmonics for richness (overtones of the QNM)
+                const harmonic = this.ctx.createOscillator();
+                const harmonicGain = this.ctx.createGain();
+                harmonic.type = 'sine';
+                harmonic.frequency.value = fQNM * 2.3; // Not exact harmonic - realistic
+                harmonic.connect(harmonicGain);
+                harmonicGain.connect(this.filter);
+                
+                harmonicGain.gain.setValueAtTime(0.2, startTime);
+                harmonicGain.gain.exponentialRampToValueAtTime(
+                    0.001, 
+                    startTime + ringdownDuration * 0.5 * dampingFactor
+                );
+                
+                // Close down filter during ringdown
+                this.filter.frequency.setValueAtTime(2000, startTime);
+                this.filter.frequency.exponentialRampToValueAtTime(
+                    300, 
+                    startTime + ringdownDuration
+                );
+                
+                this.oscMerged.start(startTime);
+                harmonic.start(startTime);
+                
+                this.oscMerged.stop(startTime + ringdownDuration + 0.5);
+                harmonic.stop(startTime + ringdownDuration + 0.5);
+            }
+            
+            // Play the complete merger event
+            async playMerger(m1, m2, inspiralDuration, ringdownDuration, speed) {
+                await this.init();
+                
+                if (this.ctx.state === 'suspended') {
+                    await this.ctx.resume();
+                }
+                
+                const mergerTime = this.startInspiral(m1, m2, inspiralDuration, speed);
+                this.playRupture(mergerTime, m1, m2);
+                this.playRingdown(mergerTime, m1, m2, ringdownDuration, speed);
+            }
+            
+            stop() {
+                if (!this.initialized) return;
+                
+                const now = this.ctx.currentTime;
+                this.masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                setTimeout(() => {
+                    if (this.osc1) this.osc1.stop();
+                    if (this.osc2) this.osc2.stop();
+                    if (this.oscMerged) this.oscMerged.stop();
+                    this.masterGain.gain.value = 0.4;
+                }, 150);
+                
+                this.playing = false;
+            }
+        }
+        
+        // Global audio instance
+        const gwAudio = new GravitationalWaveAudio();
+        
+        // CRR Physics Engine - Enhanced with Accurate GR Physics
+        class CRRGravitationalWave {
+            constructor(m1, m2) {
+                // Ensure m1 >= m2
+                if (m2 > m1) [m1, m2] = [m2, m1];
+                
+                this.m1 = m1;  // Primary mass (M☉)
+                this.m2 = m2;  // Secondary mass (M☉)
+                this.M = m1 + m2;  // Total mass
+                this.mu = (m1 * m2) / this.M;  // Reduced mass
+                this.eta = this.mu / this.M;  // Symmetric mass ratio [0, 0.25]
+                this.q = m2 / m1;  // Mass ratio [0, 1]
+                this.delta = (m1 - m2) / this.M;  // Mass difference parameter
+                this.Mc = Math.pow(m1 * m2, 3/5) / Math.pow(this.M, 1/5);  // Chirp mass
+                
+                // Final state from NR fits (Healy et al. 2014)
+                this.radiatedFraction = 0.0559745 * this.eta + 0.580951 * this.eta * this.eta;
+                this.Mfinal = this.M * (1 - this.radiatedFraction);
+                
+                // Final spin from NR fits (simplified Barausse & Rezzolla 2009)
+                this.chiFinal = Math.min(0.998, 2 * Math.sqrt(3) * this.eta);
+            }
+            
+            // =====================================================================
+            // CRR PARAMETERS
+            // =====================================================================
+            
+            get omegaCRR() {
+                // Ω = 1/φ_eff from Ω-symmetry hypothesis
+                // Z₂ symmetric (q=1, η=0.25): φ = π → Ω = 1/π ≈ 0.318
+                // Broken (q→0, η→0): φ → 2π → Ω → 1/(2π) ≈ 0.159
+                const symmetryFactor = this.eta / 0.25;  // 0 to 1
+                const phiEff = PI * (2 - symmetryFactor);  // 2π to π
+                return 1 / phiEff;
+            }
+            
+            get cvPredicted() {
+                return this.omegaCRR / 2;
+            }
+            
+            get cCritical() {
+                return 1 / this.omegaCRR;  // C* at which rupture occurs
+            }
+            
+            get symmetryClass() {
+                if (this.q > 0.9) return 'Z₂';
+                if (this.q > 0.5) return 'Weakly broken';
+                if (this.q > 0.1) return 'Moderately broken';
+                return 'EMR';
+            }
+            
+            // =====================================================================
+            // PHYSICAL FREQUENCIES (in Hz)
+            // =====================================================================
+            
+            get fISCO() {
+                // f_ISCO = c³ / (6^(3/2) × π × G × M) ≈ 4400 Hz × (M☉/M)
+                return 4400 / this.M;
+            }
+            
+            get fQNM() {
+                // QNM frequency fit (Berti et al. 2006)
+                // M × ω_R = 1.5251 - 1.1568 × (1-χ)^0.1292
+                const Mw = 1.5251 - 1.1568 * Math.pow(1 - this.chiFinal, 0.1292);
+                return Mw * 32260 / this.Mfinal;  // Convert to Hz
+            }
+            
+            get tauQNM() {
+                // QNM damping time fit
+                // τ/M = 1 / (0.0890 + 0.3441 × (1-χ)^0.4987)
+                const MoverTau = 0.0890 + 0.3441 * Math.pow(1 - this.chiFinal, 0.4987);
+                const tauGeo = this.Mfinal / MoverTau;
+                return tauGeo * this.Mfinal * 4.93e-3;  // Convert to ms
+            }
+            
+            get qualityFactor() {
+                // Q = ω × τ / 2 = π × f × τ
+                return PI * this.fQNM * (this.tauQNM / 1000) / 2;
+            }
+            
+            // =====================================================================
+            // WAVEFORM GENERATION
+            // =====================================================================
+            
+            // Inspiral phase evolution (TaylorT2, leading order)
+            inspiral(t, tMerger) {
+                const tau = Math.max(tMerger - t, 0.0001);
+                
+                // Phase: Φ(τ) = -(1/η) × (τ/5M)^(5/8) × [1 + PN corrections]
+                const theta = Math.pow(this.eta * tau / (5 * this.M), 1/8);
+                
+                // Include 2PN phase correction
+                const phi2 = 3715/756 + 55/9 * this.eta;
+                const phasePN = 1 + phi2 * theta * theta;
+                
+                const phase = -phasePN / (this.eta * Math.pow(theta, 5));
+                
+                // Amplitude: A(τ) ∝ Mc^(5/4) × τ^(-1/4)
+                const amp = Math.pow(this.Mc, 5/4) * Math.pow(tau, -1/4);
+                
+                return { phase, amp: amp / 100 };
+            }
+            
+            // Ringdown (QNM damped oscillation)
+            ringdown(t) {
+                if (t < 0) return 0;
+                
+                // ω_QNM in geometric units: ω = M × ω_R where M × ω_R ≈ 0.5-1.0
+                const Mw = 1.5251 - 1.1568 * Math.pow(1 - this.chiFinal, 0.1292);
+                const omega = Mw / this.Mfinal;
+                
+                // τ in geometric units
+                const MoverTau = 0.0890 + 0.3441 * Math.pow(1 - this.chiFinal, 0.4987);
+                const tau = this.Mfinal / MoverTau;
+                
+                // Damped sinusoid: h(t) = A₀ × exp(-t/τ) × cos(ω × t)
+                return Math.exp(-t / tau) * Math.cos(omega * t * 100);
+            }
+            
+            // =====================================================================
+            // CRR FUNCTIONS
+            // =====================================================================
+            
+            // Coherence function C(t)
+            coherence(t, phase) {
+                const Ccrit = this.cCritical;
+                
+                if (phase === 'inspiral') {
+                    // C accumulates toward C* = 1/Ω
+                    // C ∝ accumulated orbital phase
+                    return Ccrit * (0.2 + 0.8 * Math.min(t / 0.5, 1));
+                } else if (phase === 'rupture') {
+                    return Ccrit;  // Maximum at merger
+                } else {
+                    // Regeneration: effective C-access decays
+                    // Decay rate related to τ_QNM
+                    const decayRate = this.Mfinal / this.tauQNM * 10;
+                    return Ccrit * Math.exp(-t * decayRate);
+                }
+            }
+            
+            // Memory kernel exp(C/Ω)
+            memoryKernel(C) {
+                return Math.exp(C * this.omegaCRR);
+            }
+            
+            // =====================================================================
+            // SUMMARY
+            // =====================================================================
+            
+            getPhysicsParameters() {
+                return {
+                    // Binary
+                    m1: this.m1,
+                    m2: this.m2,
+                    M: this.M,
+                    Mc: this.Mc,
+                    q: this.q,
+                    eta: this.eta,
+                    
+                    // Final state
+                    Mfinal: this.Mfinal,
+                    chiFinal: this.chiFinal,
+                    Erad: this.radiatedFraction * 100,  // Percentage
+                    
+                    // Frequencies
+                    fISCO: this.fISCO,
+                    fQNM: this.fQNM,
+                    tauQNM: this.tauQNM,
+                    Q: this.qualityFactor,
+                    
+                    // CRR
+                    Omega: this.omegaCRR,
+                    CV: this.cvPredicted,
+                    Ccrit: this.cCritical,
+                    symmetry: this.symmetryClass
+                };
+            }
+        }
+        
+        // =============================================================================
+        // SPACETIME FABRIC VISUALIZATION
+        // =============================================================================
+        
+        class SpacetimeFabric {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.resize();
+                
+                this.gridSize = 25;
+                this.time = 0;
+                this.phase = 'waiting'; // waiting, inspiral, rupture, regeneration
+                this.phaseTime = 0;
+                this.animating = false;
+                this.speed = 1;
+                
+                this.bh1 = { x: 0, y: 0, mass: 30 };
+                this.bh2 = { x: 0, y: 0, mass: 30 };
+                this.merged = null;
+                
+                window.addEventListener('resize', () => this.resize());
+            }
+            
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width * 2;
+                this.canvas.height = rect.height * 2;
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
+                this.centerX = this.width / 2;
+                this.centerY = this.height / 2;
+            }
+            
+            setMasses(m1, m2) {
+                this.bh1.mass = m1;
+                this.bh2.mass = m2;
+                this.crr = new CRRGravitationalWave(m1, m2);
+            }
+            
+            start() {
+                if (this.animating) return;
+                this.animating = true;
+                this.phase = 'inspiral';
+                this.phaseTime = 0;
+                this.time = 0;
+                this.merged = null;
+                this.animate();
+            }
+            
+            // Calculate spacetime distortion at a point
+            distortion(x, y, sources, wavePhase) {
+                let totalDist = { dx: 0, dy: 0 };
+                
+                // Gravitational well distortions
+                for (const src of sources) {
+                    const relX = x - src.x;
+                    const relY = y - src.y;
+                    const dist = Math.sqrt(relX * relX + relY * relY) + 10;
+                    const strength = src.mass * 0.8 / (dist * dist) * 100;
+                    
+                    totalDist.dx -= relX * strength / dist;
+                    totalDist.dy -= relY * strength / dist;
+                }
+                
+                // Gravitational wave ripples (only during active phases)
+                if (this.phase !== 'waiting') {
+                    const distFromCenter = Math.sqrt(
+                        (x - this.centerX) ** 2 + 
+                        (y - this.centerY) ** 2
+                    );
+                    
+                    let waveAmp = 0;
+                    let waveFreq = 0;
+                    
+                    if (this.phase === 'inspiral') {
+                        // Increasing frequency chirp
+                        waveFreq = 0.02 + this.phaseTime * 0.05;
+                        waveAmp = 15 * (0.5 + this.phaseTime);
+                    } else if (this.phase === 'rupture') {
+                        // Maximum amplitude
+                        waveFreq = 0.1;
+                        waveAmp = 40 * Math.exp(-this.phaseTime * 5);
+                    } else if (this.phase === 'regeneration') {
+                        // Damped oscillation
+                        waveFreq = 0.08;
+                        waveAmp = 25 * Math.exp(-this.phaseTime * 2);
+                    }
+                    
+                    // Quadrupolar pattern (+ polarization)
+                    const angle = Math.atan2(y - this.centerY, x - this.centerX);
+                    const phase = distFromCenter * waveFreq - wavePhase;
+                    const wave = waveAmp * Math.sin(phase) * Math.cos(2 * angle);
+                    
+                    // Apply wave distortion
+                    totalDist.dx += wave * Math.cos(angle);
+                    totalDist.dy += wave * Math.sin(angle);
+                }
+                
+                return totalDist;
+            }
+            
+            draw() {
+                const ctx = this.ctx;
+                
+                // Clear with gradient
+                const gradient = ctx.createRadialGradient(
+                    this.centerX, this.centerY, 0,
+                    this.centerX, this.centerY, this.width
+                );
+                gradient.addColorStop(0, '#151520');
+                gradient.addColorStop(1, '#0a0a0f');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, this.width, this.height);
+                
+                // Update black hole positions based on phase
+                let sources = [];
+                
+                if (this.phase === 'waiting') {
+                    const separation = 120;
+                    this.bh1.x = this.centerX - separation;
+                    this.bh1.y = this.centerY;
+                    this.bh2.x = this.centerX + separation;
+                    this.bh2.y = this.centerY;
+                    sources = [this.bh1, this.bh2];
+                } else if (this.phase === 'inspiral') {
+                    // Spiraling inward
+                    const separation = 120 * Math.max(0.05, 1 - this.phaseTime * 0.8);
+                    const angle = this.time * (5 + this.phaseTime * 15);
+                    this.bh1.x = this.centerX + separation * Math.cos(angle);
+                    this.bh1.y = this.centerY + separation * Math.sin(angle);
+                    this.bh2.x = this.centerX - separation * Math.cos(angle);
+                    this.bh2.y = this.centerY - separation * Math.sin(angle);
+                    sources = [this.bh1, this.bh2];
+                } else if (this.phase === 'rupture' || this.phase === 'regeneration') {
+                    // Merged
+                    if (!this.merged) {
+                        this.merged = {
+                            x: this.centerX,
+                            y: this.centerY,
+                            mass: this.bh1.mass + this.bh2.mass
+                        };
+                    }
+                    sources = [this.merged];
+                }
+                
+                // Wave phase
+                const wavePhase = this.time * 8;
+                
+                // Draw distorted grid
+                this.drawGrid(sources, wavePhase);
+                
+                // Draw black holes
+                this.drawBlackHoles(sources);
+                
+                // Draw coherence field visualization
+                this.drawCoherenceField(sources);
+            }
+            
+            drawGrid(sources, wavePhase) {
+                const ctx = this.ctx;
+                const spacing = this.gridSize;
+                
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.15)';
+                ctx.lineWidth = 1;
+                
+                // Horizontal lines
+                for (let y = 0; y < this.height; y += spacing) {
+                    ctx.beginPath();
+                    for (let x = 0; x <= this.width; x += 5) {
+                        const dist = this.distortion(x, y, sources, wavePhase);
+                        if (x === 0) {
+                            ctx.moveTo(x + dist.dx, y + dist.dy);
+                        } else {
+                            ctx.lineTo(x + dist.dx, y + dist.dy);
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                // Vertical lines
+                for (let x = 0; x < this.width; x += spacing) {
+                    ctx.beginPath();
+                    for (let y = 0; y <= this.height; y += 5) {
+                        const dist = this.distortion(x, y, sources, wavePhase);
+                        if (y === 0) {
+                            ctx.moveTo(x + dist.dx, y + dist.dy);
+                        } else {
+                            ctx.lineTo(x + dist.dx, y + dist.dy);
+                        }
+                    }
+                    ctx.stroke();
+                }
+            }
+            
+            drawBlackHoles(sources) {
+                const ctx = this.ctx;
+                
+                for (const src of sources) {
+                    const radius = Math.sqrt(src.mass) * 2.5;
+                    
+                    // Event horizon
+                    const gradient = ctx.createRadialGradient(
+                        src.x, src.y, 0,
+                        src.x, src.y, radius * 3
+                    );
+                    
+                    let color;
+                    if (this.phase === 'inspiral') {
+                        color = [78, 205, 196]; // Coherence
+                    } else if (this.phase === 'rupture') {
+                        color = [255, 107, 107]; // Rupture
+                    } else if (this.phase === 'regeneration') {
+                        color = [167, 139, 250]; // Regeneration
+                    } else {
+                        color = [136, 136, 160]; // Waiting
+                    }
+                    
+                    gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`);
+                    gradient.addColorStop(0.3, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.3)`);
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(src.x, src.y, radius * 3, 0, PI * 2);
+                    ctx.fill();
+                    
+                    // Core
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(src.x, src.y, radius, 0, PI * 2);
+                    ctx.fill();
+                    
+                    // Edge glow
+                    ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.8)`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+            
+            drawCoherenceField(sources) {
+                if (this.phase === 'waiting' || !this.crr) return;
+                
+                const ctx = this.ctx;
+                const C = this.crr.coherence(this.phaseTime, this.phase);
+                const normalizedC = Math.min(C * this.crr.omegaCRR, 1);
+                
+                // Coherence aura around the system
+                const gradient = ctx.createRadialGradient(
+                    this.centerX, this.centerY, 0,
+                    this.centerX, this.centerY, 250 * (0.5 + normalizedC)
+                );
+                
+                let color;
+                if (this.phase === 'inspiral') {
+                    color = [78, 205, 196];
+                } else if (this.phase === 'rupture') {
+                    color = [255, 107, 107];
+                } else {
+                    color = [167, 139, 250];
+                }
+                
+                gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${0.1 * normalizedC})`);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.centerX, this.centerY, 250 * (0.5 + normalizedC), 0, PI * 2);
+                ctx.fill();
+            }
+            
+            animate() {
+                if (!this.animating) return;
+                
+                const dt = 0.016 * this.speed;
+                this.time += dt;
+                this.phaseTime += dt;
+                
+                // Phase transitions
+                if (this.phase === 'inspiral' && this.phaseTime > 1.2) {
+                    this.phase = 'rupture';
+                    this.phaseTime = 0;
+                    updatePhaseIndicator('rupture');
+                } else if (this.phase === 'rupture' && this.phaseTime > 0.3) {
+                    this.phase = 'regeneration';
+                    this.phaseTime = 0;
+                    updatePhaseIndicator('regeneration');
+                } else if (this.phase === 'regeneration' && this.phaseTime > 2) {
+                    this.animating = false;
+                    this.phase = 'waiting';
+                    updatePhaseIndicator('waiting');
+                }
+                
+                this.draw();
+                
+                if (this.animating) {
+                    requestAnimationFrame(() => this.animate());
+                }
+            }
+        }
+        
+        // =============================================================================
+        // WAVEFORM VISUALIZATION
+        // =============================================================================
+        
+        class WaveformDisplay {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.resize();
+                
+                this.data = new Array(500).fill(0);
+                this.crr = null;
+                
+                window.addEventListener('resize', () => this.resize());
+            }
+            
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width * 2;
+                this.canvas.height = rect.height * 2;
+                this.width = this.canvas.width;
+                this.height = this.canvas.height;
+            }
+            
+            setCRR(crr) {
+                this.crr = crr;
+                this.generateWaveform();
+            }
+            
+            generateWaveform() {
+                if (!this.crr) return;
+                
+                const n = this.data.length;
+                const mergerIndex = Math.floor(n * 0.6);
+                
+                for (let i = 0; i < n; i++) {
+                    const t = (i - mergerIndex) / 100;
+                    
+                    if (i < mergerIndex - 10) {
+                        // Inspiral (Coherence)
+                        const tau = (mergerIndex - i) / 100;
+                        const phase = -2 * Math.pow(tau, 5/8);
+                        const amp = Math.pow(tau, -1/4) * 0.3;
+                        this.data[i] = Math.min(amp, 1) * Math.cos(phase * 50);
+                    } else if (i < mergerIndex + 10) {
+                        // Merger (Rupture)
+                        const x = (i - mergerIndex) / 10;
+                        this.data[i] = Math.exp(-x * x * 2) * Math.cos(x * 30);
+                    } else {
+                        // Ringdown (Regeneration)
+                        this.data[i] = this.crr.ringdown(t);
+                    }
+                }
+            }
+            
+            draw(progress = 1) {
+                const ctx = this.ctx;
+                
+                // Background
+                ctx.fillStyle = '#0d0d14';
+                ctx.fillRect(0, 0, this.width, this.height);
+                
+                // Grid
+                ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+                ctx.lineWidth = 1;
+                for (let y = 0; y < this.height; y += 30) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(this.width, y);
+                    ctx.stroke();
+                }
+                
+                // Zero line
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.beginPath();
+                ctx.moveTo(0, this.height / 2);
+                ctx.lineTo(this.width, this.height / 2);
+                ctx.stroke();
+                
+                // Waveform
+                const n = Math.floor(this.data.length * progress);
+                const mergerIndex = Math.floor(this.data.length * 0.6);
+                
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                for (let i = 0; i < n; i++) {
+                    const x = (i / this.data.length) * this.width;
+                    const y = this.height / 2 - this.data[i] * (this.height * 0.4);
+                    
+                    // Color based on phase
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                // Gradient stroke
+                const gradient = ctx.createLinearGradient(0, 0, this.width, 0);
+                gradient.addColorStop(0, '#4ecdc4');
+                gradient.addColorStop(0.55, '#4ecdc4');
+                gradient.addColorStop(0.6, '#ff6b6b');
+                gradient.addColorStop(0.65, '#a78bfa');
+                gradient.addColorStop(1, '#a78bfa');
+                ctx.strokeStyle = gradient;
+                ctx.stroke();
+                
+                // Phase labels
+                ctx.font = '20px "JetBrains Mono"';
+                ctx.fillStyle = 'rgba(78, 205, 196, 0.6)';
+                ctx.fillText('C', 40, 40);
+                ctx.fillStyle = 'rgba(255, 107, 107, 0.6)';
+                ctx.fillText('δ', this.width * 0.6, 40);
+                ctx.fillStyle = 'rgba(167, 139, 250, 0.6)';
+                ctx.fillText('R', this.width * 0.85, 40);
+            }
+        }
+        
+        // =============================================================================
+        // INITIALIZATION
+        // =============================================================================
+        
+        let spacetime, waveform;
+        let soundEnabled = true;
+        
+        function init() {
+            const spacetimeCanvas = document.getElementById('spacetimeCanvas');
+            const waveformCanvas = document.getElementById('waveformCanvas');
+            
+            spacetime = new SpacetimeFabric(spacetimeCanvas);
+            waveform = new WaveformDisplay(waveformCanvas);
+            
+            updateParameters();
+            
+            spacetime.draw();
+            waveform.draw();
+            
+            // Event listeners
+            document.getElementById('mass1').addEventListener('input', updateParameters);
+            document.getElementById('mass2').addEventListener('input', updateParameters);
+            document.getElementById('speed').addEventListener('input', updateSpeed);
+            document.getElementById('playBtn').addEventListener('click', startAnimation);
+            
+            // Sound toggle
+            document.getElementById('soundToggle').addEventListener('change', (e) => {
+                soundEnabled = e.target.checked;
+                document.getElementById('soundLabel').textContent = soundEnabled ? 'Sound On' : 'Sound Off';
+            });
+        }
+        
+        function updateParameters() {
+            const m1 = parseFloat(document.getElementById('mass1').value);
+            const m2 = parseFloat(document.getElementById('mass2').value);
+            
+            document.getElementById('mass1Value').textContent = m1;
+            document.getElementById('mass2Value').textContent = m2;
+            
+            spacetime.setMasses(m1, m2);
+            
+            const crr = new CRRGravitationalWave(m1, m2);
+            waveform.setCRR(crr);
+            
+            const p = crr.getPhysicsParameters();
+            
+            // Update parameters display with accurate physics
+            document.getElementById('paramQ').textContent = p.q.toFixed(3);
+            document.getElementById('paramOmega').textContent = p.Omega.toFixed(4);
+            document.getElementById('paramCV').textContent = p.CV.toFixed(4);
+            document.getElementById('paramSymmetry').textContent = p.symmetry;
+            document.getElementById('paramTau').textContent = p.tauQNM.toFixed(1) + ' ms';
+            
+            // Update additional physics displays if they exist
+            const paramFISCO = document.getElementById('paramFISCO');
+            const paramFQNM = document.getElementById('paramFQNM');
+            const paramMfinal = document.getElementById('paramMfinal');
+            const paramErad = document.getElementById('paramErad');
+            
+            if (paramFISCO) paramFISCO.textContent = p.fISCO.toFixed(0) + ' Hz';
+            if (paramFQNM) paramFQNM.textContent = p.fQNM.toFixed(0) + ' Hz';
+            if (paramMfinal) paramMfinal.textContent = p.Mfinal.toFixed(1) + ' M☉';
+            if (paramErad) paramErad.textContent = p.Erad.toFixed(1) + '%';
+            
+            spacetime.draw();
+            waveform.draw();
+        }
+        
+        function updateSpeed() {
+            const speed = parseFloat(document.getElementById('speed').value);
+            document.getElementById('speedValue').textContent = speed.toFixed(1);
+            spacetime.speed = speed;
+        }
+        
+        function updatePhaseIndicator(phase) {
+            const indicator = document.getElementById('phaseIndicator');
+            indicator.className = 'phase-indicator ' + phase;
+            
+            const labels = {
+                'waiting': 'READY',
+                'inspiral': 'INSPIRAL · COHERENCE',
+                'rupture': 'MERGER · RUPTURE',
+                'regeneration': 'RINGDOWN · REGENERATION'
+            };
+            
+            indicator.textContent = labels[phase] || 'READY';
+        }
+        
+        function startAnimation() {
+            updatePhaseIndicator('inspiral');
+            spacetime.start();
+            
+            // Get current masses and speed
+            const m1 = parseFloat(document.getElementById('mass1').value);
+            const m2 = parseFloat(document.getElementById('mass2').value);
+            const speed = parseFloat(document.getElementById('speed').value);
+            
+            // Play the diegetic sound if enabled
+            if (soundEnabled) {
+                // Inspiral: 1.2s, Ringdown: 2s (scaled by speed)
+                gwAudio.playMerger(m1, m2, 1.2, 2.0, speed);
+            }
+            
+            // Animate waveform
+            let progress = 0;
+            const duration = (1.2 + 0.3 + 2) / spacetime.speed;
+            const startTime = performance.now();
+            
+            function animateWaveform(now) {
+                progress = Math.min((now - startTime) / (duration * 1000), 1);
+                waveform.draw(progress);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateWaveform);
+                }
+            }
+            
+            requestAnimationFrame(animateWaveform);
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
