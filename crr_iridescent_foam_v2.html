@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Iridescent Bath Foam</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1815; overflow: hidden; }
+        canvas { display: block; }
+        #info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: rgba(255,255,255,0.75);
+            font: 9px/1.5 'Courier New', monospace;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .eq { color: #b8cca9; font-family: Georgia, serif; font-style: italic; }
+        #stats {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            color: rgba(255,255,255,0.5);
+            font: 8px 'Courier New', monospace;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 10px;
+            border-radius: 3px;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    
+    <div id="info">
+        <div style="color:#c4b89a;font-size:10px;margin-bottom:4px;">CRR IRIDESCENT FOAM</div>
+        <div class="eq">C_film(x) = ∫ drainage(τ)dτ</div>
+        <div class="eq">phase = C_film / Ω</div>
+        <div class="eq">RGB ← sin(phase + 2πn/3)</div>
+    </div>
+    
+    <div id="stats">
+        N:<span id="n">0</span> | ⟨r⟩:<span id="r">0</span> | δ:<span id="d">0</span>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════════
+    // SAFEGUARDS
+    // ═══════════════════════════════════════════════════════════════════
+    const S = {
+        maxBubbles: 800,
+        minBubbles: 350,
+        clamp: (v, lo, hi) => Math.max(lo, Math.min(hi, v)),
+        ok: (v) => Number.isFinite(v) && !Number.isNaN(v),
+        fix: (v, fb = 0) => S.ok(v) ? v : fb
+    };
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // CRR CONSTANTS
+    // ═══════════════════════════════════════════════════════════════════
+    const Ω = 1 / Math.PI;
+    const CV = Ω / 2;
+    const σ = Math.sqrt(Ω);
+    const TWO_PI = Math.PI * 2;
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // CANVAS & FIELDS
+    // ═══════════════════════════════════════════════════════════════════
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    
+    let W, H, FW, FH;
+    const CELL = 2;
+    
+    let fieldFoam;
+    let fieldWell;
+    let fieldSpec;
+    let fieldFilmC;
+    let fieldIridR, fieldIridG, fieldIridB;  // Separate RGB iridescence channels
+    let fieldHeat;
+    
+    function resize() {
+        W = canvas.width = innerWidth;
+        H = canvas.height = innerHeight;
+        FW = Math.ceil(W / CELL);
+        FH = Math.ceil(H / CELL);
+        
+        const size = FW * FH;
+        fieldFoam = new Float32Array(size);
+        fieldWell = new Float32Array(size);
+        fieldSpec = new Float32Array(size);
+        fieldFilmC = new Float32Array(size);
+        fieldIridR = new Float32Array(size);
+        fieldIridG = new Float32Array(size);
+        fieldIridB = new Float32Array(size);
+        fieldHeat = new Float32Array(size);
+        
+        for (let i = 0; i < size; i++) {
+            fieldHeat[i] = 0.7 + Math.random() * 0.15;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // BUBBLE
+    // ═══════════════════════════════════════════════════════════════════
+    class Bubble {
+        constructor(x, y, parentC = 0, forceRadius = null) {
+            this.x = S.fix(x, W/2);
+            this.y = S.fix(y, H/2);
+            
+            this.C = S.clamp(parentC * Math.exp(-1/Ω), 0, 3);
+            this.L = 0.002 * (1 + (Math.random() - 0.5) * 2 * CV);
+            
+            if (forceRadius !== null) {
+                this.radius = forceRadius;
+            } else {
+                const u = Math.random();
+                const sizeParam = -Ω * Math.log(1 - u * 0.97);
+                this.radius = S.clamp(2 + sizeParam * 35, 2, 45);
+            }
+            
+            this.filmC = 0.8 + Math.random() * 0.2;
+            this.filmDecay = 0.00005 * (1 + CV * (Math.random() - 0.5));
+            
+            // Iridescence: each bubble has unique phase and thickness pattern
+            this.basePhase = Math.random() * TWO_PI;
+            this.thicknessOffset = Math.random() * 3;  // Varies starting thickness
+            this.drainageC = Math.random() * 2;
+            this.drainageRate = 0.001 * (1 + Math.random());
+            
+            // Swirl pattern for complex iridescence
+            this.swirlFreq = 2 + Math.random() * 4;
+            this.swirlPhase = Math.random() * TWO_PI;
+            this.swirlRate = 0.0003 * (Math.random() - 0.5);
+            
+            const z = Math.sqrt(-2 * Math.log(Math.max(0.001, Math.random()))) * 
+                      Math.cos(TWO_PI * Math.random());
+            this.threshold = S.clamp(1.2 + z * σ, 0.4, 3);
+            
+            this.vx = σ * (Math.random() - 0.5) * 0.08;
+            this.vy = σ * (Math.random() - 0.5) * 0.08;
+            
+            this.phase = Math.random() * TWO_PI;
+            this.phaseRate = Ω * 0.015 * (0.5 + Math.random());
+            
+            this.alive = true;
+            this.age = 0;
+        }
+        
+        update(dt, bubbles) {
+            if (!this.alive) return;
+            
+            dt = S.clamp(dt, 0, 60);
+            this.age += dt;
+            this.phase += this.phaseRate;
+            
+            this.C += this.L * dt * 0.005;
+            this.C = S.clamp(this.C, 0, 3);
+            
+            this.filmC -= this.filmDecay * dt;
+            this.filmC = S.clamp(this.filmC, 0.1, 1);
+            
+            // Drainage evolves - film thickness changes over time
+            this.drainageC += this.drainageRate * dt;
+            this.swirlPhase += this.swirlRate * dt;
+            
+            const sizeFactor = Math.sqrt(this.radius / 20);
+            const ruptureProb = Math.pow(this.C / this.threshold, 1/Ω) * 0.001 * sizeFactor;
+            const filmRupture = this.filmC < 0.15 ? 0.005 : 0;
+            
+            if (Math.random() < ruptureProb + filmRupture) {
+                this.alive = false;
+                return;
+            }
+            
+            for (const other of bubbles) {
+                if (other === this || !other.alive) continue;
+                
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const minDist = this.radius + other.radius;
+                
+                if (dist < minDist * 1.05 && dist > 0.1) {
+                    const overlap = (minDist * 1.05 - dist) / minDist;
+                    const force = overlap * 0.02 / Ω;
+                    this.vx += (dx / dist) * force;
+                    this.vy += (dy / dist) * force;
+                }
+            }
+            
+            this.vx += (Math.random() - 0.5) * 0.002;
+            this.vy += (Math.random() - 0.5) * 0.002;
+            this.vx *= 0.96;
+            this.vy *= 0.96;
+            
+            this.x += this.vx;
+            this.y += this.vy;
+            
+            const m = this.radius;
+            if (this.x < m) { this.x = m; this.vx *= -0.5; }
+            if (this.x > W - m) { this.x = W - m; this.vx *= -0.5; }
+            if (this.y < m) { this.y = m; this.vy *= -0.5; }
+            if (this.y > H - m) { this.y = H - m; this.vy *= -0.5; }
+        }
+        
+        writeToField() {
+            if (!this.alive) return;
+            
+            const cx = Math.floor(this.x / CELL);
+            const cy = Math.floor(this.y / CELL);
+            
+            const wobble = 1 + Math.sin(this.phase) * 0.01;
+            const r = this.radius * wobble;
+            const cellR = Math.ceil((r + 6) / CELL) + 1;
+            
+            for (let dy = -cellR; dy <= cellR; dy++) {
+                for (let dx = -cellR; dx <= cellR; dx++) {
+                    const fx = cx + dx;
+                    const fy = cy + dy;
+                    
+                    if (fx < 0 || fx >= FW || fy < 0 || fy >= FH) continue;
+                    
+                    const px = fx * CELL + CELL / 2;
+                    const py = fy * CELL + CELL / 2;
+                    const dist = Math.sqrt((px - this.x) ** 2 + (py - this.y) ** 2);
+                    
+                    const i = fy * FW + fx;
+                    const sdf = dist - r;
+                    
+                    // ═══ INTERIOR WELL ═══
+                    if (sdf < -0.5) {
+                        const depth = S.clamp(-sdf / r, 0, 1);
+                        fieldWell[i] += depth * this.filmC;
+                    }
+                    
+                    // ═══ FOAM BOUNDARY + IRIDESCENCE ═══
+                    if (sdf > -3 && sdf < 6) {
+                        const boundaryDist = Math.abs(sdf);
+                        const foamStrength = Math.exp(-boundaryDist * 0.4 / Ω) * this.filmC;
+                        fieldFoam[i] += foamStrength * 1.2;
+                        
+                        // Position on bubble surface (normalized)
+                        const relX = (px - this.x) / r;
+                        const relY = (py - this.y) / r;
+                        const angle = Math.atan2(relY, relX);
+                        
+                        // ═══ CRR FILM THICKNESS → IRIDESCENCE ═══
+                        
+                        // 1. Drainage gradient: thinner at top, thicker at bottom
+                        const drainageGradient = 1.5 + relY * 0.8;
+                        
+                        // 2. Swirl patterns from convection currents
+                        const swirl = Math.sin(angle * this.swirlFreq + this.swirlPhase + this.drainageC) * 0.6;
+                        
+                        // 3. Radial variation (thinner at edges due to curvature)
+                        const radialDist = Math.sqrt(relX * relX + relY * relY);
+                        const radialVar = 1 + (1 - radialDist) * 0.4;
+                        
+                        // 4. Time evolution (drainage accumulation)
+                        const timeVar = this.drainageC * 0.3;
+                        
+                        // Total local film thickness (coherence)
+                        const localFilmC = (this.thicknessOffset + drainageGradient + swirl + radialVar + timeVar) * this.filmC;
+                        
+                        // ═══ CRR PHASE → COLOUR ═══
+                        // phase = C / Ω (fundamental CRR relationship)
+                        const colorPhase = (localFilmC / Ω + this.basePhase) % TWO_PI;
+                        
+                        // Saturation from exp(C/Ω) - higher coherence = more vivid
+                        const sat = 1 - Math.exp(-localFilmC * 0.8 / Ω);
+                        
+                        // RGB interference (120° phase separation)
+                        const iR = (0.5 + 0.5 * Math.sin(colorPhase)) * sat;
+                        const iG = (0.5 + 0.5 * Math.sin(colorPhase + TWO_PI / 3)) * sat;
+                        const iB = (0.5 + 0.5 * Math.sin(colorPhase + TWO_PI * 2 / 3)) * sat;
+                        
+                        // Weight by foam presence and accumulate
+                        const weight = foamStrength * 1.5;
+                        fieldIridR[i] += iR * weight;
+                        fieldIridG[i] += iG * weight;
+                        fieldIridB[i] += iB * weight;
+                        fieldFilmC[i] += weight;  // Track total weight for normalization
+                    }
+                    
+                    // ═══ SPECULAR ═══
+                    const hlX = this.x - r * 0.33;
+                    const hlY = this.y - r * 0.33;
+                    const hlDist = Math.sqrt((px - hlX) ** 2 + (py - hlY) ** 2);
+                    const hlR = Math.max(1.5, r * 0.18);
+                    
+                    if (hlDist < hlR) {
+                        const hlStr = Math.exp(-hlDist / (hlR * 0.3)) * this.filmC;
+                        fieldSpec[i] += hlStr * 2.2;
+                        
+                        if (hlDist < hlR * 0.25) {
+                            fieldSpec[i] += (1 - hlDist / (hlR * 0.25)) * 1.8;
+                        }
+                    }
+                    
+                    if (r > 8) {
+                        const hl2X = this.x + r * 0.2;
+                        const hl2Y = this.y + r * 0.22;
+                        const hl2Dist = Math.sqrt((px - hl2X) ** 2 + (py - hl2Y) ** 2);
+                        const hl2R = r * 0.1;
+                        
+                        if (hl2Dist < hl2R) {
+                            fieldSpec[i] += Math.exp(-hl2Dist / (hl2R * 0.4)) * this.filmC * 0.6;
+                        }
+                    }
+                }
+            }
+        }
+        
+        regenerate() {
+            const daughters = [];
+            if (this.radius < 8) return daughters;
+            
+            const expW = Math.exp(S.clamp(this.C / Ω, 0, 2));
+            const n = Math.floor(Math.random() * expW * 1.2);
+            
+            for (let i = 0; i < Math.min(n, 3); i++) {
+                const angle = (i / Math.max(n, 1)) * TWO_PI + Math.random();
+                const dist = this.radius * 0.4;
+                
+                const nx = this.x + Math.cos(angle) * dist;
+                const ny = this.y + Math.sin(angle) * dist;
+                
+                if (nx > 3 && nx < W - 3 && ny > 3 && ny < H - 3) {
+                    const childR = S.clamp(this.radius * (0.3 + Math.random() * 0.2), 2, 20);
+                    daughters.push(new Bubble(nx, ny, this.C * 0.5, childR));
+                }
+            }
+            
+            return daughters;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // FIELD DYNAMICS
+    // ═══════════════════════════════════════════════════════════════════
+    
+    function clearFields() {
+        fieldFoam.fill(0);
+        fieldWell.fill(0);
+        fieldSpec.fill(0);
+        fieldFilmC.fill(0);
+        fieldIridR.fill(0);
+        fieldIridG.fill(0);
+        fieldIridB.fill(0);
+    }
+    
+    function diffuseHeat(dt) {
+        const size = FW * FH;
+        const newH = new Float32Array(size);
+        
+        for (let y = 0; y < FH; y++) {
+            for (let x = 0; x < FW; x++) {
+                const i = y * FW + x;
+                
+                let lap = 0, cnt = 0;
+                if (x > 0) { lap += fieldHeat[i-1]; cnt++; }
+                if (x < FW-1) { lap += fieldHeat[i+1]; cnt++; }
+                if (y > 0) { lap += fieldHeat[i-FW]; cnt++; }
+                if (y < FH-1) { lap += fieldHeat[i+FW]; cnt++; }
+                
+                lap = cnt > 0 ? lap / cnt - fieldHeat[i] : 0;
+                newH[i] = fieldHeat[i] + lap * Ω * dt * 0.0001;
+                newH[i] = S.clamp(newH[i] * 0.99999, 0.4, 1);
+            }
+        }
+        
+        fieldHeat.set(newH);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // RENDER WITH STRONG IRIDESCENCE
+    // ═══════════════════════════════════════════════════════════════════
+    
+    function render() {
+        const img = ctx.createImageData(W, H);
+        const data = img.data;
+        
+        for (let py = 0; py < H; py++) {
+            const fy = Math.floor(py / CELL);
+            const fy1 = Math.min(fy + 1, FH - 1);
+            const ty = (py % CELL) / CELL;
+            
+            for (let px = 0; px < W; px++) {
+                const fx = Math.floor(px / CELL);
+                const fx1 = Math.min(fx + 1, FW - 1);
+                const tx = (px % CELL) / CELL;
+                
+                const i00 = fy * FW + fx;
+                const i10 = fy * FW + fx1;
+                const i01 = fy1 * FW + fx;
+                const i11 = fy1 * FW + fx1;
+                
+                // Bilinear interpolation
+                const bilerp = (f) => 
+                    f[i00]*(1-tx)*(1-ty) + f[i10]*tx*(1-ty) +
+                    f[i01]*(1-tx)*ty + f[i11]*tx*ty;
+                
+                const foam = S.fix(bilerp(fieldFoam), 0);
+                const well = S.fix(bilerp(fieldWell), 0);
+                const spec = S.fix(bilerp(fieldSpec), 0);
+                const filmC = S.fix(bilerp(fieldFilmC), 0);
+                const iridR = S.fix(bilerp(fieldIridR), 0);
+                const iridG = S.fix(bilerp(fieldIridG), 0);
+                const iridB = S.fix(bilerp(fieldIridB), 0);
+                const heat = S.fix(bilerp(fieldHeat), 0.6);
+                
+                // ═══ BASE: Warm cream ═══
+                let r = 195 + heat * 25;
+                let g = 183 + heat * 20;
+                let b = 165 + heat * 10;
+                
+                // ═══ FOAM BRIGHTENING ═══
+                const foamBright = S.clamp(foam * 0.2, 0, 0.4);
+                r += foamBright * 35;
+                g += foamBright * 32;
+                b += foamBright * 25;
+                
+                // ═══ CRR IRIDESCENCE - STRONG ═══
+                if (filmC > 0.01) {
+                    // Normalize accumulated iridescence
+                    const normR = iridR / filmC;
+                    const normG = iridG / filmC;
+                    const normB = iridB / filmC;
+                    
+                    // Strong iridescence multiplier
+                    const iridStrength = S.clamp(foam * 0.8, 0, 1);
+                    
+                    // Apply as colour shift - AMPLIFIED
+                    // Pink/magenta tones
+                    r += (normR - 0.3) * 120 * iridStrength;
+                    // Green/cyan tones  
+                    g += (normG - 0.3) * 100 * iridStrength;
+                    // Blue/violet tones
+                    b += (normB - 0.3) * 140 * iridStrength;
+                }
+                
+                // ═══ WELL DARKENING ═══
+                const wellDark = S.clamp(well * 0.5, 0, 0.65);
+                r *= (1 - wellDark);
+                g *= (1 - wellDark);
+                b *= (1 - wellDark);
+                
+                // Warm tint in wells
+                if (wellDark > 0.1) {
+                    r += wellDark * 20;
+                    g += wellDark * 12;
+                }
+                
+                // ═══ SPECULAR ═══
+                if (spec > 0.1) {
+                    const specBright = S.clamp(spec * 0.4, 0, 1);
+                    r += specBright * 60;
+                    g += specBright * 60;
+                    b += specBright * 55;
+                }
+                
+                if (spec > 1.0) {
+                    const punch = S.clamp((spec - 1.0) * 0.65, 0, 1);
+                    r += punch * 50;
+                    g += punch * 50;
+                    b += punch * 45;
+                }
+                
+                const pi = (py * W + px) * 4;
+                data[pi] = S.clamp(Math.floor(r), 0, 255);
+                data[pi+1] = S.clamp(Math.floor(g), 0, 255);
+                data[pi+2] = S.clamp(Math.floor(b), 0, 255);
+                data[pi+3] = 255;
+            }
+        }
+        
+        ctx.putImageData(img, 0, 0);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // MAIN
+    // ═══════════════════════════════════════════════════════════════════
+    
+    let bubbles = [];
+    let ruptureCount = 0;
+    
+    function init() {
+        resize();
+        bubbles = [];
+        
+        const N = 500;
+        for (let i = 0; i < N; i++) {
+            bubbles.push(new Bubble(
+                Math.random() * W,
+                Math.random() * H,
+                Math.random() * 0.2
+            ));
+        }
+        
+        for (let s = 0; s < 15; s++) {
+            for (const b of bubbles) b.update(16, bubbles);
+        }
+    }
+    
+    let lastTime = 0;
+    
+    function animate(time) {
+        const dt = S.clamp(time - lastTime, 0, 50);
+        lastTime = time;
+        
+        clearFields();
+        diffuseHeat(dt);
+        
+        const newBubbles = [];
+        const toRemove = [];
+        
+        for (let i = 0; i < bubbles.length; i++) {
+            const b = bubbles[i];
+            b.update(dt, bubbles);
+            
+            if (!b.alive) {
+                toRemove.push(i);
+                ruptureCount++;
+                newBubbles.push(...b.regenerate());
+            } else {
+                b.writeToField();
+            }
+        }
+        
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+            bubbles.splice(toRemove[i], 1);
+        }
+        
+        for (const nb of newBubbles) {
+            if (bubbles.length < S.maxBubbles) bubbles.push(nb);
+        }
+        
+        while (bubbles.length < S.minBubbles) {
+            bubbles.push(new Bubble(Math.random() * W, Math.random() * H, 0));
+        }
+        
+        if (bubbles.length < 450 && Math.random() < 0.05) {
+            bubbles.push(new Bubble(Math.random() * W, Math.random() * H, 0));
+        }
+        
+        render();
+        
+        const meanR = bubbles.length > 0 ?
+            bubbles.reduce((s, b) => s + b.radius, 0) / bubbles.length : 0;
+        
+        document.getElementById('n').textContent = bubbles.length;
+        document.getElementById('r').textContent = meanR.toFixed(1);
+        document.getElementById('d').textContent = ruptureCount;
+        
+        requestAnimationFrame(animate);
+    }
+    
+    canvas.addEventListener('click', e => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const cx = Math.floor(x / CELL);
+        const cy = Math.floor(y / CELL);
+        
+        for (let dy = -4; dy <= 4; dy++) {
+            for (let dx = -4; dx <= 4; dx++) {
+                const fx = cx + dx, fy = cy + dy;
+                if (fx >= 0 && fx < FW && fy >= 0 && fy < FH) {
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const i = fy * FW + fx;
+                    fieldHeat[i] += Math.exp(-dist * Ω * 0.4) * 0.1;
+                    fieldHeat[i] = S.clamp(fieldHeat[i], 0, 1);
+                }
+            }
+        }
+        
+        if (bubbles.length < S.maxBubbles - 12) {
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * TWO_PI;
+                const dist = Math.random() * 30;
+                const nb = new Bubble(
+                    x + Math.cos(angle) * dist,
+                    y + Math.sin(angle) * dist,
+                    0.3
+                );
+                nb.vx = Math.cos(angle) * 0.25;
+                nb.vy = Math.sin(angle) * 0.25;
+                bubbles.push(nb);
+            }
+        }
+    });
+    
+    canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        canvas.dispatchEvent(new MouseEvent('click', {
+            clientX: t.clientX, clientY: t.clientY
+        }));
+    });
+    
+    window.addEventListener('resize', () => {
+        resize();
+        bubbles = bubbles.filter(b => b.x > 0 && b.x < W && b.y > 0 && b.y < H);
+    });
+    
+    init();
+    requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
