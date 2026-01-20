@@ -121,6 +121,23 @@
         
         button:hover { background: rgba(255,255,255,0.2); }
         
+        #shape-select {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.9);
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        
+        #shape-select option {
+            background: #1a1a2e;
+            color: rgba(255,255,255,0.9);
+        }
+        
         #info {
             position: fixed;
             bottom: 80px;
@@ -167,6 +184,12 @@
         </div>
         <button id="release">Release Form</button>
         <button id="reset">Rebirth</button>
+        <div class="row" style="margin-top: 12px;">
+            <label>Summon geometry</label>
+            <select id="shape-select">
+                <option value="-1">Free Flow</option>
+            </select>
+        </div>
     </div>
     
     <div id="stats">
@@ -1732,10 +1755,17 @@ function setGeometry(shapeIndex) {
         coherence[i] *= 0.65;
     }
     
+    // Exit free play mode
+    freePlayMode = false;
+    
     // Update UI
     document.getElementById('shape').innerHTML = 
         shapes[shapeIndex].name + 
         '<small>' + shapes[shapeIndex].desc + '</small>';
+    
+    // Sync dropdown
+    const shapeSelect = document.getElementById('shape-select');
+    if (shapeSelect) shapeSelect.value = shapeIndex;
 }
 
 /**
@@ -1747,8 +1777,13 @@ function setGeometry(shapeIndex) {
 function releaseGeometry() {
     currentShape = -1;
     hasTarget.fill(0);
+    freePlayMode = true; // Enable predator interaction
     document.getElementById('shape').innerHTML = 
-        'Free Flow<small>Pure CRR flocking dynamics</small>';
+        'Free Flow<small>Click to scare the flock!</small>';
+    
+    // Sync dropdown
+    const shapeSelect = document.getElementById('shape-select');
+    if (shapeSelect) shapeSelect.value = -1;
 }
 
 // ============================================================================
@@ -1787,8 +1822,13 @@ function init() {
     }
     
     currentShape = -1;
+    freePlayMode = false; // Start in shape cycling mode, not free play
     document.getElementById('shape').innerHTML = 
         'Click to Summon Form<small>CRR Geometric Murmuration</small>';
+    
+    // Sync dropdown
+    const shapeSelect = document.getElementById('shape-select');
+    if (shapeSelect) shapeSelect.value = -1;
 }
 
 // ============================================================================
@@ -1820,6 +1860,14 @@ function buildGrid() {
 function update() {
     time += 0.016;
     buildGrid();
+    
+    // Decay predator influence over time (threat fades)
+    if (predatorActive) {
+        predatorDecay *= 0.96;
+        if (predatorDecay < 0.01) {
+            predatorActive = false;
+        }
+    }
     
     // Gentle environmental wind
     windAngle += (Math.sin(time * 0.08) * 0.4 - windAngle) * 0.008;
@@ -2033,6 +2081,30 @@ function update() {
         ay += Math.cos(time * 1.5 + phase[i]) * 0.006;
         
         // ================================================================
+        // PREDATOR AVOIDANCE (free flow mode only)
+        // ================================================================
+        // CRR interpretation: predator creates sudden RUPTURE in local
+        // coherence field. Particles flee, breaking alignment, then
+        // gradually regenerate coherent flocking as threat fades.
+        
+        if (predatorActive && !hasTarget[i]) {
+            const pdx = px - predatorX;
+            const pdy = py - predatorY;
+            const pd2 = pdx * pdx + pdy * pdy;
+            const predatorRadius = 250;
+            
+            if (pd2 < predatorRadius * predatorRadius && pd2 > 0) {
+                const pd = Math.sqrt(pd2);
+                const fleeStrength = predatorDecay * (1 - pd / predatorRadius) * 0.8;
+                ax += (pdx / pd) * fleeStrength;
+                ay += (pdy / pd) * fleeStrength;
+                
+                // Rupture: predator presence disrupts coherence
+                coherence[i] *= (1 - fleeStrength * 0.3);
+            }
+        }
+        
+        // ================================================================
         // VELOCITY UPDATE
         // ================================================================
         
@@ -2231,15 +2303,41 @@ function loop() {
 
 window.addEventListener('resize', resize);
 
-canvas.addEventListener('click', () => {
-    currentShape = (currentShape + 1) % shapes.length;
-    setGeometry(currentShape);
+// Predator state for free flow mode
+let predatorX = -1000;
+let predatorY = -1000;
+let predatorActive = false;
+let predatorDecay = 0;
+let freePlayMode = false; // Only true when "Release Form" is pressed
+
+// Click behavior depends on mode
+canvas.addEventListener('click', e => {
+    if (freePlayMode) {
+        // Predator scare in free play mode
+        predatorX = e.clientX;
+        predatorY = e.clientY;
+        predatorActive = true;
+        predatorDecay = 1.0;
+    } else {
+        // Cycle through shapes
+        currentShape = (currentShape + 1) % shapes.length;
+        setGeometry(currentShape);
+    }
 });
 
 canvas.addEventListener('touchstart', e => {
-    e.preventDefault();
-    currentShape = (currentShape + 1) % shapes.length;
-    setGeometry(currentShape);
+    if (freePlayMode) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        predatorX = touch.clientX;
+        predatorY = touch.clientY;
+        predatorActive = true;
+        predatorDecay = 1.0;
+    } else {
+        e.preventDefault();
+        currentShape = (currentShape + 1) % shapes.length;
+        setGeometry(currentShape);
+    }
 });
 
 document.getElementById('omega').oninput = e => {
@@ -2264,6 +2362,26 @@ document.getElementById('irid').oninput = e => {
 
 document.getElementById('release').onclick = releaseGeometry;
 document.getElementById('reset').onclick = init;
+
+// Populate shape selector dropdown
+const shapeSelect = document.getElementById('shape-select');
+shapes.forEach((shape, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = shape.name;
+    shapeSelect.appendChild(option);
+});
+
+// Shape selector handler
+shapeSelect.onchange = e => {
+    const value = parseInt(e.target.value);
+    if (value === -1) {
+        releaseGeometry();
+    } else {
+        currentShape = value;
+        setGeometry(value);
+    }
+};
 
 // ============================================================================
 // START
@@ -2292,7 +2410,7 @@ loop();
  * emergence rather than mechanical positioning.
  * 
  * For more on CRR and its applications across physics, biology, and
- * consciousness studies, see: cohere.org.uk
+ * consciousness studies, see: www.temporalgrammar.ai or www.cohere.org.uk
  * 
  * Framework by Alexander Sabine
  * Active Inference Institute Board Member (2026)
