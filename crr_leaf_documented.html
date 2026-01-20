@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Leaf Genesis - Fully Documented</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Georgia', serif;
+            color: #e8e8e8;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        #canvas-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        canvas { display: block; }
+        .info-panel {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            color: #7fdbda;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: rgba(127, 219, 218, 0.2);
+            border: 1px solid rgba(127, 219, 218, 0.5);
+            color: #7fdbda;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        button:hover { background: rgba(127, 219, 218, 0.4); }
+        .stats {
+            margin-top: 10px;
+            font-size: 0.75em;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRR LEAF GENESIS</h1>
+    <div class="subtitle">Every aspect derived from Coherence-Rupture-Regeneration dynamics</div>
+    
+    <div id="canvas-container">
+        <canvas id="leaf"></canvas>
+    </div>
+    
+    <div class="info-panel">
+        <span class="equation">C(x,t) = ∫L(x,τ)dτ</span> — Coherence accumulation<br>
+        <span class="equation">δ(now)</span> — Rupture at choice-moments<br>
+        <span class="equation">R = ∫φ(x,τ)·exp(C/Ω)·Θ(...)dτ</span> — Regeneration with memory
+    </div>
+    
+    <div class="controls">
+        <button onclick="regenerateLeaf()">New Rupture Seed</button>
+        <button onclick="toggleLayer()">Cycle View</button>
+        <button onclick="cycleTime()">Cycle Light</button>
+        <button onclick="cycleSeason()">Cycle Season</button>
+    </div>
+    
+    <div class="stats" id="stats"></div>
+
+<script>
+/**
+ * ══════════════════════════════════════════════════════════════════════════════
+ * CRR LEAF GENESIS — A Photorealistic Leaf Generated Entirely Through
+ * Coherence-Rupture-Regeneration (CRR) Mathematical Framework
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Author: Alexander Sabine (Active Inference Institute)
+ * Framework: CRR (Coherence-Rupture-Regeneration)
+ * Website: www.temporalgrammar.ai
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ * CRR FRAMEWORK OVERVIEW
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 
+ * The CRR framework consists of three core equations:
+ * 
+ * 1. COHERENCE ACCUMULATION:
+ *    C(x,t) = ∫ L(x,τ) dτ
+ *    
+ *    Where:
+ *    - C(x,t) is coherence at position x and time t
+ *    - L(x,τ) is the Lagrangian (energy/information density) at position x, time τ
+ *    - The integral accumulates coherence over the system's history
+ *    
+ *    In the leaf: Coherence represents structural integrity, resource flow,
+ *    and developmental "memory" accumulated through growth.
+ * 
+ * 2. RUPTURE (Dirac Delta):
+ *    δ(now)
+ *    
+ *    The rupture is a scale-invariant choice-moment where accumulated coherence
+ *    transforms. It marks ontological present moments where agents/systems
+ *    metabolize past into future.
+ *    
+ *    In the leaf: Ruptures create branching points in veins, cell division,
+ *    stomatal opening/closing, and seasonal senescence transitions.
+ * 
+ * 3. REGENERATION:
+ *    R = ∫ φ(x,τ) · exp(C(x,τ)/Ω) · Θ(...) dτ
+ *    
+ *    Where:
+ *    - R is the regenerated form/state
+ *    - φ(x,τ) is the reconstruction potential (available resources/templates)
+ *    - exp(C/Ω) is the MEMORY KERNEL - weights history by coherence
+ *    - Ω (Omega) is the precision parameter linking to Free Energy Principle
+ *    - Θ is the Heaviside function (causal constraint)
+ *    
+ *    In the leaf: Regeneration determines how structures reform after rupture,
+ *    how much historical coherence is accessible, and the fidelity of regrowth.
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ * Ω (OMEGA) - THE PRECISION PARAMETER
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Ω = 1/(phase to rupture) and relates to system symmetry:
+ * 
+ * - Z₂ symmetry (bilateral): Ω = 1/π ≈ 0.318
+ *   Used for: Leaf bilateral symmetry, vein branching pairs
+ *   
+ * - SO(2) symmetry (rotational): Ω = 1/(2π) ≈ 0.159
+ *   Used for: Cellular processes, stomatal dynamics
+ * 
+ * The memory kernel exp(C/Ω) creates differential weighting:
+ * - Large Ω → exp(C/Ω) ≈ 1 → all history weighted equally
+ * - Small Ω → exp(C/Ω) peaked → only high-coherence moments accessible
+ * 
+ * This explains why:
+ * - Low Ω systems are rigid (frequent micro-ruptures reconstitute same patterns)
+ * - High Ω systems enable transformation (access to broader historical fields)
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+
+const canvas = document.getElementById('leaf');
+const ctx = canvas.getContext('2d');
+
+const W = 800;
+const H = 1000;
+canvas.width = W;
+canvas.height = H;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRR GLOBAL PARAMETERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Leaf geometry constants derived from CRR boundary conditions.
+ * The petiole is where coherence ENTERS the leaf (C_max).
+ * The tip is where coherence dissipates to threshold (C_min).
+ */
+const PETIOLE_Y = H * 0.90;  // Maximum coherence input point
+const TIP_Y = H * 0.06;       // Coherence dissipation endpoint
+const CENTER_X = W / 2;       // Bilateral symmetry axis (Z₂)
+
+/**
+ * Ω (Omega) values for different symmetry classes.
+ * 
+ * CRR DERIVATION:
+ * Ω = 1/φ where φ is phase in radians to complete one symmetry cycle.
+ * 
+ * Z₂ (bilateral symmetry): half-cycle = π radians → Ω_Z₂ = 1/π
+ * SO(2) (rotational symmetry): full-cycle = 2π radians → Ω_SO₂ = 1/(2π)
+ */
+const Omega_Z2 = 1 / Math.PI;       // ≈ 0.318 for bilateral structures
+const Omega_SO2 = 1 / (2 * Math.PI); // ≈ 0.159 for cellular processes
+
+// State variables
+let globalTime = 0;
+let viewLayer = 0;
+let lightPhase = 0.75;  // Represents accumulated light coherence
+let season = 0;         // Seasonal coherence cycle (0=spring → 1=winter)
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRR LEAF BOUNDARY — Geometry from Coherence Sustaining Capacity
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calculates leaf width at a given y-position using CRR principles.
+ * 
+ * CRR DERIVATION:
+ * The leaf boundary exists where coherence can no longer sustain structure.
+ * 
+ * Using the regeneration integral:
+ *   R = ∫ φ(x,τ) · exp(C(x,τ)/Ω) dτ
+ * 
+ * The leaf edge is where R drops below the threshold for structural maintenance.
+ * 
+ * φ (reconstruction potential) encodes the developmental programme:
+ * - High φ at base (cordate shape, resource input)
+ * - Maximum φ at mid-leaf (widest point)
+ * - Decreasing φ toward tip (coherence dissipation)
+ * 
+ * The serrated margin emerges from MICRO-RUPTURES at the boundary:
+ * Each serration is a δ(now) where growth coherence exceeded local capacity
+ * and ruptured, creating the characteristic tooth pattern.
+ * 
+ * @param {number} y - Vertical position on leaf
+ * @returns {number} - Width from center to edge at this y
+ */
+function getLeafWidth(y) {
+    // Calculate normalized position t along leaf axis
+    // t = 0 at petiole (base), t = 1 at tip
+    const t = (PETIOLE_Y - y) / (PETIOLE_Y - TIP_Y);
+    
+    if (t < 0 || t > 1) return 0;
+    
+    /**
+     * CRR SHAPE DERIVATION:
+     * 
+     * The leaf shape emerges from the regeneration integral R = ∫φ·exp(C/Ω)dτ
+     * where φ (reconstruction potential) varies along the leaf axis.
+     * 
+     * At each position t, the sustainable width is proportional to
+     * the integral of φ weighted by coherence memory exp(C/Ω).
+     */
+    
+    let width;
+    
+    if (t < 0.15) {
+        /**
+         * BASE REGION (t < 0.15): Cordate expansion
+         * 
+         * CRR: High φ from petiole coherence input.
+         * C(base) is maximum, so exp(C/Ω) strongly weights recent input.
+         * Width expands rapidly following sin curve (natural growth harmonic).
+         * 
+         * The slight indentation at t ≈ 0 creates the cordate (heart) shape,
+         * representing the bifurcation where coherence splits bilaterally.
+         */
+        const baseExpand = Math.sin(t / 0.15 * Math.PI / 2);
+        width = W * 0.42 * baseExpand;
+        
+        // Cordate indentation: coherence bifurcation point
+        if (t < 0.05) {
+            width *= 0.85 + 0.15 * (t / 0.05);
+        }
+        
+    } else if (t < 0.5) {
+        /**
+         * LOWER-MID REGION (0.15 < t < 0.5): Maximum coherence sustaining
+         * 
+         * CRR: Peak regeneration capacity.
+         * R = ∫φ·exp(C/Ω)dτ is maximized here.
+         * The bulge represents where coherence accumulation and
+         * reconstruction potential are optimally balanced.
+         */
+        const bulge = 1 + 0.08 * Math.sin((t - 0.15) / 0.35 * Math.PI);
+        width = W * 0.42 * bulge;
+        
+    } else if (t < 0.85) {
+        /**
+         * UPPER-MID REGION (0.5 < t < 0.85): Gradual taper
+         * 
+         * CRR: Coherence dissipation begins to dominate.
+         * C(x,t) decreases, reducing exp(C/Ω) memory weighting.
+         * φ (reconstruction potential) also decreases.
+         * Width tapers as R approaches structural threshold.
+         */
+        const taper = 1 - ((t - 0.5) / 0.35) * 0.5;
+        width = W * 0.42 * taper;
+        
+    } else {
+        /**
+         * TIP REGION (t > 0.85): Rapid coherence collapse
+         * 
+         * CRR: C approaches minimum threshold.
+         * exp(C/Ω) → exp(C_min/Ω), minimal memory access.
+         * The pointed tip emerges from coherence falling below
+         * the threshold needed for lateral expansion.
+         * 
+         * The ^1.5 exponent creates the natural pointed shape,
+         * representing accelerating coherence loss.
+         */
+        const tipTaper = (1 - t) / 0.15;
+        width = W * 0.21 * Math.pow(tipTaper, 1.5);
+    }
+    
+    /**
+     * MARGIN SERRATION from micro-ruptures:
+     * 
+     * CRR: The leaf margin experiences continuous micro-ruptures δ(now)
+     * as growth coherence meets the boundary constraint.
+     * 
+     * Each tooth is a point where:
+     * 1. Local C exceeded sustainable threshold
+     * 2. Rupture δ occurred
+     * 3. Regeneration R created a small projection before coherence normalized
+     * 
+     * Serration amplitude varies with position (larger in mid-leaf where
+     * growth coherence is highest, smaller at base and tip).
+     */
+    const serrationFreq = 25;  // Number of teeth (rupture events)
+    const serrationAmp = 6 + 8 * (1 - Math.abs(t - 0.4) / 0.5);
+    const serration = Math.sin(t * Math.PI * serrationFreq) * serrationAmp * 
+                      (0.3 + 0.7 * Math.sin(t * Math.PI));
+    
+    return Math.max(0, width + serration);
+}
+
+/**
+ * Tests if a point is inside the leaf boundary.
+ * 
+ * CRR: A point is "inside" if it's within the region where
+ * coherence can sustain structure (R > threshold).
+ */
+function isInsideLeaf(x, y) {
+    const width = getLeafWidth(y);
+    return Math.abs(x - CENTER_X) < width;
+}
+
+/**
+ * Calculates distance from leaf edge.
+ * 
+ * CRR: Distance from edge correlates with local coherence.
+ * Points near edge have lower C (boundary dissipation).
+ * Points near center/veins have higher C (transport coherence).
+ */
+function getDistanceFromEdge(x, y) {
+    const width = getLeafWidth(y);
+    return width - Math.abs(x - CENTER_X);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRR VEIN SYSTEM — Vascular Network from Coherence Transport
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * The vein system emerges from CRR coherence transport dynamics.
+ * 
+ * CRR PRINCIPLES FOR VENATION:
+ * 
+ * 1. COHERENCE FLOW: Veins are paths of maximum coherence C(x,t).
+ *    They form where ∫L(x,τ)dτ accumulates most efficiently.
+ *    
+ * 2. BRANCHING = RUPTURE: Each branch point is a δ(now) where
+ *    coherence exceeded the single-path threshold and bifurcated.
+ *    
+ * 3. GRADIENT FOLLOWING: Veins grow toward LOW coherence regions
+ *    (the margin), following the gradient ∇C.
+ *    
+ * 4. MEMORY WEIGHTING: Branch angles are determined by exp(C/Ω).
+ *    Higher coherence = more conservative angles (memory constrains).
+ */
+class CRRVeinSystem {
+    constructor(seed) {
+        this.seed = seed;
+        this.rng = this.createRNG(seed);
+        this.veins = [];
+        this.veinField = new Float32Array(W * H);
+        
+        /**
+         * CRR VEIN GENERATION ORDER:
+         * 1. Midrib (primary): Maximum coherence spine
+         * 2. Secondaries: Lateral branches from midrib ruptures
+         * 3. Tertiaries: Connecting network in moderate-C zones
+         */
+        this.generateVenation();
+        this.buildCoherenceField();
+    }
+    
+    createRNG(seed) {
+        return () => {
+            seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+            return seed / 0x7fffffff;
+        };
+    }
+    
+    generateVenation() {
+        this.generateMidrib();
+        this.generateSecondaryVeins();
+        this.generateTertiaryVeins();
+    }
+    
+    /**
+     * MIDRIB GENERATION — Primary Coherence Axis
+     * 
+     * CRR DERIVATION:
+     * The midrib is the path of MAXIMUM coherence through the leaf.
+     * It represents C_max from petiole to tip.
+     * 
+     * C(midrib, t) = ∫ L_max(τ) dτ
+     * 
+     * Where L_max is the maximum Lagrangian (resource transport capacity).
+     * 
+     * The midrib grows straight because exp(C_max/Ω) strongly weights
+     * the established direction (high memory → low deviation).
+     */
+    generateMidrib() {
+        const midrib = {
+            points: [],
+            order: 0,  // Primary vein
+            width: 7   // Maximum width (highest C)
+        };
+        
+        let y = PETIOLE_Y;
+        let x = CENTER_X;
+        let C = 1.0;  // Maximum initial coherence at petiole
+        
+        while (y > TIP_Y + 20) {
+            const t = (PETIOLE_Y - y) / (PETIOLE_Y - TIP_Y);
+            
+            /**
+             * CRR: Slight natural waviness from developmental micro-ruptures.
+             * Even the midrib experiences tiny δ(now) events that create
+             * subtle deviations, but exp(C_max/Ω) keeps these minimal.
+             */
+            const waver = Math.sin(t * Math.PI * 3) * 2 * this.rng();
+            x = CENTER_X + waver;
+            
+            /**
+             * CRR: Coherence dissipates toward tip.
+             * C(y) = C_0 · (1 - t·dissipation_rate)
+             * 
+             * This represents the natural loss of transport coherence
+             * as distance from source (petiole) increases.
+             */
+            C = 1.0 - t * 0.3;
+            
+            /**
+             * CRR: Vein width from regeneration integral.
+             * R (structural investment) decreases with C.
+             * Width ∝ R ∝ ∫φ·exp(C/Ω)dτ
+             */
+            const width = 7 * (1 - t * 0.6);
+            
+            midrib.points.push({ x, y, C, width });
+            y -= 3;  // Growth step
+        }
+        
+        this.veins.push(midrib);
+    }
+    
+    /**
+     * SECONDARY VEIN GENERATION — Lateral Branches from Rupture
+     * 
+     * CRR DERIVATION:
+     * Secondary veins emerge at RUPTURE POINTS along the midrib.
+     * 
+     * At each branch point:
+     * 1. Coherence C_midrib exceeds single-path threshold
+     * 2. δ(now) occurs — the rupture event
+     * 3. Coherence bifurcates: C_left + C_right ≈ C_midrib · η
+     *    (where η < 1 accounts for rupture energy cost)
+     * 
+     * Branch angles are determined by the regeneration integral:
+     * θ_branch = θ_base / (1 + α·exp(C/Ω))
+     * 
+     * Higher C/Ω → more memory → more conservative angles
+     */
+    generateSecondaryVeins() {
+        const numPairs = 12 + Math.floor(this.rng() * 5);
+        
+        for (let i = 0; i < numPairs; i++) {
+            // Position along midrib (rupture location)
+            const t = 0.08 + (i / numPairs) * 0.82;
+            const y = PETIOLE_Y - t * (PETIOLE_Y - TIP_Y);
+            
+            /**
+             * CRR: Rupture coherence at branch point.
+             * C_rupture decreases toward tip (less coherence available to split).
+             */
+            const C_rupture = 0.9 - t * 0.3;
+            
+            /**
+             * CRR: Branch angle from memory weighting.
+             * 
+             * exp(C/Ω) determines how much "memory" constrains the angle.
+             * High C/Ω → branch stays closer to parent direction
+             * Low C/Ω → branch can deviate more freely
+             */
+            const memoryWeight = Math.exp(C_rupture / Omega_Z2);
+            const baseAngle = Math.PI * 0.38;  // ~70° base angle
+            const angleVariation = 0.15 / memoryWeight;
+            
+            /**
+             * CRR: Z₂ bilateral symmetry.
+             * Both left and right branches emerge from each rupture point,
+             * reflecting the leaf's bilateral organization.
+             */
+            const leftAngle = Math.PI / 2 + baseAngle + (this.rng() - 0.5) * angleVariation;
+            const rightAngle = Math.PI / 2 - baseAngle + (this.rng() - 0.5) * angleVariation;
+            
+            // Coherence splits at rupture (each branch gets fraction)
+            const branchC = C_rupture * 0.7;
+            
+            this.growSecondaryVein(CENTER_X, y, leftAngle, branchC, 1);
+            this.growSecondaryVein(CENTER_X, y, rightAngle, branchC, 1);
+        }
+    }
+    
+    /**
+     * SECONDARY VEIN GROWTH — Coherence Gradient Following
+     * 
+     * CRR DERIVATION:
+     * Veins grow toward regions of LOW coherence (the margin).
+     * This follows the coherence gradient: growth_direction ∝ -∇C
+     * 
+     * The vein is "seeking" to distribute coherence to underserved regions.
+     * 
+     * At each step:
+     * 1. Calculate local coherence gradient
+     * 2. Apply memory-weighted angle adjustment
+     * 3. Add micro-rupture stochasticity
+     * 4. Update position and coherence
+     * 5. Check for branching ruptures (→ tertiary veins)
+     */
+    growSecondaryVein(startX, startY, angle, C, order) {
+        const vein = {
+            points: [{ x: startX, y: startY, C, width: 3.5 - order * 0.8 }],
+            order: order,
+            width: 3.5 - order * 0.8
+        };
+        
+        let x = startX;
+        let y = startY;
+        let currentAngle = angle;
+        let currentC = C;
+        
+        const direction = angle > Math.PI / 2 ? -1 : 1;
+        
+        let steps = 0;
+        const maxSteps = 150;
+        
+        while (steps < maxSteps && currentC > 0.08) {
+            steps++;
+            
+            const distFromEdge = getDistanceFromEdge(x, y);
+            const leafWidth = getLeafWidth(y);
+            
+            if (distFromEdge < 8 || !isInsideLeaf(x, y)) break;
+            
+            /**
+             * CRR: Coherence gradient force.
+             * 
+             * The vein grows toward the margin (low C) following:
+             * F_gradient = k · (1 - distFromEdge/leafWidth)
+             * 
+             * As the vein approaches the edge, gradient force weakens
+             * (C is already low, less gradient to follow).
+             */
+            const gradientPull = 0.02 * (1 - distFromEdge / leafWidth);
+            currentAngle += direction * gradientPull;
+            
+            /**
+             * CRR: Memory-weighted upward bias.
+             * 
+             * exp(C/Ω) creates a tendency to curve toward the tip.
+             * This represents the leaf's "memory" of its growth axis.
+             * 
+             * bias = upwardBase / exp(C/Ω)
+             * Higher C → more memory → less deviation allowed
+             */
+            const memoryFactor = Math.exp(currentC / Omega_Z2);
+            const upwardBias = 0.003 / memoryFactor;
+            currentAngle += (currentAngle > Math.PI / 2 ? upwardBias : -upwardBias);
+            
+            /**
+             * CRR: Micro-rupture stochasticity.
+             * 
+             * Small δ(now) events create natural waviness.
+             * These are sub-threshold ruptures that don't branch
+             * but introduce organic variation.
+             */
+            const microRupture = (this.rng() - 0.5) * 0.01;
+            currentAngle += microRupture;
+            
+            /**
+             * CRR: Step size from coherence.
+             * 
+             * Higher C → more "momentum" → larger steps
+             * This represents coherence-driven growth vigor.
+             */
+            const step = 4 + currentC * 2;
+            x += Math.cos(currentAngle) * step;
+            y -= Math.sin(currentAngle) * step * 0.3;
+            
+            /**
+             * CRR: Coherence dissipation.
+             * 
+             * C decreases with distance from source (midrib).
+             * dC/ds = -λ·C where λ is dissipation rate.
+             * Discrete form: C_new = C_old · (1 - λ)
+             */
+            currentC *= 0.985;
+            
+            /**
+             * CRR: Width from regeneration.
+             * 
+             * Vein width ∝ R ∝ local coherence.
+             * As C decreases, less structural investment is possible.
+             */
+            const width = vein.width * (0.3 + 0.7 * currentC);
+            
+            vein.points.push({ x, y, C: currentC, width });
+            
+            /**
+             * CRR: Branching rupture check.
+             * 
+             * If coherence exceeds local threshold and random trigger hits,
+             * a rupture δ(now) creates a new branch (tertiary vein).
+             */
+            if (this.rng() < 0.06 && currentC > 0.2 && order < 3) {
+                const branchAngle = currentAngle + direction * (0.4 + this.rng() * 0.3);
+                this.growSecondaryVein(x, y, branchAngle, currentC * 0.5, order + 1);
+            }
+        }
+        
+        if (vein.points.length > 3) {
+            this.veins.push(vein);
+        }
+    }
+    
+    /**
+     * TERTIARY VEIN GENERATION — Reticulate Network
+     * 
+     * CRR DERIVATION:
+     * Tertiary veins form a connecting network in MODERATE coherence zones.
+     * 
+     * They emerge where:
+     * - C is too low for the region to be served by major veins
+     * - C is high enough to sustain minor vascular structure
+     * 
+     * These veins don't follow strong gradients; instead, they form
+     * a mesh that equalizes coherence across the mesophyll.
+     */
+    generateTertiaryVeins() {
+        for (let y = TIP_Y + 50; y < PETIOLE_Y - 50; y += 20) {
+            const leafWidth = getLeafWidth(y);
+            if (leafWidth < 30) continue;
+            
+            for (let side = -1; side <= 1; side += 2) {
+                const numMinor = 2 + Math.floor(this.rng() * 2);
+                
+                for (let i = 0; i < numMinor; i++) {
+                    const xOffset = (i + 1) / (numMinor + 1) * leafWidth * 0.8;
+                    const x = CENTER_X + side * xOffset;
+                    
+                    if (!isInsideLeaf(x, y)) continue;
+                    
+                    /**
+                     * CRR: Tertiaries only form in moderate-C zones.
+                     * 
+                     * If localC > 0.4, we're too close to a major vein
+                     * (that vein already provides coherence here).
+                     */
+                    const localC = this.getCoherenceFromVeins(x, y);
+                    if (localC > 0.4) continue;
+                    
+                    const veinlet = {
+                        points: [],
+                        order: 3,
+                        width: 0.8
+                    };
+                    
+                    let vx = x;
+                    let vy = y;
+                    let vAngle = (this.rng() - 0.5) * Math.PI * 0.3 + 
+                                 Math.PI / 2 * (this.rng() > 0.5 ? 1 : -1);
+                    
+                    const maxSteps = 6 + Math.floor(this.rng() * 6);
+                    for (let s = 0; s < maxSteps; s++) {
+                        if (!isInsideLeaf(vx, vy)) break;
+                        if (getDistanceFromEdge(vx, vy) < 10) break;
+                        
+                        veinlet.points.push({ x: vx, y: vy, C: 0.12, width: 0.5 });
+                        
+                        const stepSize = 4;
+                        vx += Math.cos(vAngle) * stepSize;
+                        vy += Math.sin(vAngle) * stepSize;
+                        
+                        /**
+                         * CRR: Random walk constrained by coherence.
+                         * Tertiary veins meander but are constrained
+                         * by the local coherence field.
+                         */
+                        vAngle += (this.rng() - 0.5) * 0.25;
+                    }
+                    
+                    if (veinlet.points.length > 2) {
+                        this.veins.push(veinlet);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Quick coherence lookup from existing veins (before field is built).
+     */
+    getCoherenceFromVeins(x, y) {
+        let maxC = 0;
+        for (const vein of this.veins) {
+            if (vein.order > 2) continue;
+            for (const p of vein.points) {
+                const dist = Math.sqrt(Math.pow(x - p.x, 2) + Math.pow(y - p.y, 2));
+                if (dist < 30) {
+                    const c = p.C * Math.exp(-dist / 15);
+                    if (c > maxC) maxC = c;
+                }
+            }
+        }
+        return maxC;
+    }
+    
+    /**
+     * BUILD COHERENCE FIELD — Spatial Coherence Distribution
+     * 
+     * CRR DERIVATION:
+     * Coherence diffuses from veins into surrounding tissue.
+     * 
+     * C(x,y) = Σ_veins C_vein · exp(-d²/2σ²)
+     * 
+     * This Gaussian diffusion represents how vascular coherence
+     * spreads to serve the mesophyll (photosynthetic tissue).
+     */
+    buildCoherenceField() {
+        for (const vein of this.veins) {
+            for (const p of vein.points) {
+                this.addCoherenceAt(p.x, p.y, p.C, 15 + vein.order * 5);
+            }
+        }
+    }
+    
+    addCoherenceAt(cx, cy, C, radius) {
+        const r = Math.ceil(radius);
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+                const px = Math.floor(cx + dx);
+                const py = Math.floor(cy + dy);
+                if (px < 0 || px >= W || py < 0 || py >= H) continue;
+                
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < radius) {
+                    const idx = py * W + px;
+                    /**
+                     * CRR: Gaussian coherence diffusion.
+                     * C_diffused = C_source · exp(-d²/2σ²)
+                     */
+                    const diffused = C * Math.exp(-(dist * dist) / (2 * Math.pow(radius / 2, 2)));
+                    this.veinField[idx] = Math.max(this.veinField[idx], diffused);
+                }
+            }
+        }
+    }
+    
+    getCoherence(x, y) {
+        const px = Math.floor(x);
+        const py = Math.floor(y);
+        if (px < 0 || px >= W || py < 0 || py >= H) return 0;
+        return this.veinField[py * W + px];
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRR CELLULAR BIOLOGY — Cells, Chloroplasts, Stomata
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Biological structures emerge from CRR dynamics at cellular scale.
+ * 
+ * CRR PRINCIPLES FOR BIOLOGY:
+ * 
+ * 1. CELL DISTRIBUTION: Cells form where coherence sustains structure.
+ *    Cell size inversely correlates with coherence gradient.
+ *    
+ * 2. CHLOROPLASTS: Density follows regeneration integral.
+ *    R = ∫φ·exp(C/Ω)dτ determines photosynthetic investment.
+ *    
+ * 3. STOMATA: Gas exchange pores form in LOW coherence regions.
+ *    They avoid veins (high C) to maximize mesophyll exposure.
+ *    Opening/closing is a micro-CRR cycle (coherence-rupture-regeneration).
+ */
+class CRRBiology {
+    constructor(veinSystem) {
+        this.veinSystem = veinSystem;
+        this.cells = [];
+        this.stomata = [];
+        this.generateCells();
+        this.generateStomata();
+    }
+    
+    /**
+     * CELL GENERATION — Coherence-Dependent Distribution
+     * 
+     * CRR DERIVATION:
+     * Cells form where C(x,y) > C_threshold (coherence sustains structure).
+     * 
+     * Cell SIZE is inversely related to coherence gradient magnitude:
+     * - High |∇C| (near veins) → small, elongated cells
+     * - Low |∇C| (mesophyll) → larger, rounder cells
+     * 
+     * This reflects how coherence "pressure" shapes cell development.
+     */
+    generateCells() {
+        const minDist = 8;
+        
+        for (let attempt = 0; attempt < 15000; attempt++) {
+            const y = TIP_Y + Math.random() * (PETIOLE_Y - TIP_Y - 40);
+            const leafWidth = getLeafWidth(y);
+            if (leafWidth < 10) continue;
+            
+            const x = CENTER_X + (Math.random() - 0.5) * 2 * leafWidth * 0.95;
+            if (!isInsideLeaf(x, y)) continue;
+            
+            /**
+             * CRR: Cell spacing modulated by coherence.
+             * Higher C → cells can pack more tightly (more structural support).
+             * Lower C → cells need more space (less coherence to share).
+             */
+            const C = this.veinSystem.getCoherence(x, y);
+            const localMinDist = minDist * (0.6 + 0.8 * (1 - C));
+            
+            let tooClose = false;
+            for (const cell of this.cells) {
+                const dist = Math.sqrt(Math.pow(x - cell.x, 2) + Math.pow(y - cell.y, 2));
+                if (dist < localMinDist) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            
+            if (!tooClose) {
+                const distFromEdge = getDistanceFromEdge(x, y);
+                const t = (PETIOLE_Y - y) / (PETIOLE_Y - TIP_Y);
+                
+                /**
+                 * CRR: Chloroplast density from regeneration integral.
+                 * 
+                 * R = ∫φ(x,τ)·exp(C/Ω)dτ
+                 * 
+                 * In mesophyll (low C), more resources go to photosynthesis.
+                 * Near veins (high C), resources go to transport structure.
+                 * 
+                 * chloroplastDensity ∝ (1 - C) · distanceFromEdge
+                 */
+                const chloroplastDensity = (1 - C * 0.7) * 
+                                           (0.5 + 0.5 * Math.min(1, distFromEdge / 50));
+                
+                /**
+                 * CRR: Cell elongation follows coherence gradient.
+                 * 
+                 * Cells near veins (high C) are elongated along the vein.
+                 * Cells in mesophyll (low C) are more isotropic.
+                 */
+                const elongation = 1 + C * 0.8;
+                
+                this.cells.push({
+                    x, y,
+                    size: 6 + Math.random() * 4,
+                    elongation,
+                    angle: Math.atan2(y - PETIOLE_Y, x - CENTER_X) + Math.PI / 2,
+                    chloroplasts: Math.floor(chloroplastDensity * (3 + Math.random() * 5)),
+                    C: C,
+                    age: t
+                });
+            }
+        }
+    }
+    
+    /**
+     * STOMATA GENERATION — Gas Exchange in Low-Coherence Zones
+     * 
+     * CRR DERIVATION:
+     * Stomata form where coherence is LOW (mesophyll, away from veins).
+     * 
+     * This is because:
+     * 1. Low C regions are dedicated to gas exchange, not transport
+     * 2. Stomata need access to intercellular air spaces (spongy mesophyll)
+     * 3. Veins (high C) are for water/nutrient transport, not gas exchange
+     * 
+     * Probability of stoma forming: P(stoma) ∝ (1 - C)
+     */
+    generateStomata() {
+        for (let i = 0; i < 120; i++) {
+            const t = 0.1 + Math.random() * 0.8;
+            const y = PETIOLE_Y - t * (PETIOLE_Y - TIP_Y);
+            const leafWidth = getLeafWidth(y);
+            if (leafWidth < 30) continue;
+            
+            const x = CENTER_X + (Math.random() - 0.5) * 2 * leafWidth * 0.9;
+            if (!isInsideLeaf(x, y)) continue;
+            
+            const C = this.veinSystem.getCoherence(x, y);
+            
+            /**
+             * CRR: Stomata AVOID high-coherence vein areas.
+             * Only form where C < 0.25 (low coherence mesophyll).
+             */
+            if (C < 0.25 && Math.random() > C * 2) {
+                this.stomata.push({
+                    x, y,
+                    openness: 0.5,
+                    angle: Math.random() * Math.PI,
+                    size: 4 + Math.random() * 2
+                });
+            }
+        }
+    }
+    
+    /**
+     * STOMATAL DYNAMICS — Micro-CRR Cycles
+     * 
+     * CRR DERIVATION:
+     * Stomatal opening/closing is a continuous CRR process:
+     * 
+     * 1. COHERENCE: Light accumulates "opening coherence" in guard cells
+     *    C_open = ∫ L_light(τ) dτ
+     *    
+     * 2. RUPTURE: When CO₂ or water stress exceeds threshold, δ(now)
+     *    triggers state change
+     *    
+     * 3. REGENERATION: Aperture adjusts based on memory-weighted history
+     *    R_aperture = ∫ φ_turgor · exp(C/Ω) dτ
+     * 
+     * This creates the characteristic diurnal rhythm with hysteresis.
+     */
+    update(time) {
+        for (const stoma of this.stomata) {
+            /**
+             * CRR: Light coherence drives opening.
+             * C_light represents accumulated photosynthetic signal.
+             */
+            const C_light = lightPhase;
+            
+            /**
+             * CRR: Memory-weighted response.
+             * exp(C/Ω_SO2) determines how much history affects current state.
+             * SO(2) symmetry for rotational guard cell mechanics.
+             */
+            const memoryWeight = Math.exp(C_light / Omega_SO2);
+            
+            /**
+             * CRR: Circadian modulation.
+             * Represents the oscillating coherence-rupture cycles
+             * of the biological clock.
+             */
+            const circadian = Math.sin(time * 0.002 + stoma.x * 0.01);
+            
+            /**
+             * CRR: Final aperture from regeneration.
+             * Combines light coherence, memory, and circadian rhythm.
+             */
+            stoma.openness = 0.3 + 0.4 * lightPhase * (0.7 + 0.3 * circadian);
+        }
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CRR COLOUR & TRANSLUCENCY — Pigments and Light Interaction
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Leaf colour emerges from CRR dynamics of pigment systems.
+ * 
+ * CRR PRINCIPLES FOR COLOUR:
+ * 
+ * 1. CHLOROPHYLL: Concentration follows coherence accumulation C(x,t).
+ *    High C (veins) → transport focus → less chlorophyll
+ *    Low C (mesophyll) → photosynthesis focus → more chlorophyll
+ *    
+ * 2. CAROTENOIDS: Always present but masked by chlorophyll.
+ *    Revealed when chlorophyll coherence ruptures (autumn).
+ *    They represent "historical coherence" now visible.
+ *    
+ * 3. ANTHOCYANINS: Produced as regeneration response to stress.
+ *    R_anthocyanin = ∫φ_stress·exp(C/Ω)dτ
+ *    Red/purple pigments protect remaining coherence.
+ *    
+ * 4. TRANSLUCENCY: From cellular structure (regeneration determines density).
+ *    High C → dense tissue → less translucent
+ *    Low C → spongy tissue → more translucent
+ *    
+ * 5. SEASONAL SENESCENCE: Coherence collapse propagates from edges/tip inward.
+ *    This is a large-scale rupture where C falls below maintenance threshold.
+ */
+class CRRColourSystem {
+    constructor(veinSystem, biology) {
+        this.veinSystem = veinSystem;
+        this.biology = biology;
+    }
+    
+    /**
+     * GET COLOUR — Full CRR Pigment Computation
+     * 
+     * This method computes the colour at each pixel using CRR principles
+     * for each pigment system and their interactions.
+     */
+    getColour(x, y, time) {
+        if (!isInsideLeaf(x, y)) {
+            return { r: 26, g: 26, b: 46, a: 255 };  // Background
+        }
+        
+        const C = this.veinSystem.getCoherence(x, y);
+        const distFromEdge = getDistanceFromEdge(x, y);
+        const t = (PETIOLE_Y - y) / (PETIOLE_Y - TIP_Y);
+        const leafWidth = getLeafWidth(y);
+        
+        // ══════════════════════════════════════════════════════════════════
+        // CHLOROPHYLL — From Coherence Accumulation C(x,t) = ∫L(x,τ)dτ
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Chlorophyll inversely correlates with vein coherence.
+         * 
+         * Near veins (high C): Resources go to transport → less chlorophyll
+         * In mesophyll (low C): Resources go to photosynthesis → more chlorophyll
+         * 
+         * chlorophyll = base + (1-C) · photosynthetic_investment
+         */
+        let chlorophyll = 0.65 + (1 - C) * 0.25;
+        
+        /**
+         * CRR: Age gradient from developmental coherence history.
+         * 
+         * Young tissue (tip, low t) accumulated less coherence → lighter
+         * Mature tissue (base, high t) accumulated more → darker green
+         */
+        chlorophyll *= 0.75 + 0.25 * (1 - t * 0.5);
+        
+        /**
+         * CRR: Light adaptation through memory kernel exp(C/Ω).
+         * 
+         * The leaf "remembers" light history and adjusts chlorophyll.
+         * Higher coherence → stronger memory → more stable response.
+         */
+        const lightMemory = Math.exp(Math.min(C, 0.5) / Omega_Z2);
+        chlorophyll *= 0.9 + 0.1 * lightPhase / lightMemory;
+        
+        /**
+         * CRR: SEASONAL SENESCENCE — Coherence Collapse
+         * 
+         * In autumn, chlorophyll coherence RUPTURES.
+         * The rupture propagates from LOW coherence regions (edges, tip)
+         * toward HIGH coherence regions (veins, base).
+         * 
+         * This is because:
+         * - Low C regions have less "structural memory" to maintain chlorophyll
+         * - High C regions (veins) retain coherence longer
+         * 
+         * senescence ∝ (1 - C) · distance_from_protected_zones
+         */
+        if (season > 0.4) {
+            const senescenceFactor = (season - 0.4) / 0.6;
+            
+            // Edge vulnerability: low C at margins
+            const edgeVulnerability = 1 - Math.min(1, distFromEdge / 80);
+            
+            // Tip vulnerability: developmental coherence exhausted
+            const tipVulnerability = t > 0.6 ? (t - 0.6) / 0.4 : 0;
+            
+            // Vein protection: high C maintains structure longer
+            const veinProtection = C * 0.5;
+            
+            const localSenescence = senescenceFactor * 
+                (0.3 + 0.7 * Math.max(edgeVulnerability, tipVulnerability)) * 
+                (1 - veinProtection);
+            
+            chlorophyll *= (1 - localSenescence);
+        }
+        
+        // ══════════════════════════════════════════════════════════════════
+        // CAROTENOIDS — Historical Coherence Revealed
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Carotenoids represent ACCUMULATED historical coherence.
+         * 
+         * They were always present (co-accumulated with chlorophyll)
+         * but masked by the dominant green pigment.
+         * 
+         * Base level: higher in stressed (low C) regions
+         */
+        let carotenoids = Math.max(0, 0.15 - C * 0.3) * (1 + (1 - t) * 0.3);
+        
+        /**
+         * CRR: Carotenoids REVEALED as chlorophyll ruptures.
+         * 
+         * This is CRR regeneration: the "memory" of past coherence
+         * becomes visible when the masking system collapses.
+         * 
+         * carotenoid_visible ∝ (1 - chlorophyll) · season_factor
+         */
+        if (season > 0.4) {
+            const revealFactor = (season - 0.4) / 0.6;
+            const chloroLoss = 1 - chlorophyll;
+            carotenoids += chloroLoss * revealFactor * 0.8;
+        }
+        
+        // ══════════════════════════════════════════════════════════════════
+        // ANTHOCYANINS — Regeneration Response to Stress
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Anthocyanins at margins (boundary stress).
+         * 
+         * The leaf edge is a zone of continuous micro-ruptures
+         * where growth coherence meets resistance.
+         * Anthocyanins are the regeneration response to this stress.
+         */
+        let anthocyanins = 0;
+        if (distFromEdge < 20) {
+            anthocyanins = ((20 - distFromEdge) / 20) * 0.2;
+        }
+        if (t > 0.85) {
+            anthocyanins += (t - 0.85) / 0.15 * 0.15;
+        }
+        
+        /**
+         * CRR: AUTUMN ANTHOCYANIN SURGE — Stress Regeneration
+         * 
+         * New anthocyanins produced via regeneration integral:
+         * R_anthocyanin = ∫ φ_stress · exp(C/Ω) dτ
+         * 
+         * They form in patches, especially where sugars accumulate
+         * (near veins but not in them — moderate C zones).
+         * 
+         * This is the plant's regenerative response to senescence stress,
+         * protecting remaining viable tissue.
+         */
+        if (season > 0.5 && season < 0.85) {
+            const stressFactor = (season - 0.5) / 0.35;
+            
+            // Anthocyanins form near (but not on) veins
+            const veinProximity = C > 0.2 && C < 0.5 ? 1 : 0.3;
+            
+            // Patchy distribution from local coherence variations
+            const patchiness = (Math.sin(x * 0.1 + y * 0.05) + 1) * 0.5;
+            
+            anthocyanins += stressFactor * veinProximity * patchiness * 0.6;
+        }
+        
+        // ══════════════════════════════════════════════════════════════════
+        // WINTER — Total Coherence Collapse → Tannin Brown
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Winter represents TOTAL coherence collapse.
+         * 
+         * All pigment systems undergo complete rupture.
+         * What remains are TANNINS — the structural "skeleton"
+         * of accumulated coherence (oxidized phenolic compounds).
+         * 
+         * Tannins are the final residue of the coherence integral:
+         * the non-recoverable structural investment that persists
+         * after all dynamic coherence is exhausted.
+         * 
+         * Veins (highest C) retain structure longest → more tannin visible.
+         */
+        let tannins = 0;
+        if (season > 0.8) {
+            const winterDecay = (season - 0.8) / 0.2;
+            
+            // All pigments fade — coherence fully ruptured
+            chlorophyll *= (1 - winterDecay * 0.95);
+            carotenoids *= (1 - winterDecay * 0.7);
+            anthocyanins *= (1 - winterDecay * 0.8);
+            
+            // Tannins revealed — structural coherence skeleton
+            tannins = winterDecay * 0.9;
+            
+            // Veins persist longest (highest accumulated C)
+            tannins *= (0.6 + C * 0.6);
+        }
+        
+        // ══════════════════════════════════════════════════════════════════
+        // TRANSLUCENCY — From Regeneration-Determined Tissue Density
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Translucency inversely correlates with coherence.
+         * 
+         * R = ∫φ·exp(C/Ω)dτ determines tissue density:
+         * - High C (veins) → high R → dense tissue → opaque
+         * - Low C (mesophyll) → low R → spongy tissue → translucent
+         * 
+         * The spongy mesophyll's air spaces allow light penetration.
+         */
+        const baseTrans = 0.15 + (1 - C) * 0.35;
+        const edgeTrans = distFromEdge < 30 ? (30 - distFromEdge) / 30 * 0.2 : 0;
+        const translucency = Math.min(0.6, baseTrans + edgeTrans);
+        
+        // ══════════════════════════════════════════════════════════════════
+        // VEIN COLOUR — High Coherence Transport Tissue
+        // ══════════════════════════════════════════════════════════════════
+        
+        /**
+         * CRR: Vein colour is darker (concentrated coherence).
+         * 
+         * High C → structural investment dominates → darker green
+         * This represents the transport-specialized tissue.
+         */
+        const veinInfluence = Math.min(1, C * 1.5);
+        
+        // ══════════════════════════════════════════════════════════════════
+        // COMPOSE FINAL COLOUR — Pigment Mixing
+        // ══════════════════════════════════════════════════════════════════
+        
+        // Base mesophyll green from chlorophyll
+        let r = 85 + (1 - chlorophyll) * 60;
+        let g = 140 + chlorophyll * 50;
+        let b = 65 - chlorophyll * 20;
+        
+        // Vein darkening (high C regions)
+        r = r * (1 - veinInfluence * 0.4) + 45 * veinInfluence;
+        g = g * (1 - veinInfluence * 0.25) + 90 * veinInfluence;
+        b = b * (1 - veinInfluence * 0.3) + 35 * veinInfluence;
+        
+        // Carotenoid yellowing
+        r += carotenoids * 80;
+        g += carotenoids * 40;
+        
+        // Anthocyanin reddening
+        r += anthocyanins * 100;
+        g -= anthocyanins * 30;
+        b += anthocyanins * 40;
+        
+        /**
+         * CRR: Tannin brown — structural coherence skeleton.
+         * 
+         * The brown colour of dead leaves is oxidized phenolics,
+         * the non-dynamic residue of accumulated coherence.
+         */
+        if (tannins > 0) {
+            const tanninR = 130, tanninG = 85, tanninB = 40;
+            r = r * (1 - tannins) + tanninR * tannins;
+            g = g * (1 - tannins) + tanninG * tannins;
+            b = b * (1 - tannins) + tanninB * tannins;
+            
+            // Decomposition texture — patchy coherence loss
+            const decayNoise = (Math.sin(x * 0.3 + y * 0.2) * 
+                               Math.cos(x * 0.15 - y * 0.25) + 1) * 0.5;
+            const darkening = tannins * decayNoise * 30;
+            r -= darkening;
+            g -= darkening * 0.8;
+            b -= darkening * 0.5;
+        }
+        
+        /**
+         * CRR: Translucency lightening — light penetration.
+         * 
+         * Low C tissue allows subsurface scattering,
+         * adding luminosity to the mesophyll.
+         */
+        const transLight = translucency * lightPhase;
+        r += transLight * 50;
+        g += transLight * 60;
+        b += transLight * 30;
+        
+        /**
+         * CRR: Subsurface scattering — light in mesophyll.
+         * 
+         * Light penetrates low-C spongy tissue and scatters,
+         * creating the characteristic leaf glow.
+         */
+        const scatter = (1 - C) * lightPhase * 0.15;
+        r += scatter * 30;
+        g += scatter * 50;
+        b += scatter * 20;
+        
+        // Subtle cellular texture
+        const noise = (Math.sin(x * 0.5) * Math.cos(y * 0.5) + 1) * 3;
+        r += noise;
+        g += noise;
+        b += noise * 0.5;
+        
+        return {
+            r: Math.min(255, Math.max(0, r)),
+            g: Math.min(255, Math.max(0, g)),
+            b: Math.min(255, Math.max(0, b)),
+            a: 255
+        };
+    }
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDERING SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+
+let veinSystem, biology, colourSystem;
+
+function init() {
+    const seed = Date.now();
+    veinSystem = new CRRVeinSystem(seed);
+    biology = new CRRBiology(veinSystem);
+    colourSystem = new CRRColourSystem(veinSystem, biology);
+    
+    document.getElementById('stats').textContent = 
+        `Veins: ${veinSystem.veins.length} | Cells: ${biology.cells.length} | ` +
+        `Stomata: ${biology.stomata.length} | Ω_Z₂ = 1/π ≈ ${Omega_Z2.toFixed(4)}`;
+}
+
+function render() {
+    globalTime++;
+    biology.update(globalTime);
+    
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, W, H);
+    
+    if (viewLayer === 0 || viewLayer === 3) renderLeafBase();
+    if (viewLayer === 0 || viewLayer === 2) renderCells();
+    if (viewLayer === 0 || viewLayer === 1) renderVeins();
+    if (viewLayer === 0) {
+        renderStomata();
+        renderEdgeDetail();
+    }
+    if (viewLayer === 3) renderCoherenceField();
+    
+    requestAnimationFrame(render);
+}
+
+function renderLeafBase() {
+    const imageData = ctx.createImageData(W, H);
+    const data = imageData.data;
+    
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            const idx = (y * W + x) * 4;
+            const colour = colourSystem.getColour(x, y, globalTime);
+            data[idx] = colour.r;
+            data[idx + 1] = colour.g;
+            data[idx + 2] = colour.b;
+            data[idx + 3] = colour.a;
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function renderVeins() {
+    const sortedVeins = [...veinSystem.veins].sort((a, b) => b.order - a.order);
+    
+    for (const vein of sortedVeins) {
+        if (vein.points.length < 2) continue;
+        
+        ctx.beginPath();
+        ctx.moveTo(vein.points[0].x, vein.points[0].y);
+        
+        for (let i = 1; i < vein.points.length; i++) {
+            ctx.lineTo(vein.points[i].x, vein.points[i].y);
+        }
+        
+        const order = vein.order;
+        const baseAlpha = 0.9 - order * 0.15;
+        
+        if (order === 0) {
+            ctx.strokeStyle = `rgba(50, 85, 40, ${baseAlpha})`;
+            ctx.lineWidth = vein.width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.strokeStyle = `rgba(90, 130, 70, 0.4)`;
+            ctx.lineWidth = vein.width * 0.4;
+            ctx.stroke();
+        } else if (order === 1) {
+            ctx.strokeStyle = `rgba(55, 90, 45, ${baseAlpha})`;
+            ctx.lineWidth = vein.points[0].width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else if (order === 2) {
+            ctx.strokeStyle = `rgba(65, 100, 55, ${baseAlpha * 0.8})`;
+            ctx.lineWidth = vein.points[0].width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        } else {
+            ctx.strokeStyle = `rgba(75, 115, 65, 0.35)`;
+            ctx.lineWidth = 0.7;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+    }
+}
+
+function renderCells() {
+    for (const cell of biology.cells) {
+        ctx.save();
+        ctx.translate(cell.x, cell.y);
+        ctx.rotate(cell.angle);
+        
+        ctx.beginPath();
+        const irregularity = 0.15;
+        const points = 8;
+        for (let i = 0; i <= points; i++) {
+            const a = (i / points) * Math.PI * 2;
+            const r = cell.size * (1 + Math.sin(a * 3) * irregularity);
+            const rx = r * cell.elongation;
+            const ry = r;
+            const px = Math.cos(a) * rx;
+            const py = Math.sin(a) * ry;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        
+        ctx.strokeStyle = `rgba(60, 95, 50, ${0.15 + cell.C * 0.1})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        
+        for (let c = 0; c < cell.chloroplasts; c++) {
+            const ca = Math.random() * Math.PI * 2;
+            const cr = Math.random() * cell.size * 0.6;
+            const cx = Math.cos(ca) * cr;
+            const cy = Math.sin(ca) * cr * 0.7;
+            
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, 2, 1.2, ca, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(40, 100, 35, ${0.3 + lightPhase * 0.3})`;
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+}
+
+function renderStomata() {
+    for (const stoma of biology.stomata) {
+        ctx.save();
+        ctx.translate(stoma.x, stoma.y);
+        ctx.rotate(stoma.angle);
+        
+        const open = stoma.openness;
+        const size = stoma.size;
+        
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.3, 0, size * 0.8, size * 0.35, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(50, 100, 45, 0.5)`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(40, 80, 35, 0.6)`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.ellipse(size * 0.3, 0, size * 0.8, size * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * 0.25 * open, size * 0.6 * open, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(30, 50, 30, ${0.4 * open})`;
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+function renderEdgeDetail() {
+    ctx.beginPath();
+    
+    for (let y = PETIOLE_Y - 5; y > TIP_Y; y -= 2) {
+        const width = getLeafWidth(y);
+        if (width > 0) {
+            if (y === PETIOLE_Y - 5) ctx.moveTo(CENTER_X + width, y);
+            else ctx.lineTo(CENTER_X + width, y);
+        }
+    }
+    
+    for (let y = TIP_Y; y < PETIOLE_Y - 5; y += 2) {
+        const width = getLeafWidth(y);
+        if (width > 0) ctx.lineTo(CENTER_X - width, y);
+    }
+    
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(30, 60, 25, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(120, 170, 100, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(CENTER_X - 12, PETIOLE_Y);
+    ctx.quadraticCurveTo(CENTER_X, PETIOLE_Y + 50, CENTER_X + 12, PETIOLE_Y);
+    ctx.fillStyle = 'rgba(60, 90, 45, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(40, 70, 35, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+function renderCoherenceField() {
+    const imageData = ctx.getImageData(0, 0, W, H);
+    const data = imageData.data;
+    
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            if (!isInsideLeaf(x, y)) continue;
+            
+            const idx = (y * W + x) * 4;
+            const C = veinSystem.getCoherence(x, y);
+            
+            data[idx] = data[idx] * (1 - C * 0.5);
+            data[idx + 1] = data[idx + 1] * (1 - C * 0.3);
+            data[idx + 2] = Math.min(255, data[idx + 2] + C * 200);
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USER CONTROLS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function regenerateLeaf() {
+    init();
+}
+
+function toggleLayer() {
+    viewLayer = (viewLayer + 1) % 4;
+}
+
+function cycleTime() {
+    lightPhase = lightPhase + 0.2;
+    if (lightPhase > 1) lightPhase = 0.3;
+}
+
+function cycleSeason() {
+    season += 0.12;
+    if (season > 1) season = 0;
+    const seasonNames = ['Spring', 'Late Spring', 'Early Summer', 'Summer', 
+                         'Late Summer', 'Early Autumn', 'Autumn', 'Late Autumn', 'Winter'];
+    const idx = Math.min(seasonNames.length - 1, Math.floor(season * seasonNames.length));
+    document.getElementById('stats').textContent = 
+        `Season: ${seasonNames[idx]} | Veins: ${veinSystem.veins.length} | ` +
+        `Cells: ${biology.cells.length} | Ω_Z₂ = 1/π`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+init();
+render();
+
+/**
+ * ══════════════════════════════════════════════════════════════════════════════
+ * END OF CRR LEAF GENESIS
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 
+ * SUMMARY OF CRR APPLICATIONS IN THIS VISUALIZATION:
+ * 
+ * 1. LEAF GEOMETRY
+ *    - Boundary: R = ∫φ·exp(C/Ω)dτ determines sustainable width
+ *    - Serration: Micro-ruptures δ(now) at margin create teeth
+ *    - Shape: Coherence sustaining capacity varies along axis
+ * 
+ * 2. VEIN SYSTEM
+ *    - Midrib: Maximum coherence path C_max
+ *    - Branching: Ruptures δ(now) where C exceeds single-path threshold
+ *    - Angles: Determined by memory kernel exp(C/Ω)
+ *    - Growth direction: Follows gradient ∇C toward low-C regions
+ *    - Tertiary network: Forms in moderate-C zones
+ * 
+ * 3. CELLULAR BIOLOGY
+ *    - Cell distribution: Where C > threshold
+ *    - Cell size: Inversely related to |∇C|
+ *    - Chloroplasts: Density from R = ∫φ·exp(C/Ω)dτ
+ *    - Stomata: Form in low-C zones, dynamics are micro-CRR cycles
+ * 
+ * 4. COLOUR & PIGMENTS
+ *    - Chlorophyll: Inversely correlates with vein C
+ *    - Carotenoids: Historical coherence revealed by chlorophyll rupture
+ *    - Anthocyanins: Regeneration response R to senescence stress
+ *    - Tannins: Structural coherence skeleton after total collapse
+ * 
+ * 5. TRANSLUCENCY
+ *    - Tissue density from regeneration integral R
+ *    - High C → dense → opaque; Low C → spongy → translucent
+ * 
+ * 6. SEASONAL DYNAMICS
+ *    - Spring/Summer: Coherence accumulation C = ∫L·dτ
+ *    - Autumn: Coherence rupture propagates from low-C regions
+ *    - Winter: Total collapse, only structural tannins remain
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ * 
+ * For more on the CRR framework:
+ * Alexander Sabine — Active Inference Institute
+ * www.temporalgrammar.ai
+ * 
+ * CRR connects to the Free Energy Principle through:
+ * Ω = σ² (precision) and Ω = 1/φ (phase to rupture)
+ * 
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+</script>
+</body>
+</html>
