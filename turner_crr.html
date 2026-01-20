@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turner Emergent — CRR Agents Painting Light</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 24px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      color: #e8dcc4;
+    }
+    
+    .title {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .title h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #f4e4bc;
+      text-shadow: 0 2px 20px rgba(244, 228, 188, 0.3);
+    }
+    
+    .title p {
+      font-size: 1rem;
+      font-style: italic;
+      opacity: 0.7;
+      margin-top: 8px;
+      letter-spacing: 0.1em;
+    }
+    
+    .canvas-container {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .canvas-frame {
+      background: linear-gradient(145deg, #2a2a3a 0%, #1a1a2a 100%);
+      padding: 16px;
+      border-radius: 4px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    
+    .canvas-frame canvas {
+      display: block;
+      background: #FCF8F0;
+      box-shadow: inset 0 0 30px rgba(139, 119, 101, 0.2);
+    }
+    
+    .canvas-label {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      opacity: 0.6;
+    }
+    
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 12px 32px;
+      font-size: 1rem;
+      font-family: inherit;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 2px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #c9a227 0%, #8b6914 100%);
+      box-shadow: 0 4px 15px rgba(201, 162, 39, 0.3);
+    }
+    
+    .btn-primary:disabled {
+      background: #3a3a4a;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #4a4a5a 0%, #3a3a4a 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #5a3a3a 0%, #4a2a2a 100%);
+    }
+    
+    .btn-info {
+      background: linear-gradient(135deg, #3a4a5a 0%, #2a3a4a 100%);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .stats-grid {
+      max-width: 800px;
+      margin: 32px auto 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    
+    .stat-box {
+      background: rgba(255,255,255,0.03);
+      padding: 16px;
+      border-radius: 4px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: #f4e4bc;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+    
+    .explanation {
+      max-width: 700px;
+      margin: 32px auto 0;
+      padding: 24px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .explanation h3 {
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      color: #f4e4bc;
+    }
+    
+    .explanation p {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      opacity: 0.85;
+      margin-bottom: 12px;
+    }
+    
+    .equation {
+      padding-left: 16px;
+      margin-bottom: 8px;
+    }
+    
+    .equation strong {
+      color: #c9a227;
+    }
+    
+    .note {
+      font-style: italic;
+      opacity: 0.7;
+    }
+    
+    .file-input-container {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .file-input-container input[type="file"] {
+      display: none;
+    }
+    
+    .file-label {
+      display: inline-block;
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #3a5a4a 0%, #2a4a3a 100%);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+    }
+    
+    .file-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    #sourceFrame {
+      display: none;
+    }
+    
+    #sourceFrame.visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">
+    <h1>Turner Emergent</h1>
+    <p>CRR Agents Painting Light — Base-60 Colour Space</p>
+  </div>
+
+  <div class="file-input-container">
+    <label class="file-label" for="imageInput">
+      Load Turner Image
+    </label>
+    <input type="file" id="imageInput" accept="image/*">
+  </div>
+
+  <div class="canvas-container">
+    <div class="canvas-frame">
+      <canvas id="mainCanvas" width="800" height="500"></canvas>
+      <div class="canvas-label">CRR Emergent Painting</div>
+    </div>
+    
+    <div class="canvas-frame" id="sourceFrame">
+      <canvas id="sourceCanvas" width="800" height="500"></canvas>
+      <div class="canvas-label">Source: J.M.W. Turner</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-primary" id="startBtn" disabled>Begin Painting</button>
+    <button class="btn-secondary" id="pauseBtn" disabled>Pause</button>
+    <button class="btn-danger" id="resetBtn">Reset</button>
+    <button class="btn-info" id="toggleSourceBtn">Show Source</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-value" id="activeAgents">0</div>
+      <div class="stat-label">Active Agents</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="completedAgents">0</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="avgCoherence">0</div>
+      <div class="stat-label">Mean C(t)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="ruptures">0</div>
+      <div class="stat-label">Total δ-Ruptures</div>
+    </div>
+  </div>
+
+  <div class="explanation">
+    <h3>The CRR Dynamics</h3>
+    <p>Each agent embodies the <em>Coherence–Rupture–Regeneration</em> cycle:</p>
+    <p class="equation"><strong>C(x,t) = ∫L(x,τ)dτ</strong> — coherence accumulates from local luminance</p>
+    <p class="equation"><strong>δ(now)</strong> — rupture occurs at threshold πΩ</p>
+    <p class="equation"><strong>R = ∫φ·exp(C/Ω)dτ</strong> — regeneration with exponential memory weighting</p>
+    <p>
+      <strong>Ω varies with luminance:</strong> bright golden areas have high Ω (stable, slow change), 
+      while dark storm-clouds have low Ω (volatile, frequent ruptures). This creates Turner's 
+      characteristic interplay of serene light and dramatic atmosphere.
+    </p>
+    <p class="note">
+      Colours encoded in base-60 — the Babylonian system of cycles and harmonics.
+    </p>
+  </div>
+
+  <script>
+    // ==================== BASE-60 ENCODING ====================
+    // Babylonian wisdom meets digital pigment
+    const toBase60 = (value) => Math.floor(value * 59);
+    const fromBase60 = (b60) => Math.floor((b60 / 59) * 255);
+
+    // ==================== CRR AGENT CLASS ====================
+    class CRRAgent {
+      constructor(x, y, targetColor, omega, id) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.targetColor = targetColor; // Base-60 encoded [r, g, b]
+        this.currentColor = [0, 0, 0]; // Start from void
+        
+        // CRR parameters
+        this.omega = omega; // Ω - the rupture threshold / precision parameter
+        this.coherence = 0; // C(t) - accumulated coherence
+        this.coherenceHistory = []; // For exp(C/Ω) weighting
+        this.phase = 0; // Current phase in CRR cycle
+        this.isInRupture = false;
+        this.regenerationProgress = 0;
+        
+        // Painting parameters
+        this.brushSize = 2 + Math.random() * 3;
+        this.opacity = 0;
+        this.active = false;
+        this.completed = false;
+        
+        // Temporal dynamics
+        this.birthTime = 0;
+        this.lastRuptureTime = 0;
+      }
+      
+      // C(x,t) = ∫L(x,τ)dτ - coherence accumulation
+      accumulateCoherence(dt, luminanceField) {
+        const localLuminance = luminanceField || 0.5;
+        this.coherence += localLuminance * dt * 0.1;
+        this.coherenceHistory.push({ t: performance.now(), c: this.coherence });
+        
+        if (this.coherenceHistory.length > 100) {
+          this.coherenceHistory.shift();
+        }
+      }
+      
+      // δ(now) - rupture as scale-invariant choice-moment
+      checkRupture() {
+        const threshold = Math.PI * this.omega;
+        if (this.coherence >= threshold && !this.isInRupture) {
+          this.isInRupture = true;
+          this.lastRuptureTime = performance.now();
+          this.coherence = 0;
+          return true;
+        }
+        return false;
+      }
+      
+      // R = ∫φ(x,τ)exp(C(x,τ)/Ω)Θ(...)dτ - regeneration with memory weighting
+      regenerate(dt) {
+        if (!this.isInRupture) return;
+        
+        let totalWeight = 0;
+        let weightedContribution = 0;
+        
+        for (const moment of this.coherenceHistory) {
+          const weight = Math.exp(moment.c / this.omega);
+          totalWeight += weight;
+          weightedContribution += weight * moment.c;
+        }
+        
+        const memoryFactor = totalWeight > 0 ? weightedContribution / totalWeight : 1;
+        
+        this.regenerationProgress += dt * 0.05 * (1 + memoryFactor * 0.1);
+        
+        for (let i = 0; i < 3; i++) {
+          const diff = this.targetColor[i] - this.currentColor[i];
+          this.currentColor[i] += diff * this.regenerationProgress * 0.1;
+        }
+        
+        this.opacity = Math.min(1, this.regenerationProgress * 0.3);
+        
+        if (this.regenerationProgress >= 1) {
+          this.isInRupture = false;
+          this.regenerationProgress = 0;
+          this.phase++;
+          
+          const colorDiff = this.targetColor.reduce((sum, t, i) => 
+            sum + Math.abs(t - this.currentColor[i]), 0);
+          if (colorDiff < 3) {
+            this.completed = true;
+          }
+        }
+      }
+      
+      update(dt, luminanceField) {
+        if (this.completed) return;
+        
+        if (!this.isInRupture) {
+          this.accumulateCoherence(dt, luminanceField);
+          this.checkRupture();
+        } else {
+          this.regenerate(dt);
+        }
+      }
+      
+      getRGB() {
+        return this.currentColor.map(c => fromBase60(Math.round(c)));
+      }
+    }
+
+    // ==================== MAIN APPLICATION ====================
+    const mainCanvas = document.getElementById('mainCanvas');
+    const sourceCanvas = document.getElementById('sourceCanvas');
+    const mainCtx = mainCanvas.getContext('2d');
+    const sourceCtx = sourceCanvas.getContext('2d');
+    
+    let agents = [];
+    let isRunning = false;
+    let animationId = null;
+    let lastTime = 0;
+    let ruptureCount = 0;
+    let imageLoaded = false;
+
+    // Initialize agents from image data
+    function initializeAgents(imageData, width, height) {
+      const newAgents = [];
+      const gridSize = 4;
+      
+      for (let y = 0; y < height; y += gridSize) {
+        for (let x = 0; x < width; x += gridSize) {
+          const i = (y * width + x) * 4;
+          const r = imageData[i];
+          const g = imageData[i + 1];
+          const b = imageData[i + 2];
+          
+          const targetColor = [toBase60(r / 255), toBase60(g / 255), toBase60(b / 255)];
+          const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+          const omega = 0.1 + luminance * 0.4;
+          
+          const agent = new CRRAgent(x, y, targetColor, omega, newAgents.length);
+          agent.birthTime = performance.now() + Math.random() * 2000;
+          newAgents.push(agent);
+        }
+      }
+      
+      return newAgents;
+    }
+
+    // Animation loop
+    function animate(timestamp) {
+      if (!isRunning) return;
+      
+      const dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      
+      // Subtle background wash
+      mainCtx.fillStyle = 'rgba(252, 248, 240, 0.02)';
+      mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+      
+      let activeCount = 0;
+      let completedCount = 0;
+      let totalCoherence = 0;
+      
+      for (const agent of agents) {
+        if (timestamp < agent.birthTime) continue;
+        if (!agent.active) agent.active = true;
+        
+        const luminanceField = 0.5 + Math.sin(timestamp * 0.001 + agent.x * 0.01) * 0.2;
+        
+        const wasInRupture = agent.isInRupture;
+        agent.update(dt, luminanceField);
+        if (!wasInRupture && agent.isInRupture) {
+          ruptureCount++;
+        }
+        
+        if (agent.completed) {
+          completedCount++;
+        } else {
+          activeCount++;
+        }
+        totalCoherence += agent.coherence;
+        
+        if (agent.opacity > 0.01) {
+          const [r, g, b] = agent.getRGB();
+          
+          const gradient = mainCtx.createRadialGradient(
+            agent.x, agent.y, 0,
+            agent.x, agent.y, agent.brushSize * (agent.isInRupture ? 1.5 : 1)
+          );
+          
+          const baseOpacity = agent.opacity * (agent.isInRupture ? 0.8 : 0.4);
+          gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${baseOpacity})`);
+          gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${baseOpacity * 0.5})`);
+          gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+          
+          mainCtx.fillStyle = gradient;
+          mainCtx.beginPath();
+          mainCtx.arc(agent.x, agent.y, agent.brushSize * 2, 0, Math.PI * 2);
+          mainCtx.fill();
+        }
+      }
+      
+      // Update stats
+      document.getElementById('activeAgents').textContent = activeCount;
+      document.getElementById('completedAgents').textContent = completedCount;
+      document.getElementById('avgCoherence').textContent = 
+        activeCount > 0 ? (totalCoherence / activeCount).toFixed(3) : '0';
+      document.getElementById('ruptures').textContent = ruptureCount;
+      
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Event handlers
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const img = new Image();
+      img.onload = function() {
+        const maxWidth = 800;
+        const maxHeight = 500;
+        const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+        const width = Math.floor(img.width * scale);
+        const height = Math.floor(img.height * scale);
+        
+        sourceCanvas.width = width;
+        sourceCanvas.height = height;
+        mainCanvas.width = width;
+        mainCanvas.height = height;
+        
+        sourceCtx.drawImage(img, 0, 0, width, height);
+        
+        mainCtx.fillStyle = '#FCF8F0';
+        mainCtx.fillRect(0, 0, width, height);
+        
+        const imageData = sourceCtx.getImageData(0, 0, width, height).data;
+        agents = initializeAgents(imageData, width, height);
+        
+        imageLoaded = true;
+        document.getElementById('startBtn').disabled = false;
+        
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+    document.getElementById('startBtn').addEventListener('click', function() {
+      if (!imageLoaded) return;
+      isRunning = true;
+      lastTime = performance.now();
+      this.disabled = true;
+      document.getElementById('pauseBtn').disabled = false;
+      animationId = requestAnimationFrame(animate);
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+      isRunning = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      this.disabled = true;
+      document.getElementById('startBtn').disabled = false;
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      isRunning = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      ruptureCount = 0;
+      
+      mainCtx.fillStyle = '#FCF8F0';
+      mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+      
+      if (imageLoaded) {
+        const imageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height).data;
+        agents = initializeAgents(imageData, sourceCanvas.width, sourceCanvas.height);
+      }
+      
+      document.getElementById('activeAgents').textContent = '0';
+      document.getElementById('completedAgents').textContent = '0';
+      document.getElementById('avgCoherence').textContent = '0';
+      document.getElementById('ruptures').textContent = '0';
+      
+      document.getElementById('startBtn').disabled = !imageLoaded;
+      document.getElementById('pauseBtn').disabled = true;
+    });
+
+    document.getElementById('toggleSourceBtn').addEventListener('click', function() {
+      const sourceFrame = document.getElementById('sourceFrame');
+      sourceFrame.classList.toggle('visible');
+      this.textContent = sourceFrame.classList.contains('visible') ? 'Hide Source' : 'Show Source';
+    });
+  </script>
+</body>
+</html>
