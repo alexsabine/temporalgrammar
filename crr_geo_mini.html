@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>*{margin:0}body{background:#000;overflow:hidden}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas><script>
+const c=document.getElementById('c'),gl=c.getContext('webgl'),N=36000,
+x=new Float32Array(N),y=new Float32Array(N),vx=new Float32Array(N),vy=new Float32Array(N),
+C=new Float32Array(N),ph=new Float32Array(N),tx=new Float32Array(N),ty=new Float32Array(N),ht=new Uint8Array(N);
+let W,H,cx,cy,Ω=.1,t=0,sh=-1,gW,gH,gr,gc;const CELL=55,MPC=30,
+shapes=['Flower','Torus','Fibonacci','Metatron','Helix','Lemniscate','Vesica','SriYantra','Lorenz','Klein',
+'Hopf','Penrose','Nautilus','TreeOfLife','YinYang','Ouroboros','Seed','Fruit','Merkaba','Icosa','Dodeca',
+'Tetra','Octa','Cube','64Tetra','Enneagram','Labyrinth','TorusKnot','Rose','Gordian','Tesseract','StarDavid',
+'Ankh','Caduceus','Borromean','Moebius','Apollonian','Mandelbrot','Dragon','Venus'];
+
+const vsrc=`attribute vec2 a_p;attribute float a_c,a_ph;varying float v_c,v_h,v_a;uniform vec2 u_r;uniform float u_t;
+void main(){gl_Position=vec4((a_p/u_r)*2.0-1.0,0,1);gl_Position.y*=-1.0;gl_PointSize=mix(2.0,5.0,a_c);
+v_c=a_c;v_h=fract(a_ph+u_t*0.1+a_c*0.5);v_a=0.3+a_c*0.7;}`,
+fsrc=`precision mediump float;varying float v_c,v_h,v_a;
+vec3 hsv(vec3 c){vec4 K=vec4(1,2./3.,1./3.,3.);vec3 p=abs(fract(c.xxx+K.xyz)*6.0-K.www);return c.z*mix(K.xxx,clamp(p-K.xxx,0.0,1.0),c.y);}
+void main(){float r=length(gl_PointCoord-0.5)*2.0;if(r>1.0)discard;gl_FragColor=vec4(hsv(vec3(v_h,0.3+v_c*0.5,0.75+v_c*0.25)),v_a*(1.0-r*r));}`;
+
+let prg,pB,cB,phB,pL,cL,phL,rL,tL;
+function iGL(){const vs=gl.createShader(gl.VERTEX_SHADER);gl.shaderSource(vs,vsrc);gl.compileShader(vs);
+const fs=gl.createShader(gl.FRAGMENT_SHADER);gl.shaderSource(fs,fsrc);gl.compileShader(fs);
+prg=gl.createProgram();gl.attachShader(prg,vs);gl.attachShader(prg,fs);gl.linkProgram(prg);gl.useProgram(prg);
+pL=gl.getAttribLocation(prg,'a_p');cL=gl.getAttribLocation(prg,'a_c');phL=gl.getAttribLocation(prg,'a_ph');
+rL=gl.getUniformLocation(prg,'u_r');tL=gl.getUniformLocation(prg,'u_t');
+pB=gl.createBuffer();cB=gl.createBuffer();phB=gl.createBuffer();gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);}
+
+const pD=new Float32Array(N*2);
+function render(){gl.clearColor(.006,.006,.018,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.uniform2f(rL,W,H);gl.uniform1f(tL,t);
+for(let i=0;i<N;i++){pD[i*2]=x[i];pD[i*2+1]=y[i];}
+gl.bindBuffer(gl.ARRAY_BUFFER,pB);gl.bufferData(gl.ARRAY_BUFFER,pD,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(pL);gl.vertexAttribPointer(pL,2,gl.FLOAT,!1,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,cB);gl.bufferData(gl.ARRAY_BUFFER,C,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(cL);gl.vertexAttribPointer(cL,1,gl.FLOAT,!1,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,phB);gl.bufferData(gl.ARRAY_BUFFER,ph,gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(phL);gl.vertexAttribPointer(phL,1,gl.FLOAT,!1,0,0);
+gl.drawArrays(gl.POINTS,0,N);}
+
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;cx=W/2;cy=H/2;gl.viewport(0,0,W,H);
+gW=Math.ceil(W/CELL)+2;gH=Math.ceil(H/CELL)+2;gr=new Int32Array(gW*gH*MPC);gc=new Int32Array(gW*gH);}
+
+function init(){for(let i=0;i<N;i++){const a=(i/N)*Math.PI*6,r=(i/N)*Math.min(W,H)*.3;
+x[i]=cx+Math.cos(a)*r+(Math.random()-.5)*50;y[i]=cy+Math.sin(a)*r+(Math.random()-.5)*50;
+const va=a+Math.PI/2,sp=1+Math.random()*1.5;vx[i]=Math.cos(va)*sp;vy[i]=Math.sin(va)*sp;
+C[i]=.3+Math.random()*.4;ph[i]=Math.random()*Math.PI*2;ht[i]=0;}sh=-1;}
+
+function bGrid(){gc.fill(0);for(let i=0;i<N;i++){const gx=Math.floor(x[i]/CELL)+1,gy=Math.floor(y[i]/CELL)+1;
+if(gx>=0&&gx<gW&&gy>=0&&gy<gH){const idx=gy*gW+gx,cnt=gc[idx];if(cnt<MPC){gr[idx*MPC+cnt]=i;gc[idx]=cnt+1;}}}}
+
+function update(){t+=.016;bGrid();const wA=Math.sin(t*.08)*.4,wX=Math.cos(wA)*.25,wY=Math.sin(wA)*.25;
+for(let i=0;i<N;i++){const px=x[i],py=y[i],pvx=vx[i],pvy=vy[i],gx=Math.floor(px/CELL)+1,gy=Math.floor(py/CELL)+1;
+let sVx=0,sVy=0,sepX=0,sepY=0,cohX=0,cohY=0,nc=0,tw=0,wVx=0,wVy=0;
+for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const cxi=gx+dx,cyi=gy+dy;if(cxi<0||cxi>=gW||cyi<0||cyi>=gH)continue;
+const ci=cyi*gW+cxi,cnt=gc[ci],st=cnt>6?Math.floor(cnt/6):1;
+for(let k=0;k<cnt;k+=st){const j=gr[ci*MPC+k];if(j===i)continue;const ddx=x[j]-px,ddy=y[j]-py,d2=ddx*ddx+ddy*ddy;
+if(d2<2500&&d2>0){const d=Math.sqrt(d2);nc++;sVx+=vx[j];sVy+=vy[j];cohX+=x[j];cohY+=y[j];
+if(d2<200){const f=(14-d)/14;sepX-=ddx/d*f;sepY-=ddy/d*f;}const w=Math.exp(C[j]/Ω);tw+=w;wVx+=vx[j]*w;wVy+=vy[j]*w;}}}
+if(nc>0){const sp=Math.sqrt(pvx*pvx+pvy*pvy)+.001,aVx=sVx/nc,aVy=sVy/nc,aSp=Math.sqrt(aVx*aVx+aVy*aVy)+.001;
+const dot=(pvx*aVx+pvy*aVy)/(sp*aSp),al=(dot+1)*.5;C[i]=C[i]*.99+al*.01;}
+let ax=0,ay=0;if(ht[i]){const dx=tx[i]-px,dy=ty[i]-py,d=Math.sqrt(dx*dx+dy*dy)+.001,pl=Math.exp(C[i]/Ω)*.012;
+ax+=dx/d*pl*Math.min(d,200);ay+=dy/d*pl*Math.min(d,200);}
+if(nc>0&&tw>0){const rVx=wVx/tw,rVy=wVy/tw;ax+=(rVx-pvx)*.08;ay+=(rVy-pvy)*.08;
+cohX/=nc;cohY/=nc;ax+=(cohX-px)*.003;ay+=(cohY-py)*.003;}ax+=sepX*.3;ay+=sepY*.3;ax+=wX;ay+=wY;
+const nVx=pvx+ax,nVy=pvy+ay,nSp=Math.sqrt(nVx*nVx+nVy*nVy)+.001,mxS=2.5+C[i];
+vx[i]=nVx/nSp*Math.min(nSp,mxS);vy[i]=nVy/nSp*Math.min(nSp,mxS);x[i]=px+vx[i];y[i]=py+vy[i];
+if(x[i]<0){x[i]=0;vx[i]*=-.5;}if(x[i]>W){x[i]=W;vx[i]*=-.5;}if(y[i]<0){y[i]=0;vy[i]*=-.5;}if(y[i]>H){y[i]=H;vy[i]*=-.5;}
+ph[i]+=.02+C[i]*.03;}}
+
+// Geometry generators (compact)
+function gFlower(n,s){const p=[],pc=Math.floor(n/37);for(let i=0;i<pc*2;i++){const a=i/(pc*2)*Math.PI*2;p.push([Math.cos(a)*s*.5,Math.sin(a)*s*.5]);}
+for(let j=0;j<6;j++){const ca=j/6*Math.PI*2,ccx=Math.cos(ca)*s*.5,ccy=Math.sin(ca)*s*.5;for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([ccx+Math.cos(a)*s*.5,ccy+Math.sin(a)*s*.5]);}}
+for(let j=0;j<12;j++){const ca=j/12*Math.PI*2+Math.PI/12,ccx=Math.cos(ca)*s*.866,ccy=Math.sin(ca)*s*.866;for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([ccx+Math.cos(a)*s*.5,ccy+Math.sin(a)*s*.5]);}}
+while(p.length<n)p.push([Math.cos(Math.random()*Math.PI*2)*s*.5,Math.sin(Math.random()*Math.PI*2)*s*.5]);return p;}
+function gTorus(n,s){const p=[],R=s*.6,r=s*.25;for(let i=0;i<n;i++){const u=i/n*Math.PI*2*3,v=i/n*Math.PI*2*11;p.push([(R+r*Math.cos(v))*Math.cos(u),(R+r*Math.cos(v))*Math.sin(u)*.3+r*Math.sin(v)]);}return p;}
+function gFib(n,s){const p=[],φ=Math.PI*(3-Math.sqrt(5));for(let i=0;i<n;i++){const r=Math.sqrt(i/n)*s,θ=i*φ;p.push([Math.cos(θ)*r,Math.sin(θ)*r]);}return p;}
+function gMeta(n,s){const p=[],pc=Math.floor(n/13);for(let c=0;c<13;c++){const cx=c===0?0:Math.cos(c/12*Math.PI*2)*s*.5,cy=c===0?0:Math.sin(c/12*Math.PI*2)*s*.5;
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([cx+Math.cos(a)*s*.15,cy+Math.sin(a)*s*.15]);}}while(p.length<n)p.push([0,0]);return p;}
+function gHelix(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*4-Math.PI*2,h=i%2,r=s*.3,ox=h?-s*.15:s*.15;p.push([ox+Math.cos(t)*r,t*s*.1]);}return p;}
+function gLem(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2,sc=Math.cos(t),sn=Math.sin(t),d=1+sc*sc;p.push([s*.8*sc/d,s*.4*sc*sn/d]);}return p;}
+function gVes(n,s){const p=[],pc=Math.floor(n/2);for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([Math.cos(a)*s*.4-s*.2,Math.sin(a)*s*.4]);}
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([Math.cos(a)*s*.4+s*.2,Math.sin(a)*s*.4]);}return p;}
+function gSri(n,s){const p=[];for(let i=0;i<n;i++){const l=Math.floor(Math.random()*9),up=l<4,sc=.9-l*.08,a=Math.random()*Math.PI*2;
+p.push([Math.cos(a)*s*sc*.5,(up?1:-1)*Math.sin(a)*s*sc*.3]);}return p;}
+function gLorenz(n,s){const p=[];let lx=.1,ly=0,lz=0;const σ=10,ρ=28,β=8/3,dt=.005;
+for(let i=0;i<n;i++){const dx=σ*(ly-lx),dy=lx*(ρ-lz)-ly,dz=lx*ly-β*lz;lx+=dx*dt;ly+=dy*dt;lz+=dz*dt;p.push([lx*s*.02,ly*s*.02]);}return p;}
+function gKlein(n,s){const p=[];for(let i=0;i<n;i++){const u=i/n*Math.PI*2,v=(i*7%n)/n*Math.PI*2;
+const x=(2+Math.cos(u/2)*Math.sin(v)-Math.sin(u/2)*Math.sin(2*v))*Math.cos(u),y=(2+Math.cos(u/2)*Math.sin(v)-Math.sin(u/2)*Math.sin(2*v))*Math.sin(u);
+p.push([x*s*.2,y*s*.2]);}return p;}
+function gHopf(n,s){const p=[];for(let i=0;i<n;i++){const η=i/n*Math.PI*2*3,ξ=(i*11%n)/n*Math.PI*2;
+p.push([Math.cos(η)*s*.4*(1+.5*Math.cos(ξ)),Math.sin(η)*s*.4*(1+.5*Math.cos(ξ))]);}return p;}
+function gPenrose(n,s){const p=[],φ=(1+Math.sqrt(5))/2;for(let i=0;i<n;i++){const x=(Math.random()-.5)*2,y=(Math.random()-.5)*2;
+const px=x*φ+y,py=x+y*φ;p.push([(px%1)*s*.8,(py%1)*s*.8]);}return p;}
+function gNaut(n,s){const p=[],φ=(1+Math.sqrt(5))/2;for(let i=0;i<n;i++){const θ=i/n*Math.PI*6,r=Math.pow(φ,θ/(Math.PI/2))*s*.02;p.push([Math.cos(θ)*r,Math.sin(θ)*r]);}return p;}
+function gTree(n,s){const p=[],pc=Math.floor(n/10),pos=[[0,-.4],[-.15,-.2],[.15,-.2],[-.25,0],[0,0],[.25,0],[-.2,.2],[.2,.2],[-.1,.35],[.1,.35]];
+pos.forEach(([px,py])=>{for(let i=0;i<pc;i++){const a=Math.random()*Math.PI*2,r=Math.random()*s*.08;p.push([px*s+Math.cos(a)*r,py*s+Math.sin(a)*r]);}});return p;}
+function gYY(n,s){const p=[],pc=Math.floor(n/4);for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([Math.cos(a)*s*.45,Math.sin(a)*s*.45]);}
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI+Math.PI;p.push([Math.cos(a)*s*.225,s*.225+Math.sin(a)*s*.225]);}
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI;p.push([Math.cos(a)*s*.225,-s*.225-Math.sin(a)*s*.225]);}
+for(let i=0;i<pc;i++)p.push([(Math.random()-.5)*s*.1,s*.225+(Math.random()-.5)*s*.1]);return p;}
+function gOuro(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2,r=s*.4+Math.sin(t*3)*s*.05;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gSeed(n,s){const p=[],pc=Math.floor(n/7);for(let c=0;c<7;c++){const cx=c===0?0:Math.cos(c/6*Math.PI*2)*s*.3,cy=c===0?0:Math.sin(c/6*Math.PI*2)*s*.3;
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([cx+Math.cos(a)*s*.3,cy+Math.sin(a)*s*.3]);}}return p;}
+function gFruit(n,s){const p=[],pc=Math.floor(n/13);for(let c=0;c<13;c++){const cx=c===0?0:c<7?Math.cos(c/6*Math.PI*2)*s*.35:Math.cos((c-6)/6*Math.PI*2+Math.PI/6)*s*.6,
+cy=c===0?0:c<7?Math.sin(c/6*Math.PI*2)*s*.35:Math.sin((c-6)/6*Math.PI*2+Math.PI/6)*s*.6;
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([cx+Math.cos(a)*s*.2,cy+Math.sin(a)*s*.2]);}}return p;}
+function gMerk(n,s){const p=[],v=[[0,-.4],[-.35,.2],[.35,.2],[0,.4],[-.35,-.2],[.35,-.2]];for(let i=0;i<n;i++){const e=i%6,e2=(i+1)%6<3?(i+1)%6:(i+1)%6;
+const t=Math.random(),v1=v[e<3?e:e],v2=v[e<3?(e+1)%3:(e+1)%3+3];p.push([((v1[0]+v2[0])*t+(1-t)*v1[0])*s,((v1[1]+v2[1])*t+(1-t)*v1[1])*s]);}return p;}
+function gIco(n,s){const p=[],φ=(1+Math.sqrt(5))/2,v=[[0,1,φ],[0,-1,φ],[0,1,-φ],[0,-1,-φ],[1,φ,0],[-1,φ,0],[1,-φ,0],[-1,-φ,0],[φ,0,1],[-φ,0,1],[φ,0,-1],[-φ,0,-1]];
+for(let i=0;i<n;i++){const vi=v[i%12],a=Math.random()*Math.PI*2,r=Math.random()*s*.1;p.push([vi[0]*s*.2+Math.cos(a)*r,vi[1]*s*.2+Math.sin(a)*r]);}return p;}
+function gDodec(n,s){const p=[],φ=(1+Math.sqrt(5))/2,v=[[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1],[0,φ,1/φ],[0,φ,-1/φ],[0,-φ,1/φ],[0,-φ,-1/φ],[1/φ,0,φ],[1/φ,0,-φ],[-1/φ,0,φ],[-1/φ,0,-φ],[φ,1/φ,0],[φ,-1/φ,0],[-φ,1/φ,0],[-φ,-1/φ,0]];
+for(let i=0;i<n;i++){const vi=v[i%20];p.push([vi[0]*s*.2,vi[1]*s*.2]);}return p;}
+function gTetra(n,s){const p=[],v=[[1,1,1],[-1,-1,1],[-1,1,-1],[1,-1,-1]];for(let i=0;i<n;i++){const e=i%6,v1=v[Math.floor(e/2)],v2=v[(Math.floor(e/2)+1+e%2)%4],t=Math.random();
+p.push([(v1[0]*t+v2[0]*(1-t))*s*.25,(v1[1]*t+v2[1]*(1-t))*s*.25]);}return p;}
+function gOcta(n,s){const p=[],v=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];for(let i=0;i<n;i++){const vi=v[i%6],a=Math.random()*Math.PI*2,r=Math.random()*s*.1;
+p.push([vi[0]*s*.35+Math.cos(a)*r,vi[1]*s*.35+Math.sin(a)*r]);}return p;}
+function gCube(n,s){const p=[],v=[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+for(let i=0;i<n;i++){const vi=v[i%8],a=Math.random()*Math.PI*2,r=Math.random()*s*.05;p.push([vi[0]*s*.25+Math.cos(a)*r,vi[1]*s*.25+Math.sin(a)*r]);}return p;}
+function g64T(n,s){const p=[];for(let i=0;i<n;i++){const x=(i%4-1.5)*s*.2,y=(Math.floor(i/4)%4-1.5)*s*.2;p.push([x+(Math.random()-.5)*s*.1,y+(Math.random()-.5)*s*.1]);}return p;}
+function gEnne(n,s){const p=[],pc=Math.floor(n/9);for(let i=0;i<9;i++){const a=i/9*Math.PI*2-Math.PI/2;for(let j=0;j<pc;j++){const r=s*.4+Math.random()*s*.05;p.push([Math.cos(a)*r,Math.sin(a)*r]);}}return p;}
+function gLab(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*8,r=s*.1+t*s*.04;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gTK(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2*3,r=s*.3+Math.cos(t*2)*s*.15;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gRose(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2*6,r=Math.cos(t*2.5)*s*.4;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gGord(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2*5,r=s*.3+Math.sin(t*3)*s*.1;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gTess(n,s){const p=[],v=[[-1,-1],[-1,1],[1,-1],[1,1]].flatMap(([x,y])=>[[-1,-1],[1,-1],[-1,1],[1,1]].map(([dx,dy])=>[x*.5+dx*.25,y*.5+dy*.25]));
+for(let i=0;i<n;i++){const vi=v[i%16];p.push([vi[0]*s*.4,vi[1]*s*.4]);}return p;}
+function gStar(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2,r=(i%2?.25:.45)*s;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+function gAnkh(n,s){const p=[],pc=Math.floor(n/3);for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([Math.cos(a)*s*.15,Math.sin(a)*s*.15+s*.25]);}
+for(let i=0;i<pc;i++)p.push([(Math.random()-.5)*s*.05,i/pc*s*.5-s*.25]);for(let i=0;i<pc;i++)p.push([i/pc*s*.3-s*.15,s*.05]);return p;}
+function gCad(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*6,h=i%2?.08:-.08;p.push([Math.sin(t)*s*.15+h*s,t*s*.05-s*.4]);}return p;}
+function gBorro(n,s){const p=[],pc=Math.floor(n/3);for(let r=0;r<3;r++){const ox=Math.cos(r/3*Math.PI*2)*.15,oy=Math.sin(r/3*Math.PI*2)*.15;
+for(let i=0;i<pc;i++){const a=i/pc*Math.PI*2;p.push([ox*s+Math.cos(a)*s*.3,oy*s+Math.sin(a)*s*.3]);}}return p;}
+function gMoeb(n,s){const p=[];for(let i=0;i<n;i++){const u=i/n*Math.PI*2,v=(Math.random()-.5)*.3,r=s*.35+v*s*Math.cos(u/2);p.push([Math.cos(u)*r,Math.sin(u)*r]);}return p;}
+function gApoll(n,s){const p=[];function circ(cx,cy,r,d){if(d>4||r<s*.02)return;const pc=Math.max(8,Math.floor(r*2));for(let i=0;i<pc&&p.length<n;i++){const a=i/pc*Math.PI*2;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}
+circ(cx-r*.6,cy,r*.4,d+1);circ(cx+r*.6,cy,r*.4,d+1);circ(cx,cy-r*.6,r*.4,d+1);}circ(0,0,s*.4,0);while(p.length<n)p.push([Math.random()*s-.5*s,Math.random()*s-.5*s]);return p;}
+function gMand(n,s){const p=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2,r=s*.35*(1+.2*Math.cos(a*5));p.push([Math.cos(a)*r-.1*s,Math.sin(a)*r]);}return p;}
+function gDrag(n,s){const p=[];let x=0,y=0,d=0;const moves=[[1,0],[0,1],[-1,0],[0,-1]];for(let i=0;i<n;i++){p.push([x*s*.01,y*s*.01]);
+const m=moves[d%4];x+=m[0];y+=m[1];if(i%2===1)d=(d+1)%4;}return p;}
+function gVenus(n,s){const p=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2*8,r=Math.cos(t*5/8)*s*.4;p.push([Math.cos(t)*r,Math.sin(t)*r]);}return p;}
+
+const gens=[gFlower,gTorus,gFib,gMeta,gHelix,gLem,gVes,gSri,gLorenz,gKlein,gHopf,gPenrose,gNaut,gTree,gYY,gOuro,gSeed,gFruit,gMerk,gIco,gDodec,gTetra,gOcta,gCube,g64T,gEnne,gLab,gTK,gRose,gGord,gTess,gStar,gAnkh,gCad,gBorro,gMoeb,gApoll,gMand,gDrag,gVenus];
+
+function setGeo(si){const sc=Math.min(W,H)*.42,pts=gens[si](N,sc),idx=Array.from({length:N},(_,i)=>i);
+for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+for(let i=0;i<N;i++){const pi=idx[i]%pts.length;tx[i]=cx+pts[pi][0];ty[i]=cy+pts[pi][1];ht[i]=1;C[i]*=.65;}}
+
+c.onclick=()=>{sh=(sh+1)%shapes.length;setGeo(sh);};
+c.ontouchstart=e=>{e.preventDefault();sh=(sh+1)%shapes.length;setGeo(sh);};
+
+function loop(){update();render();requestAnimationFrame(loop);}
+resize();iGL();init();loop();addEventListener('resize',resize);
+</script></body></html>
