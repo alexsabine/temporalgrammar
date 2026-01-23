@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR Breath Meditation | Coherent Resonance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --breath-phase: 0;
+            --coherence: 0;
+            --omega: 0.318;
+            
+            /* Deep contemplative palette */
+            --void: #0a0a0f;
+            --deep: #12121a;
+            --surface: #1a1a24;
+            --glow-coherence: #4a9eff;
+            --glow-rupture: #ff6b4a;
+            --glow-regeneration: #7b68ee;
+            --text-primary: #e8e6e3;
+            --text-secondary: #8a8a9a;
+            --text-dim: #4a4a5a;
+            --gold: #c9a96e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            background: var(--void);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        /* Atmospheric background */
+        .atmosphere {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .atmosphere::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% 100%, rgba(74, 158, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 30% 20%, rgba(123, 104, 238, 0.02) 0%, transparent 40%),
+                radial-gradient(ellipse 50% 50% at 70% 80%, rgba(255, 107, 74, 0.015) 0%, transparent 40%);
+        }
+        
+        .atmosphere::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.015;
+            mix-blend-mode: overlay;
+        }
+        
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            padding: 2rem;
+            gap: 1rem;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            padding: 1rem 0;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        header h1 span {
+            color: var(--gold);
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+        
+        /* Main meditation area */
+        .meditation-space {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        /* Side panels */
+        .panel {
+            background: linear-gradient(135deg, rgba(26, 26, 36, 0.6) 0%, rgba(18, 18, 26, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .panel-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* CRR State Display */
+        .crr-state {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        
+        .state-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        
+        .state-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        
+        .state-label .value {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+        
+        .state-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .state-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.1s ease-out;
+            position: relative;
+        }
+        
+        .state-bar-fill.coherence {
+            background: linear-gradient(90deg, var(--glow-coherence), rgba(74, 158, 255, 0.6));
+            box-shadow: 0 0 10px var(--glow-coherence);
+        }
+        
+        .state-bar-fill.omega {
+            background: linear-gradient(90deg, var(--gold), rgba(201, 169, 110, 0.6));
+            box-shadow: 0 0 10px var(--gold);
+        }
+        
+        .state-bar-fill.exp-weight {
+            background: linear-gradient(90deg, var(--glow-regeneration), rgba(123, 104, 238, 0.6));
+            box-shadow: 0 0 10px var(--glow-regeneration);
+        }
+        
+        /* Equations display */
+        .equations {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .equation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            opacity: 0.6;
+            transition: opacity 0.3s, color 0.3s;
+        }
+        
+        .equation.active {
+            opacity: 1;
+            color: var(--text-secondary);
+        }
+        
+        .equation.coherence-active { color: var(--glow-coherence); }
+        .equation.rupture-active { color: var(--glow-rupture); }
+        .equation.regeneration-active { color: var(--glow-regeneration); }
+        
+        /* Central breath visualization */
+        .breath-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .breath-orb-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Breath orb rings */
+        .breath-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(74, 158, 255, 0.1);
+            transition: all 0.3s ease-out;
+        }
+        
+        .breath-ring:nth-child(1) { width: 100%; height: 100%; }
+        .breath-ring:nth-child(2) { width: 85%; height: 85%; }
+        .breath-ring:nth-child(3) { width: 70%; height: 70%; }
+        .breath-ring:nth-child(4) { width: 55%; height: 55%; }
+        
+        /* Main breath orb */
+        .breath-orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(74, 158, 255, 0.3) 0%, 
+                rgba(74, 158, 255, 0.1) 40%, 
+                rgba(123, 104, 238, 0.05) 70%,
+                transparent 100%);
+            box-shadow: 
+                0 0 60px rgba(74, 158, 255, 0.2),
+                0 0 120px rgba(74, 158, 255, 0.1),
+                inset 0 0 40px rgba(74, 158, 255, 0.1);
+            transition: all 0.15s ease-out;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .breath-orb::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(74, 158, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .breath-orb.rupture {
+            animation: rupture-flash 0.4s ease-out;
+        }
+        
+        .breath-orb.rupture::before {
+            opacity: 1;
+            animation: rupture-wave 0.6s ease-out;
+        }
+        
+        @keyframes rupture-flash {
+            0% { 
+                box-shadow: 
+                    0 0 60px rgba(255, 107, 74, 0.8),
+                    0 0 120px rgba(255, 107, 74, 0.4),
+                    inset 0 0 40px rgba(255, 107, 74, 0.3);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 60px rgba(74, 158, 255, 0.2),
+                    0 0 120px rgba(74, 158, 255, 0.1),
+                    inset 0 0 40px rgba(74, 158, 255, 0.1);
+            }
+        }
+        
+        @keyframes rupture-wave {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* Phase indicator */
+        .phase-indicator {
+            position: absolute;
+            bottom: -60px;
+            text-align: center;
+        }
+        
+        .phase-text {
+            font-size: 1.4rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+        
+        .phase-text.inhale { color: var(--glow-coherence); }
+        .phase-text.hold-in { color: var(--gold); }
+        .phase-text.exhale { color: var(--glow-regeneration); }
+        .phase-text.hold-out { color: var(--text-dim); }
+        
+        .phase-subtext {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 0.3rem;
+        }
+        
+        /* Timeline */
+        .timeline {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 80px;
+        }
+        
+        .timeline-track {
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 1px;
+            position: relative;
+            overflow: visible;
+        }
+        
+        .timeline-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--glow-coherence), var(--glow-regeneration));
+            border-radius: 1px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--glow-coherence);
+        }
+        
+        .timeline-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            color: var(--text-dim);
+        }
+        
+        /* Sound panel */
+        .sound-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .sound-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        
+        .sound-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .slider-container {
+            position: relative;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+            transition: transform 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Frequency display */
+        .frequency-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .freq-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            margin-bottom: 0.3rem;
+        }
+        
+        .freq-row:last-child { margin-bottom: 0; }
+        
+        .freq-label { color: var(--text-dim); }
+        .freq-value { color: var(--text-secondary); }
+        
+        /* Footer controls */
+        footer {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 1rem 0;
+        }
+        
+        .control-btn {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.8rem 2rem;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+        }
+        
+        .control-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 20px rgba(201, 169, 110, 0.1);
+        }
+        
+        .control-btn.primary {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(123, 104, 238, 0.1) 100%);
+            border-color: rgba(74, 158, 255, 0.3);
+        }
+        
+        .control-btn.primary:hover {
+            border-color: var(--glow-coherence);
+            color: var(--glow-coherence);
+            box-shadow: 0 0 30px rgba(74, 158, 255, 0.2);
+        }
+        
+        .control-btn.active {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.2) 0%, rgba(123, 104, 238, 0.2) 100%);
+            border-color: var(--glow-coherence);
+            color: var(--text-primary);
+        }
+        
+        /* Info overlay */
+        .info-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: transparent;
+            color: var(--text-dim);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .info-toggle:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        
+        .info-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.95);
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+            backdrop-filter: blur(20px);
+        }
+        
+        .info-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .info-content {
+            max-width: 700px;
+            padding: 3rem;
+            text-align: center;
+        }
+        
+        .info-content h2 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+        
+        .info-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+        
+        .info-content .math {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.5rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        
+        .info-content .math-line {
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+        }
+        
+        .info-content .math-line span {
+            color: var(--glow-coherence);
+        }
+        
+        .info-content .close-info {
+            margin-top: 2rem;
+        }
+        
+        /* Waveform visualizer */
+        .waveform-container {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .waveform-canvas {
+            width: 100%;
+            height: 60px;
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Session stats */
+        .session-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.2rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .meditation-space {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            
+            .panel {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+            
+            .breath-orb-container {
+                width: 260px;
+                height: 260px;
+            }
+            
+            .breath-orb {
+                width: 100px;
+                height: 100px;
+            }
+        }
+        
+        /* Start screen */
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--void);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s, visibility 0.8s;
+        }
+        
+        .start-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .start-screen h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .start-screen h1 span {
+            color: var(--gold);
+        }
+        
+        .start-screen .tagline {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+        }
+        
+        .start-screen .description {
+            max-width: 500px;
+            text-align: center;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 3rem;
+            font-size: 1rem;
+        }
+        
+        .start-btn {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 1rem 3rem;
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+        }
+        
+        .start-btn:hover {
+            background: rgba(201, 169, 110, 0.1);
+            box-shadow: 0 0 40px rgba(201, 169, 110, 0.2);
+        }
+        
+        .start-screen .note {
+            position: absolute;
+            bottom: 2rem;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <h1><span>CRR</span> Breath</h1>
+        <p class="tagline">A Meditation in Mathematical Resonance</p>
+        <p class="description">
+            This tool sonifies the Coherence-Rupture-Regeneration framework through breath. 
+            The mathematics generates the audio directly—frequencies derived from π, 
+            the coherent breath period of π² ≈ 10 seconds, and the exp(C/Ω) memory weighting.
+            <br><br>
+            If the theory is valid, you should feel drawn to breathe with it.
+        </p>
+        <button class="start-btn" id="startBtn">Begin Practice</button>
+        <p class="note">🎧 Headphones recommended for binaural frequencies</p>
+    </div>
+    
+    <!-- Info Overlay -->
+    <div class="info-overlay" id="infoOverlay">
+        <div class="info-content">
+            <h2>The Mathematics of Breath</h2>
+            <p>
+                CRR proposes that breath embodies the fundamental grammar of temporal becoming: 
+                <em>inhalation</em> accumulates coherence (C), the <em>peak</em> is rupture (δ), 
+                and <em>exhalation</em> is regeneration (R) weighted by exp(C/Ω).
+            </p>
+            <div class="math">
+                <div class="math-line"><span>Inhale:</span> C(t) = ∫L(τ)dτ — coherence accumulates</div>
+                <div class="math-line"><span>Peak:</span> δ(now) when C = Ω — rupture fires</div>
+                <div class="math-line"><span>Exhale:</span> R = ∫φ·exp(C/Ω)·Θ dτ — regeneration</div>
+                <div class="math-line"><span>Period:</span> π² ≈ 9.87s — the coherent breath</div>
+                <div class="math-line"><span>Ω:</span> 1/π ≈ 0.318 for Z₂ systems</div>
+            </div>
+            <p>
+                The audio is generated directly from these equations. Drone frequencies 
+                accumulate during inhale (coherence), bells strike at rupture, and 
+                filtered harmonics decay during exhale weighted by exp(C/Ω).
+            </p>
+            <p>
+                Psychoacoustic validity: if you feel naturally drawn to breathe 
+                with the rhythm, the mathematics is resonating with your nervous system.
+            </p>
+            <button class="control-btn close-info" onclick="toggleInfo()">Close</button>
+        </div>
+    </div>
+    
+    <button class="info-toggle" id="infoToggle" onclick="toggleInfo()">?</button>
+    
+    <div class="atmosphere"></div>
+    
+    <div class="container">
+        <header>
+            <h1><span>CRR</span> Breath Meditation</h1>
+            <p class="subtitle">Sonified Coherence-Rupture-Regeneration</p>
+        </header>
+        
+        <main class="meditation-space">
+            <!-- Left Panel: CRR State -->
+            <div class="panel">
+                <div class="panel-title">CRR State</div>
+                <div class="crr-state">
+                    <div class="state-row">
+                        <div class="state-label">
+                            <span>Coherence C(t)</span>
+                            <span class="value" id="coherenceValue">0.000</span>
+                        </div>
+                        <div class="state-bar">
+                            <div class="state-bar-fill coherence" id="coherenceBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="state-row">
+                        <div class="state-label">
+                            <span>Threshold Ω</span>
+                            <span class="value" id="omegaValue">0.318</span>
+                        </div>
+                        <div class="state-bar">
+                            <div class="state-bar-fill omega" id="omegaBar" style="width: 31.8%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="state-row">
+                        <div class="state-label">
+                            <span>exp(C/Ω)</span>
+                            <span class="value" id="expValue">1.000</span>
+                        </div>
+                        <div class="state-bar">
+                            <div class="state-bar-fill exp-weight" id="expBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="state-row">
+                        <div class="state-label">
+                            <span>C/Ω Ratio</span>
+                            <span class="value" id="ratioValue">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="equations">
+                    <div class="equation" id="eqCoherence">C(t) = ∫L(τ)dτ</div>
+                    <div class="equation" id="eqRupture">δ(now) when C = Ω</div>
+                    <div class="equation" id="eqRegeneration">R = ∫φ·exp(C/Ω)dτ</div>
+                </div>
+                
+                <div class="session-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="breathCount">0</div>
+                        <div class="stat-label">Breaths</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="sessionTime">0:00</div>
+                        <div class="stat-label">Duration</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center: Breath Visualization -->
+            <div class="breath-center">
+                <div class="breath-orb-container">
+                    <div class="breath-ring"></div>
+                    <div class="breath-ring"></div>
+                    <div class="breath-ring"></div>
+                    <div class="breath-ring"></div>
+                    <div class="breath-orb" id="breathOrb"></div>
+                </div>
+                
+                <div class="phase-indicator">
+                    <div class="phase-text" id="phaseText">Ready</div>
+                    <div class="phase-subtext" id="phaseSubtext">Press begin to start</div>
+                </div>
+                
+                <div class="timeline">
+                    <div class="timeline-track">
+                        <div class="timeline-progress" id="timelineProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="timeline-markers">
+                        <span>0</span>
+                        <span>Inhale</span>
+                        <span>δ</span>
+                        <span>Exhale</span>
+                        <span>π²</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Sound Controls -->
+            <div class="panel">
+                <div class="panel-title">Sound Parameters</div>
+                <div class="sound-panel">
+                    <div class="sound-control">
+                        <div class="sound-label">
+                            <span>Master Volume</span>
+                            <span id="volumeValue">50%</span>
+                        </div>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50">
+                    </div>
+                    
+                    <div class="sound-control">
+                        <div class="sound-label">
+                            <span>Drone Depth</span>
+                            <span id="droneValue">70%</span>
+                        </div>
+                        <input type="range" id="droneSlider" min="0" max="100" value="70">
+                    </div>
+                    
+                    <div class="sound-control">
+                        <div class="sound-label">
+                            <span>Bell Intensity</span>
+                            <span id="bellValue">60%</span>
+                        </div>
+                        <input type="range" id="bellSlider" min="0" max="100" value="60">
+                    </div>
+                    
+                    <div class="sound-control">
+                        <div class="sound-label">
+                            <span>Binaural Depth</span>
+                            <span id="binauralValue">40%</span>
+                        </div>
+                        <input type="range" id="binauralSlider" min="0" max="100" value="40">
+                    </div>
+                    
+                    <div class="frequency-display">
+                        <div class="freq-row">
+                            <span class="freq-label">Base Freq (π×100)</span>
+                            <span class="freq-value" id="baseFreq">314.16 Hz</span>
+                        </div>
+                        <div class="freq-row">
+                            <span class="freq-label">Binaural Beat</span>
+                            <span class="freq-value" id="binauralFreq">7.83 Hz</span>
+                        </div>
+                        <div class="freq-row">
+                            <span class="freq-label">Bell Freq (e×100)</span>
+                            <span class="freq-value" id="bellFreq">271.83 Hz</span>
+                        </div>
+                        <div class="freq-row">
+                            <span class="freq-label">Breath Period</span>
+                            <span class="freq-value" id="breathPeriod">π² ≈ 9.87s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="waveform-container">
+                        <div class="panel-title">Audio Waveform</div>
+                        <canvas class="waveform-canvas" id="waveformCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <button class="control-btn primary" id="beginBtn">Begin</button>
+            <button class="control-btn" id="pauseBtn">Pause</button>
+            <button class="control-btn" id="resetBtn">Reset</button>
+        </footer>
+    </div>
+    
+    <script>
+        // ============================================
+        // CRR Breath Meditation - Psychoacoustic Engine
+        // ============================================
+        
+        // Mathematical constants derived from CRR
+        const PI = Math.PI;
+        const E = Math.E;
+        const PHI = (1 + Math.sqrt(5)) / 2; // Golden ratio
+        
+        // CRR Parameters
+        const OMEGA = 1 / PI;  // ≈ 0.318 for Z₂ systems
+        const BREATH_PERIOD = PI * PI;  // ≈ 9.87 seconds - the coherent breath
+        const SCHUMANN = 7.83;  // Earth's resonant frequency
+        
+        // Derived frequencies
+        const BASE_FREQ = PI * 100;  // 314.16 Hz - π scaled
+        const BELL_FREQ = E * 100;   // 271.83 Hz - e scaled
+        const OM_FREQ = 136.1;       // Traditional Om frequency
+        
+        // State
+        let audioContext = null;
+        let isPlaying = false;
+        let isPaused = false;
+        let startTime = 0;
+        let sessionStartTime = 0;
+        let breathCount = 0;
+        let animationId = null;
+        
+        // Audio nodes
+        let masterGain = null;
+        let droneOscL = null;
+        let droneOscR = null;
+        let droneGainL = null;
+        let droneGainR = null;
+        let bellOsc = null;
+        let bellGain = null;
+        let harmonicOscs = [];
+        let harmonicGains = [];
+        let analyser = null;
+        let compressor = null;
+        
+        // UI Elements
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const beginBtn = document.getElementById('beginBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const breathOrb = document.getElementById('breathOrb');
+        const phaseText = document.getElementById('phaseText');
+        const phaseSubtext = document.getElementById('phaseSubtext');
+        const timelineProgress = document.getElementById('timelineProgress');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const waveformCtx = waveformCanvas.getContext('2d');
+        
+        // Sliders
+        const volumeSlider = document.getElementById('volumeSlider');
+        const droneSlider = document.getElementById('droneSlider');
+        const bellSlider = document.getElementById('bellSlider');
+        const binauralSlider = document.getElementById('binauralSlider');
+        
+        // ============================================
+        // Audio Engine
+        // ============================================
+        
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Compressor for smooth dynamics
+            compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.knee.value = 30;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+            compressor.connect(audioContext.destination);
+            
+            // Master gain
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(compressor);
+            
+            // Analyser for waveform
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048;
+            masterGain.connect(analyser);
+            
+            // Create binaural drone (left)
+            droneOscL = audioContext.createOscillator();
+            droneOscL.type = 'sine';
+            droneOscL.frequency.value = BASE_FREQ;
+            droneGainL = audioContext.createGain();
+            droneGainL.gain.value = 0;
+            
+            const panL = audioContext.createStereoPanner();
+            panL.pan.value = -1;
+            droneOscL.connect(droneGainL);
+            droneGainL.connect(panL);
+            panL.connect(masterGain);
+            
+            // Create binaural drone (right) - offset by Schumann frequency
+            droneOscR = audioContext.createOscillator();
+            droneOscR.type = 'sine';
+            droneOscR.frequency.value = BASE_FREQ + SCHUMANN;
+            droneGainR = audioContext.createGain();
+            droneGainR.gain.value = 0;
+            
+            const panR = audioContext.createStereoPanner();
+            panR.pan.value = 1;
+            droneOscR.connect(droneGainR);
+            droneGainR.connect(panR);
+            panR.connect(masterGain);
+            
+            // Create harmonic oscillators for richer sound
+            const harmonicRatios = [1, PHI, 2, E, PI]; // Mathematical ratios
+            harmonicRatios.forEach((ratio, i) => {
+                const osc = audioContext.createOscillator();
+                osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.value = OM_FREQ * ratio;
+                
+                const gain = audioContext.createGain();
+                gain.gain.value = 0;
+                
+                osc.connect(gain);
+                gain.connect(masterGain);
+                
+                harmonicOscs.push(osc);
+                harmonicGains.push(gain);
+                osc.start();
+            });
+            
+            droneOscL.start();
+            droneOscR.start();
+        }
+        
+        function playBell(intensity = 1) {
+            if (!audioContext) return;
+            
+            const now = audioContext.currentTime;
+            const bellValue = bellSlider.value / 100;
+            const gain = intensity * bellValue * 0.3;
+            
+            // Create bell oscillator with exponential decay
+            const bell = audioContext.createOscillator();
+            bell.type = 'sine';
+            bell.frequency.value = BELL_FREQ;
+            
+            const bellEnv = audioContext.createGain();
+            bellEnv.gain.setValueAtTime(gain, now);
+            bellEnv.gain.exponentialRampToValueAtTime(0.001, now + 2);
+            
+            // Add harmonics for bell-like quality
+            const bell2 = audioContext.createOscillator();
+            bell2.type = 'sine';
+            bell2.frequency.value = BELL_FREQ * PHI;
+            
+            const bell2Env = audioContext.createGain();
+            bell2Env.gain.setValueAtTime(gain * 0.5, now);
+            bell2Env.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            
+            const bell3 = audioContext.createOscillator();
+            bell3.type = 'sine';
+            bell3.frequency.value = BELL_FREQ * 2;
+            
+            const bell3Env = audioContext.createGain();
+            bell3Env.gain.setValueAtTime(gain * 0.25, now);
+            bell3Env.gain.exponentialRampToValueAtTime(0.001, now + 1);
+            
+            bell.connect(bellEnv);
+            bell2.connect(bell2Env);
+            bell3.connect(bell3Env);
+            bellEnv.connect(masterGain);
+            bell2Env.connect(masterGain);
+            bell3Env.connect(masterGain);
+            
+            bell.start(now);
+            bell2.start(now);
+            bell3.start(now);
+            bell.stop(now + 2.5);
+            bell2.stop(now + 2);
+            bell3.stop(now + 1.5);
+        }
+        
+        // ============================================
+        // CRR Breath Cycle
+        // ============================================
+        
+        function calculateCRRState(t) {
+            // Normalize time within breath cycle
+            const cycleTime = t % BREATH_PERIOD;
+            const cycleProgress = cycleTime / BREATH_PERIOD;
+            
+            // Define phases:
+            // 0-0.4: Inhale (coherence accumulation)
+            // 0.4-0.5: Hold at peak (approaching rupture)
+            // 0.5: Rupture (δ)
+            // 0.5-0.9: Exhale (regeneration)
+            // 0.9-1.0: Hold empty (rest)
+            
+            let phase, coherence, phaseLabel, phaseSub;
+            
+            if (cycleProgress < 0.4) {
+                // Inhale: C(t) = ∫L(τ)dτ accumulating
+                phase = 'inhale';
+                coherence = (cycleProgress / 0.4) * OMEGA;
+                phaseLabel = 'Inhale';
+                phaseSub = 'C(t) = ∫L(τ)dτ';
+            } else if (cycleProgress < 0.5) {
+                // Hold at peak: C approaching Ω
+                phase = 'hold-in';
+                coherence = OMEGA * (0.9 + ((cycleProgress - 0.4) / 0.1) * 0.1);
+                phaseLabel = 'Hold';
+                phaseSub = 'C → Ω';
+            } else if (cycleProgress < 0.55) {
+                // Rupture moment
+                phase = 'rupture';
+                coherence = OMEGA;
+                phaseLabel = 'δ';
+                phaseSub = 'Rupture: C = Ω';
+            } else if (cycleProgress < 0.9) {
+                // Exhale: Regeneration with exp(C/Ω) weighting
+                phase = 'exhale';
+                const exhaleProgress = (cycleProgress - 0.55) / 0.35;
+                // Coherence decays but weighted by exp(C/Ω)
+                coherence = OMEGA * (1 - exhaleProgress) * Math.exp(-exhaleProgress);
+                phaseLabel = 'Exhale';
+                phaseSub = 'R = ∫φ·exp(C/Ω)dτ';
+            } else {
+                // Hold empty
+                phase = 'hold-out';
+                coherence = 0;
+                phaseLabel = 'Rest';
+                phaseSub = 'Stillness';
+            }
+            
+            const expWeight = Math.exp(coherence / OMEGA);
+            const ratio = coherence / OMEGA;
+            
+            return {
+                phase,
+                coherence,
+                expWeight,
+                ratio,
+                cycleProgress,
+                phaseLabel,
+                phaseSub,
+                isRupture: phase === 'rupture'
+            };
+        }
+        
+        // ============================================
+        // Animation Loop
+        // ============================================
+        
+        let lastRuptureTime = 0;
+        
+        function update() {
+            if (!isPlaying || isPaused) return;
+            
+            const now = audioContext.currentTime;
+            const elapsed = now - startTime;
+            const state = calculateCRRState(elapsed);
+            
+            // Update UI
+            updateUI(state);
+            
+            // Update audio
+            updateAudio(state, now);
+            
+            // Check for rupture
+            if (state.isRupture && now - lastRuptureTime > BREATH_PERIOD * 0.8) {
+                triggerRupture();
+                lastRuptureTime = now;
+            }
+            
+            // Draw waveform
+            drawWaveform();
+            
+            // Update session stats
+            updateSessionStats();
+            
+            animationId = requestAnimationFrame(update);
+        }
+        
+        function updateUI(state) {
+            // Coherence bar
+            const coherencePercent = (state.coherence / OMEGA) * 100;
+            document.getElementById('coherenceBar').style.width = `${Math.min(coherencePercent, 100)}%`;
+            document.getElementById('coherenceValue').textContent = state.coherence.toFixed(3);
+            
+            // Exp weight
+            const expPercent = Math.min((state.expWeight - 1) / (E - 1) * 100, 100);
+            document.getElementById('expBar').style.width = `${expPercent}%`;
+            document.getElementById('expValue').textContent = state.expWeight.toFixed(3);
+            
+            // Ratio
+            document.getElementById('ratioValue').textContent = `${(state.ratio * 100).toFixed(1)}%`;
+            
+            // Timeline
+            timelineProgress.style.width = `${state.cycleProgress * 100}%`;
+            
+            // Phase text
+            phaseText.textContent = state.phaseLabel;
+            phaseText.className = `phase-text ${state.phase}`;
+            phaseSubtext.textContent = state.phaseSub;
+            
+            // Breath orb size
+            const orbScale = 0.6 + (state.ratio * 0.8);
+            breathOrb.style.transform = `scale(${orbScale})`;
+            
+            // Ring expansion
+            const rings = document.querySelectorAll('.breath-ring');
+            rings.forEach((ring, i) => {
+                const ringScale = 1 + (state.ratio * 0.15 * (i + 1));
+                const opacity = 0.1 + (state.ratio * 0.15);
+                ring.style.transform = `scale(${ringScale})`;
+                ring.style.borderColor = `rgba(74, 158, 255, ${opacity})`;
+            });
+            
+            // Equation highlighting
+            document.getElementById('eqCoherence').className = 'equation' + 
+                (state.phase === 'inhale' ? ' active coherence-active' : '');
+            document.getElementById('eqRupture').className = 'equation' + 
+                (state.phase === 'rupture' || state.phase === 'hold-in' ? ' active rupture-active' : '');
+            document.getElementById('eqRegeneration').className = 'equation' + 
+                (state.phase === 'exhale' ? ' active regeneration-active' : '');
+        }
+        
+        function updateAudio(state, now) {
+            const droneDepth = droneSlider.value / 100;
+            const binauralDepth = binauralSlider.value / 100;
+            const volume = volumeSlider.value / 100;
+            
+            masterGain.gain.setTargetAtTime(volume, now, 0.1);
+            
+            // Drone volume follows coherence
+            const droneVol = state.ratio * droneDepth * 0.4;
+            droneGainL.gain.setTargetAtTime(droneVol, now, 0.1);
+            droneGainR.gain.setTargetAtTime(droneVol * binauralDepth, now, 0.1);
+            
+            // Harmonics follow exp(C/Ω) weighting
+            harmonicGains.forEach((gain, i) => {
+                const weight = Math.exp(-i * 0.5) * (state.expWeight - 1) / E * droneDepth * 0.15;
+                gain.gain.setTargetAtTime(Math.max(0, weight), now, 0.15);
+            });
+            
+            // Modulate frequencies subtly with coherence
+            const freqMod = 1 + (state.coherence * 0.02);
+            droneOscL.frequency.setTargetAtTime(BASE_FREQ * freqMod, now, 0.3);
+            droneOscR.frequency.setTargetAtTime((BASE_FREQ + SCHUMANN) * freqMod, now, 0.3);
+        }
+        
+        function triggerRupture() {
+            breathCount++;
+            document.getElementById('breathCount').textContent = breathCount;
+            
+            // Visual rupture
+            breathOrb.classList.add('rupture');
+            setTimeout(() => breathOrb.classList.remove('rupture'), 600);
+            
+            // Audio rupture - bell strike
+            playBell(1);
+        }
+        
+        function drawWaveform() {
+            if (!analyser) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+            
+            const width = waveformCanvas.width = waveformCanvas.offsetWidth * 2;
+            const height = waveformCanvas.height = waveformCanvas.offsetHeight * 2;
+            
+            waveformCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            waveformCtx.fillRect(0, 0, width, height);
+            
+            waveformCtx.lineWidth = 2;
+            waveformCtx.strokeStyle = 'rgba(74, 158, 255, 0.6)';
+            waveformCtx.beginPath();
+            
+            const sliceWidth = width / bufferLength;
+            let x = 0;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * height / 2;
+                
+                if (i === 0) {
+                    waveformCtx.moveTo(x, y);
+                } else {
+                    waveformCtx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+            
+            waveformCtx.stroke();
+        }
+        
+        function updateSessionStats() {
+            if (!sessionStartTime) return;
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            document.getElementById('sessionTime').textContent = 
+                `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // ============================================
+        // Controls
+        // ============================================
+        
+        function startMeditation() {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            isPlaying = true;
+            isPaused = false;
+            startTime = audioContext.currentTime;
+            sessionStartTime = Date.now();
+            lastRuptureTime = 0;
+            
+            beginBtn.classList.add('active');
+            beginBtn.textContent = 'Playing';
+            
+            update();
+        }
+        
+        function pauseMeditation() {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+            
+            if (!isPaused) {
+                update();
+            }
+        }
+        
+        function resetMeditation() {
+            isPlaying = false;
+            isPaused = false;
+            breathCount = 0;
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // Reset UI
+            document.getElementById('coherenceBar').style.width = '0%';
+            document.getElementById('coherenceValue').textContent = '0.000';
+            document.getElementById('expBar').style.width = '0%';
+            document.getElementById('expValue').textContent = '1.000';
+            document.getElementById('ratioValue').textContent = '0%';
+            timelineProgress.style.width = '0%';
+            phaseText.textContent = 'Ready';
+            phaseText.className = 'phase-text';
+            phaseSubtext.textContent = 'Press begin to start';
+            breathOrb.style.transform = 'scale(1)';
+            document.getElementById('breathCount').textContent = '0';
+            document.getElementById('sessionTime').textContent = '0:00';
+            
+            beginBtn.classList.remove('active');
+            beginBtn.textContent = 'Begin';
+            pauseBtn.textContent = 'Pause';
+            
+            // Reset audio
+            if (droneGainL) droneGainL.gain.value = 0;
+            if (droneGainR) droneGainR.gain.value = 0;
+            harmonicGains.forEach(g => g.gain.value = 0);
+        }
+        
+        function toggleInfo() {
+            const overlay = document.getElementById('infoOverlay');
+            overlay.classList.toggle('visible');
+        }
+        
+        // ============================================
+        // Slider Updates
+        // ============================================
+        
+        volumeSlider.addEventListener('input', () => {
+            document.getElementById('volumeValue').textContent = `${volumeSlider.value}%`;
+        });
+        
+        droneSlider.addEventListener('input', () => {
+            document.getElementById('droneValue').textContent = `${droneSlider.value}%`;
+        });
+        
+        bellSlider.addEventListener('input', () => {
+            document.getElementById('bellValue').textContent = `${bellSlider.value}%`;
+        });
+        
+        binauralSlider.addEventListener('input', () => {
+            document.getElementById('binauralValue').textContent = `${binauralSlider.value}%`;
+        });
+        
+        // ============================================
+        // Event Listeners
+        // ============================================
+        
+        startBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            initAudio();
+        });
+        
+        beginBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                startMeditation();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', pauseMeditation);
+        resetBtn.addEventListener('click', resetMeditation);
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!isPlaying) {
+                    startMeditation();
+                } else {
+                    pauseMeditation();
+                }
+            } else if (e.code === 'Escape') {
+                resetMeditation();
+            } else if (e.code === 'KeyI') {
+                toggleInfo();
+            }
+        });
+        
+        // Initialize display values
+        document.getElementById('omegaValue').textContent = OMEGA.toFixed(3);
+        document.getElementById('omegaBar').style.width = `${OMEGA * 100}%`;
+        document.getElementById('baseFreq').textContent = `${BASE_FREQ.toFixed(2)} Hz`;
+        document.getElementById('binauralFreq').textContent = `${SCHUMANN} Hz`;
+        document.getElementById('bellFreq').textContent = `${BELL_FREQ.toFixed(2)} Hz`;
+    </script>
+</body>
+</html>
