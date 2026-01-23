@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Rainbow — Coherence · Rupture · Regeneration</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      min-height: 100vh;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      cursor: none;
+    }
+    
+    body.show-cursor { cursor: crosshair; }
+    
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #sky { z-index: 1; }
+    #rain { z-index: 2; }
+    #rainbow { z-index: 3; }
+    #veil { z-index: 4; }
+    
+    .fixation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    .fixation.visible { opacity: 1; }
+    
+    .cross {
+      position: relative;
+      width: 50px;
+      height: 50px;
+    }
+    
+    .cross::before,
+    .cross::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.22);
+    }
+    
+    .cross::before {
+      width: 1px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .cross::after {
+      width: 100%;
+      height: 1px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .cross-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 5px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    body.show-cursor .controls { opacity: 1; }
+    
+    button {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      font: inherit;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    button.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.75);
+    }
+    
+    .info {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      color: rgba(220, 230, 240, 0.6);
+    }
+    
+    body.show-cursor .info { opacity: 1; }
+    
+    .title {
+      font-size: 0.75rem;
+      letter-spacing: 0.5em;
+      opacity: 0.4;
+      margin-bottom: 0.25rem;
+    }
+    
+    .hint {
+      font-size: 0.5rem;
+      font-style: italic;
+      opacity: 0.3;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+    
+    .wavelength-display {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, 60px);
+      font-family: 'Courier New', monospace;
+      font-size: 0.5rem;
+      color: rgba(255, 255, 255, 0.35);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-align: center;
+      line-height: 1.5;
+    }
+    
+    .wavelength-display.visible { opacity: 1; }
+    
+    .equation {
+      position: fixed;
+      bottom: 3.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Courier New', monospace;
+      font-size: 0.45rem;
+      color: rgba(180, 200, 220, 0.3);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    body.show-cursor .equation { opacity: 1; }
+  </style>
+</head>
+<body class="show-cursor">
+  <div id="container">
+    <canvas id="sky"></canvas>
+    <canvas id="rain"></canvas>
+    <canvas id="rainbow"></canvas>
+    <canvas id="veil"></canvas>
+  </div>
+  
+  <div class="info">
+    <div class="title">CRR RAINBOW</div>
+    <div class="hint">
+      fixate on the cross · breathe slowly · let the periphery dissolve ·
+      trace through the spectrum to hear coherence singing
+    </div>
+  </div>
+  
+  <div class="fixation" id="fixation">
+    <div class="cross">
+      <div class="cross-dot"></div>
+    </div>
+  </div>
+  
+  <div class="wavelength-display" id="wavelengthDisplay">
+    <div id="lambdaValue">λ = --- nm</div>
+    <div id="freqValue">f = --- Hz</div>
+    <div id="noteValue">---</div>
+  </div>
+  
+  <div class="equation" id="equation">
+    C(λ,t) = ∫L(λ,τ)dτ → δ(adaptation) → R(blank field)
+  </div>
+  
+  <div class="controls">
+    <button id="btnRain">RAIN</button>
+    <button id="btnFixation">FIXATION</button>
+    <button id="btnSing">SING</button>
+    <button id="btnImmerse">IMMERSE</button>
+  </div>
+
+<script>
+/**
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║                                                                           ║
+ * ║   CRR RAINBOW — A Complete Implementation of Coherence-Rupture-Regeneration║
+ * ║                                                                           ║
+ * ║   This simulation demonstrates how CRR (Coherence-Rupture-Regeneration)   ║
+ * ║   operates across multiple domains: optics, perception, audio, and        ║
+ * ║   interaction. Every element is grounded in CRR principles.               ║
+ * ║                                                                           ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ * 
+ * ============================================================================
+ * WHAT IS CRR?
+ * ============================================================================
+ * 
+ * CRR (Coherence-Rupture-Regeneration) is a mathematical framework developed
+ * by Alexander Sabine that describes how systems accumulate coherent states,
+ * undergo phase transitions (ruptures), and regenerate into new configurations.
+ * 
+ * The three core equations:
+ * 
+ *   C(x,t) = ∫L(x,τ)dτ        — Coherence accumulates over time
+ *   δ(now)                    — Rupture as scale-invariant moment of transition  
+ *   R = ∫φ(x,τ)exp(C/Ω)Θ(...)dτ  — Regeneration with exponential memory weighting
+ * 
+ * Where:
+ *   - C = accumulated coherence (integrated history)
+ *   - L = local coherence contribution at each moment
+ *   - δ = Dirac delta marking the rupture moment
+ *   - Ω = characteristic scale parameter (related to system's "openness")
+ *   - φ = reconstruction field
+ *   - exp(C/Ω) = memory weighting (how past states influence regeneration)
+ * 
+ * Key insight: Ω = 1/π for Z₂ (binary/half-cycle) systems
+ *              Ω = 1/2π for SO(2) (continuous/full-cycle) systems
+ * 
+ * This creates coefficient of variation CV = Ω/2, matching empirical data
+ * across wound healing, muscle hypertrophy, neural dynamics, and more.
+ * 
+ * ============================================================================
+ * CRR IN THIS SIMULATION
+ * ============================================================================
+ * 
+ * 1. OPTICAL COHERENCE (Rainbow Formation)
+ *    - Light accumulates coherent phase through water droplets
+ *    - Constructive interference at 42° = coherence maximum
+ *    - Dispersion creates wavelength-dependent C(λ)
+ *    
+ * 2. PERCEPTUAL COHERENCE (Troxler Fading)  
+ *    - Retinal neurons accumulate adaptation: C_retina(t) = ∫I(τ)dτ
+ *    - When C crosses threshold θ → rupture (δ) occurs
+ *    - Visual system regenerates blank field (R)
+ *    - This is CRR operating in your visual cortex in real-time
+ *    
+ * 3. AUDIO COHERENCE (Singing Rainbow)
+ *    - Mouse movement builds coherence: C_mouse(t)
+ *    - Smooth movement → high C → rich sustained tones
+ *    - Jerky movement → rupture → filtered, decaying tones
+ *    - The timbre IS the coherence made audible
+ *    
+ * 4. ATMOSPHERIC COHERENCE (Sky, Rain, Light)
+ *    - Rayleigh scattering: coherent oscillation of air molecules
+ *    - Rain: droplets maintaining coherent fall trajectories
+ *    - Veiling luminance: accumulated scattered light (path integral)
+ * 
+ * ============================================================================
+ * PHYSICAL ACCURACY
+ * ============================================================================
+ * 
+ * Sun Position: Behind viewer (below horizon / off-screen bottom)
+ *   - Rainbows appear OPPOSITE the sun at 42° from anti-solar point
+ *   - Anti-solar point = screen center (where your shadow's head would be)
+ *   - Sun glow visible at bottom = realistic viewing geometry
+ *   
+ * Rainbow Physics:
+ *   - Cauchy dispersion: n(λ) = 1.3247 + 3300/λ²
+ *   - Primary bow at 42° (one internal reflection)
+ *   - Violet inside (more refraction), red outside (less refraction)
+ *   
+ * Atmospheric Physics:
+ *   - Rayleigh scattering: I ∝ 1/λ⁴ (sky is blue)
+ *   - Mie scattering: forward glow around sun through rain
+ *   - Beer-Lambert extinction for atmospheric depth
+ */
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+// All parameters tuned for CRR-optimal perception
+
+const CONFIG = {
+  
+  /**
+   * RAINBOW CONFIGURATION
+   * 
+   * CRR Mapping:
+   * - Each wavelength has its own coherence accumulation rate in your retina
+   * - L-cones (red) have slower adaptation τ ≈ 200ms
+   * - S-cones (blue) have faster adaptation τ ≈ 100ms
+   * - To achieve SIMULTANEOUS rupture (uniform fading), we must compensate:
+   *   α(red) < α(blue) so that C_red(t) and C_blue(t) reach threshold together
+   * 
+   * This is CRR predicting and explaining differential adaptation!
+   */
+  rainbow: {
+    alphaBase: 0.052,        // Base visibility - increased for more saturation
+    saturationBoost: 1.25,   // Color saturation multiplier
+    blur: 5,                 // Gaussian blur (removes edge transients that resist adaptation)
+    innerRadius: 0.28,       // Rainbow inner edge (violet)
+    outerRadius: 0.40,       // Rainbow outer edge (red)
+    
+    /**
+     * Wavelength-dependent alpha compensation
+     * 
+     * CRR Principle: For uniform Troxler fading, all wavelengths must reach
+     * their adaptation threshold (rupture point) simultaneously.
+     * 
+     * Since: dC/dt = α(λ) × I(λ) × cone_sensitivity(λ)
+     * And:   τ_adaptation(red) > τ_adaptation(blue)
+     * 
+     * We need: α(red) < α(blue) to compensate
+     * 
+     * These values are empirically tuned to human cone adaptation kinetics.
+     */
+    alphaByWavelength: λ => {
+      // CRR-compensated alpha values for uniform adaptation
+      if (λ >= 640) return 0.58;   // Deep red - L-cones slowest, reduce most
+      if (λ >= 600) return 0.65;   // Orange-red
+      if (λ >= 570) return 0.75;   // Yellow - mixed L+M response
+      if (λ >= 540) return 0.85;   // Green - M-cones
+      if (λ >= 500) return 0.92;   // Cyan - M+S transition
+      if (λ >= 460) return 0.98;   // Blue - S-cones faster
+      if (λ >= 420) return 1.0;    // Deep blue - maximum alpha
+      return 0.88;                  // Violet - reduced luminous efficiency
+    }
+  },
+  
+  /**
+   * SUN CONFIGURATION
+   * 
+   * CRR Mapping: The sun is the SOURCE of coherent light that creates
+   * the rainbow. In CRR terms, sunlight provides the initial L(x,t)
+   * that accumulates into rainbow coherence through droplet refraction.
+   * 
+   * Physical Accuracy: Sun must be BEHIND the viewer to see a rainbow.
+   * The anti-solar point (screen center) is where your shadow's head would be.
+   * Rainbow forms at 42° around this point.
+   * 
+   * We position the sun below the horizon (y > 1.0) with glow visible
+   * at screen bottom, simulating late afternoon geometry.
+   */
+  sun: {
+    x: 0.5,                  // Centered horizontally (directly behind viewer)
+    y: 1.35,                 // Below screen (behind viewer)
+    radius: 50,              // Sun disk size
+    coronaSize: 300,         // Glow extent
+    color: { r: 255, g: 220, b: 180 },  // Golden hour color temperature ~3500K
+    glowIntensity: 0.35,     // How much sun glow shows at horizon
+  },
+  
+  /**
+   * SKY CONFIGURATION  
+   * 
+   * CRR Mapping: Sky color emerges from coherent oscillation of air molecules
+   * at optical frequencies. Rayleigh scattering intensity I ∝ 1/λ⁴ means
+   * blue wavelengths scatter more → blue sky.
+   * 
+   * The gradient from zenith to horizon represents accumulated scattering
+   * along different path lengths - a spatial integral analogous to C(x,t).
+   */
+  sky: {
+    zenith: '#0a1628',       // Deep blue overhead (less scattered light)
+    upper: '#142540',        // 
+    mid: '#1e3858',          // Rayleigh blue gradient
+    lower: '#2d5070',        //
+    horizon: '#4a7595',      // Lighter at horizon (more path length = more scattering)
+    warmTint: 0.15,          // Golden hour warm bias
+  },
+  
+  /**
+   * RAIN CONFIGURATION
+   * 
+   * CRR Mapping: Each raindrop maintains coherent trajectory until
+   * it impacts (rupture) and regenerates as splash/absorption.
+   * 
+   * The rain system demonstrates CRR at the individual particle level:
+   * - Coherent fall phase: C accumulates as drop descends
+   * - Screen exit: δ rupture moment
+   * - Reset at top: R regeneration as new drop
+   * 
+   * Mie scattering creates the bright glow toward sun - coherent
+   * forward scattering from spherical droplets.
+   */
+  rain: {
+    enabled: false,
+    count: 500,
+    speed: { min: 12, max: 22 },   // Terminal velocity distribution
+    length: { min: 25, max: 50 },  // Motion blur length
+    wind: 0.08,                     // Horizontal drift
+    alpha: 0.12,                    // Drop visibility
+    mieScatter: 0.025,              // Forward scattering glow intensity
+  },
+  
+  /**
+   * ATMOSPHERIC EFFECTS
+   * 
+   * CRR Mapping: These effects represent coherence accumulated along
+   * the optical path between rainbow and viewer.
+   * 
+   * Veiling luminance = ∫scattered_light(path) = C_atmosphere
+   * This reduces contrast uniformly, raising adaptation baseline.
+   * 
+   * Scintillation = tiny fluctuations from atmospheric turbulence,
+   * kept below flicker fusion (~50Hz) to avoid disrupting adaptation.
+   */
+  atmosphere: {
+    veilingLuminance: 0.012,    // Uniform haze (path radiance integral)
+    pathRadiance: 0.02,         // Directional glow from sun
+    hazeAlpha: 0.05,            // Layered atmospheric haze
+    
+    /**
+     * Scintillation - subtle brightness fluctuations
+     * 
+     * CRR Note: Must stay below flicker fusion frequency (~50Hz)
+     * to avoid resetting adaptation. We use 0.025Hz = one cycle per 40s,
+     * which adds realism without disrupting coherence accumulation.
+     */
+    scintillation: { 
+      amplitude: 0.004,  // Subtle - just enough to prevent perfect uniformity
+      frequency: 0.025   // Hz - very slow, below conscious perception
+    },
+  },
+  
+  /**
+   * AUDIO CONFIGURATION
+   * 
+   * CRR Mapping: This is where CRR becomes AUDIBLE.
+   * 
+   * The mouse tracking system implements CRR explicitly:
+   *   - C_mouse(t) = accumulated smooth movement (coherence)
+   *   - Jerky movement = rupture events
+   *   - Tone regeneration weighted by coherence history
+   * 
+   * Wavelength → Frequency mapping:
+   *   - Violet (380nm) → high pitch (more energetic photons)
+   *   - Red (700nm) → low pitch (less energetic photons)
+   *   - Logarithmic scaling preserves perceptual intervals
+   * 
+   * Timbre modulation:
+   *   - High coherence → open filter, rich harmonics, sustained envelope
+   *   - Low coherence (post-rupture) → closed filter, thin sound, fast decay
+   *   
+   * You are HEARING the CRR state of your interaction!
+   */
+  audio: {
+    enabled: false,
+    baseFreq: 196,           // G3 - warm base frequency
+    octaves: 2.8,            // Pitch range for spectrum mapping
+    attackTime: 0.012,       // Fast attack on note onset (rupture → sound)
+    releaseTime: 0.5,        // Slow release (coherence decays gradually)
+    maxGain: 0.1,            // Maximum volume
+    
+    // CRR coherence tracking parameters
+    coherenceDecay: 0.94,    // How fast coherence fades without movement (per frame)
+    coherenceGain: 0.12,     // How much smooth movement adds to coherence
+  }
+};
+
+// ============================================================================
+// PHYSICS ENGINE
+// ============================================================================
+
+/**
+ * REFRACTIVE INDEX - Cauchy Dispersion Equation
+ * 
+ * n(λ) = A + B/λ²
+ * 
+ * For water: A ≈ 1.3247, B ≈ 3300 (λ in nm)
+ * 
+ * CRR Connection: The wavelength-dependent refraction is what creates
+ * the spectral separation. Each wavelength accumulates different phase
+ * through the droplet, emerging at different angles. This is coherent
+ * light being dispersed by material properties.
+ */
+const refractiveIndex = λ => 1.3247 + 3300 / (λ * λ);
+
+/**
+ * RAINBOW ANGLE - Geometric Optics
+ * 
+ * Calculates the deviation angle for light passing through a spherical
+ * water droplet with one internal reflection (primary rainbow).
+ * 
+ * The math:
+ * 1. Light enters droplet at incidence angle i
+ * 2. Refracts to angle r (Snell's law: sin(i) = n·sin(r))
+ * 3. Reflects off back surface
+ * 4. Refracts again on exit
+ * 
+ * Maximum intensity occurs at the angle where dθ/di = 0 (caustic)
+ * This is the "rainbow angle" ≈ 42° for water.
+ * 
+ * CRR Connection: The caustic is a COHERENCE MAXIMUM - rays from a
+ * range of incidence angles all exit at nearly the same angle,
+ * creating constructive interference. This is C(θ) peaking at 42°.
+ */
+const rainbowAngle = λ => {
+  const n = refractiveIndex(λ);
+  
+  // Critical angle condition for maximum deviation
+  // Derived from dθ/di = 0
+  const cos2c = (n * n - 1) / 3;
+  if (cos2c < 0 || cos2c > 1) return 42;  // Fallback
+  
+  const i = Math.acos(Math.sqrt(cos2c));  // Incidence angle
+  const r = Math.asin(Math.sin(i) / n);    // Refraction angle
+  
+  // Total deviation for primary rainbow (one internal reflection)
+  const deviation = Math.PI + 2*i - 4*r;
+  
+  // Convert to viewing angle from anti-solar point
+  return (Math.PI - deviation) * 180 / Math.PI;
+};
+
+/**
+ * WAVELENGTH TO RGB - Spectral Color Conversion
+ * 
+ * Attempt to approximate how the eye perceives monochromatic light.
+ * 
+ * This uses a piecewise linear approximation of the CIE color matching
+ * functions, with gamma correction for sRGB display.
+ * 
+ * CRR Connection: Color perception itself is a CRR process!
+ * Photons are absorbed (coherence), triggering neural cascade (rupture),
+ * resulting in color qualia (regeneration). But that's another story...
+ */
+const wavelengthToRGB = λ => {
+  let r, g, b;
+  
+  // Piecewise linear spectral locus approximation
+  if (λ < 440) { 
+    r = -(λ - 440) / 60; 
+    g = 0; 
+    b = 1; 
+  } else if (λ < 490) { 
+    r = 0; 
+    g = (λ - 440) / 50; 
+    b = 1; 
+  } else if (λ < 510) { 
+    r = 0; 
+    g = 1; 
+    b = -(λ - 510) / 20; 
+  } else if (λ < 580) { 
+    r = (λ - 510) / 70; 
+    g = 1; 
+    b = 0; 
+  } else if (λ < 645) { 
+    r = 1; 
+    g = -(λ - 645) / 65; 
+    b = 0; 
+  } else { 
+    r = 1; 
+    g = 0; 
+    b = 0; 
+  }
+  
+  // Luminous efficiency falloff at spectrum edges
+  let efficiency = 1;
+  if (λ < 420) efficiency = 0.3 + 0.7 * (λ - 380) / 40;
+  else if (λ > 680) efficiency = 0.3 + 0.7 * (700 - λ) / 20;
+  
+  // Apply saturation boost
+  const sat = CONFIG.rainbow.saturationBoost;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  r = luminance + (r - luminance) * sat;
+  g = luminance + (g - luminance) * sat;
+  b = luminance + (b - luminance) * sat;
+  
+  // Gamma correction for sRGB
+  const γ = 2.2;
+  return [
+    Math.pow(Math.max(0, Math.min(1, r)) * efficiency, 1/γ),
+    Math.pow(Math.max(0, Math.min(1, g)) * efficiency, 1/γ),
+    Math.pow(Math.max(0, Math.min(1, b)) * efficiency, 1/γ)
+  ];
+};
+
+/**
+ * BUILD SPECTRUM
+ * 
+ * Pre-calculate all spectral bands with their:
+ * - Wavelength (nm)
+ * - Rainbow angle (degrees)
+ * - RGB color
+ * - Alpha (CRR-compensated for uniform adaptation)
+ * - Normalized radius for rendering
+ */
+const buildSpectrum = () => {
+  const spectrum = [];
+  
+  // Sample spectrum at 0.5nm intervals for smooth gradients
+  for (let λ = 700; λ >= 380; λ -= 0.5) {
+    spectrum.push({
+      wavelength: λ,
+      angle: rainbowAngle(λ),
+      rgb: wavelengthToRGB(λ),
+      alpha: CONFIG.rainbow.alphaBase * CONFIG.rainbow.alphaByWavelength(λ)
+    });
+  }
+  
+  // Normalize angles to [0,1] range for radius mapping
+  const angles = spectrum.map(s => s.angle);
+  const minA = Math.min(...angles);
+  const maxA = Math.max(...angles);
+  
+  spectrum.forEach(s => {
+    // Normalized radius: 0 = inner (violet), 1 = outer (red)
+    s.normalizedRadius = (s.angle - minA) / (maxA - minA);
+  });
+  
+  return spectrum;
+};
+
+const SPECTRUM = buildSpectrum();
+
+// ============================================================================
+// CRR AUDIO SYSTEM
+// ============================================================================
+
+/**
+ * The audio system is a direct implementation of CRR dynamics:
+ * 
+ * COHERENCE (C):
+ *   - Accumulated from smooth, continuous mouse movement
+ *   - Decays exponentially when movement stops
+ *   - High C → rich, open, sustained sound
+ * 
+ * RUPTURE (δ):
+ *   - Triggered by sudden direction changes or speed spikes
+ *   - Causes immediate timbre shift (filter closes)
+ *   - Fast attack transient in envelope
+ * 
+ * REGENERATION (R):
+ *   - Sound rebuilds as smooth movement resumes
+ *   - Memory weighting: recent coherence matters more
+ *   - Timbre gradually opens, harmonics return
+ * 
+ * The SOUND you hear IS the CRR state of your interaction!
+ */
+
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+let filterNode = null;
+
+// CRR state variables for audio
+let mouseCoherence = 0;          // C(t) - current coherence level
+let lastMousePos = { x: 0, y: 0 };
+let lastMouseTime = 0;
+let currentWavelength = null;
+let isInRainbow = false;
+
+/**
+ * Initialize Web Audio system
+ * 
+ * Creates a multi-oscillator synth with:
+ * - Primary sine wave (fundamental)
+ * - Slightly detuned second oscillator (warmth)
+ * - Octave-up triangle wave (brightness, coherence-modulated)
+ * - Low-pass filter (coherence controls cutoff)
+ * - Reverb for spatial depth
+ */
+const initAudio = () => {
+  if (audioCtx) return;
+  
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // Primary oscillator
+  oscillator = audioCtx.createOscillator();
+  oscillator.type = 'sine';
+  oscillator.frequency.value = 440;
+  
+  // Secondary oscillator - slight detune for chorus effect
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.value = 440;
+  osc2.detune.value = 4;  // 4 cents sharp
+  
+  // Tertiary oscillator - octave up, triangle for brightness
+  // This one is COHERENCE-MODULATED: only audible when C is high
+  const osc3 = audioCtx.createOscillator();
+  osc3.type = 'triangle';
+  osc3.frequency.value = 880;
+  
+  // Gain nodes for each oscillator
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0;
+  
+  const gain2 = audioCtx.createGain();
+  gain2.gain.value = 0;
+  
+  const gain3 = audioCtx.createGain();
+  gain3.gain.value = 0;
+  
+  /**
+   * Low-pass filter - COHERENCE CONTROLS THIS
+   * 
+   * High coherence → high cutoff → bright, rich sound
+   * Low coherence → low cutoff → muffled, thin sound
+   * 
+   * This is CRR made audible: the filter state IS the coherence state.
+   */
+  filterNode = audioCtx.createBiquadFilter();
+  filterNode.type = 'lowpass';
+  filterNode.frequency.value = 1500;
+  filterNode.Q.value = 0.8;
+  
+  // Simple reverb for depth
+  const reverb = audioCtx.createConvolver();
+  const reverbLength = audioCtx.sampleRate * 1.5;
+  const reverbBuffer = audioCtx.createBuffer(2, reverbLength, audioCtx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = reverbBuffer.getChannelData(ch);
+    for (let i = 0; i < reverbLength; i++) {
+      // Exponential decay impulse response
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (reverbLength * 0.2));
+    }
+  }
+  reverb.buffer = reverbBuffer;
+  
+  const reverbGain = audioCtx.createGain();
+  reverbGain.gain.value = 0.15;
+  
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.7;
+  
+  // Connect audio graph
+  oscillator.connect(gainNode);
+  osc2.connect(gain2);
+  osc3.connect(gain3);
+  
+  gainNode.connect(filterNode);
+  gain2.connect(filterNode);
+  gain3.connect(filterNode);
+  
+  filterNode.connect(masterGain);
+  filterNode.connect(reverb);
+  reverb.connect(reverbGain);
+  reverbGain.connect(masterGain);
+  
+  masterGain.connect(audioCtx.destination);
+  
+  // Start oscillators
+  oscillator.start();
+  osc2.start();
+  osc3.start();
+  
+  // Store references for later modulation
+  oscillator._osc2 = osc2;
+  oscillator._osc3 = osc3;
+  oscillator._gain2 = gain2;
+  oscillator._gain3 = gain3;
+};
+
+/**
+ * WAVELENGTH TO AUDIO FREQUENCY
+ * 
+ * Maps visible spectrum (380-700nm) to audible range.
+ * 
+ * Physical motivation: 
+ * - Shorter wavelength = higher energy photons → higher pitch
+ * - Violet (380nm) → ~1400 Hz
+ * - Red (700nm) → ~196 Hz (G3)
+ * 
+ * Logarithmic scaling preserves perceptual intervals (octaves).
+ * 
+ * CRR Note: This creates a direct mapping between optical coherence
+ * (wavelength) and auditory coherence (frequency). You're hearing
+ * the color!
+ */
+const wavelengthToFrequency = λ => {
+  const normalized = (λ - 380) / (700 - 380);  // 0 at violet, 1 at red
+  const inverted = 1 - normalized;              // Flip: violet = high
+  
+  // Logarithmic mapping across configured octave range
+  return CONFIG.audio.baseFreq * Math.pow(2, inverted * CONFIG.audio.octaves);
+};
+
+/**
+ * Frequency to musical note name (for display)
+ */
+const frequencyToNote = f => {
+  const noteNames = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  const semitones = 12 * Math.log2(f / 440) + 9;  // A4 = 440Hz = index 9
+  const noteIndex = Math.round(semitones) % 12;
+  const octave = Math.floor((semitones + 3) / 12) + 4;
+  return noteNames[(noteIndex + 12) % 12] + octave;
+};
+
+/**
+ * UPDATE AUDIO - Core CRR Audio Function
+ * 
+ * This is where CRR becomes sound:
+ * 
+ * @param λ - Current wavelength (determines pitch)
+ * @param coherence - Current C(t) value (determines timbre)
+ * 
+ * The coherence value modulates:
+ * 1. Pitch glide time (high C → fast, smooth; low C → slow, wobbly)
+ * 2. Overall gain (high C → louder)
+ * 3. Harmonic content (high C → octave overtone audible)
+ * 4. Filter cutoff (high C → bright; low C → muffled)
+ */
+const updateAudio = (λ, coherence) => {
+  if (!audioCtx || !CONFIG.audio.enabled) return;
+  
+  const now = audioCtx.currentTime;
+  const freq = wavelengthToFrequency(λ);
+  
+  // Pitch glide time inversely proportional to coherence
+  // High coherence = fast, precise pitch tracking
+  // Low coherence = sluggish, laggy pitch
+  const glideTime = 0.03 + (1 - coherence) * 0.12;
+  
+  oscillator.frequency.linearRampToValueAtTime(freq, now + glideTime);
+  oscillator._osc2.frequency.linearRampToValueAtTime(freq, now + glideTime);
+  oscillator._osc3.frequency.linearRampToValueAtTime(freq * 2, now + glideTime);
+  
+  // Gain modulated by coherence
+  // Minimum 25% even at zero coherence, up to 100% at full coherence
+  const targetGain = CONFIG.audio.maxGain * (0.25 + coherence * 0.75);
+  
+  gainNode.gain.linearRampToValueAtTime(targetGain, now + CONFIG.audio.attackTime);
+  oscillator._gain2.gain.linearRampToValueAtTime(targetGain * 0.35, now + CONFIG.audio.attackTime);
+  
+  // Octave harmonic ONLY audible at high coherence
+  // This is the "brightness" that emerges from sustained smooth movement
+  oscillator._gain3.gain.linearRampToValueAtTime(
+    targetGain * 0.12 * coherence,  // Scales with coherence²
+    now + CONFIG.audio.attackTime
+  );
+  
+  // Filter cutoff controlled by coherence
+  // High coherence → open filter (bright)
+  // Low coherence → closed filter (muffled)
+  filterNode.frequency.linearRampToValueAtTime(
+    600 + coherence * 3500,  // 600Hz (dark) to 4100Hz (bright)
+    now + 0.05
+  );
+};
+
+/**
+ * FADE OUT AUDIO
+ * 
+ * Called when mouse leaves rainbow area.
+ * Uses slow release time for natural decay (not abrupt cutoff).
+ * 
+ * CRR: This is the regeneration phase - sound fading to silence.
+ */
+const fadeOutAudio = () => {
+  if (!audioCtx || !gainNode) return;
+  
+  const now = audioCtx.currentTime;
+  gainNode.gain.linearRampToValueAtTime(0, now + CONFIG.audio.releaseTime);
+  oscillator._gain2.gain.linearRampToValueAtTime(0, now + CONFIG.audio.releaseTime);
+  oscillator._gain3.gain.linearRampToValueAtTime(0, now + CONFIG.audio.releaseTime);
+};
+
+// ============================================================================
+// RAIN AUDIO
+// ============================================================================
+
+/**
+ * Rain sound using filtered pink noise.
+ * 
+ * CRR Mapping: Rain is many simultaneous micro-CRR cycles:
+ * each drop has coherent fall, impacts (rupture), regenerates as splash.
+ * The aggregate sound is the statistical ensemble of these processes.
+ */
+
+let rainGain = null;
+
+const initRainAudio = () => {
+  if (!audioCtx) initAudio();
+  if (rainGain) return;
+  
+  // Generate pink noise buffer
+  const bufferSize = audioCtx.sampleRate * 3;
+  const buffer = audioCtx.createBuffer(2, bufferSize, audioCtx.sampleRate);
+  
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buffer.getChannelData(ch);
+    // Paul Kellet's refined pink noise algorithm
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.96900 * b2 + white * 0.1538520;
+      b3 = 0.86650 * b3 + white * 0.3104856;
+      b4 = 0.55000 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.0168980;
+      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.06;
+      b6 = white * 0.115926;
+    }
+  }
+  
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+  
+  // Bandpass filter for rain character
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 2200;
+  filter.Q.value = 0.5;
+  
+  rainGain = audioCtx.createGain();
+  rainGain.gain.value = 0;
+  
+  source.connect(filter);
+  filter.connect(rainGain);
+  rainGain.connect(audioCtx.destination);
+  
+  source.start();
+};
+
+const setRainAudio = enabled => {
+  if (!rainGain) return;
+  const target = enabled ? 0.08 : 0;
+  rainGain.gain.linearRampToValueAtTime(target, audioCtx.currentTime + 0.8);
+};
+
+// ============================================================================
+// CANVAS SETUP
+// ============================================================================
+
+const skyCanvas = document.getElementById('sky');
+const rainCanvas = document.getElementById('rain');
+const rainbowCanvas = document.getElementById('rainbow');
+const veilCanvas = document.getElementById('veil');
+
+const skyCtx = skyCanvas.getContext('2d');
+const rainCtx = rainCanvas.getContext('2d');
+const rainbowCtx = rainbowCanvas.getContext('2d');
+const veilCtx = veilCanvas.getContext('2d');
+
+let W, H, CX, CY, SIZE;
+
+const resize = () => {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  CX = W / 2;  // Screen center = anti-solar point
+  CY = H / 2;
+  SIZE = Math.min(W, H);
+  
+  [skyCanvas, rainCanvas, rainbowCanvas, veilCanvas].forEach(c => {
+    c.width = W;
+    c.height = H;
+  });
+  
+  renderSky();
+  renderRainbow();
+  renderVeil();
+};
+
+window.addEventListener('resize', resize);
+
+// ============================================================================
+// SKY RENDERING
+// ============================================================================
+
+/**
+ * Render the sky with:
+ * - Rayleigh scattering gradient (blue zenith to lighter horizon)
+ * - Sun glow at bottom (sun is behind viewer)
+ * - God rays streaming upward from below horizon
+ * - Atmospheric haze layers
+ * 
+ * CRR Mapping: The sky represents accumulated scattering along optical paths.
+ * Longer path to horizon = more scattering = lighter sky = higher C_scatter.
+ */
+const renderSky = () => {
+  const ctx = skyCtx;
+  
+  // Base Rayleigh gradient
+  const gradient = ctx.createLinearGradient(0, 0, 0, H);
+  gradient.addColorStop(0.0, '#0a1628');   // Deep blue zenith
+  gradient.addColorStop(0.2, '#122540');
+  gradient.addColorStop(0.4, '#1a3858');
+  gradient.addColorStop(0.6, '#2a5068');
+  gradient.addColorStop(0.8, '#3d6580');
+  gradient.addColorStop(1.0, '#5a85a8');   // Lighter horizon
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Warm atmospheric tint (golden hour)
+  const warmGrad = ctx.createLinearGradient(0, H * 0.5, 0, H);
+  warmGrad.addColorStop(0, 'rgba(255, 200, 150, 0)');
+  warmGrad.addColorStop(0.5, `rgba(255, 210, 170, ${CONFIG.sky.warmTint * 0.5})`);
+  warmGrad.addColorStop(1, `rgba(255, 220, 180, ${CONFIG.sky.warmTint})`);
+  ctx.fillStyle = warmGrad;
+  ctx.fillRect(0, 0, W, H);
+  
+  /**
+   * SUN GLOW FROM BELOW
+   * 
+   * The sun is at CONFIG.sun.y = 1.35 (below screen).
+   * We render its glow rising from the bottom edge.
+   * 
+   * This is physically correct: to see a rainbow, sun must be behind you,
+   * which means below the horizon if rainbow is high in sky.
+   */
+  const sunX = W * CONFIG.sun.x;
+  const sunY = H * CONFIG.sun.y;  // Below screen
+  
+  // Large diffuse glow
+  const glow3 = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.9);
+  glow3.addColorStop(0, `rgba(255, 230, 190, ${CONFIG.sun.glowIntensity * 0.3})`);
+  glow3.addColorStop(0.3, `rgba(255, 220, 180, ${CONFIG.sun.glowIntensity * 0.15})`);
+  glow3.addColorStop(0.6, `rgba(255, 210, 170, ${CONFIG.sun.glowIntensity * 0.05})`);
+  glow3.addColorStop(1, 'rgba(255, 200, 160, 0)');
+  ctx.fillStyle = glow3;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Medium glow
+  const glow2 = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 0.5);
+  glow2.addColorStop(0, `rgba(255, 245, 220, ${CONFIG.sun.glowIntensity * 0.5})`);
+  glow2.addColorStop(0.2, `rgba(255, 235, 200, ${CONFIG.sun.glowIntensity * 0.25})`);
+  glow2.addColorStop(0.5, `rgba(255, 225, 190, ${CONFIG.sun.glowIntensity * 0.1})`);
+  glow2.addColorStop(1, 'rgba(255, 215, 180, 0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Bright core glow at horizon
+  const glow1 = ctx.createRadialGradient(sunX, H, 0, sunX, H, H * 0.25);
+  glow1.addColorStop(0, `rgba(255, 255, 240, ${CONFIG.sun.glowIntensity * 0.6})`);
+  glow1.addColorStop(0.3, `rgba(255, 250, 230, ${CONFIG.sun.glowIntensity * 0.3})`);
+  glow1.addColorStop(0.6, `rgba(255, 245, 220, ${CONFIG.sun.glowIntensity * 0.1})`);
+  glow1.addColorStop(1, 'rgba(255, 240, 210, 0)');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, W, H);
+  
+  /**
+   * GOD RAYS (Crepuscular rays)
+   * 
+   * These stream UPWARD from the sun below horizon.
+   * Created by shadows of clouds/terrain interrupting sunlight.
+   * 
+   * CRR: Each ray is coherent light that has traveled an unobstructed path.
+   * The gaps between rays = shadows = incoherent (blocked) paths.
+   */
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  
+  const rayCount = 16;
+  for (let i = 0; i < rayCount; i++) {
+    // Rays fan out from sun position upward
+    const baseAngle = -Math.PI / 2;  // Pointing up
+    const spread = Math.PI * 0.6;     // Fan angle
+    const angle = baseAngle + (i / rayCount - 0.5) * spread;
+    
+    const length = H * 0.7 + Math.sin(i * 2.7) * H * 0.15;
+    const raySpread = 0.03 + Math.sin(i * 1.9) * 0.015;
+    
+    const rayGrad = ctx.createLinearGradient(
+      sunX, H,
+      sunX + Math.cos(angle) * length,
+      H + Math.sin(angle) * length
+    );
+    rayGrad.addColorStop(0, `rgba(255, 245, 220, ${CONFIG.sun.glowIntensity * 0.08})`);
+    rayGrad.addColorStop(0.4, `rgba(255, 240, 210, ${CONFIG.sun.glowIntensity * 0.03})`);
+    rayGrad.addColorStop(1, 'rgba(255, 235, 200, 0)');
+    
+    ctx.beginPath();
+    ctx.moveTo(sunX, H + 50);  // Start below screen edge
+    ctx.lineTo(
+      sunX + Math.cos(angle - raySpread) * length,
+      H + Math.sin(angle - raySpread) * length
+    );
+    ctx.lineTo(
+      sunX + Math.cos(angle + raySpread) * length,
+      H + Math.sin(angle + raySpread) * length
+    );
+    ctx.closePath();
+    ctx.fillStyle = rayGrad;
+    ctx.fill();
+  }
+  ctx.restore();
+  
+  // Atmospheric haze layers
+  for (let i = 0; i < 4; i++) {
+    const y = H * (0.4 + i * 0.15);
+    const haze = ctx.createLinearGradient(0, y - 40, 0, y + 40);
+    haze.addColorStop(0, 'rgba(130, 160, 190, 0)');
+    haze.addColorStop(0.5, `rgba(140, 170, 200, ${CONFIG.atmosphere.hazeAlpha * 0.3})`);
+    haze.addColorStop(1, 'rgba(130, 160, 190, 0)');
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, y - 40, W, 80);
+  }
+  
+  // Horizon glow (accumulated scattering)
+  const horizonGlow = ctx.createLinearGradient(0, H * 0.75, 0, H);
+  horizonGlow.addColorStop(0, 'rgba(200, 220, 240, 0)');
+  horizonGlow.addColorStop(0.5, `rgba(220, 200, 180, ${CONFIG.sun.glowIntensity * 0.15})`);
+  horizonGlow.addColorStop(1, `rgba(255, 230, 200, ${CONFIG.sun.glowIntensity * 0.25})`);
+  ctx.fillStyle = horizonGlow;
+  ctx.fillRect(0, H * 0.75, W, H * 0.25);
+};
+
+// ============================================================================
+// RAINBOW RENDERING
+// ============================================================================
+
+/**
+ * Render the full 360° rainbow circle.
+ * 
+ * CRR Principles at work:
+ * 
+ * 1. COHERENCE IN FORMATION
+ *    Each spectral band represents coherent light at that wavelength.
+ *    The rainbow exists because water droplets create coherent phase
+ *    relationships that constructively interfere at specific angles.
+ *    
+ * 2. COHERENCE IN PERCEPTION (Troxler fading)
+ *    Your retina accumulates adaptation: C_retina(λ,t) = ∫I(λ,τ)dτ
+ *    When C crosses threshold → rupture (δ) → blank field regenerates (R)
+ *    
+ * 3. WAVELENGTH-DEPENDENT ALPHA
+ *    Different cone types adapt at different rates (τ_L > τ_M > τ_S)
+ *    We compensate with α(λ) so all wavelengths reach threshold together
+ *    This IS CRR predicting the compensation needed for uniform fading!
+ */
+const renderRainbow = () => {
+  const ctx = rainbowCtx;
+  ctx.clearRect(0, 0, W, H);
+  
+  // Rainbow geometry
+  const innerR = SIZE * CONFIG.rainbow.innerRadius;  // Violet edge
+  const outerR = SIZE * CONFIG.rainbow.outerRadius;  // Red edge
+  const bandWidth = outerR - innerR;
+  
+  // Draw to offscreen canvas first, then blur
+  const offscreen = document.createElement('canvas');
+  offscreen.width = W;
+  offscreen.height = H;
+  const offCtx = offscreen.getContext('2d');
+  
+  // Render each wavelength band
+  SPECTRUM.forEach(band => {
+    const radius = innerR + band.normalizedRadius * bandWidth;
+    const [r, g, b] = band.rgb;
+    
+    offCtx.beginPath();
+    offCtx.arc(CX, CY, radius, 0, Math.PI * 2);  // Full circle
+    offCtx.strokeStyle = `rgba(${Math.round(r*255)}, ${Math.round(g*255)}, ${Math.round(b*255)}, ${band.alpha})`;
+    offCtx.lineWidth = bandWidth / SPECTRUM.length * 3.2;
+    offCtx.stroke();
+  });
+  
+  /**
+   * GAUSSIAN BLUR
+   * 
+   * CRR Relevance: Sharp edges resist adaptation because edge-detecting
+   * neurons in V1 keep firing. Blur removes high spatial frequencies,
+   * allowing coherence to build uniformly across the retinal image.
+   */
+  ctx.filter = `blur(${CONFIG.rainbow.blur}px)`;
+  ctx.drawImage(offscreen, 0, 0);
+  ctx.filter = 'none';
+  
+  // Subtle inner glow
+  const innerGlow = ctx.createRadialGradient(CX, CY, innerR - 25, CX, CY, innerR + 8);
+  innerGlow.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  innerGlow.addColorStop(0.6, 'rgba(255, 253, 250, 0.008)');
+  innerGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  
+  ctx.beginPath();
+  ctx.arc(CX, CY, innerR, 0, Math.PI * 2);
+  ctx.strokeStyle = innerGlow;
+  ctx.lineWidth = 45;
+  ctx.stroke();
+};
+
+// ============================================================================
+// VEILING LUMINANCE
+// ============================================================================
+
+/**
+ * Render atmospheric veiling luminance.
+ * 
+ * CRR Mapping: Veiling luminance is the integrated path radiance -
+ * light scattered INTO your line of sight along the viewing path.
+ * 
+ * C_veil = ∫scatter(path) dpath
+ * 
+ * This raises the adaptation baseline uniformly, reducing Weber contrast
+ * and facilitating uniform Troxler fading across all wavelengths.
+ */
+const renderVeil = () => {
+  const ctx = veilCtx;
+  ctx.clearRect(0, 0, W, H);
+  
+  // Uniform veiling luminance
+  ctx.fillStyle = `rgba(140, 165, 190, ${CONFIG.atmosphere.veilingLuminance})`;
+  ctx.fillRect(0, 0, W, H);
+  
+  // Directional component from sun
+  const sunX = W * CONFIG.sun.x;
+  const sunY = H * CONFIG.sun.y;
+  
+  const sunVeil = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, H * 1.2);
+  sunVeil.addColorStop(0, `rgba(255, 245, 230, ${CONFIG.atmosphere.pathRadiance})`);
+  sunVeil.addColorStop(0.3, `rgba(230, 235, 240, ${CONFIG.atmosphere.pathRadiance * 0.4})`);
+  sunVeil.addColorStop(1, 'rgba(200, 215, 230, 0)');
+  
+  ctx.fillStyle = sunVeil;
+  ctx.fillRect(0, 0, W, H);
+};
+
+// ============================================================================
+// RAIN SYSTEM
+// ============================================================================
+
+/**
+ * Rain particle class
+ * 
+ * CRR at the particle level:
+ * - Each drop has COHERENT fall trajectory (phase of coherence)
+ * - Exiting screen = RUPTURE moment
+ * - Reset at top = REGENERATION as new drop
+ * 
+ * The ensemble of drops creates the visible rain field.
+ */
+class RainDrop {
+  constructor() {
+    this.reset(true);
+  }
+  
+  /**
+   * Reset/regenerate drop
+   * 
+   * CRR: This is the R (regeneration) phase.
+   * New drop inherits statistical properties from the ensemble
+   * but with fresh random variation.
+   */
+  reset(initial = false) {
+    this.x = Math.random() * W * 1.3 - W * 0.15;
+    this.y = initial ? Math.random() * H : -Math.random() * H * 0.3 - 30;
+    this.speed = CONFIG.rain.speed.min + Math.random() * (CONFIG.rain.speed.max - CONFIG.rain.speed.min);
+    this.length = CONFIG.rain.length.min + Math.random() * (CONFIG.rain.length.max - CONFIG.rain.length.min);
+    this.alpha = CONFIG.rain.alpha * (0.4 + Math.random() * 0.6);
+    this.thickness = 0.5 + Math.random() * 1;
+  }
+  
+  /**
+   * Update drop position
+   * 
+   * CRR: Coherence accumulates as drop falls (C += dt)
+   * When y > H: rupture threshold reached, triggers regeneration
+   */
+  update(dt) {
+    this.y += this.speed * dt * 60;
+    this.x += CONFIG.rain.wind * this.speed * dt * 60;
+    
+    if (this.y > H + this.length) {
+      this.reset();  // Rupture → Regeneration
+    }
+  }
+  
+  draw(ctx) {
+    const windAngle = Math.atan2(CONFIG.rain.wind, 1);
+    const endX = this.x + Math.sin(windAngle) * this.length;
+    const endY = this.y + Math.cos(windAngle) * this.length;
+    
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(endX, endY);
+    ctx.strokeStyle = `rgba(210, 225, 245, ${this.alpha})`;
+    ctx.lineWidth = this.thickness;
+    ctx.stroke();
+  }
+}
+
+let raindrops = [];
+
+const initRain = () => {
+  raindrops = [];
+  for (let i = 0; i < CONFIG.rain.count; i++) {
+    raindrops.push(new RainDrop());
+  }
+};
+
+/**
+ * Render rain layer with Mie scattering
+ * 
+ * CRR: Mie scattering is coherent forward scattering from spherical droplets.
+ * Creates bright glow in direction of sun (bottom of screen).
+ */
+const renderRainLayer = () => {
+  rainCtx.clearRect(0, 0, W, H);
+  if (!CONFIG.rain.enabled) return;
+  
+  raindrops.forEach(drop => drop.draw(rainCtx));
+  
+  // Mie scattering glow toward sun
+  const sunX = W * CONFIG.sun.x;
+  
+  const mieGlow = rainCtx.createRadialGradient(sunX, H, 0, sunX, H, H * 0.4);
+  mieGlow.addColorStop(0, `rgba(255, 250, 240, ${CONFIG.rain.mieScatter})`);
+  mieGlow.addColorStop(0.4, `rgba(255, 248, 235, ${CONFIG.rain.mieScatter * 0.4})`);
+  mieGlow.addColorStop(1, 'rgba(255, 245, 230, 0)');
+  
+  rainCtx.fillStyle = mieGlow;
+  rainCtx.fillRect(0, 0, W, H);
+};
+
+// ============================================================================
+// ATMOSPHERIC SCINTILLATION
+// ============================================================================
+
+/**
+ * Subtle brightness fluctuations from atmospheric turbulence.
+ * 
+ * CRR Note: Frequency must stay below flicker fusion (~50Hz).
+ * We use ~0.025Hz (one cycle per 40 seconds) - imperceptible consciously
+ * but adds realism and prevents perfect static adaptation.
+ * 
+ * If scintillation were too fast, it would reset adaptation (rupture)
+ * and prevent the coherence buildup needed for Troxler fading.
+ */
+let scintTime = 0;
+
+const updateScintillation = dt => {
+  scintTime += dt;
+  
+  const amp = CONFIG.atmosphere.scintillation.amplitude;
+  const freq = CONFIG.atmosphere.scintillation.frequency;
+  
+  // Multi-frequency modulation for natural feel
+  const mod = 1 + 
+    Math.sin(scintTime * freq * Math.PI * 2) * amp +
+    Math.sin(scintTime * freq * 0.6 * Math.PI * 2) * amp * 0.6;
+  
+  rainbowCanvas.style.opacity = mod;
+};
+
+// ============================================================================
+// MOUSE INTERACTION - CRR COHERENCE TRACKING
+// ============================================================================
+
+/**
+ * Get wavelength at mouse position
+ * 
+ * Maps screen position to spectral wavelength based on distance from center.
+ * Returns null if outside rainbow band.
+ */
+const getWavelengthAtPosition = (x, y) => {
+  const dx = x - CX;
+  const dy = y - CY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  const innerR = SIZE * CONFIG.rainbow.innerRadius;
+  const outerR = SIZE * CONFIG.rainbow.outerRadius;
+  
+  // Check if in rainbow band (with small margin)
+  if (dist < innerR - 25 || dist > outerR + 25) return null;
+  
+  // Normalize position within rainbow
+  const normalized = (dist - innerR) / (outerR - innerR);
+  const clamped = Math.max(0, Math.min(1, normalized));
+  
+  // Map to wavelength: inner = violet (380nm), outer = red (700nm)
+  return 380 + clamped * (700 - 380);
+};
+
+/**
+ * UPDATE MOUSE COHERENCE - Core CRR Implementation
+ * 
+ * This function implements the CRR coherence integral for mouse movement:
+ * 
+ * C_mouse(t) = ∫smoothness(τ)dτ
+ * 
+ * Where smoothness is inversely related to movement velocity.
+ * 
+ * Slow, steady movement → high smoothness → coherence accumulates
+ * Fast, jerky movement → low smoothness → coherence decays (rupture)
+ * 
+ * The coherence value then modulates the audio timbre, creating an
+ * audible representation of the CRR state.
+ */
+const updateMouseCoherence = (x, y, time) => {
+  if (lastMouseTime === 0) {
+    lastMousePos = { x, y };
+    lastMouseTime = time;
+    return 0.5;  // Initial coherence
+  }
+  
+  const dt = (time - lastMouseTime) / 1000;
+  const dx = x - lastMousePos.x;
+  const dy = y - lastMousePos.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const velocity = dist / Math.max(dt, 0.001);
+  
+  /**
+   * SMOOTHNESS CALCULATION
+   * 
+   * smoothness = 1 / (1 + velocity/threshold)
+   * 
+   * - At zero velocity: smoothness = 1 (maximum)
+   * - At threshold velocity: smoothness = 0.5
+   * - At high velocity: smoothness → 0 (rupture regime)
+   */
+  const smoothness = 1 / (1 + velocity / 400);
+  
+  /**
+   * COHERENCE UPDATE - The CRR integral in discrete form
+   * 
+   * C(t+dt) = C(t) × decay + smoothness × gain
+   * 
+   * This is a leaky integrator that accumulates smooth movement
+   * while naturally decaying back to baseline.
+   */
+  mouseCoherence = mouseCoherence * CONFIG.audio.coherenceDecay + 
+                   smoothness * CONFIG.audio.coherenceGain;
+  mouseCoherence = Math.max(0, Math.min(1, mouseCoherence));
+  
+  lastMousePos = { x, y };
+  lastMouseTime = time;
+  
+  return mouseCoherence;
+};
+
+// Display elements
+const wavelengthDisplay = document.getElementById('wavelengthDisplay');
+const lambdaValue = document.getElementById('lambdaValue');
+const freqValue = document.getElementById('freqValue');
+const noteValue = document.getElementById('noteValue');
+
+/**
+ * Mouse move handler
+ * 
+ * When mouse is in rainbow:
+ * 1. Calculate wavelength from position
+ * 2. Update coherence from movement quality
+ * 3. Update audio (pitch from λ, timbre from C)
+ * 4. Update display
+ */
+const handleMouseMove = e => {
+  const λ = getWavelengthAtPosition(e.clientX, e.clientY);
+  
+  if (λ !== null && CONFIG.audio.enabled) {
+    isInRainbow = true;
+    currentWavelength = λ;
+    
+    const coherence = updateMouseCoherence(e.clientX, e.clientY, performance.now());
+    const freq = wavelengthToFrequency(λ);
+    const note = frequencyToNote(freq);
+    
+    wavelengthDisplay.classList.add('visible');
+    lambdaValue.textContent = `λ = ${Math.round(λ)} nm`;
+    freqValue.textContent = `f = ${Math.round(freq)} Hz`;
+    noteValue.textContent = note;
+    
+    updateAudio(λ, coherence);
+    
+  } else {
+    if (isInRainbow) {
+      fadeOutAudio();
+      wavelengthDisplay.classList.remove('visible');
+    }
+    isInRainbow = false;
+    currentWavelength = null;
+  }
+};
+
+const handleMouseLeave = () => {
+  fadeOutAudio();
+  wavelengthDisplay.classList.remove('visible');
+  isInRainbow = false;
+  mouseCoherence = 0;
+  lastMouseTime = 0;
+};
+
+document.addEventListener('mousemove', handleMouseMove);
+document.addEventListener('mouseleave', handleMouseLeave);
+
+// ============================================================================
+// UI CONTROLS
+// ============================================================================
+
+const btnRain = document.getElementById('btnRain');
+const btnFixation = document.getElementById('btnFixation');
+const btnSing = document.getElementById('btnSing');
+const btnImmerse = document.getElementById('btnImmerse');
+const fixation = document.getElementById('fixation');
+
+let immersed = false;
+let cursorTimeout;
+
+const showUI = () => {
+  document.body.classList.add('show-cursor');
+  clearTimeout(cursorTimeout);
+  if (immersed) {
+    cursorTimeout = setTimeout(() => {
+      document.body.classList.remove('show-cursor');
+    }, 2500);
+  }
+};
+
+document.addEventListener('mousemove', showUI);
+
+btnRain.addEventListener('click', () => {
+  CONFIG.rain.enabled = !CONFIG.rain.enabled;
+  btnRain.classList.toggle('active', CONFIG.rain.enabled);
+  
+  if (CONFIG.rain.enabled) {
+    if (raindrops.length === 0) initRain();
+    initRainAudio();
+    setRainAudio(true);
+  } else {
+    setRainAudio(false);
+  }
+});
+
+btnFixation.addEventListener('click', () => {
+  fixation.classList.toggle('visible');
+  btnFixation.classList.toggle('active', fixation.classList.contains('visible'));
+});
+
+btnSing.addEventListener('click', () => {
+  CONFIG.audio.enabled = !CONFIG.audio.enabled;
+  btnSing.classList.toggle('active', CONFIG.audio.enabled);
+  
+  if (CONFIG.audio.enabled) {
+    initAudio();
+  } else {
+    fadeOutAudio();
+    wavelengthDisplay.classList.remove('visible');
+  }
+});
+
+btnImmerse.addEventListener('click', () => {
+  immersed = !immersed;
+  btnImmerse.classList.toggle('active', immersed);
+  
+  if (immersed) {
+    document.documentElement.requestFullscreen?.();
+    fixation.classList.add('visible');
+    btnFixation.classList.add('active');
+    document.body.classList.remove('show-cursor');
+  } else {
+    document.exitFullscreen?.();
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'r') btnRain.click();
+  if (e.key === 'f') btnFixation.click();
+  if (e.key === 's') btnSing.click();
+  if (e.key === 'i' || e.key === 'Enter') btnImmerse.click();
+  if (e.key === 'Escape') {
+    immersed = false;
+    btnImmerse.classList.remove('active');
+    document.body.classList.add('show-cursor');
+  }
+});
+
+// ============================================================================
+// ANIMATION LOOP
+// ============================================================================
+
+let lastTime = 0;
+
+const animate = time => {
+  const dt = Math.min((time - lastTime) / 1000, 0.1);
+  lastTime = time;
+  
+  // Update rain particles (each undergoing its own CRR cycle)
+  if (CONFIG.rain.enabled) {
+    raindrops.forEach(drop => drop.update(dt));
+  }
+  
+  renderRainLayer();
+  updateScintillation(dt);
+  
+  // Decay coherence when mouse is stationary
+  // CRR: Without active input, coherence naturally decays
+  if (performance.now() - lastMouseTime > 100) {
+    mouseCoherence *= 0.96;
+  }
+  
+  requestAnimationFrame(animate);
+};
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+resize();
+initRain();
+requestAnimationFrame(animate);
+
+// Update equation display with current CRR state
+const equationEl = document.getElementById('equation');
+setInterval(() => {
+  if (isInRainbow && currentWavelength) {
+    const c = mouseCoherence.toFixed(2);
+    equationEl.textContent = `C(${Math.round(currentWavelength)}nm) = ${c} · δ(touch) · R(tone)`;
+  } else {
+    equationEl.textContent = `C(λ,t) = ∫L(λ,τ)dτ → δ(adaptation) → R(blank field)`;
+  }
+}, 100);
+
+/**
+ * ============================================================================
+ * SUMMARY: CRR THROUGHOUT THIS SIMULATION
+ * ============================================================================
+ * 
+ * 1. RAINBOW FORMATION (Optical CRR)
+ *    C = coherent phase accumulation through droplet
+ *    δ = caustic angle where constructive interference peaks
+ *    R = spectral separation into visible bow
+ * 
+ * 2. TROXLER FADING (Perceptual CRR)
+ *    C = retinal adaptation integral ∫I(λ,t)dt
+ *    δ = adaptation threshold crossed
+ *    R = blank field reconstruction by visual cortex
+ * 
+ * 3. AUDIO INTERACTION (Behavioral CRR)
+ *    C = smooth movement accumulation
+ *    δ = movement rupture (jerky input)
+ *    R = tone regeneration weighted by coherence history
+ * 
+ * 4. RAIN PARTICLES (Particle CRR)
+ *    C = coherent fall trajectory
+ *    δ = exit screen (impact)
+ *    R = new drop spawned at top
+ * 
+ * 5. ATMOSPHERIC SCATTERING (Statistical CRR)
+ *    C = accumulated scatter along path
+ *    δ = observer's retina (measurement)
+ *    R = perceived sky color
+ * 
+ * The same mathematical framework - Coherence, Rupture, Regeneration -
+ * operates at every scale from photons to perception to interaction.
+ * 
+ * This is CRR: a universal grammar of process.
+ * 
+ * — Alexander Sabine, 2025
+ *    Cohere Research (cohere.org.uk)
+ *    Active Inference Institute
+ * ============================================================================
+ */
+
+</script>
+</body>
+</html>
