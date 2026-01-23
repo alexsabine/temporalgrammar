@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Rainbow — Coherence · Rupture · Regeneration</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      min-height: 100vh;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+      cursor: none;
+    }
+    
+    body.show-cursor { cursor: crosshair; }
+    
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #sky { z-index: 1; }
+    #droplets { z-index: 2; }
+    #rain { z-index: 3; }
+    #rainbow { z-index: 4; }
+    #veil { z-index: 5; }
+    
+    .fixation {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    .fixation.visible { opacity: 1; }
+    
+    .cross {
+      position: relative;
+      width: 50px;
+      height: 50px;
+    }
+    
+    .cross::before,
+    .cross::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.22);
+    }
+    
+    .cross::before {
+      width: 1px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .cross::after {
+      width: 100%;
+      height: 1px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .cross-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 5px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    body.show-cursor .controls { opacity: 1; }
+    
+    button {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      font: inherit;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.35);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    button.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.75);
+    }
+    
+    .info {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      color: rgba(220, 230, 240, 0.6);
+    }
+    
+    body.show-cursor .info { opacity: 1; }
+    
+    .title {
+      font-size: 0.75rem;
+      letter-spacing: 0.5em;
+      opacity: 0.4;
+      margin-bottom: 0.25rem;
+    }
+    
+    .hint {
+      font-size: 0.5rem;
+      font-style: italic;
+      opacity: 0.3;
+      max-width: 520px;
+      line-height: 1.6;
+    }
+    
+    .wavelength-display {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, 60px);
+      font-family: 'Courier New', monospace;
+      font-size: 0.5rem;
+      color: rgba(255, 255, 255, 0.35);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-align: center;
+      line-height: 1.5;
+    }
+    
+    .wavelength-display.visible { opacity: 1; }
+    
+    .zoom-display {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.55rem;
+      color: rgba(180, 200, 220, 0.4);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      text-align: right;
+      line-height: 1.6;
+    }
+    
+    body.show-cursor .zoom-display { opacity: 1; }
+    
+    .equation {
+      position: fixed;
+      bottom: 3.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Courier New', monospace;
+      font-size: 0.45rem;
+      color: rgba(180, 200, 220, 0.3);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    body.show-cursor .equation { opacity: 1; }
+    
+    /* CRR PANEL */
+    .crr-panel {
+      position: fixed;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 260px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      z-index: 100;
+      backdrop-filter: blur(15px);
+      opacity: 0;
+      transition: opacity 0.5s;
+      font-family: 'Courier New', monospace;
+      color: rgba(220, 230, 240, 0.8);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    body.show-cursor .crr-panel { opacity: 1; }
+    
+    .crr-panel-header {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .scale-indicator {
+      font-size: 0.5rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(100, 200, 150, 0.25);
+      border-radius: 10px;
+      letter-spacing: 0.05em;
+    }
+    
+    .scale-meso .scale-indicator { background: rgba(200, 180, 100, 0.25); }
+    .scale-micro .scale-indicator { background: rgba(200, 130, 100, 0.25); }
+    .scale-nano .scale-indicator { background: rgba(180, 100, 200, 0.25); }
+    
+    .macro-controls, .meso-calc, .micro-calc, .nano-calc {
+      display: none;
+    }
+    
+    .scale-macro .macro-controls { display: block; }
+    .scale-meso .meso-calc { display: block; }
+    .scale-micro .micro-calc { display: block; }
+    .scale-nano .nano-calc { display: block; }
+    
+    .slider-group {
+      margin-bottom: 0.9rem;
+    }
+    
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.5rem;
+      margin-bottom: 0.3rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .slider-label .symbol {
+      font-style: italic;
+      color: rgba(150, 200, 255, 0.9);
+    }
+    
+    .slider-label .value {
+      color: rgba(150, 255, 200, 0.8);
+    }
+    
+    .slider-desc {
+      font-size: 0.4rem;
+      color: rgba(255, 255, 255, 0.3);
+      margin-bottom: 0.25rem;
+      font-style: italic;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: rgba(150, 200, 255, 0.7);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .calc-section {
+      margin-bottom: 0.7rem;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 6px;
+      border-left: 2px solid rgba(150, 200, 255, 0.3);
+    }
+    
+    .calc-title {
+      font-size: 0.42rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 0.35rem;
+    }
+    
+    .calc-eq {
+      font-family: Georgia, serif;
+      font-style: italic;
+      color: rgba(200, 220, 255, 0.6);
+      font-size: 0.48rem;
+      margin: 0.2rem 0;
+    }
+    
+    .calc-row {
+      font-size: 0.45rem;
+      margin: 0.15rem 0;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .calc-val {
+      color: rgba(150, 255, 200, 0.9);
+    }
+    
+    .calc-note {
+      font-size: 0.38rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-style: italic;
+      margin-top: 0.25rem;
+    }
+    
+    .crr-cycle {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-top: 0.7rem;
+      padding: 0.4rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+    }
+    
+    .cycle-phase {
+      text-align: center;
+    }
+    
+    .phase-name {
+      font-size: 0.35rem;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .phase-sym {
+      font-size: 0.6rem;
+      font-style: italic;
+      margin-top: 0.1rem;
+    }
+    
+    .phase-c .phase-sym { color: rgba(100, 200, 255, 0.7); }
+    .phase-d .phase-sym { color: rgba(255, 200, 100, 0.7); }
+    .phase-r .phase-sym { color: rgba(100, 255, 150, 0.7); }
+    
+    .phase-active .phase-sym {
+      text-shadow: 0 0 8px currentColor;
+      opacity: 1;
+    }
+    
+    .cycle-arr {
+      color: rgba(255, 255, 255, 0.15);
+      font-size: 0.5rem;
+    }
+  </style>
+</head>
+<body class="show-cursor">
+  <div id="container">
+    <canvas id="sky"></canvas>
+    <canvas id="droplets"></canvas>
+    <canvas id="rain"></canvas>
+    <canvas id="rainbow"></canvas>
+    <canvas id="veil"></canvas>
+  </div>
+  
+  <div class="info">
+    <div class="title">CRR RAINBOW</div>
+    <div class="hint">scroll to zoom · adjust CRR parameters at macro · observe calculations at micro/nano</div>
+  </div>
+  
+  <div class="fixation" id="fixation">
+    <div class="cross"><div class="cross-dot"></div></div>
+  </div>
+  
+  <div class="crr-panel scale-macro" id="crrPanel">
+    <div class="crr-panel-header">
+      <span>CRR Mathematics</span>
+      <span class="scale-indicator" id="scaleInd">MACRO</span>
+    </div>
+    
+    <!-- MACRO SLIDERS -->
+    <div class="macro-controls">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span><span class="symbol">Ω</span> Adaptation Rate</span>
+          <span class="value" id="omegaVal">0.318</span>
+        </div>
+        <div class="slider-desc">1/π for Z₂ systems · controls fading speed</div>
+        <input type="range" id="omegaSlider" min="0.1" max="0.8" step="0.001" value="0.318">
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span><span class="symbol">C<sub>th</sub></span> Rupture Threshold</span>
+          <span class="value" id="cThVal">0.85</span>
+        </div>
+        <div class="slider-desc">Coherence level triggering phase transition</div>
+        <input type="range" id="cThSlider" min="0.5" max="1.0" step="0.01" value="0.85">
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span><span class="symbol">L(λ,τ)</span> Luminance Rate</span>
+          <span class="value" id="lumVal">1.00</span>
+        </div>
+        <div class="slider-desc">Coherence accumulation speed</div>
+        <input type="range" id="lumSlider" min="0.3" max="2.0" step="0.05" value="1.0">
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span><span class="symbol">CV</span> Coefficient of Variation</span>
+          <span class="value" id="cvVal">0.159</span>
+        </div>
+        <div class="slider-desc">CV = Ω/2 · derived from Ω</div>
+        <input type="range" id="cvSlider" min="0.05" max="0.4" step="0.001" value="0.159" disabled style="opacity:0.5">
+      </div>
+      
+      <div class="crr-cycle">
+        <div class="cycle-phase phase-c" id="phC"><div class="phase-name">Coherence</div><div class="phase-sym">C</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-d" id="phD"><div class="phase-name">Rupture</div><div class="phase-sym">δ</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-r" id="phR"><div class="phase-name">Regeneration</div><div class="phase-sym">R</div></div>
+      </div>
+    </div>
+    
+    <!-- MESO CALCULATIONS -->
+    <div class="meso-calc">
+      <div class="calc-section">
+        <div class="calc-title">Snell's Law at Entry</div>
+        <div class="calc-eq">n₁ sin θ₁ = n₂ sin θ₂</div>
+        <div class="calc-row">n<sub>water</sub>(λ) = <span class="calc-val" id="mRefIdx">1.333</span></div>
+        <div class="calc-row">θ<sub>incidence</sub> = <span class="calc-val" id="mIncAng">59.4°</span></div>
+        <div class="calc-row">θ<sub>refraction</sub> = <span class="calc-val" id="mRefAng">40.2°</span></div>
+      </div>
+      <div class="calc-section">
+        <div class="calc-title">Dispersion</div>
+        <div class="calc-eq">n(λ) = A + B/λ²</div>
+        <div class="calc-row">Δn (red→violet) = <span class="calc-val" id="mDisp">0.014</span></div>
+        <div class="calc-row">Angular spread = <span class="calc-val" id="mSpread">1.8°</span></div>
+        <div class="calc-note">Each wavelength exits at unique angle → spectrum</div>
+      </div>
+      <div class="crr-cycle">
+        <div class="cycle-phase phase-c"><div class="phase-name">Entry</div><div class="phase-sym">n₁</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-d"><div class="phase-name">Refract</div><div class="phase-sym">δθ</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-r"><div class="phase-name">Separate</div><div class="phase-sym">λ</div></div>
+      </div>
+    </div>
+    
+    <!-- MICRO CALCULATIONS -->
+    <div class="micro-calc">
+      <div class="calc-section">
+        <div class="calc-title">Path Integral Through Droplet</div>
+        <div class="calc-eq">C(x,t) = ∫L(x,τ)dτ</div>
+        <div class="calc-row">Droplet ⌀ = <span class="calc-val" id="uDiam">1.2</span> mm</div>
+        <div class="calc-row">Path length = <span class="calc-val" id="uPath">2.4</span> mm</div>
+        <div class="calc-row">Phase = <span class="calc-val" id="uPhase">4.2π</span> rad</div>
+      </div>
+      <div class="calc-section">
+        <div class="calc-title">Internal Reflection</div>
+        <div class="calc-eq">θ<sub>c</sub> = arcsin(1/n)</div>
+        <div class="calc-row">Critical angle = <span class="calc-val" id="uCrit">48.6°</span></div>
+        <div class="calc-row">Reflection R = <span class="calc-val">0.98</span></div>
+        <div class="calc-note">Light trapped → coherence accumulates</div>
+      </div>
+      <div class="calc-section">
+        <div class="calc-title">Rainbow Exit (Rupture)</div>
+        <div class="calc-eq">θ = 180° + 2θᵢ - 4θᵣ</div>
+        <div class="calc-row">Exit angle = <span class="calc-val" id="uExit">42.0°</span></div>
+        <div class="calc-row">exp(C/Ω) = <span class="calc-val" id="uExpCO">23.1</span></div>
+        <div class="calc-note">Caustic = coherence max → visibility</div>
+      </div>
+      <div class="crr-cycle">
+        <div class="cycle-phase phase-c"><div class="phase-name">Traverse</div><div class="phase-sym">∫L</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-d"><div class="phase-name">Exit</div><div class="phase-sym">42°</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-r"><div class="phase-name">Rainbow</div><div class="phase-sym">🌈</div></div>
+      </div>
+    </div>
+    
+    <!-- NANO CALCULATIONS -->
+    <div class="nano-calc">
+      <div class="calc-section">
+        <div class="calc-title">Wave Phase</div>
+        <div class="calc-eq">φ = 2πnL/λ</div>
+        <div class="calc-row">λ = <span class="calc-val" id="nLambda">550</span> nm</div>
+        <div class="calc-row">Optical path = <span class="calc-val" id="nOptPath">2640</span> nm</div>
+        <div class="calc-row">Phase φ = <span class="calc-val" id="nPhaseVal">30.2</span> rad</div>
+      </div>
+      <div class="calc-section">
+        <div class="calc-title">Interference</div>
+        <div class="calc-eq">Δφ = 2πm (constructive)</div>
+        <div class="calc-row">Path diff = <span class="calc-val" id="nPathDiff">412</span> nm</div>
+        <div class="calc-row">Fringe order m = <span class="calc-val" id="nFringe">4</span></div>
+        <div class="calc-row">I ∝ cos²(Δφ/2)</div>
+      </div>
+      <div class="calc-section">
+        <div class="calc-title">Memory Weighting</div>
+        <div class="calc-eq">R = ∫φ·exp(C/Ω)dτ</div>
+        <div class="calc-row">C = π (coherence max)</div>
+        <div class="calc-row">Ω = 1/π ≈ 0.318</div>
+        <div class="calc-row">exp(C/Ω) = <span class="calc-val">e<sup>π</sup> ≈ 23.1</span></div>
+        <div class="calc-note">Same e<sup>π</sup> in black holes & neural gain!</div>
+      </div>
+      <div class="crr-cycle">
+        <div class="cycle-phase phase-c"><div class="phase-name">Phase</div><div class="phase-sym">φ</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-d"><div class="phase-name">Interfere</div><div class="phase-sym">Σ</div></div>
+        <div class="cycle-arr">→</div>
+        <div class="cycle-phase phase-r"><div class="phase-name">Fringe</div><div class="phase-sym">I</div></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="wavelength-display" id="wavelengthDisplay">
+    <div id="lambdaValue">λ = --- nm</div>
+    <div id="freqValue">f = --- Hz</div>
+    <div id="noteValue">---</div>
+  </div>
+  
+  <div class="zoom-display" id="zoomDisplay">
+    <div id="zoomLevel">1.0×</div>
+    <div id="scaleInfo">macro view</div>
+  </div>
+  
+  <div class="equation" id="equation">C(λ,t) = ∫L(λ,τ)dτ → δ(adaptation) → R(blank field)</div>
+  
+  <div class="controls">
+    <button id="btnRain">RAIN</button>
+    <button id="btnFixation">FIXATION</button>
+    <button id="btnSing">SING</button>
+    <button id="btnZoomReset">RESET</button>
+    <button id="btnImmerse">IMMERSE</button>
+  </div>
+
+<script>
+// ============================================================================
+// CRR RAINBOW — Interactive Scale-Dependent Mathematics
+// ============================================================================
+
+const CONFIG = {
+  zoom: { min: 1, max: 100, current: 1, target: 1, speed: 0.08, centerX: 0.5, centerY: 0.5,
+    thresholds: { meso: 3, micro: 10, nano: 30 }
+  },
+  crr: { omega: 1/Math.PI, cThreshold: 0.85, luminanceRate: 1.0, cv: 1/(2*Math.PI) },
+  rainbow: { alphaBase: 0.052, saturationBoost: 1.25, blur: 5, innerRadius: 0.28, outerRadius: 0.40,
+    alphaByWavelength: l => l>=640?0.58:l>=600?0.65:l>=570?0.75:l>=540?0.85:l>=500?0.92:l>=460?0.98:l>=420?1.0:0.88
+  },
+  droplets: { count: 2000, minSize: 0.3, maxSize: 2.5, baseAlpha: 0.6, terminalVelocity: 9, turbulence: 0.3,
+    glowAtZoom: 10, refractionAtZoom: 20, interferenceAtZoom: 40
+  },
+  sun: { x: 0.5, y: 1.35, glowIntensity: 0.35 },
+  sky: { warmTint: 0.15 },
+  rain: { enabled: false, count: 500, speed: { min: 12, max: 22 }, length: { min: 25, max: 50 }, wind: 0.08, alpha: 0.12, mieScatter: 0.025 },
+  atmosphere: { veilingLuminance: 0.012, pathRadiance: 0.02, scintillation: { amplitude: 0.004, frequency: 0.025 } },
+  audio: { enabled: false, baseFreq: 196, octaves: 2.8, attackTime: 0.012, releaseTime: 0.5, maxGain: 0.1, coherenceDecay: 0.94, coherenceGain: 0.12 }
+};
+
+// CRR Panel & Sliders
+const crrPanel = document.getElementById('crrPanel');
+const scaleInd = document.getElementById('scaleInd');
+const omegaSlider = document.getElementById('omegaSlider');
+const cThSlider = document.getElementById('cThSlider');
+const lumSlider = document.getElementById('lumSlider');
+const cvSlider = document.getElementById('cvSlider');
+const omegaVal = document.getElementById('omegaVal');
+const cThVal = document.getElementById('cThVal');
+const lumVal = document.getElementById('lumVal');
+const cvVal = document.getElementById('cvVal');
+
+omegaSlider.oninput = e => {
+  CONFIG.crr.omega = +e.target.value;
+  omegaVal.textContent = CONFIG.crr.omega.toFixed(3);
+  CONFIG.crr.cv = CONFIG.crr.omega / 2;
+  cvSlider.value = CONFIG.crr.cv;
+  cvVal.textContent = CONFIG.crr.cv.toFixed(3);
+};
+cThSlider.oninput = e => { CONFIG.crr.cThreshold = +e.target.value; cThVal.textContent = CONFIG.crr.cThreshold.toFixed(2); };
+lumSlider.oninput = e => { CONFIG.crr.luminanceRate = +e.target.value; lumVal.textContent = CONFIG.crr.luminanceRate.toFixed(2); };
+
+const updatePanel = z => {
+  crrPanel.classList.remove('scale-macro','scale-meso','scale-micro','scale-nano');
+  if (z < CONFIG.zoom.thresholds.meso) { crrPanel.classList.add('scale-macro'); scaleInd.textContent = 'MACRO'; }
+  else if (z < CONFIG.zoom.thresholds.micro) { crrPanel.classList.add('scale-meso'); scaleInd.textContent = 'MESO'; updateMeso(); }
+  else if (z < CONFIG.zoom.thresholds.nano) { crrPanel.classList.add('scale-micro'); scaleInd.textContent = 'MICRO'; updateMicro(); }
+  else { crrPanel.classList.add('scale-nano'); scaleInd.textContent = 'NANO'; updateNano(); }
+};
+
+// Physics
+const refIdx = l => 1.3247 + 3300/(l*l);
+const rbAngle = l => { const n=refIdx(l), c2=(n*n-1)/3; if(c2<0||c2>1)return 42; const i=Math.acos(Math.sqrt(c2)), r=Math.asin(Math.sin(i)/n); return (Math.PI-(Math.PI+2*i-4*r))*180/Math.PI; };
+const wlToRGB = l => { let r,g,b; if(l<440){r=-(l-440)/60;g=0;b=1}else if(l<490){r=0;g=(l-440)/50;b=1}else if(l<510){r=0;g=1;b=-(l-510)/20}else if(l<580){r=(l-510)/70;g=1;b=0}else if(l<645){r=1;g=-(l-645)/65;b=0}else{r=1;g=0;b=0} let e=1;if(l<420)e=0.3+0.7*(l-380)/40;else if(l>680)e=0.3+0.7*(700-l)/20; const s=CONFIG.rainbow.saturationBoost,lu=0.2126*r+0.7152*g+0.0722*b; r=lu+(r-lu)*s;g=lu+(g-lu)*s;b=lu+(b-lu)*s; const y=2.2; return [Math.pow(Math.max(0,Math.min(1,r))*e,1/y),Math.pow(Math.max(0,Math.min(1,g))*e,1/y),Math.pow(Math.max(0,Math.min(1,b))*e,1/y)]; };
+const SPECTRUM = (()=>{ const s=[]; for(let l=700;l>=380;l-=0.5)s.push({wavelength:l,angle:rbAngle(l),rgb:wlToRGB(l),alpha:CONFIG.rainbow.alphaBase*CONFIG.rainbow.alphaByWavelength(l)}); const a=s.map(x=>x.angle),mn=Math.min(...a),mx=Math.max(...a); s.forEach(x=>x.normalizedRadius=(x.angle-mn)/(mx-mn)); return s; })();
+
+// Scale calculations
+const updateMeso = () => {
+  const l=550, n=refIdx(l), c2=(n*n-1)/3, i=Math.acos(Math.sqrt(Math.max(0,Math.min(1,c2)))), r=Math.asin(Math.sin(i)/n);
+  document.getElementById('mRefIdx').textContent = n.toFixed(3);
+  document.getElementById('mIncAng').textContent = (i*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('mRefAng').textContent = (r*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('mDisp').textContent = (refIdx(400)-refIdx(700)).toFixed(3);
+  document.getElementById('mSpread').textContent = Math.abs(rbAngle(400)-rbAngle(700)).toFixed(1)+'°';
+};
+const updateMicro = () => {
+  const d=1.2+Math.sin(Date.now()/2000)*0.3, p=d*2, l=currentWavelength||550, n=refIdx(l), op=p*n*1e6, ph=2*Math.PI*op/l;
+  document.getElementById('uDiam').textContent = d.toFixed(1);
+  document.getElementById('uPath').textContent = p.toFixed(1);
+  document.getElementById('uPhase').textContent = (ph/Math.PI).toFixed(1)+'π';
+  document.getElementById('uCrit').textContent = (Math.asin(1/n)*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('uExit').textContent = rbAngle(l).toFixed(1)+'°';
+  document.getElementById('uExpCO').textContent = Math.min(Math.exp((ph/(2*Math.PI))*Math.PI*CONFIG.crr.omega),999).toFixed(1);
+};
+const updateNano = () => {
+  const l=currentWavelength||550, n=refIdx(l), p=2000, op=p*n, ph=2*Math.PI*op/l, pd=l*(0.5+Math.sin(Date.now()/1000)*0.3);
+  document.getElementById('nLambda').textContent = Math.round(l);
+  document.getElementById('nOptPath').textContent = Math.round(op);
+  document.getElementById('nPhaseVal').textContent = ph.toFixed(1);
+  document.getElementById('nPathDiff').textContent = Math.round(pd);
+  document.getElementById('nFringe').textContent = Math.round(pd/l);
+};
+
+// CRR phase animation
+let crrTime = 0;
+const updateCRRPhase = dt => {
+  crrTime += dt * CONFIG.crr.luminanceRate;
+  const dur = 3/CONFIG.crr.omega, ph = (crrTime%dur)/dur;
+  ['phC','phD','phR'].forEach(id => document.getElementById(id)?.classList.remove('phase-active'));
+  if (ph < CONFIG.crr.cThreshold*0.6) document.getElementById('phC')?.classList.add('phase-active');
+  else if (ph < CONFIG.crr.cThreshold*0.6+0.15) document.getElementById('phD')?.classList.add('phase-active');
+  else document.getElementById('phR')?.classList.add('phase-active');
+};
+
+// Droplet class
+class Droplet {
+  constructor() { this.reset(true); }
+  reset(init=false) {
+    const a=Math.random()*Math.PI*2, rn=CONFIG.rainbow.innerRadius+Math.random()*(CONFIG.rainbow.outerRadius-CONFIG.rainbow.innerRadius)*1.5;
+    this.x=0.5+Math.cos(a)*rn*(0.8+Math.random()*0.4); this.y=0.5+Math.sin(a)*rn*(0.8+Math.random()*0.4);
+    if(Math.random()<0.3){this.x=Math.random();this.y=Math.random();}
+    this.size=CONFIG.droplets.minSize+Math.random()*(CONFIG.droplets.maxSize-CONFIG.droplets.minSize);
+    this.velocity={x:(Math.random()-0.5)*CONFIG.droplets.turbulence,y:CONFIG.droplets.terminalVelocity*(0.5+this.size/CONFIG.droplets.maxSize)};
+    this.phase=Math.random()*Math.PI*2; this.phaseSpeed=0.5+Math.random()*2;
+    this.resonantWavelength=380+Math.random()*320; this.seed=Math.random()*1000;
+  }
+  update(dt) {
+    this.y+=this.velocity.y*dt*0.001; this.x+=this.velocity.x*dt*0.01+Math.sin(this.phase*3+this.seed)*CONFIG.droplets.turbulence*dt*0.01;
+    this.phase+=this.phaseSpeed*dt*CONFIG.crr.omega*3;
+    this.resonantWavelength+=Math.sin(this.phase*0.1)*dt*5; this.resonantWavelength=Math.max(380,Math.min(700,this.resonantWavelength));
+    if(this.y>1.2||this.y<-0.2||this.x>1.2||this.x<-0.2)this.reset();
+  }
+  draw(ctx,z,vx,vy,vw,vh) {
+    const sx=(this.x-vx)/vw*ctx.canvas.width, sy=(this.y-vy)/vh*ctx.canvas.height;
+    if(sx<-50||sx>ctx.canvas.width+50||sy<-50||sy>ctx.canvas.height+50)return;
+    const sz=Math.max(1,this.size*z*2), rgb=wlToRGB(this.resonantWavelength), r=Math.round(rgb[0]*255), g=Math.round(rgb[1]*255), b=Math.round(rgb[2]*255), al=Math.min(1,CONFIG.droplets.baseAlpha*(0.3+sz/20));
+    if(z<CONFIG.droplets.glowAtZoom){ctx.beginPath();ctx.arc(sx,sy,sz,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${al*0.5})`;ctx.fill();if(sz>2){ctx.beginPath();ctx.arc(sx,sy,sz*0.4,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${al*0.3})`;ctx.fill();}}
+    else if(z<CONFIG.droplets.refractionAtZoom){const gr=ctx.createRadialGradient(sx-sz*0.3,sy-sz*0.3,0,sx,sy,sz);gr.addColorStop(0,`rgba(255,255,255,${al*0.6})`);gr.addColorStop(0.3,`rgba(${r},${g},${b},${al*0.8})`);gr.addColorStop(0.7,`rgba(${r},${g},${b},${al*0.4})`);gr.addColorStop(1,`rgba(${r},${g},${b},0)`);ctx.beginPath();ctx.arc(sx,sy,sz,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();}
+    else if(z<CONFIG.droplets.interferenceAtZoom){const gr=ctx.createRadialGradient(sx-sz*0.25,sy-sz*0.25,0,sx,sy,sz);gr.addColorStop(0,`rgba(220,230,240,${al*0.3})`);gr.addColorStop(0.5,`rgba(180,200,220,${al*0.15})`);gr.addColorStop(1,`rgba(150,170,190,0)`);ctx.beginPath();ctx.arc(sx,sy,sz,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();const aa=(this.resonantWavelength-380)/320*0.3+0.5;ctx.beginPath();ctx.arc(sx,sy,sz*0.85,Math.PI*aa,Math.PI*(aa+0.8));ctx.strokeStyle=`rgba(${r},${g},${b},${al})`;ctx.lineWidth=sz*0.15;ctx.lineCap='round';ctx.stroke();const ea=Math.PI*(aa+0.4),ex=sx+Math.cos(ea)*sz*0.85,ey=sy+Math.sin(ea)*sz*0.85;ctx.beginPath();ctx.arc(ex,ey,sz*0.12,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${al})`;ctx.fill();ctx.beginPath();ctx.arc(sx,sy,sz,0,Math.PI*2);ctx.strokeStyle=`rgba(200,220,240,${al*0.3})`;ctx.lineWidth=1.5;ctx.stroke();}
+    else{ctx.beginPath();ctx.arc(sx,sy,sz,0,Math.PI*2);ctx.fillStyle=`rgba(200,215,230,${al*0.1})`;ctx.fill();const fc=Math.floor(sz/8);for(let i=0;i<fc;i++){const fr=sz*(0.3+i*0.15),fp=(this.phase+i*0.5)%(Math.PI*2),fi=(Math.sin(fp)+1)*0.5;ctx.beginPath();ctx.arc(sx,sy,fr,0,Math.PI*2);ctx.strokeStyle=`rgba(${r},${g},${b},${al*fi*0.6})`;ctx.lineWidth=2;ctx.stroke();}const cs=sz*0.2*(1+Math.sin(this.phase*2)*0.3),cg=ctx.createRadialGradient(sx,sy,0,sx,sy,cs);cg.addColorStop(0,`rgba(255,255,255,${al})`);cg.addColorStop(0.5,`rgba(${r},${g},${b},${al*0.7})`);cg.addColorStop(1,`rgba(${r},${g},${b},0)`);ctx.beginPath();ctx.arc(sx,sy,cs,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();}
+  }
+}
+let droplets = [];
+const initDroplets = () => { droplets=[]; for(let i=0;i<CONFIG.droplets.count;i++)droplets.push(new Droplet()); };
+
+// Rain
+class RainDrop { constructor(){this.reset(true);} reset(i=false){this.x=Math.random()*W*1.3-W*0.15;this.y=i?Math.random()*H:-Math.random()*H*0.3-30;this.speed=CONFIG.rain.speed.min+Math.random()*(CONFIG.rain.speed.max-CONFIG.rain.speed.min);this.length=CONFIG.rain.length.min+Math.random()*(CONFIG.rain.length.max-CONFIG.rain.length.min);this.alpha=CONFIG.rain.alpha*(0.4+Math.random()*0.6);this.thickness=0.5+Math.random();} update(dt){this.y+=this.speed*dt*60;this.x+=CONFIG.rain.wind*this.speed*dt*60;if(this.y>H+this.length)this.reset();} draw(ctx){const wa=Math.atan2(CONFIG.rain.wind,1),ex=this.x+Math.sin(wa)*this.length,ey=this.y+Math.cos(wa)*this.length;ctx.beginPath();ctx.moveTo(this.x,this.y);ctx.lineTo(ex,ey);ctx.strokeStyle=`rgba(210,225,245,${this.alpha})`;ctx.lineWidth=this.thickness;ctx.stroke();}}
+let raindrops = [];
+const initRain = () => { raindrops=[]; for(let i=0;i<CONFIG.rain.count;i++)raindrops.push(new RainDrop()); };
+
+// Audio
+let audioCtx=null,oscillator=null,gainNode=null,filterNode=null,rainGain=null,mouseCoherence=0,lastMousePos={x:0,y:0},lastMouseTime=0,currentWavelength=null,isInRainbow=false;
+const initAudio = () => { if(audioCtx)return; audioCtx=new(window.AudioContext||window.webkitAudioContext)(); oscillator=audioCtx.createOscillator();oscillator.type='sine';oscillator.frequency.value=440; const o2=audioCtx.createOscillator();o2.type='sine';o2.frequency.value=440;o2.detune.value=4; const o3=audioCtx.createOscillator();o3.type='triangle';o3.frequency.value=880; gainNode=audioCtx.createGain();gainNode.gain.value=0;const g2=audioCtx.createGain();g2.gain.value=0;const g3=audioCtx.createGain();g3.gain.value=0; filterNode=audioCtx.createBiquadFilter();filterNode.type='lowpass';filterNode.frequency.value=1500;filterNode.Q.value=0.8; const rv=audioCtx.createConvolver(),rl=audioCtx.sampleRate*1.5,rb=audioCtx.createBuffer(2,rl,audioCtx.sampleRate);for(let c=0;c<2;c++){const d=rb.getChannelData(c);for(let i=0;i<rl;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(rl*0.2));}rv.buffer=rb;const rg=audioCtx.createGain();rg.gain.value=0.15;const mg=audioCtx.createGain();mg.gain.value=0.7; oscillator.connect(gainNode);o2.connect(g2);o3.connect(g3);gainNode.connect(filterNode);g2.connect(filterNode);g3.connect(filterNode);filterNode.connect(mg);filterNode.connect(rv);rv.connect(rg);rg.connect(mg);mg.connect(audioCtx.destination); oscillator.start();o2.start();o3.start();oscillator._osc2=o2;oscillator._osc3=o3;oscillator._gain2=g2;oscillator._gain3=g3; };
+const wlToFreq = l => CONFIG.audio.baseFreq*Math.pow(2,(1-(l-380)/(700-380))*CONFIG.audio.octaves);
+const freqToNote = f => { const nn=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'],st=12*Math.log2(f/440)+9,ni=Math.round(st)%12,oc=Math.floor((st+3)/12)+4;return nn[(ni+12)%12]+oc; };
+const updateAudio = (l,c) => { if(!audioCtx||!CONFIG.audio.enabled)return; const n=audioCtx.currentTime,f=wlToFreq(l),gt=0.03+(1-c)*0.12; oscillator.frequency.linearRampToValueAtTime(f,n+gt);oscillator._osc2.frequency.linearRampToValueAtTime(f,n+gt);oscillator._osc3.frequency.linearRampToValueAtTime(f*2,n+gt); const tg=CONFIG.audio.maxGain*(0.25+c*0.75);gainNode.gain.linearRampToValueAtTime(tg,n+CONFIG.audio.attackTime);oscillator._gain2.gain.linearRampToValueAtTime(tg*0.35,n+CONFIG.audio.attackTime);oscillator._gain3.gain.linearRampToValueAtTime(tg*0.12*c,n+CONFIG.audio.attackTime);filterNode.frequency.linearRampToValueAtTime(600+c*3500,n+0.05); };
+const fadeOutAudio = () => { if(!audioCtx||!gainNode)return;const n=audioCtx.currentTime;gainNode.gain.linearRampToValueAtTime(0,n+CONFIG.audio.releaseTime);oscillator._gain2.gain.linearRampToValueAtTime(0,n+CONFIG.audio.releaseTime);oscillator._gain3.gain.linearRampToValueAtTime(0,n+CONFIG.audio.releaseTime); };
+const initRainAudio = () => { if(!audioCtx)initAudio();if(rainGain)return;const bs=audioCtx.sampleRate*3,bf=audioCtx.createBuffer(2,bs,audioCtx.sampleRate);for(let c=0;c<2;c++){const d=bf.getChannelData(c);let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;for(let i=0;i<bs;i++){const w=Math.random()*2-1;b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;b2=0.96900*b2+w*0.1538520;b3=0.86650*b3+w*0.3104856;b4=0.55000*b4+w*0.5329522;b5=-0.7616*b5-w*0.0168980;d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.06;b6=w*0.115926;}}const sr=audioCtx.createBufferSource();sr.buffer=bf;sr.loop=true;const fl=audioCtx.createBiquadFilter();fl.type='bandpass';fl.frequency.value=2200;fl.Q.value=0.5;rainGain=audioCtx.createGain();rainGain.gain.value=0;sr.connect(fl);fl.connect(rainGain);rainGain.connect(audioCtx.destination);sr.start(); };
+const setRainAudio = e => { if(!rainGain)return;rainGain.gain.linearRampToValueAtTime(e?0.08:0,audioCtx.currentTime+0.8); };
+
+// Canvas setup
+const skyCanvas=document.getElementById('sky'),dropletsCanvas=document.getElementById('droplets'),rainCanvas=document.getElementById('rain'),rainbowCanvas=document.getElementById('rainbow'),veilCanvas=document.getElementById('veil');
+const skyCtx=skyCanvas.getContext('2d'),dropletsCtx=dropletsCanvas.getContext('2d'),rainCtx=rainCanvas.getContext('2d'),rainbowCtx=rainbowCanvas.getContext('2d'),veilCtx=veilCanvas.getContext('2d');
+let W,H,CX,CY,SIZE,viewX=0,viewY=0,viewW=1,viewH=1;
+const resize = () => { W=window.innerWidth;H=window.innerHeight;CX=W/2;CY=H/2;SIZE=Math.min(W,H);[skyCanvas,dropletsCanvas,rainCanvas,rainbowCanvas,veilCanvas].forEach(c=>{c.width=W;c.height=H;});renderSky();renderRainbow();renderVeil(); };
+window.addEventListener('resize',resize);
+
+// Zoom
+const updateZoom = () => { CONFIG.zoom.current+=(CONFIG.zoom.target-CONFIG.zoom.current)*CONFIG.zoom.speed;const z=CONFIG.zoom.current;viewW=1/z;viewH=1/z;viewX=CONFIG.zoom.centerX-viewW/2;viewY=CONFIG.zoom.centerY-viewH/2;viewX=Math.max(0,Math.min(1-viewW,viewX));viewY=Math.max(0,Math.min(1-viewH,viewY));document.getElementById('zoomLevel').textContent=z.toFixed(1)+'×';document.getElementById('scaleInfo').textContent=z<CONFIG.zoom.thresholds.meso?'macro view':z<CONFIG.zoom.thresholds.micro?'meso view':z<CONFIG.zoom.thresholds.nano?'micro view':'nano view';updatePanel(z); };
+document.addEventListener('wheel',e=>{e.preventDefault();CONFIG.zoom.target=Math.max(CONFIG.zoom.min,Math.min(CONFIG.zoom.max,CONFIG.zoom.target*(e.deltaY>0?0.9:1.1)));CONFIG.zoom.centerX=e.clientX/W;CONFIG.zoom.centerY=e.clientY/H;},{passive:false});
+
+// Rendering
+const renderSky = () => { const c=skyCtx,g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0a1628');g.addColorStop(0.2,'#122540');g.addColorStop(0.4,'#1a3858');g.addColorStop(0.6,'#2a5068');g.addColorStop(0.8,'#3d6580');g.addColorStop(1,'#5a85a8');c.fillStyle=g;c.fillRect(0,0,W,H);const wg=c.createLinearGradient(0,H*0.5,0,H);wg.addColorStop(0,'rgba(255,200,150,0)');wg.addColorStop(0.5,`rgba(255,210,170,${CONFIG.sky.warmTint*0.5})`);wg.addColorStop(1,`rgba(255,220,180,${CONFIG.sky.warmTint})`);c.fillStyle=wg;c.fillRect(0,0,W,H);const sx=W*CONFIG.sun.x,sy=H*CONFIG.sun.y,g3=c.createRadialGradient(sx,sy,0,sx,sy,H*0.9);g3.addColorStop(0,`rgba(255,230,190,${CONFIG.sun.glowIntensity*0.3})`);g3.addColorStop(0.3,`rgba(255,220,180,${CONFIG.sun.glowIntensity*0.15})`);g3.addColorStop(0.6,`rgba(255,210,170,${CONFIG.sun.glowIntensity*0.05})`);g3.addColorStop(1,'rgba(255,200,160,0)');c.fillStyle=g3;c.fillRect(0,0,W,H); };
+const renderRainbow = () => { const c=rainbowCtx;c.clearRect(0,0,W,H);const z=CONFIG.zoom.current,rcx=(0.5-viewX)/viewW*W,rcy=(0.5-viewY)/viewH*H,ir=SIZE*CONFIG.rainbow.innerRadius*z,or=SIZE*CONFIG.rainbow.outerRadius*z,bw=or-ir;const oc=document.createElement('canvas');oc.width=W;oc.height=H;const ox=oc.getContext('2d'),zab=1+Math.log10(Math.max(1,z))*0.3,cab=CONFIG.crr.luminanceRate;SPECTRUM.forEach(b=>{const rd=ir+b.normalizedRadius*bw,[r,g,bl]=b.rgb,aa=Math.min(0.9,b.alpha*zab*cab);ox.beginPath();ox.arc(rcx,rcy,rd,0,Math.PI*2);ox.strokeStyle=`rgba(${Math.round(r*255)},${Math.round(g*255)},${Math.round(bl*255)},${aa})`;ox.lineWidth=Math.max(1,bw/SPECTRUM.length*3.2);ox.stroke();});c.filter=`blur(${Math.max(1,CONFIG.rainbow.blur/Math.sqrt(z)/(0.5+CONFIG.crr.omega))}px)`;c.drawImage(oc,0,0);c.filter='none'; };
+const renderVeil = () => { const c=veilCtx;c.clearRect(0,0,W,H);const vr=Math.max(0.2,1/Math.sqrt(CONFIG.zoom.current));c.fillStyle=`rgba(140,165,190,${CONFIG.atmosphere.veilingLuminance*vr})`;c.fillRect(0,0,W,H);const sx=W*CONFIG.sun.x,sy=H*CONFIG.sun.y,sv=c.createRadialGradient(sx,sy,0,sx,sy,H*1.2);sv.addColorStop(0,`rgba(255,245,230,${CONFIG.atmosphere.pathRadiance*vr})`);sv.addColorStop(0.3,`rgba(230,235,240,${CONFIG.atmosphere.pathRadiance*0.4*vr})`);sv.addColorStop(1,'rgba(200,215,230,0)');c.fillStyle=sv;c.fillRect(0,0,W,H); };
+const renderRainLayer = () => { rainCtx.clearRect(0,0,W,H);if(!CONFIG.rain.enabled)return;raindrops.forEach(d=>d.draw(rainCtx));const sx=W*CONFIG.sun.x,mg=rainCtx.createRadialGradient(sx,H,0,sx,H,H*0.4);mg.addColorStop(0,`rgba(255,250,240,${CONFIG.rain.mieScatter})`);mg.addColorStop(0.4,`rgba(255,248,235,${CONFIG.rain.mieScatter*0.4})`);mg.addColorStop(1,'rgba(255,245,230,0)');rainCtx.fillStyle=mg;rainCtx.fillRect(0,0,W,H); };
+const renderDroplets = () => { dropletsCtx.clearRect(0,0,W,H);const z=CONFIG.zoom.current;if(z<CONFIG.zoom.thresholds.meso)return;dropletsCtx.globalAlpha=Math.min(1,(z-CONFIG.zoom.thresholds.meso)/5);droplets.forEach(d=>d.draw(dropletsCtx,z,viewX,viewY,viewW,viewH));dropletsCtx.globalAlpha=1; };
+let scintTime=0;
+const updateScintillation = dt => { scintTime+=dt;const a=CONFIG.atmosphere.scintillation.amplitude,f=CONFIG.atmosphere.scintillation.frequency,m=1+Math.sin(scintTime*f*Math.PI*2)*a+Math.sin(scintTime*f*0.6*Math.PI*2)*a*0.6;rainbowCanvas.style.opacity=m; };
+
+// Mouse interaction
+const getWLAtPos = (x,y) => { const nx=viewX+(x/W)*viewW,ny=viewY+(y/H)*viewH,dx=nx-0.5,dy=ny-0.5,ds=Math.sqrt(dx*dx+dy*dy),ir=CONFIG.rainbow.innerRadius,or=CONFIG.rainbow.outerRadius;if(ds<ir-0.03||ds>or+0.03)return null;return 380+Math.max(0,Math.min(1,(ds-ir)/(or-ir)))*(700-380); };
+const updateMouseCoh = (x,y,t) => { if(lastMouseTime===0){lastMousePos={x,y};lastMouseTime=t;return 0.5;}const dt=(t-lastMouseTime)/1000,dx=x-lastMousePos.x,dy=y-lastMousePos.y,v=Math.sqrt(dx*dx+dy*dy)/Math.max(dt,0.001),sm=1/(1+v/400);mouseCoherence=mouseCoherence*CONFIG.audio.coherenceDecay+sm*CONFIG.audio.coherenceGain;mouseCoherence=Math.max(0,Math.min(1,mouseCoherence));lastMousePos={x,y};lastMouseTime=t;return mouseCoherence; };
+const wld=document.getElementById('wavelengthDisplay'),lv=document.getElementById('lambdaValue'),fv=document.getElementById('freqValue'),nv=document.getElementById('noteValue');
+document.addEventListener('mousemove',e=>{const l=getWLAtPos(e.clientX,e.clientY);if(l!==null&&CONFIG.audio.enabled){isInRainbow=true;currentWavelength=l;const c=updateMouseCoh(e.clientX,e.clientY,performance.now()),f=wlToFreq(l);wld.classList.add('visible');lv.textContent=`λ = ${Math.round(l)} nm`;fv.textContent=`f = ${Math.round(f)} Hz`;nv.textContent=freqToNote(f);updateAudio(l,c);}else{if(isInRainbow){fadeOutAudio();wld.classList.remove('visible');}isInRainbow=false;currentWavelength=null;}});
+document.addEventListener('mouseleave',()=>{fadeOutAudio();wld.classList.remove('visible');isInRainbow=false;mouseCoherence=0;lastMouseTime=0;});
+
+// UI Controls
+const btnRain=document.getElementById('btnRain'),btnFixation=document.getElementById('btnFixation'),btnSing=document.getElementById('btnSing'),btnZoomReset=document.getElementById('btnZoomReset'),btnImmerse=document.getElementById('btnImmerse'),fixation=document.getElementById('fixation');
+let immersed=false,cursorTimeout;
+const showUI = () => { document.body.classList.add('show-cursor');clearTimeout(cursorTimeout);if(immersed)cursorTimeout=setTimeout(()=>document.body.classList.remove('show-cursor'),2500); };
+document.addEventListener('mousemove',showUI);
+btnRain.onclick = () => { CONFIG.rain.enabled=!CONFIG.rain.enabled;btnRain.classList.toggle('active',CONFIG.rain.enabled);if(CONFIG.rain.enabled){if(raindrops.length===0)initRain();initRainAudio();setRainAudio(true);}else setRainAudio(false); };
+btnFixation.onclick = () => { fixation.classList.toggle('visible');btnFixation.classList.toggle('active',fixation.classList.contains('visible')); };
+btnSing.onclick = () => { CONFIG.audio.enabled=!CONFIG.audio.enabled;btnSing.classList.toggle('active',CONFIG.audio.enabled);if(CONFIG.audio.enabled)initAudio();else{fadeOutAudio();wld.classList.remove('visible');} };
+btnZoomReset.onclick = () => { CONFIG.zoom.target=1;CONFIG.zoom.centerX=0.5;CONFIG.zoom.centerY=0.5; };
+btnImmerse.onclick = () => { immersed=!immersed;btnImmerse.classList.toggle('active',immersed);if(immersed){document.documentElement.requestFullscreen?.();fixation.classList.add('visible');btnFixation.classList.add('active');document.body.classList.remove('show-cursor');}else document.exitFullscreen?.(); };
+document.addEventListener('keydown',e=>{if(e.key==='r')btnRain.click();if(e.key==='f')btnFixation.click();if(e.key==='s')btnSing.click();if(e.key==='z'||e.key==='0')btnZoomReset.click();if(e.key==='i'||e.key==='Enter')btnImmerse.click();if(e.key==='Escape'){immersed=false;btnImmerse.classList.remove('active');document.body.classList.add('show-cursor');}if(e.key==='='||e.key==='+')CONFIG.zoom.target=Math.min(CONFIG.zoom.max,CONFIG.zoom.target*1.3);if(e.key==='-'||e.key==='_')CONFIG.zoom.target=Math.max(CONFIG.zoom.min,CONFIG.zoom.target/1.3);});
+
+// Animation loop
+let lastTime=0;
+const animate = t => { const dt=Math.min((t-lastTime)/1000,0.1);lastTime=t;updateZoom();updateCRRPhase(dt);droplets.forEach(d=>d.update(dt));if(CONFIG.rain.enabled)raindrops.forEach(d=>d.update(dt));renderRainbow();renderDroplets();renderRainLayer();renderVeil();updateScintillation(dt);if(performance.now()-lastMouseTime>100)mouseCoherence*=0.96;requestAnimationFrame(animate); };
+
+// Init
+resize();initRain();initDroplets();requestAnimationFrame(animate);
+const eqEl=document.getElementById('equation');
+setInterval(()=>{if(isInRainbow&&currentWavelength)eqEl.textContent=`C(${Math.round(currentWavelength)}nm) = ${mouseCoherence.toFixed(2)} · δ(touch) · R(tone)`;else{const z=CONFIG.zoom.current;if(z>CONFIG.zoom.thresholds.nano)eqEl.textContent=`NANO: R = ∫φ·exp(C/Ω)dτ | exp(π) ≈ 23.1`;else if(z>CONFIG.zoom.thresholds.micro)eqEl.textContent=`MICRO: C(x,t) = ∫L(x,τ)dτ | θ_rainbow = 42°`;else if(z>CONFIG.zoom.thresholds.meso)eqEl.textContent=`MESO: n(λ) = 1.325 + 3300/λ² | Δn = 0.014`;else eqEl.textContent=`MACRO: C→δ→R | Ω=${CONFIG.crr.omega.toFixed(3)} CV=${CONFIG.crr.cv.toFixed(3)}`;}},100);
+</script>
+</body>
+</html>
