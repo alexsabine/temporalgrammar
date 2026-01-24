@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Bouncy Ball Physics</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      min-height: 100vh;
+      background: #111827;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 1.5rem;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      font-size: 1.875rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #9ca3af;
+      margin-bottom: 1.5rem;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (min-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    .panel {
+      background: #1f2937;
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+    
+    .canvas-container {
+      border: 1px solid #374151;
+      border-radius: 0.5rem;
+      background: #030712;
+    }
+    
+    .phase-display {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      font-family: monospace;
+      border-left: 4px solid;
+    }
+    
+    .phase-coherence {
+      background: rgba(59, 130, 246, 0.13);
+      border-color: #3b82f6;
+    }
+    
+    .phase-rupture {
+      background: rgba(239, 68, 68, 0.13);
+      border-color: #ef4444;
+    }
+    
+    .phase-regeneration {
+      background: rgba(34, 197, 94, 0.13);
+      border-color: #22c55e;
+    }
+    
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .omega-symbol {
+      font-size: 1.5rem;
+    }
+    
+    .omega-subtitle {
+      color: #9ca3af;
+      font-size: 0.875rem;
+      font-weight: normal;
+    }
+    
+    .slider {
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, #ef4444, #22c55e);
+      cursor: pointer;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+    }
+    
+    .slider-labels .low {
+      color: #f87171;
+    }
+    
+    .slider-labels .current {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fbbf24;
+    }
+    
+    .slider-labels .high {
+      color: #4ade80;
+      text-align: right;
+    }
+    
+    .omega-note {
+      color: #9ca3af;
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+    
+    .omega-note .highlight {
+      color: #fbbf24;
+    }
+    
+    .energy-bar-container {
+      margin-bottom: 0.75rem;
+    }
+    
+    .energy-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .energy-label.pe { color: #60a5fa; }
+    .energy-label.ke { color: #fbbf24; }
+    .energy-label.total { color: #4ade80; }
+    .energy-label.lost { color: #f87171; }
+    
+    .energy-bar {
+      height: 1rem;
+      background: #374151;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    
+    .energy-fill {
+      height: 100%;
+      transition: width 0.075s;
+    }
+    
+    .energy-fill.pe { background: #3b82f6; }
+    .energy-fill.ke { background: #eab308; }
+    .energy-fill.total { background: #22c55e; }
+    .energy-fill.lost { background: #ef4444; }
+    
+    .button-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .btn-start {
+      background: #16a34a;
+    }
+    
+    .btn-start:hover {
+      background: #15803d;
+    }
+    
+    .btn-start:disabled {
+      background: #4b5563;
+      cursor: not-allowed;
+    }
+    
+    .btn-reset {
+      background: #4b5563;
+      color: white;
+    }
+    
+    .btn-reset:hover {
+      background: #374151;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.875rem;
+      font-weight: bold;
+    }
+    
+    .stat-value.ruptures { color: #c084fc; }
+    .stat-value.retained { color: #22d3ee; }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      color: #9ca3af;
+    }
+    
+    .explanation-section {
+      margin-top: 1.5rem;
+    }
+    
+    .explanation-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    @media (min-width: 768px) {
+      .explanation-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    .explanation-card {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid;
+    }
+    
+    .explanation-card.coherence {
+      background: rgba(30, 58, 138, 0.3);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .explanation-card.rupture {
+      background: rgba(127, 29, 29, 0.3);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    .explanation-card.regeneration {
+      background: rgba(20, 83, 45, 0.3);
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    
+    .explanation-card h4 {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .explanation-card.coherence h4 { color: #60a5fa; }
+    .explanation-card.rupture h4 { color: #f87171; }
+    .explanation-card.regeneration h4 { color: #4ade80; }
+    
+    .explanation-card p {
+      font-size: 0.875rem;
+      color: #d1d5db;
+    }
+    
+    .omega-explanation {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: rgba(113, 63, 18, 0.2);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+    
+    .omega-explanation h4 {
+      font-weight: bold;
+      color: #fbbf24;
+      margin-bottom: 0.5rem;
+    }
+    
+    .omega-explanation p {
+      font-size: 0.875rem;
+      color: #d1d5db;
+    }
+    
+    .history-section {
+      margin-top: 1.5rem;
+    }
+    
+    .history-table {
+      width: 100%;
+      font-size: 0.875rem;
+      border-collapse: collapse;
+    }
+    
+    .history-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      color: #9ca3af;
+      border-bottom: 1px solid #374151;
+    }
+    
+    .history-table td {
+      padding: 0.5rem 0.75rem;
+      font-family: monospace;
+      border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+    }
+    
+    .history-table .bounce-num { color: #c084fc; }
+    .history-table .pre-v { color: #60a5fa; }
+    .history-table .post-v { color: #4ade80; }
+    .history-table .retained { color: #fbbf24; }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CRR Bouncy Ball Physics</h1>
+    <p class="subtitle">Demonstrating Coherence-Rupture-Regeneration through gravitational energy transfer</p>
+    
+    <div class="main-grid">
+      <!-- Simulation Canvas -->
+      <div class="panel">
+        <div class="canvas-container">
+          <svg id="simulation" width="100%" viewBox="0 0 400 420">
+            <!-- Ground -->
+            <rect x="0" y="380" width="400" height="40" fill="#374151" />
+            <line x1="0" y1="380" x2="400" y2="380" stroke="#6b7280" stroke-width="2" />
+            
+            <!-- Height markers -->
+            <g id="height-markers">
+              <line x1="10" y1="50" x2="30" y2="50" stroke="#4b5563" stroke-width="1" />
+              <text x="35" y="54" fill="#6b7280" font-size="10">31m</text>
+              <line x1="10" y1="150" x2="30" y2="150" stroke="#4b5563" stroke-width="1" />
+              <text x="35" y="154" fill="#6b7280" font-size="10">21m</text>
+              <line x1="10" y1="250" x2="30" y2="250" stroke="#4b5563" stroke-width="1" />
+              <text x="35" y="254" fill="#6b7280" font-size="10">11m</text>
+              <line x1="10" y1="350" x2="30" y2="350" stroke="#4b5563" stroke-width="1" />
+              <text x="35" y="354" fill="#6b7280" font-size="10">1m</text>
+            </g>
+            
+            <!-- Rupture flash effect -->
+            <circle id="rupture-flash" cx="200" cy="360" r="60" fill="none" stroke="#ef4444" stroke-width="4" opacity="0" />
+            
+            <!-- Ball -->
+            <circle id="ball" cx="200" cy="50" r="20" fill="#3b82f6" stroke="white" stroke-width="2" />
+            
+            <!-- Velocity arrow -->
+            <line id="velocity-arrow" x1="200" y1="50" x2="200" y2="50" stroke="#fbbf24" stroke-width="3" />
+            <polygon id="arrow-head" points="0,0 0,0 0,0" fill="#fbbf24" />
+            
+            <!-- Phase indicator -->
+            <text id="phase-text" x="200" y="30" text-anchor="middle" fill="#3b82f6" font-size="14" font-weight="bold">COHERENCE</text>
+          </svg>
+        </div>
+        
+        <div id="phase-display" class="phase-display phase-coherence">
+          C = ∫L(x,τ)dτ — Accumulating gravitational coherence
+        </div>
+      </div>
+      
+      <!-- Controls & Data -->
+      <div class="controls-section">
+        <!-- Ω Control -->
+        <div class="panel">
+          <h3 class="section-title">
+            <span class="omega-symbol">Ω</span>
+            <span class="omega-subtitle">= Coefficient of Restitution</span>
+          </h3>
+          <input type="range" id="omega-slider" class="slider" min="0.1" max="0.99" step="0.01" value="0.85">
+          <div class="slider-labels">
+            <span class="low">Low Ω = 0.1<br>Rapid dissipation</span>
+            <span class="current" id="omega-value">0.85</span>
+            <span class="high">High Ω = 0.99<br>High retention</span>
+          </div>
+          <p class="omega-note">
+            exp(C/Ω) determines how much coherence is accessible for regeneration.<br>
+            Energy retained per bounce: <span class="highlight" id="energy-retained">72.3%</span>
+          </p>
+        </div>
+        
+        <!-- Energy Bars -->
+        <div class="panel">
+          <h3 class="section-title">Energy Transfer</h3>
+          
+          <div class="energy-bar-container">
+            <div class="energy-label pe">
+              <span>Potential Energy (PE)</span>
+              <span id="pe-value">0.0</span>
+            </div>
+            <div class="energy-bar">
+              <div id="pe-fill" class="energy-fill pe" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="energy-bar-container">
+            <div class="energy-label ke">
+              <span>Kinetic Energy (KE)</span>
+              <span id="ke-value">0.0</span>
+            </div>
+            <div class="energy-bar">
+              <div id="ke-fill" class="energy-fill ke" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="energy-bar-container">
+            <div class="energy-label total">
+              <span>Total Mechanical</span>
+              <span id="total-value">0.0</span>
+            </div>
+            <div class="energy-bar">
+              <div id="total-fill" class="energy-fill total" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <div class="energy-bar-container">
+            <div class="energy-label lost">
+              <span>Dissipated (Heat/Sound)</span>
+              <span id="lost-value">0.0</span>
+            </div>
+            <div class="energy-bar">
+              <div id="lost-fill" class="energy-fill lost" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="button-row">
+          <button id="start-btn" class="btn btn-start">▶ Drop Ball</button>
+          <button id="reset-btn" class="btn btn-reset">↺ Reset</button>
+        </div>
+        
+        <!-- Stats -->
+        <div class="panel">
+          <div class="stats-grid">
+            <div>
+              <div class="stat-value ruptures" id="bounce-count">0</div>
+              <div class="stat-label">Rupture Events</div>
+            </div>
+            <div>
+              <div class="stat-value retained" id="coherence-retained">100%</div>
+              <div class="stat-label">Coherence Retained</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CRR Explanation Panel -->
+    <div class="panel explanation-section">
+      <h3 class="section-title">CRR Framework Mapping</h3>
+      
+      <div class="explanation-grid">
+        <div class="explanation-card coherence">
+          <h4>COHERENCE: C = ∫L(x,τ)dτ</h4>
+          <p>
+            As the ball falls, it <strong>accumulates coherence</strong> — gravitational potential 
+            converting to kinetic energy. The integral captures the full history of the trajectory.
+            This is the "gathering" phase where the system builds toward rupture.
+          </p>
+        </div>
+        
+        <div class="explanation-card rupture">
+          <h4>RUPTURE: δ(now)</h4>
+          <p>
+            The <strong>impact moment</strong> is a Dirac delta — an infinitesimal instant where 
+            the ball's trajectory is fundamentally transformed. Past momentum is "metabolized" 
+            into future motion. This is the scale-invariant choice-point.
+          </p>
+        </div>
+        
+        <div class="explanation-card regeneration">
+          <h4>REGENERATION: R = ∫φ·exp(C/Ω)dτ</h4>
+          <p>
+            The rebound phase where motion <strong>reconstitutes from rupture</strong>. 
+            The exp(C/Ω) term determines how much prior coherence is accessible — 
+            high Ω means more "memory" of initial energy, low Ω means rapid dissipation.
+          </p>
+        </div>
+      </div>
+      
+      <div class="omega-explanation">
+        <h4>Ω as Coefficient of Restitution</h4>
+        <p>
+          In this demo, <strong>Ω directly maps to the coefficient of restitution</strong>. 
+          A rubber ball (high Ω ≈ 0.9) retains most of its coherence across rupture events — 
+          it can "access" its initial energy state for many bounces. A clay ball (low Ω ≈ 0.2) 
+          rapidly dissipates coherence — each rupture loses access to historical energy.
+          <br><br>
+          This mirrors the CRR insight: <strong>exp(C/Ω) creates differential memory weighting</strong>. 
+          Large Ω → history weighted equally → sustained bouncing. Small Ω → only immediate 
+          moments accessible → rapid decay to ground state.
+        </p>
+      </div>
+    </div>
+    
+    <!-- Bounce History -->
+    <div id="history-section" class="panel history-section hidden">
+      <h3 class="section-title">Rupture Event Log</h3>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Bounce #</th>
+            <th>Pre-Rupture v</th>
+            <th>Post-Rupture v</th>
+            <th>Energy Retained</th>
+          </tr>
+        </thead>
+        <tbody id="history-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Physics constants
+    const GRAVITY = 0.4;
+    const GROUND_Y = 380;
+    const BALL_RADIUS = 20;
+    const INITIAL_HEIGHT = 50;
+    
+    // State
+    let omega = 0.85;
+    let isRunning = false;
+    let ball = { y: INITIAL_HEIGHT, vy: 0, phase: 'coherence' };
+    let energies = { pe: 0, ke: 0, total: 0, lost: 0, initialTotal: 0 };
+    let bounceCount = 0;
+    let history = [];
+    let animationId = null;
+    
+    // DOM elements
+    const ballEl = document.getElementById('ball');
+    const phaseText = document.getElementById('phase-text');
+    const phaseDisplay = document.getElementById('phase-display');
+    const ruptureFlash = document.getElementById('rupture-flash');
+    const velocityArrow = document.getElementById('velocity-arrow');
+    const arrowHead = document.getElementById('arrow-head');
+    const omegaSlider = document.getElementById('omega-slider');
+    const omegaValue = document.getElementById('omega-value');
+    const energyRetained = document.getElementById('energy-retained');
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const bounceCountEl = document.getElementById('bounce-count');
+    const coherenceRetainedEl = document.getElementById('coherence-retained');
+    const historySection = document.getElementById('history-section');
+    const historyBody = document.getElementById('history-body');
+    
+    // Phase colors and descriptions
+    const phaseColors = {
+      coherence: '#3b82f6',
+      rupture: '#ef4444',
+      regeneration: '#22c55e'
+    };
+    
+    const phaseDescriptions = {
+      coherence: 'C = ∫L(x,τ)dτ — Accumulating gravitational coherence',
+      rupture: 'δ(now) — Scale-invariant choice-moment',
+      regeneration: 'R = ∫φ·exp(C/Ω)dτ — Reconstituting from rupture'
+    };
+    
+    const phaseClasses = {
+      coherence: 'phase-coherence',
+      rupture: 'phase-rupture',
+      regeneration: 'phase-regeneration'
+    };
+    
+    // Calculate energies
+    function calculateEnergies(y, vy) {
+      const height = GROUND_Y - BALL_RADIUS - y;
+      const pe = Math.max(0, height * GRAVITY * 2);
+      const ke = 0.5 * vy * vy;
+      const total = pe + ke;
+      const lost = energies.initialTotal - total;
+      return { pe, ke, total, lost, initialTotal: energies.initialTotal };
+    }
+    
+    // Determine phase
+    function getPhase(y, vy) {
+      const nearGround = y >= GROUND_Y - BALL_RADIUS - 5;
+      if (nearGround && vy > 0) return 'rupture';
+      if (vy < 0) return 'regeneration';
+      return 'coherence';
+    }
+    
+    // Update display
+    function updateDisplay() {
+      // Ball position
+      ballEl.setAttribute('cy', ball.y);
+      ballEl.setAttribute('fill', phaseColors[ball.phase]);
+      
+      // Phase text
+      phaseText.textContent = ball.phase.toUpperCase();
+      phaseText.setAttribute('fill', phaseColors[ball.phase]);
+      
+      // Phase display
+      phaseDisplay.textContent = phaseDescriptions[ball.phase];
+      phaseDisplay.className = 'phase-display ' + phaseClasses[ball.phase];
+      phaseDisplay.style.borderColor = phaseColors[ball.phase];
+      
+      // Velocity arrow
+      if (Math.abs(ball.vy) > 1) {
+        const arrowEndY = ball.y + ball.vy * 3;
+        velocityArrow.setAttribute('y1', ball.y);
+        velocityArrow.setAttribute('y2', arrowEndY);
+        velocityArrow.style.display = 'block';
+        
+        // Arrow head
+        const headY = arrowEndY;
+        const dir = ball.vy > 0 ? 1 : -1;
+        arrowHead.setAttribute('points', 
+          `195,${headY - 7*dir} 200,${headY} 205,${headY - 7*dir}`
+        );
+        arrowHead.style.display = 'block';
+      } else {
+        velocityArrow.style.display = 'none';
+        arrowHead.style.display = 'none';
+      }
+      
+      // Energy bars
+      const maxEnergy = Math.max(energies.initialTotal || 100, 100);
+      document.getElementById('pe-value').textContent = energies.pe.toFixed(1);
+      document.getElementById('ke-value').textContent = energies.ke.toFixed(1);
+      document.getElementById('total-value').textContent = energies.total.toFixed(1);
+      document.getElementById('lost-value').textContent = Math.max(0, energies.lost).toFixed(1);
+      
+      document.getElementById('pe-fill').style.width = (energies.pe / maxEnergy * 100) + '%';
+      document.getElementById('ke-fill').style.width = (energies.ke / maxEnergy * 100) + '%';
+      document.getElementById('total-fill').style.width = (energies.total / maxEnergy * 100) + '%';
+      document.getElementById('lost-fill').style.width = (Math.max(0, energies.lost) / maxEnergy * 100) + '%';
+      
+      // Stats
+      bounceCountEl.textContent = bounceCount;
+      const retainedPct = energies.initialTotal > 0 
+        ? ((energies.total / energies.initialTotal) * 100).toFixed(0)
+        : 100;
+      coherenceRetainedEl.textContent = retainedPct + '%';
+    }
+    
+    // Flash effect
+    function triggerRuptureFlash() {
+      ruptureFlash.setAttribute('opacity', '0.6');
+      setTimeout(() => {
+        ruptureFlash.setAttribute('opacity', '0');
+      }, 100);
+    }
+    
+    // Add to history
+    function addToHistory(preV, postV) {
+      history.push({
+        bounce: bounceCount,
+        preV: preV,
+        postV: postV,
+        retained: omega * omega
+      });
+      
+      // Update history table
+      historySection.classList.remove('hidden');
+      const rows = history.slice(-5).reverse();
+      historyBody.innerHTML = rows.map(h => `
+        <tr>
+          <td class="bounce-num">${h.bounce}</td>
+          <td class="pre-v">${h.preV.toFixed(2)}</td>
+          <td class="post-v">${h.postV.toFixed(2)}</td>
+          <td class="retained">${(h.retained * 100).toFixed(1)}%</td>
+        </tr>
+      `).join('');
+    }
+    
+    // Physics step
+    function physicsStep() {
+      // Apply gravity
+      ball.vy += GRAVITY;
+      ball.y += ball.vy;
+      
+      // Ground collision (RUPTURE!)
+      if (ball.y >= GROUND_Y - BALL_RADIUS) {
+        ball.y = GROUND_Y - BALL_RADIUS;
+        
+        if (ball.vy > 0.5) {
+          const preV = ball.vy;
+          ball.vy = -ball.vy * omega;
+          bounceCount++;
+          
+          triggerRuptureFlash();
+          addToHistory(preV, -ball.vy);
+          
+          ball.phase = 'rupture';
+        } else {
+          ball.vy = 0;
+          isRunning = false;
+          startBtn.disabled = false;
+        }
+      } else {
+        ball.phase = getPhase(ball.y, ball.vy);
+      }
+      
+      // Update energies
+      energies = calculateEnergies(ball.y, ball.vy);
+      
+      updateDisplay();
+    }
+    
+    // Animation loop
+    function animate() {
+      if (!isRunning) return;
+      physicsStep();
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    // Start
+    function start() {
+      if (isRunning) return;
+      
+      const initialPE = (GROUND_Y - BALL_RADIUS - INITIAL_HEIGHT) * GRAVITY * 2;
+      energies.initialTotal = initialPE;
+      energies.pe = initialPE;
+      energies.total = initialPE;
+      
+      isRunning = true;
+      startBtn.disabled = true;
+      animate();
+    }
+    
+    // Reset
+    function reset() {
+      isRunning = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      
+      ball = { y: INITIAL_HEIGHT, vy: 0, phase: 'coherence' };
+      const initialPE = (GROUND_Y - BALL_RADIUS - INITIAL_HEIGHT) * GRAVITY * 2;
+      energies = { pe: initialPE, ke: 0, total: initialPE, lost: 0, initialTotal: initialPE };
+      bounceCount = 0;
+      history = [];
+      
+      startBtn.disabled = false;
+      historySection.classList.add('hidden');
+      historyBody.innerHTML = '';
+      
+      updateDisplay();
+    }
+    
+    // Event listeners
+    omegaSlider.addEventListener('input', (e) => {
+      omega = parseFloat(e.target.value);
+      omegaValue.textContent = omega.toFixed(2);
+      energyRetained.textContent = (omega * omega * 100).toFixed(1) + '%';
+    });
+    
+    startBtn.addEventListener('click', start);
+    resetBtn.addEventListener('click', reset);
+    
+    // Initialize
+    reset();
+  </script>
+</body>
+</html>
