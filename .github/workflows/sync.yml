@@ -9,23 +9,18 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if token exists
-        run: |
-          if [ -z "${{ secrets.SYNC_TOKEN }}" ]; then
-            echo "ERROR: SYNC_TOKEN is empty!"
-            exit 1
-          else
-            echo "Token exists and has length: ${#TOKEN}"
-          fi
-        env:
-          TOKEN: ${{ secrets.SYNC_TOKEN }}
-          
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Push to temporalgrammar
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           git config user.name "alexsabine"
           git config user.email "alexsabine@users.noreply.github.com"
-          git remote add target https://alexsabine:${{ secrets.SYNC_TOKEN }}@github.com/alexsabine/temporalgrammar.git
+          git config credential.helper store
+          echo "https://alexsabine:${GH_TOKEN}@github.com" > ~/.git-credentials
+          git remote add target https://github.com/alexsabine/temporalgrammar.git
           git push target main:main --force
