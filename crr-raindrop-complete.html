@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Through Light — CRR Framework Complete</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        .ctrl-btn {
+            padding: 10px 18px;
+            background: rgba(5, 5, 10, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.55);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(12px);
+            letter-spacing: 0.3px;
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(20, 20, 30, 0.9);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .ctrl-btn.active {
+            background: rgba(255, 200, 120, 0.12);
+            border-color: rgba(255, 200, 120, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .title-overlay {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .title-overlay h1 {
+            font-family: 'Baskerville', 'Georgia', serif;
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        
+        .title-overlay .subtitle {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 9px;
+            color: rgba(255, 200, 120, 0.35);
+            letter-spacing: 1px;
+        }
+        
+        /* Theory Panel */
+        .theory-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 360px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.94);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            z-index: 1000;
+            display: none;
+            line-height: 1.65;
+            backdrop-filter: blur(20px);
+        }
+        
+        .theory-panel.visible {
+            display: block;
+        }
+        
+        .theory-panel h3 {
+            color: rgba(255, 200, 120, 0.85);
+            font-size: 10px;
+            margin: 16px 0 10px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 200, 120, 0.12);
+            font-weight: 500;
+            letter-spacing: 1.5px;
+        }
+        
+        .theory-panel h3:first-child {
+            margin-top: 0;
+        }
+        
+        .theory-panel .equation {
+            background: rgba(255, 200, 120, 0.06);
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Times New Roman', Georgia, serif;
+            font-size: 15px;
+            font-style: italic;
+            color: #fff;
+            border-left: 2px solid rgba(255, 200, 120, 0.35);
+        }
+        
+        .theory-panel .note {
+            color: rgba(255, 180, 100, 0.75);
+            font-size: 9px;
+            margin: 6px 0;
+            padding-left: 10px;
+            border-left: 2px solid rgba(255, 180, 100, 0.25);
+        }
+        
+        .theory-panel .param {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        
+        .theory-panel .param-name {
+            color: rgba(255, 200, 120, 0.6);
+        }
+        
+        .theory-panel .param-value {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .theory-panel .code {
+            background: rgba(40, 40, 50, 0.6);
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin: 6px 0;
+            font-size: 9px;
+            color: rgba(150, 220, 150, 0.85);
+        }
+        
+        .theory-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .theory-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .theory-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 200, 120, 0.2);
+            border-radius: 2px;
+        }
+        
+        /* Velocity control */
+        .velocity-control {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+            background: rgba(5, 5, 10, 0.88);
+            padding: 12px 22px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(15px);
+        }
+        
+        .velocity-control label {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'SF Mono', monospace;
+            letter-spacing: 1px;
+        }
+        
+        .velocity-control input[type="range"] {
+            width: 130px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .velocity-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 200, 120, 0.7);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .velocity-control input[type="range"]::-webkit-slider-thumb:hover {
+            background: rgba(255, 200, 120, 1);
+            transform: scale(1.1);
+        }
+        
+        .velocity-control .value {
+            font-size: 10px;
+            color: rgba(255, 200, 120, 0.75);
+            font-family: 'SF Mono', monospace;
+            min-width: 55px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="title-overlay">
+        <h1>Falling Through Light</h1>
+        <div class="subtitle">Coherence · Rupture · Regeneration</div>
+    </div>
+    
+    <!-- Theory Panel -->
+    <div class="theory-panel" id="theoryPanel">
+        <h3>CRR FRAMEWORK OVERVIEW</h3>
+        <div style="color: rgba(255,255,255,0.5); margin-bottom: 12px;">
+            Every aspect of this simulation derives from<br>
+            Coherence-Rupture-Regeneration dynamics.
+        </div>
+        
+        <h3>§1 THE THREE OPERATORS</h3>
+        <div class="equation">C(x,t) = ∫ L(x,τ) dτ</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            <b>Coherence</b> accumulates as the temporal integral<br>
+            of local activity L. Systems build coherence over time.
+        </div>
+        <div class="equation">δ(now) when C ≥ Ω</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            <b>Rupture</b> occurs when coherence reaches threshold Ω.<br>
+            The Dirac delta marks the ontological present moment.
+        </div>
+        <div class="equation">R = ∫ φ(x,τ) · exp(C/Ω) dτ</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            <b>Regeneration</b> rebuilds with exponential memory<br>
+            weighting. exp(C/Ω) determines historical access.
+        </div>
+        
+        <h3>§2 SOLAR COHERENCE</h3>
+        <div class="code">
+            CRR.solar.C += L_fusion<br>
+            if (C ≥ Ω_solar) → flare event
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Nuclear fusion accumulates coherence. Ruptures<br>
+            manifest as prominences and flares. Ω_solar is<br>
+            massive (~10⁸), so ruptures are rare but powerful.
+        </div>
+        
+        <h3>§3 PHOTON EMISSION</h3>
+        <div class="code">
+            CRR.photon.C += L_emission<br>
+            if (C ≥ Ω_photon) → quantum δ event
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Each photon emission is a quantum rupture.<br>
+            Light carries "frozen coherence" through space.<br>
+            Ω_photon = 0.8 (fast, frequent events).
+        </div>
+        
+        <h3>§4 ATMOSPHERIC SCATTERING</h3>
+        <div class="equation">I(λ) ∝ λ⁻⁴</div>
+        <div class="code">
+            CRR.atmosphere.C += L_scatter<br>
+            Rayleigh: each scatter = micro-rupture
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Blue light (short λ) scatters more, creating<br>
+            the sky gradient. CRR frames each scatter as<br>
+            a coherence transfer event.
+        </div>
+        
+        <h3>§5 DROPLET SHAPE (EMERGENT)</h3>
+        <div class="equation">We = ρv²D / σ</div>
+        <div class="code">
+            F_C = surface tension → spherical<br>
+            F_δ = drag pressure → flatten bottom<br>
+            F_R = internal pressure → restore volume
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Shape emerges from CRR force balance:<br>
+            • Coherence (C): Surface tension maintains boundary<br>
+            • Rupture (δ): External drag disrupts surface<br>
+            • Regeneration (R): Internal pressure restores
+        </div>
+        <div class="note">
+            Weber number determines deformation degree.<br>
+            We &lt; 3: spherical | We 3-10: oblate | We &gt; 12: breakup
+        </div>
+        
+        <h3>§6 MOLECULAR DYNAMICS</h3>
+        <div class="equation">H₂O: ∠HOH = 104.45°</div>
+        <div class="code">
+            CRR.molecular.C += L_vibration<br>
+            if (C ≥ Ω_molecular) → bond rupture/reform
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Inside the droplet, H₂O molecules exhibit CRR:<br>
+            • C: Vibration/rotation accumulates<br>
+            • δ: H-bond breaking events<br>
+            • R: Bond reformation with memory
+        </div>
+        <div class="param"><span class="param-name">H-bond lifetime</span><span class="param-value">~1 picosecond</span></div>
+        <div class="param"><span class="param-name">Coordination</span><span class="param-value">~3.5 bonds (tetrahedral)</span></div>
+        
+        <h3>§7 RAINBOW OPTICS</h3>
+        <div class="equation">n(λ) = A + B/λ²</div>
+        <div class="code">
+            Internal reflection = boundary rupture<br>
+            Rainbow angle shifts with We (shape)
+        </div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Cauchy dispersion separates wavelengths.<br>
+            Each internal reflection is a CRR rupture at<br>
+            the droplet's Markov blanket boundary.
+        </div>
+        <div class="note">
+            Higher velocity → more oblate → altered light<br>
+            paths → brighter, wider spectral dispersion.
+        </div>
+        
+        <h3>§8 Ω HIERARCHY</h3>
+        <div class="param"><span class="param-name">Ω_solar</span><span class="param-value">~10⁸ (very slow)</span></div>
+        <div class="param"><span class="param-name">Ω_photon</span><span class="param-value">0.8 (fast)</span></div>
+        <div class="param"><span class="param-name">Ω_atmosphere</span><span class="param-value">3.0</span></div>
+        <div class="param"><span class="param-name">Ω_molecular</span><span class="param-value">2.0</span></div>
+        <div class="param"><span class="param-name">Ω_cluster</span><span class="param-value">5.0</span></div>
+        <div class="param"><span class="param-name">Ω_surface</span><span class="param-value">12.0</span></div>
+        <div class="note" style="margin-top: 8px;">
+            Inter-scale ratio ≈ 2.5× (approaching e ≈ 2.718)<br>
+            This suggests natural exponential temporal scaling.
+        </div>
+        
+        <h3>§9 FRESNEL REFLECTION</h3>
+        <div class="equation">R = ½(R_s + R_p)</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Grazing angles → high reflectance (bright rim).<br>
+            Normal incidence → low reflectance (transparent).<br>
+            CRR: reflection = coherence boundary interaction.
+        </div>
+        
+        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(255,200,120,0.12); color: rgba(255,255,255,0.25); font-size: 8px;">
+            CRR Framework — A. Sabine (2024-2025)<br>
+            cohere.org.uk
+        </div>
+    </div>
+    
+    <div class="velocity-control">
+        <label>VELOCITY</label>
+        <input type="range" id="velocitySlider" min="0" max="100" value="45">
+        <span class="value" id="velocityValue">4.5 m/s</span>
+    </div>
+    
+    <div class="controls">
+        <button class="ctrl-btn" id="theoryBtn">∫ Theory</button>
+        <button class="ctrl-btn" id="physicsBtn">⚛ Molecular</button>
+        <button class="ctrl-btn" id="crrBtn">◎ CRR</button>
+        <button class="ctrl-btn" id="resetBtn">↺ Reset</button>
+        <button class="ctrl-btn active" id="pureBtn">✧ Pure</button>
+    </div>
+    
+    <script>
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * 
+         *   ███████╗ █████╗ ██╗     ██╗     ██╗███╗   ██╗ ██████╗     ████████╗██╗  ██╗██████╗ 
+         *   ██╔════╝██╔══██╗██║     ██║     ██║████╗  ██║██╔════╝     ╚══██╔══╝██║  ██║██╔══██╗
+         *   █████╗  ███████║██║     ██║     ██║██╔██╗ ██║██║  ███╗       ██║   ███████║██████╔╝
+         *   ██╔══╝  ██╔══██║██║     ██║     ██║██║╚██╗██║██║   ██║       ██║   ██╔══██║██╔══██╗
+         *   ██║     ██║  ██║███████╗███████╗██║██║ ╚████║╚██████╔╝       ██║   ██║  ██║██║  ██║
+         *   ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
+         *   
+         *   ██╗     ██╗ ██████╗ ██╗  ██╗████████╗
+         *   ██║     ██║██╔════╝ ██║  ██║╚══██╔══╝
+         *   ██║     ██║██║  ███╗███████║   ██║   
+         *   ██║     ██║██║   ██║██╔══██║   ██║   
+         *   ███████╗██║╚██████╔╝██║  ██║   ██║   
+         *   ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   
+         *
+         *   COMPLETE CRR FRAMEWORK IMPLEMENTATION
+         *   A. Sabine (2024-2026) — www.temporalgrammar.ai
+         *
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * 
+         * TABLE OF CONTENTS
+         * ─────────────────
+         * 1.  CRR THEORETICAL FOUNDATION
+         * 2.  PHYSICAL CONSTANTS
+         * 3.  CRR STATE VARIABLES
+         * 4.  MOLECULAR SIMULATION (H₂O, H-bonds, clusters)
+         * 5.  DROPLET BOUNDARY DYNAMICS
+         * 6.  CRR UPDATE FUNCTIONS
+         * 7.  PHYSICS UPDATE (Shape emergence)
+         * 8.  RENDERING PIPELINE
+         * 9.  OPTICAL PHYSICS (Fresnel, Cauchy, Rainbow)
+         * 10. ANIMATION LOOP
+         *
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * 
+         * SECTION 1: CRR THEORETICAL FOUNDATION
+         * ═════════════════════════════════════
+         * 
+         * The Coherence-Rupture-Regeneration (CRR) framework provides a unified mathematical
+         * description of temporal dynamics across scales. Every phenomenon in this simulation
+         * is derived from three core operators:
+         * 
+         * ┌─────────────────────────────────────────────────────────────────────────────────┐
+         * │                                                                                 │
+         * │  COHERENCE:     C(x,t) = ∫ L(x,τ) dτ                                           │
+         * │                                                                                 │
+         * │  Coherence accumulates as the temporal integral of local activity L.           │
+         * │  This represents the system's tendency to maintain pattern integrity.          │
+         * │  In code: C_new = C_old + L                                                    │
+         * │                                                                                 │
+         * │  RUPTURE:       δ(now) when C ≥ Ω                                              │
+         * │                                                                                 │
+         * │  When accumulated coherence reaches threshold Ω, a rupture event occurs.       │
+         * │  The Dirac delta marks the ontological present — the moment of transformation. │
+         * │  In code: if (C >= omega) { C = 0; rupture = 1; cascade_to_next_scale(); }    │
+         * │                                                                                 │
+         * │  REGENERATION:  R = ∫ φ(x,τ) · exp(C(x,τ)/Ω) · Θ(...) dτ                      │
+         * │                                                                                 │
+         * │  Post-rupture reconstruction with exponential memory weighting.                │
+         * │  exp(C/Ω) creates differential historical access:                              │
+         * │    • Large Ω → exp ≈ 1 (all history weighted equally)                         │
+         * │    • Small Ω → peaked (only highest coherence moments accessible)             │
+         * │                                                                                 │
+         * └─────────────────────────────────────────────────────────────────────────────────┘
+         * 
+         * KEY INSIGHT: The same C → δ → R dynamics operate at every scale, with Ω
+         * determining the characteristic timescale. This scale-invariance is what makes
+         * CRR a unified framework for temporal processes.
+         * 
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         */
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 2: PHYSICAL CONSTANTS
+         * ═════════════════════════════
+         * 
+         * These constants ground the simulation in real physics. Each is used in CRR
+         * calculations to produce physically accurate emergent behavior.
+         */
+        
+        const PHYSICS = {
+            /*
+             * WATER PROPERTIES
+             * ────────────────
+             * Surface tension creates the COHERENCE force that maintains droplet boundary.
+             * σ = 72.8 mN/m is the experimentally measured value at 20°C.
+             */
+            surfaceTension: 0.0728,    // N/m — COHERENCE force coefficient
+            density: 1000,              // kg/m³ — mass for inertial calculations
+            
+            /*
+             * OPTICAL PROPERTIES (Cauchy Dispersion)
+             * ──────────────────────────────────────
+             * n(λ) = A + B/λ² describes wavelength-dependent refractive index.
+             * This dispersion is responsible for rainbow formation.
+             * 
+             * CRR INTERPRETATION: Different wavelengths experience different
+             * "coherence transfer rates" at the droplet boundary, leading to
+             * spectral separation.
+             */
+            n_water: 1.333,            // Refractive index at 589nm (sodium D-line)
+            cauchyA: 1.3199,           // Cauchy coefficient A (dimensionless)
+            cauchyB: 0.00653,          // Cauchy coefficient B (μm²)
+            
+            /*
+             * AIR PROPERTIES
+             * ──────────────
+             * Air density determines the RUPTURE pressure from aerodynamic drag.
+             * F_drag = ½ρv² creates the external stress that deforms the droplet.
+             */
+            airDensity: 1.225,         // kg/m³ — for drag calculations
+            
+            /*
+             * SOLAR PROPERTIES
+             * ────────────────
+             * The sun is the ultimate coherence source in this simulation.
+             * Its temperature determines the blackbody spectrum of emitted light.
+             */
+            solarTemp: 5778,           // K — photosphere temperature
+            
+            /*
+             * DROPLET SCALE
+             * ─────────────
+             * Nominal radius for Weber number calculations.
+             * Real raindrops range from 0.5mm to 5mm diameter.
+             */
+            nominalRadius: 0.002,      // m (2mm radius = 4mm diameter drop)
+            
+            /*
+             * RAINBOW ANGLES
+             * ──────────────
+             * Primary bow: 42° deviation (one internal reflection)
+             * Secondary bow: 51° deviation (two internal reflections)
+             * 
+             * CRR INTERPRETATION: Each internal reflection is a RUPTURE event
+             * at the droplet's internal Markov blanket boundary.
+             */
+            primaryAngle: 42 * Math.PI / 180,
+            secondaryAngle: 51 * Math.PI / 180,
+            
+            /*
+             * MOLECULAR GEOMETRY
+             * ──────────────────
+             * H₂O bond angle is 104.45° (experimental value).
+             * This tetrahedral-ish geometry creates the H-bond network.
+             */
+            waterBondAngle: 104.45 * Math.PI / 180
+        };
+        
+        /*
+         * CAUCHY DISPERSION FUNCTION
+         * ──────────────────────────
+         * Returns wavelength-dependent refractive index.
+         * This is what creates rainbow colors — different wavelengths
+         * bend different amounts.
+         * 
+         * CRR: The refractive index can be understood as the "coherence
+         * transfer impedance" at the water-air boundary. Higher n means
+         * slower phase velocity, which in CRR terms means stronger
+         * coherence coupling across the boundary.
+         */
+        function refractiveIndex(lambda_nm) {
+            const lambda_um = lambda_nm / 1000;
+            return PHYSICS.cauchyA + PHYSICS.cauchyB / (lambda_um * lambda_um);
+        }
+        
+        /*
+         * FRESNEL REFLECTANCE
+         * ───────────────────
+         * Computes reflection coefficient at dielectric interface.
+         * 
+         * R_s (s-polarization): Electric field perpendicular to plane of incidence
+         * R_p (p-polarization): Electric field parallel to plane of incidence
+         * Unpolarized light: R = (R_s + R_p) / 2
+         * 
+         * CRR INTERPRETATION: Fresnel reflection is a "partial rupture" at the
+         * boundary — some coherence reflects back (R), some transmits (1-R).
+         * At grazing angles, R → 1 (total reflection = complete boundary rupture).
+         */
+        function fresnelReflectance(n1, n2, cosTheta) {
+            const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+            const sinThetaT = (n1 / n2) * sinTheta;
+            
+            // Total Internal Reflection check
+            if (sinThetaT > 1) return 1;  // Complete rupture — all light reflects
+            
+            const cosThetaT = Math.sqrt(Math.max(0, 1 - sinThetaT * sinThetaT));
+            
+            // Fresnel equations
+            const Rs = Math.pow((n1 * cosTheta - n2 * cosThetaT) / (n1 * cosTheta + n2 * cosThetaT + 1e-10), 2);
+            const Rp = Math.pow((n1 * cosThetaT - n2 * cosTheta) / (n1 * cosThetaT + n2 * cosTheta + 1e-10), 2);
+            
+            return Math.min(1, (Rs + Rp) / 2);
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 3: CRR STATE VARIABLES
+         * ═══════════════════════════════
+         * 
+         * Each scale maintains its own CRR state:
+         *   C       — Accumulated coherence (∫L dτ)
+         *   omega   — Rupture threshold (Ω)
+         *   L       — Current coherence input rate
+         *   rupture — Recent rupture intensity (decays after δ event)
+         * 
+         * THE Ω HIERARCHY
+         * ───────────────
+         * Scale        Ω       Timescale    Physical Interpretation
+         * ──────────────────────────────────────────────────────────
+         * Solar        200     Minutes      Nuclear fusion coherence
+         * Photon       0.8     ~13ms        Quantum emission events
+         * Atmosphere   3.0     ~50ms        Rayleigh scattering
+         * Surface      12.0    ~200ms       Droplet boundary dynamics
+         * Molecular    2.0     ~33ms        H₂O vibration/rotation
+         * Cluster      5.0     ~83ms        H-bond network dynamics
+         * 
+         * Inter-scale ratio ≈ 2.5× — remarkably close to e ≈ 2.718
+         * This suggests a natural exponential temporal hierarchy.
+         */
+        
+        const CRR = {
+            solar:      { C: 0, omega: 200,  L: 0, rupture: 0, flareIntensity: 0 },
+            photon:     { C: 0, omega: 0.8,  L: 0, rupture: 0 },
+            atmosphere: { C: 0, omega: 3.0,  L: 0, rupture: 0 },
+            surface:    { C: 0, omega: 12.0, L: 0, rupture: 0 },
+            molecular:  { C: 0, omega: 2.0,  L: 0, rupture: 0 },
+            cluster:    { C: 0, omega: 5.0,  L: 0, rupture: 0 }
+        };
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 4: MOLECULAR SIMULATION
+         * ════════════════════════════════
+         * 
+         * The droplet interior contains simulated H₂O molecules, clusters, and H-bonds.
+         * Each component exhibits CRR dynamics at the molecular scale.
+         * 
+         * MOLECULAR CRR:
+         * • Coherence: Molecular vibration/rotation accumulates
+         * • Rupture: H-bond breaking, molecular excitation
+         * • Regeneration: Bond reformation with thermal memory
+         */
+        
+        const NUM_CLUSTERS = 35;
+        const NUM_MOLECULES = 70;
+        
+        let clusters = [];    // H₂O cluster aggregates
+        let molecules = [];   // Individual H₂O molecules
+        let hBonds = [];      // Hydrogen bonds between clusters
+        
+        /*
+         * INITIALIZE MOLECULAR POPULATION
+         * ────────────────────────────────
+         * Creates the internal molecular structure of the droplet.
+         * Positions are in normalized coordinates (-1 to 1).
+         */
+        function initMolecules() {
+            clusters = [];
+            molecules = [];
+            hBonds = [];
+            
+            /*
+             * H₂O CLUSTERS
+             * ────────────
+             * Clusters represent local aggregates of water molecules
+             * with tetrahedral coordination. Each cluster has:
+             * - Position (x, y, z)
+             * - Size (visual radius)
+             * - Phase (for pulsation animation)
+             * - Coherence (CRR state — affects visibility)
+             * - Velocity (Brownian motion)
+             */
+            for (let i = 0; i < NUM_CLUSTERS; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.85;  // Keep inside droplet
+                clusters.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    z: (Math.random() - 0.5) * 1.6,  // Depth for 3D effect
+                    size: 0.015 + Math.random() * 0.02,
+                    phase: Math.random() * Math.PI * 2,
+                    pulseSpeed: 0.012 + Math.random() * 0.012,
+                    coherence: Math.random(),  // CRR coherence state
+                    vx: (Math.random() - 0.5) * 0.0006,
+                    vy: (Math.random() - 0.5) * 0.0006
+                });
+            }
+            
+            /*
+             * INDIVIDUAL H₂O MOLECULES
+             * ────────────────────────
+             * Smaller, faster-moving than clusters. Show the molecular
+             * structure with correct bond angle (104.45°).
+             */
+            for (let i = 0; i < NUM_MOLECULES; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const r = Math.random() * 0.9;
+                molecules.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    z: (Math.random() - 0.5) * 1.8,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.04,
+                    vibration: Math.random() * 0.5 + 0.5,  // CRR coherence indicator
+                    vx: (Math.random() - 0.5) * 0.0015,
+                    vy: (Math.random() - 0.5) * 0.0015
+                });
+            }
+            
+            updateHBonds();
+        }
+        
+        /*
+         * HYDROGEN BOND NETWORK
+         * ─────────────────────
+         * H-bonds form between nearby clusters, creating the characteristic
+         * tetrahedral network structure of liquid water.
+         * 
+         * CRR: H-bond formation is a REGENERATION process (rebuilding
+         * coherence after thermal rupture). Bond breaking is RUPTURE.
+         * The network continuously cycles through C → δ → R.
+         */
+        function updateHBonds() {
+            hBonds = [];
+            const cutoff = 0.35;  // Normalized H-bond cutoff distance
+            
+            for (let i = 0; i < clusters.length; i++) {
+                for (let j = i + 1; j < clusters.length; j++) {
+                    const dx = clusters[j].x - clusters[i].x;
+                    const dy = clusters[j].y - clusters[i].y;
+                    const dz = clusters[j].z - clusters[i].z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    
+                    // H-bond forms within cutoff (mimics ~3.5 Å in real water)
+                    if (dist < cutoff && dist > 0.05) {
+                        hBonds.push({
+                            from: i,
+                            to: j,
+                            strength: 1 - dist / cutoff,  // Stronger when closer
+                            phase: Math.random() * Math.PI * 2
+                        });
+                    }
+                }
+            }
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 5: DROPLET BOUNDARY DYNAMICS
+         * ═════════════════════════════════════
+         * 
+         * The droplet boundary is represented as a set of nodes, each subject to
+         * CRR forces. The emergent shape comes from force balance, not prescription.
+         * 
+         * FORCES ON EACH BOUNDARY NODE:
+         * ─────────────────────────────
+         * 1. COHERENCE (Surface Tension)
+         *    F_C = κ · (1/r - 1/R₀)
+         *    Pulls toward minimum surface area (sphere)
+         *    This is the primary COHERENCE-maintaining force
+         * 
+         * 2. RUPTURE (Aerodynamic Drag)
+         *    F_δ = ½ρv² · Cd · cos²θ
+         *    External pressure disrupting the surface
+         *    Maximum at bottom (facing into airflow)
+         * 
+         * 3. REGENERATION (Internal Pressure)
+         *    P = P₀ + 2σ/R (Laplace pressure)
+         *    Pushes outward uniformly, maintaining volume
+         *    This is the REGENERATIVE response to compression
+         */
+        
+        const NUM_BOUNDARY_NODES = 80;
+        
+        let scene = {
+            time: 0,
+            sunX: 0,
+            sunY: 0,
+            sunRadius: 0
+        };
+        
+        let droplet = {
+            cx: 0,
+            cy: 0,
+            baseRadius: 0,
+            velocity: 4.5,
+            nodes: [],
+            lightAngle: 0,
+            fallY: 0,
+            fallSpeed: 0.00006
+        };
+        
+        /*
+         * INITIALIZE DROPLET BOUNDARY
+         * ───────────────────────────
+         * Creates boundary nodes in a circle. The physics will deform
+         * this into the correct oblate spheroid shape.
+         */
+        function initDroplet() {
+            droplet.nodes = [];
+            
+            for (let i = 0; i < NUM_BOUNDARY_NODES; i++) {
+                const angle = (i / NUM_BOUNDARY_NODES) * Math.PI * 2;
+                droplet.nodes.push({
+                    angle: angle,
+                    offset: 0,           // Radial offset from base circle
+                    velocity: 0,         // Rate of change of offset
+                    targetOffset: 0,     // Equilibrium position (calculated from physics)
+                    coherence: 1         // Local coherence (for visualization)
+                });
+            }
+            
+            updateTargetShape();
+            initMolecules();
+        }
+        
+        /*
+         * CALCULATE EQUILIBRIUM SHAPE
+         * ───────────────────────────
+         * Based on Weber number, calculate what the equilibrium shape should be.
+         * The simulation smoothly converges toward this target.
+         * 
+         * WEBER NUMBER: We = ρv²D / σ
+         * Ratio of inertial forces (RUPTURE) to surface tension (COHERENCE)
+         * 
+         * We < 3:  Surface tension dominates → nearly spherical
+         * We 3-10: Balance → oblate spheroid (squashed bottom)
+         * We > 12: Inertia dominates → unstable, oscillation, breakup
+         * 
+         * CRR INTERPRETATION:
+         * Low We = high Ω (slow rupture, strong coherence maintenance)
+         * High We = low Ω (fast rupture, boundary instability)
+         */
+        function updateTargetShape() {
+            const v = droplet.velocity;
+            const D = PHYSICS.nominalRadius * 2;
+            const We = PHYSICS.density * v * v * D / PHYSICS.surfaceTension;
+            
+            // Deformation factor increases with Weber number
+            // Capped at 0.32 to prevent extreme shapes
+            const deformFactor = Math.min(0.32, We * 0.022);
+            
+            droplet.nodes.forEach(node => {
+                const angle = node.angle;
+                
+                /*
+                 * SHAPE CALCULATION
+                 * ─────────────────
+                 * Real raindrops are NOT teardrops! They are oblate spheroids:
+                 * - Flattened on bottom (facing into airflow)
+                 * - Slightly flattened on top
+                 * - Bulging at the sides
+                 * 
+                 * This emerges from the balance:
+                 *   Surface tension (C) wants sphere
+                 *   Drag pressure (δ) pushes bottom in
+                 *   Internal pressure (R) pushes sides out
+                 */
+                
+                // How much this point is on top/bottom vs sides
+                const verticalness = Math.abs(Math.sin(angle));
+                
+                // Bottom is compressed more than top
+                const bottomFactor = Math.sin(angle) > 0 ? 1.4 : 0.6;
+                
+                // Vertical compression
+                const baseDeform = -deformFactor * verticalness * bottomFactor;
+                
+                // Horizontal bulge (conservation of volume)
+                const sidesBulge = deformFactor * 0.35 * (1 - verticalness);
+                
+                node.targetOffset = (baseDeform + sidesBulge) * droplet.baseRadius;
+            });
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 6: CRR UPDATE FUNCTIONS
+         * ════════════════════════════════
+         * 
+         * This is the heart of the simulation. Each scale follows the same
+         * C → δ → R pattern, with cross-scale coupling.
+         */
+        
+        function updateCRR(dt) {
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * SOLAR SCALE (Ω = 200)
+             * ─────────────────────────────────────────────────────────────────
+             * The sun accumulates coherence through nuclear fusion.
+             * Massive Ω means ruptures are rare but spectacular (flares).
+             * 
+             * CROSS-SCALE CASCADE:
+             * Solar rupture → boosts photon emission rate
+             */
+            CRR.solar.L = 0.06 + Math.random() * 0.03;  // Fusion input
+            CRR.solar.C += CRR.solar.L;                  // C = ∫L dτ
+            
+            if (CRR.solar.C >= CRR.solar.omega) {        // δ(now) when C ≥ Ω
+                CRR.solar.C = 0;                          // Reset coherence
+                CRR.solar.rupture = 1;                    // Rupture event
+                CRR.solar.flareIntensity = 0.6 + Math.random() * 0.4;
+                CRR.photon.L += 0.2;                      // CASCADE → photon scale
+            }
+            CRR.solar.rupture *= 0.985;                  // Exponential decay
+            CRR.solar.flareIntensity *= 0.992;
+            
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * PHOTON SCALE (Ω = 0.8)
+             * ─────────────────────────────────────────────────────────────────
+             * Fast quantum emission events. Each photon emission is a
+             * rupture that carries "frozen coherence" through spacetime.
+             * 
+             * CRR INTERPRETATION: The photon is coherence that has ruptured
+             * from the sun and will regenerate when absorbed by the droplet.
+             */
+            CRR.photon.L += 0.03 + Math.random() * 0.04;
+            CRR.photon.C += CRR.photon.L;
+            CRR.photon.L *= 0.8;                         // L decay (damping)
+            
+            if (CRR.photon.C >= CRR.photon.omega) {
+                CRR.photon.C = 0;
+                CRR.photon.rupture = 1;
+                CRR.atmosphere.L += 0.1;                  // CASCADE → atmosphere
+            }
+            CRR.photon.rupture *= 0.75;
+            
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * ATMOSPHERE SCALE (Ω = 3.0)
+             * ─────────────────────────────────────────────────────────────────
+             * Rayleigh scattering: each scatter is a micro-rupture.
+             * Blue light scatters more (I ∝ λ⁻⁴), creating sky gradient.
+             */
+            CRR.atmosphere.L += 0.015 + Math.random() * 0.02;
+            CRR.atmosphere.C += CRR.atmosphere.L;
+            CRR.atmosphere.L *= 0.85;
+            
+            if (CRR.atmosphere.C >= CRR.atmosphere.omega) {
+                CRR.atmosphere.C = 0;
+                CRR.atmosphere.rupture = 1;
+                CRR.surface.L += 0.08;                    // CASCADE → surface
+            }
+            CRR.atmosphere.rupture *= 0.82;
+            
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * SURFACE SCALE (Ω = 12.0)
+             * ─────────────────────────────────────────────────────────────────
+             * Droplet boundary dynamics. The surface is a Markov blanket
+             * separating internal from external coherence fields.
+             */
+            CRR.surface.L += 0.008 + Math.random() * 0.01;
+            CRR.surface.C += CRR.surface.L;
+            CRR.surface.L *= 0.9;
+            
+            if (CRR.surface.C >= CRR.surface.omega) {
+                CRR.surface.C = 0;
+                CRR.surface.rupture = 1;
+                CRR.molecular.L += 0.15;                  // CASCADE → molecular
+            }
+            CRR.surface.rupture *= 0.9;
+            
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * MOLECULAR SCALE (Ω = 2.0)
+             * ─────────────────────────────────────────────────────────────────
+             * H₂O vibration and rotation. Rupture = molecular excitation.
+             * Drives individual molecule dynamics in the simulation.
+             */
+            CRR.molecular.L += 0.02 + Math.random() * 0.025;
+            CRR.molecular.C += CRR.molecular.L;
+            CRR.molecular.L *= 0.88;
+            
+            if (CRR.molecular.C >= CRR.molecular.omega) {
+                CRR.molecular.C = 0;
+                CRR.molecular.rupture = 1;
+                CRR.cluster.L += 0.12;                    // CASCADE → cluster
+                
+                // Excite random molecules
+                for (let i = 0; i < 3; i++) {
+                    const mol = molecules[Math.floor(Math.random() * molecules.length)];
+                    if (mol) {
+                        mol.vibration = 1.3;
+                        mol.rotSpeed *= 1.3;
+                    }
+                }
+            }
+            CRR.molecular.rupture *= 0.85;
+            
+            /*
+             * ─────────────────────────────────────────────────────────────────
+             * CLUSTER SCALE (Ω = 5.0)
+             * ─────────────────────────────────────────────────────────────────
+             * H-bond network dynamics. Rupture = cluster disruption.
+             */
+            CRR.cluster.L += 0.01 + Math.random() * 0.012;
+            CRR.cluster.C += CRR.cluster.L;
+            CRR.cluster.L *= 0.9;
+            
+            if (CRR.cluster.C >= CRR.cluster.omega) {
+                CRR.cluster.C = 0;
+                CRR.cluster.rupture = 1;
+                
+                // Disrupt random cluster
+                const cluster = clusters[Math.floor(Math.random() * clusters.length)];
+                if (cluster) {
+                    cluster.coherence = 0.2;
+                    cluster.vx += (Math.random() - 0.5) * 0.003;
+                    cluster.vy += (Math.random() - 0.5) * 0.003;
+                }
+            }
+            CRR.cluster.rupture *= 0.88;
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 7: PHYSICS UPDATE
+         * ═════════════════════════
+         * 
+         * Updates all physical dynamics including droplet shape, molecular motion,
+         * and falling position.
+         */
+        
+        function updatePhysics(dt) {
+            scene.time += dt * 0.001;
+            
+            /*
+             * FALLING MOTION
+             * ──────────────
+             * Slow, dreamlike descent. Fall speed scales with velocity
+             * (higher velocity = terminal velocity reached = faster fall).
+             */
+            const fallSpeedMultiplier = 0.5 + droplet.velocity * 0.15;
+            droplet.fallY += droplet.fallSpeed * dt * fallSpeedMultiplier;
+            
+            // Loop when fallen off screen
+            if (droplet.fallY > 1.3) {
+                droplet.fallY = -0.3;
+            }
+            
+            // Update position
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            droplet.cx = w * 0.55;
+            droplet.cy = h * (0.2 + droplet.fallY * 0.6);
+            droplet.lightAngle = Math.atan2(scene.sunY - droplet.cy, scene.sunX - droplet.cx);
+            
+            /*
+             * BOUNDARY NODE DYNAMICS
+             * ──────────────────────
+             * Each node converges toward its target position with damping.
+             * This creates smooth, stable shape evolution.
+             * 
+             * CRR: The convergence is REGENERATION — the system rebuilding
+             * coherent form after continuous micro-ruptures from thermal
+             * fluctuation and aerodynamic stress.
+             */
+            const convergenceRate = 0.012;  // REGENERATION rate
+            const damping = 0.88;           // Energy dissipation
+            
+            // Subtle breathing animation (shows droplet is "alive")
+            const breathe = Math.sin(scene.time * 0.25) * 0.0012 * droplet.baseRadius;
+            
+            droplet.nodes.forEach((node, i) => {
+                // Spring force toward target (REGENERATION)
+                const targetWithBreathe = node.targetOffset + breathe * Math.abs(Math.cos(node.angle));
+                const springForce = (targetWithBreathe - node.offset) * convergenceRate;
+                
+                // Neighbor smoothing (surface tension COHERENCE)
+                const prev = droplet.nodes[(i - 1 + NUM_BOUNDARY_NODES) % NUM_BOUNDARY_NODES];
+                const next = droplet.nodes[(i + 1) % NUM_BOUNDARY_NODES];
+                const smoothForce = ((prev.offset + next.offset) / 2 - node.offset) * 0.08;
+                
+                // Update with damping
+                node.velocity += springForce + smoothForce;
+                node.velocity *= damping;
+                node.offset += node.velocity;
+                
+                // Local coherence (visualizes stress state)
+                const deviation = Math.abs(node.offset - node.targetOffset) / droplet.baseRadius;
+                node.coherence = Math.max(0.5, 1 - deviation * 8);
+            });
+            
+            /*
+             * MOLECULAR DYNAMICS
+             * ──────────────────
+             * Brownian motion + coherence recovery (REGENERATION).
+             */
+            clusters.forEach(cluster => {
+                // Brownian motion
+                cluster.x += cluster.vx;
+                cluster.y += cluster.vy;
+                cluster.vx += (Math.random() - 0.5) * 0.0002;
+                cluster.vy += (Math.random() - 0.5) * 0.0002;
+                cluster.vx *= 0.985;
+                cluster.vy *= 0.985;
+                
+                // Boundary constraint
+                const r = Math.sqrt(cluster.x * cluster.x + cluster.y * cluster.y);
+                if (r > 0.85) {
+                    cluster.x *= 0.85 / r;
+                    cluster.y *= 0.85 / r;
+                    cluster.vx *= -0.4;
+                    cluster.vy *= -0.4;
+                }
+                
+                // Phase update (visual pulsation)
+                cluster.phase += cluster.pulseSpeed;
+                
+                // REGENERATION: Coherence recovery
+                cluster.coherence = Math.min(1, cluster.coherence + 0.008);
+            });
+            
+            molecules.forEach(mol => {
+                mol.x += mol.vx;
+                mol.y += mol.vy;
+                mol.vx += (Math.random() - 0.5) * 0.0004;
+                mol.vy += (Math.random() - 0.5) * 0.0004;
+                mol.vx *= 0.98;
+                mol.vy *= 0.98;
+                
+                const r = Math.sqrt(mol.x * mol.x + mol.y * mol.y);
+                if (r > 0.9) {
+                    mol.x *= 0.9 / r;
+                    mol.y *= 0.9 / r;
+                    mol.vx *= -0.3;
+                    mol.vy *= -0.3;
+                }
+                
+                mol.rotation += mol.rotSpeed;
+                mol.rotSpeed *= 0.997;
+                mol.rotSpeed = Math.max(0.005, Math.abs(mol.rotSpeed)) * Math.sign(mol.rotSpeed || 1);
+                mol.vibration = Math.max(0.3, mol.vibration * 0.99);
+            });
+            
+            // Periodically update H-bond network
+            if (Math.random() < 0.01) updateHBonds();
+            hBonds.forEach(bond => bond.phase += 0.02);
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 8: RENDERING PIPELINE
+         * ══════════════════════════════
+         */
+        
+        // UI State
+        let showPhysics = false;
+        let showTheory = false;
+        let showCRR = false;
+        
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            scene.sunX = w * 0.18;
+            scene.sunY = h * 0.15;
+            scene.sunRadius = Math.min(w, h) * 0.085;
+            
+            droplet.cx = w * 0.55;
+            droplet.cy = h * (0.2 + droplet.fallY * 0.6);
+            droplet.baseRadius = Math.min(w, h) * 0.2;
+            droplet.lightAngle = Math.atan2(scene.sunY - droplet.cy, scene.sunX - droplet.cx);
+            
+            initDroplet();
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // UI Event Handlers
+        document.getElementById('theoryBtn').addEventListener('click', () => {
+            showTheory = !showTheory;
+            document.getElementById('theoryPanel').classList.toggle('visible', showTheory);
+            document.getElementById('theoryBtn').classList.toggle('active', showTheory);
+        });
+        
+        document.getElementById('physicsBtn').addEventListener('click', () => {
+            showPhysics = !showPhysics;
+            document.getElementById('physicsBtn').classList.toggle('active', showPhysics);
+            if (showPhysics) {
+                document.getElementById('pureBtn').classList.remove('active');
+            }
+        });
+        
+        document.getElementById('crrBtn').addEventListener('click', () => {
+            showCRR = !showCRR;
+            document.getElementById('crrBtn').classList.toggle('active', showCRR);
+            if (showCRR) {
+                document.getElementById('pureBtn').classList.remove('active');
+            }
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            // Reset all state
+            droplet.fallY = 0;
+            droplet.velocity = 4.5;
+            document.getElementById('velocitySlider').value = 45;
+            document.getElementById('velocityValue').textContent = '4.5 m/s';
+            
+            // Reset CRR states
+            Object.values(CRR).forEach(scale => {
+                scale.C = 0;
+                scale.L = 0;
+                scale.rupture = 0;
+                if (scale.flareIntensity !== undefined) scale.flareIntensity = 0;
+            });
+            
+            updateTargetShape();
+            initDroplet();
+        });
+        
+        document.getElementById('pureBtn').addEventListener('click', () => {
+            showPhysics = false;
+            showTheory = false;
+            showCRR = false;
+            document.getElementById('physicsBtn').classList.remove('active');
+            document.getElementById('theoryBtn').classList.remove('active');
+            document.getElementById('crrBtn').classList.remove('active');
+            document.getElementById('theoryPanel').classList.remove('visible');
+            document.getElementById('pureBtn').classList.add('active');
+        });
+        
+        const velocitySlider = document.getElementById('velocitySlider');
+        const velocityValue = document.getElementById('velocityValue');
+        
+        velocitySlider.addEventListener('input', () => {
+            droplet.velocity = velocitySlider.value / 10;
+            velocityValue.textContent = droplet.velocity.toFixed(1) + ' m/s';
+            updateTargetShape();
+        });
+        
+        /*
+         * BOUNDARY PATH HELPERS
+         * ─────────────────────
+         */
+        function getBoundaryPoints() {
+            const cx = droplet.cx;
+            const cy = droplet.cy;
+            const R = droplet.baseRadius;
+            
+            return droplet.nodes.map(node => ({
+                x: cx + Math.cos(node.angle) * (R + node.offset),
+                y: cy + Math.sin(node.angle) * (R + node.offset),
+                angle: node.angle,
+                coherence: node.coherence,
+                radius: R + node.offset
+            }));
+        }
+        
+        function drawSmoothPath(points, close = true) {
+            ctx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const p0 = points[(i - 1 + points.length) % points.length];
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                const p3 = points[(i + 2) % points.length];
+                
+                if (i === 0) ctx.moveTo(p1.x, p1.y);
+                
+                const tension = 6;
+                const cp1x = p1.x + (p2.x - p0.x) / tension;
+                const cp1y = p1.y + (p2.y - p0.y) / tension;
+                const cp2x = p2.x - (p3.x - p1.x) / tension;
+                const cp2y = p2.y - (p3.y - p1.y) / tension;
+                
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+            }
+            if (close) ctx.closePath();
+        }
+        
+        function project3D(x, y, z, cx, cy, radius) {
+            const fov = 600;
+            const scale = fov / (fov + z * radius * 0.5);
+            return {
+                x: cx + x * radius * scale,
+                y: cy + y * radius * scale,
+                scale: scale,
+                depth: z
+            };
+        }
+        
+        /*
+         * MAIN RENDER FUNCTION
+         * ────────────────────
+         */
+        function render() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            renderSky(w, h);
+            renderSun();
+            renderSunRays();
+            renderDroplet();
+            
+            if (showCRR) renderCRROverlay();
+        }
+        
+        /*
+         * SKY RENDERING
+         * ─────────────
+         * Rayleigh scattering: I ∝ λ⁻⁴
+         * Blue light scatters more, creating gradient from deep blue (zenith)
+         * to lighter blue/white (horizon).
+         * 
+         * CRR: Each scatter event is a micro-rupture in the atmosphere's
+         * coherence field. The accumulated effect creates the gradient.
+         */
+        function renderSky(w, h) {
+            const skyGrad = ctx.createLinearGradient(0, 0, w * 0.4, h);
+            skyGrad.addColorStop(0, '#0a1525');
+            skyGrad.addColorStop(0.15, '#0d1f3a');
+            skyGrad.addColorStop(0.35, '#152d4a');
+            skyGrad.addColorStop(0.55, '#1f3d58');
+            skyGrad.addColorStop(0.75, '#2a4d65');
+            skyGrad.addColorStop(1, '#355a70');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Golden light wash from sun
+            const sunGlow = ctx.createRadialGradient(
+                scene.sunX, scene.sunY, 0,
+                scene.sunX, scene.sunY, Math.max(w, h) * 0.85
+            );
+            sunGlow.addColorStop(0, 'rgba(255, 230, 180, 0.35)');
+            sunGlow.addColorStop(0.1, 'rgba(255, 210, 150, 0.2)');
+            sunGlow.addColorStop(0.25, 'rgba(255, 190, 120, 0.1)');
+            sunGlow.addColorStop(0.5, 'rgba(255, 170, 100, 0.04)');
+            sunGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = sunGlow;
+            ctx.fillRect(0, 0, w, h);
+        }
+        
+        /*
+         * SUN RENDERING
+         * ─────────────
+         * CRR: The sun is the ultimate coherence source.
+         * Flares appear when CRR.solar.rupture triggers.
+         */
+        function renderSun() {
+            const sx = scene.sunX;
+            const sy = scene.sunY;
+            const sr = scene.sunRadius;
+            const t = scene.time;
+            
+            // Corona layers
+            for (let i = 5; i > 0; i--) {
+                const coronaR = sr * (1.4 + i * 0.45);
+                const alpha = 0.07 / i;
+                const corona = ctx.createRadialGradient(sx, sy, sr * 0.9, sx, sy, coronaR);
+                corona.addColorStop(0, `rgba(255, 235, 190, ${alpha})`);
+                corona.addColorStop(0.4, `rgba(255, 210, 140, ${alpha * 0.5})`);
+                corona.addColorStop(1, 'transparent');
+                ctx.fillStyle = corona;
+                ctx.beginPath();
+                ctx.arc(sx, sy, coronaR, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Solar flares (CRR rupture events)
+            if (CRR.solar.flareIntensity > 0.15) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 + t * 0.05;
+                    const flareLen = sr * (0.3 + CRR.solar.flareIntensity * 0.5);
+                    
+                    ctx.save();
+                    ctx.translate(sx, sy);
+                    ctx.rotate(angle);
+                    
+                    const flareGrad = ctx.createLinearGradient(sr * 0.85, 0, sr + flareLen, 0);
+                    flareGrad.addColorStop(0, `rgba(255, 220, 150, ${CRR.solar.flareIntensity * 0.35})`);
+                    flareGrad.addColorStop(0.5, `rgba(255, 180, 100, ${CRR.solar.flareIntensity * 0.15})`);
+                    flareGrad.addColorStop(1, 'transparent');
+                    
+                    ctx.fillStyle = flareGrad;
+                    ctx.beginPath();
+                    ctx.moveTo(sr * 0.85, -sr * 0.08);
+                    ctx.quadraticCurveTo(sr + flareLen * 0.6, -sr * 0.15, sr + flareLen, 0);
+                    ctx.quadraticCurveTo(sr + flareLen * 0.6, sr * 0.15, sr * 0.85, sr * 0.08);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    ctx.restore();
+                }
+                ctx.restore();
+            }
+            
+            // Main disk
+            const diskGrad = ctx.createRadialGradient(
+                sx - sr * 0.2, sy - sr * 0.2, 0,
+                sx, sy, sr
+            );
+            diskGrad.addColorStop(0, '#fffef5');
+            diskGrad.addColorStop(0.25, '#fff6d8');
+            diskGrad.addColorStop(0.5, '#ffe090');
+            diskGrad.addColorStop(0.75, '#ffc850');
+            diskGrad.addColorStop(0.92, '#ffa030');
+            diskGrad.addColorStop(1, '#ff7010');
+            ctx.fillStyle = diskGrad;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Limb darkening
+            const limbGrad = ctx.createRadialGradient(sx, sy, sr * 0.6, sx, sy, sr);
+            limbGrad.addColorStop(0, 'transparent');
+            limbGrad.addColorStop(0.4, 'rgba(200, 100, 20, 0.1)');
+            limbGrad.addColorStop(0.8, 'rgba(180, 70, 10, 0.25)');
+            limbGrad.addColorStop(1, 'rgba(150, 50, 0, 0.4)');
+            ctx.fillStyle = limbGrad;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        /*
+         * SUN RAYS
+         * ────────
+         * Photon coherence transfer from sun to droplet.
+         */
+        function renderSunRays() {
+            const sx = scene.sunX;
+            const sy = scene.sunY;
+            const dx = droplet.cx;
+            const dy = droplet.cy;
+            const dr = droplet.baseRadius;
+            
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            const mainAngle = Math.atan2(dy - sy, dx - sx);
+            
+            // Volumetric light cone
+            ctx.beginPath();
+            ctx.moveTo(sx + scene.sunRadius * 0.9 * Math.cos(mainAngle), 
+                       sy + scene.sunRadius * 0.9 * Math.sin(mainAngle));
+            ctx.lineTo(dx + dr * 1.1 * Math.cos(mainAngle - 0.25), 
+                       dy + dr * 1.1 * Math.sin(mainAngle - 0.25));
+            ctx.lineTo(dx + dr * 1.1 * Math.cos(mainAngle + 0.25), 
+                       dy + dr * 1.1 * Math.sin(mainAngle + 0.25));
+            ctx.closePath();
+            
+            const beamGrad = ctx.createLinearGradient(sx, sy, dx, dy);
+            beamGrad.addColorStop(0, 'rgba(255, 230, 180, 0.05)');
+            beamGrad.addColorStop(0.3, 'rgba(255, 215, 150, 0.025)');
+            beamGrad.addColorStop(0.7, 'rgba(255, 200, 130, 0.01)');
+            beamGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = beamGrad;
+            ctx.fill();
+            
+            // God rays
+            for (let i = 0; i < 8; i++) {
+                const rayAngle = mainAngle + (Math.random() - 0.5) * 0.4;
+                const dist = Math.sqrt((dx - sx) ** 2 + (dy - sy) ** 2);
+                const rayLen = dist * (0.75 + Math.random() * 0.4);
+                
+                const startX = sx + scene.sunRadius * Math.cos(rayAngle);
+                const startY = sy + scene.sunRadius * Math.sin(rayAngle);
+                const endX = startX + Math.cos(rayAngle) * rayLen;
+                const endY = startY + Math.sin(rayAngle) * rayLen;
+                
+                const rayGrad = ctx.createLinearGradient(startX, startY, endX, endY);
+                rayGrad.addColorStop(0, 'rgba(255, 235, 190, 0.03)');
+                rayGrad.addColorStop(0.5, 'rgba(255, 220, 160, 0.012)');
+                rayGrad.addColorStop(1, 'transparent');
+                
+                ctx.strokeStyle = rayGrad;
+                ctx.lineWidth = 12 + Math.random() * 18;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        /*
+         * DROPLET RENDERING
+         * ─────────────────
+         */
+        function renderDroplet() {
+            const points = getBoundaryPoints();
+            const cx = droplet.cx;
+            const cy = droplet.cy;
+            const R = droplet.baseRadius;
+            const lightAngle = droplet.lightAngle;
+            
+            // Clip to droplet
+            ctx.save();
+            drawSmoothPath(points);
+            ctx.clip();
+            
+            // Water body
+            const waterBase = ctx.createRadialGradient(
+                cx + Math.cos(lightAngle) * R * 0.2,
+                cy + Math.sin(lightAngle) * R * 0.2,
+                0, cx, cy, R * 1.15
+            );
+            waterBase.addColorStop(0, 'rgba(200, 220, 240, 0.14)');
+            waterBase.addColorStop(0.25, 'rgba(180, 210, 235, 0.1)');
+            waterBase.addColorStop(0.5, 'rgba(160, 195, 225, 0.06)');
+            waterBase.addColorStop(0.75, 'rgba(140, 180, 215, 0.035)');
+            waterBase.addColorStop(1, 'rgba(120, 165, 205, 0.02)');
+            ctx.fillStyle = waterBase;
+            ctx.fillRect(cx - R * 1.5, cy - R * 1.5, R * 3, R * 3);
+            
+            // Molecular visualization (if enabled)
+            if (showPhysics) {
+                renderMolecularDynamics(cx, cy, R);
+            }
+            
+            // Light entry
+            renderLightEntry(cx, cy, R, lightAngle);
+            
+            // Rainbow
+            renderRainbowCaustics(cx, cy, R, lightAngle);
+            
+            // Internal scattering
+            renderInternalScattering(cx, cy, R, lightAngle);
+            
+            ctx.restore();
+            
+            // Surface effects
+            renderFresnelRim(points, lightAngle);
+            renderSpecularHighlights(cx, cy, R, lightAngle, points);
+            renderEdge(points, lightAngle);
+        }
+        
+        /*
+         * MOLECULAR DYNAMICS VISUALIZATION
+         * ─────────────────────────────────
+         * Shows H₂O molecules, clusters, and H-bonds inside the droplet.
+         */
+        function renderMolecularDynamics(cx, cy, R) {
+            // Draw H-bonds first (behind everything)
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            
+            hBonds.forEach(bond => {
+                const c1 = clusters[bond.from];
+                const c2 = clusters[bond.to];
+                const p1 = project3D(c1.x, c1.y, c1.z, cx, cy, R);
+                const p2 = project3D(c2.x, c2.y, c2.z, cx, cy, R);
+                const pulse = 0.5 + Math.sin(bond.phase) * 0.5;
+                
+                ctx.strokeStyle = `rgba(100, 180, 255, ${bond.strength * pulse * 0.4})`;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+            ctx.restore();
+            
+            // Sort by depth
+            const items = [];
+            clusters.forEach(c => items.push({ type: 'cluster', data: c, z: c.z }));
+            molecules.forEach(m => items.push({ type: 'molecule', data: m, z: m.z }));
+            items.sort((a, b) => a.z - b.z);
+            
+            items.forEach(item => {
+                if (item.type === 'cluster') {
+                    drawCluster(item.data, cx, cy, R);
+                } else {
+                    drawMolecule(item.data, cx, cy, R);
+                }
+            });
+        }
+        
+        function drawCluster(cluster, cx, cy, R) {
+            const p = project3D(cluster.x, cluster.y, cluster.z, cx, cy, R);
+            const size = cluster.size * R * p.scale;
+            const pulse = 0.7 + Math.sin(cluster.phase) * 0.3;
+            const alpha = (0.3 + cluster.coherence * 0.7) * pulse;
+            const depthFade = 0.5 + (cluster.z + 1) * 0.25;
+            
+            // Glow
+            const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 2.5);
+            glow.addColorStop(0, `rgba(150, 200, 255, ${alpha * depthFade * 0.25})`);
+            glow.addColorStop(0.5, `rgba(130, 190, 255, ${alpha * depthFade * 0.1})`);
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Core
+            const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+            core.addColorStop(0, `rgba(220, 240, 255, ${alpha * depthFade * 0.6})`);
+            core.addColorStop(0.5, `rgba(180, 220, 255, ${alpha * depthFade * 0.3})`);
+            core.addColorStop(1, 'transparent');
+            ctx.fillStyle = core;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawMolecule(mol, cx, cy, R) {
+            const p = project3D(mol.x, mol.y, mol.z, cx, cy, R);
+            const size = 2.5 * p.scale;
+            const alpha = mol.vibration * 0.5;
+            const depthFade = 0.4 + (mol.z + 1) * 0.3;
+            
+            const bondLen = size * 2;
+            const bondAngle = PHYSICS.waterBondAngle;
+            
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(mol.rotation);
+            
+            // Oxygen (red)
+            const oGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+            oGrad.addColorStop(0, `rgba(255, 120, 120, ${alpha * depthFade * 0.7})`);
+            oGrad.addColorStop(0.5, `rgba(255, 100, 100, ${alpha * depthFade * 0.35})`);
+            oGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = oGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hydrogen positions
+            const h1x = Math.cos(-bondAngle/2) * bondLen;
+            const h1y = Math.sin(-bondAngle/2) * bondLen;
+            const h2x = Math.cos(bondAngle/2) * bondLen;
+            const h2y = Math.sin(bondAngle/2) * bondLen;
+            
+            // Bonds
+            ctx.strokeStyle = `rgba(200, 220, 240, ${alpha * depthFade * 0.3})`;
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); ctx.lineTo(h1x, h1y);
+            ctx.moveTo(0, 0); ctx.lineTo(h2x, h2y);
+            ctx.stroke();
+            
+            // Hydrogens (white)
+            const hSize = size * 0.45;
+            [{ x: h1x, y: h1y }, { x: h2x, y: h2y }].forEach(h => {
+                const hGrad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, hSize);
+                hGrad.addColorStop(0, `rgba(255, 255, 255, ${alpha * depthFade * 0.8})`);
+                hGrad.addColorStop(0.5, `rgba(240, 250, 255, ${alpha * depthFade * 0.4})`);
+                hGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = hGrad;
+                ctx.beginPath();
+                ctx.arc(h.x, h.y, hSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.restore();
+        }
+        
+        function renderLightEntry(cx, cy, R, lightAngle) {
+            const entryX = cx + Math.cos(lightAngle) * R * 0.88;
+            const entryY = cy + Math.sin(lightAngle) * R * 0.88;
+            
+            const entryGlow = ctx.createRadialGradient(entryX, entryY, 0, entryX, entryY, R * 0.4);
+            entryGlow.addColorStop(0, 'rgba(255, 255, 250, 0.35)');
+            entryGlow.addColorStop(0.15, 'rgba(255, 250, 230, 0.2)');
+            entryGlow.addColorStop(0.4, 'rgba(255, 240, 200, 0.08)');
+            entryGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = entryGlow;
+            ctx.beginPath();
+            ctx.arc(entryX, entryY, R * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        /*
+         * RAINBOW CAUSTICS
+         * ────────────────
+         * Velocity-dependent spectral dispersion.
+         * CRR: Each internal reflection is a RUPTURE at the Markov blanket.
+         */
+        function renderRainbowCaustics(cx, cy, R, lightAngle) {
+            const t = scene.time;
+            const v = droplet.velocity;
+            
+            // Weber number affects rainbow
+            const D = PHYSICS.nominalRadius * 2;
+            const We = PHYSICS.density * v * v * D / PHYSICS.surfaceTension;
+            const deformFactor = Math.min(0.32, We * 0.022);
+            
+            // Rainbow parameters vary with velocity
+            const rainbowIntensity = 0.08 + v * 0.015;
+            const baseSpread = 0.11;
+            const angularSpread = baseSpread * (1 + deformFactor * 0.5);
+            const angleShift = deformFactor * 0.03;
+            
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            const primaryBase = lightAngle + Math.PI + PHYSICS.primaryAngle + angleShift;
+            
+            const spectrum = [
+                { nm: 700, color: [255, 70, 70] },
+                { nm: 620, color: [255, 150, 50] },
+                { nm: 580, color: [255, 230, 60] },
+                { nm: 530, color: [120, 255, 100] },
+                { nm: 480, color: [80, 200, 255] },
+                { nm: 450, color: [120, 100, 255] },
+                { nm: 400, color: [200, 80, 255] }
+            ];
+            
+            const baseThickness = 5 + v * 0.5;
+            
+            spectrum.forEach((band, i) => {
+                const fraction = i / (spectrum.length - 1);
+                const bandAngle = primaryBase - angularSpread / 2 + fraction * angularSpread;
+                const shapeEffect = 1 + deformFactor * Math.cos(bandAngle - lightAngle - Math.PI) * 0.3;
+                
+                const innerDist = R * 0.25 * shapeEffect;
+                const outerDist = R * 0.9;
+                const innerX = cx + Math.cos(bandAngle) * innerDist;
+                const innerY = cy + Math.sin(bandAngle) * innerDist;
+                const outerX = cx + Math.cos(bandAngle) * outerDist;
+                const outerY = cy + Math.sin(bandAngle) * outerDist;
+                
+                const pulse = 0.65 + Math.sin(t * 1.5 + i * 0.7) * 0.35;
+                const crrBoost = 1 + CRR.photon.rupture * 0.5;
+                const intensity = pulse * rainbowIntensity * crrBoost * shapeEffect;
+                
+                const rayGrad = ctx.createLinearGradient(innerX, innerY, outerX, outerY);
+                rayGrad.addColorStop(0, `rgba(${band.color.join(',')}, 0)`);
+                rayGrad.addColorStop(0.2, `rgba(${band.color.join(',')}, ${intensity * 0.3})`);
+                rayGrad.addColorStop(0.5, `rgba(${band.color.join(',')}, ${intensity * 0.7})`);
+                rayGrad.addColorStop(0.8, `rgba(${band.color.join(',')}, ${intensity})`);
+                rayGrad.addColorStop(1, `rgba(${band.color.join(',')}, ${intensity * 0.5})`);
+                
+                ctx.strokeStyle = rayGrad;
+                ctx.lineWidth = baseThickness + (3 - Math.abs(i - 3)) * 2.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(innerX, innerY);
+                ctx.lineTo(outerX, outerY);
+                ctx.stroke();
+                
+                const causticSize = R * (0.1 + v * 0.005);
+                const causticGrad = ctx.createRadialGradient(outerX, outerY, 0, outerX, outerY, causticSize);
+                causticGrad.addColorStop(0, `rgba(${band.color.join(',')}, ${intensity * 1.3})`);
+                causticGrad.addColorStop(0.35, `rgba(${band.color.join(',')}, ${intensity * 0.5})`);
+                causticGrad.addColorStop(0.7, `rgba(${band.color.join(',')}, ${intensity * 0.15})`);
+                causticGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = causticGrad;
+                ctx.beginPath();
+                ctx.arc(outerX, outerY, causticSize, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // External rays
+            const externalIntensity = 0.04 + v * 0.008;
+            
+            spectrum.forEach((band, i) => {
+                const fraction = i / (spectrum.length - 1);
+                const bandAngle = primaryBase - angularSpread / 2 + fraction * angularSpread;
+                
+                const startX = cx + Math.cos(bandAngle) * R;
+                const startY = cy + Math.sin(bandAngle) * R;
+                const rayLength = R * (1.8 + v * 0.1);
+                const endX = cx + Math.cos(bandAngle) * rayLength;
+                const endY = cy + Math.sin(bandAngle) * rayLength;
+                
+                const pulse = 0.55 + Math.sin(t * 1.5 + i * 0.7) * 0.45;
+                const intensity = pulse * externalIntensity;
+                
+                const rayGrad = ctx.createLinearGradient(startX, startY, endX, endY);
+                rayGrad.addColorStop(0, `rgba(${band.color.join(',')}, ${intensity})`);
+                rayGrad.addColorStop(0.4, `rgba(${band.color.join(',')}, ${intensity * 0.35})`);
+                rayGrad.addColorStop(1, 'transparent');
+                
+                ctx.strokeStyle = rayGrad;
+                ctx.lineWidth = (8 + v * 0.4) - Math.abs(i - 3) * 1.2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            });
+            
+            ctx.restore();
+        }
+        
+        function renderInternalScattering(cx, cy, R, lightAngle) {
+            const sssGrad = ctx.createRadialGradient(
+                cx + Math.cos(lightAngle) * R * 0.2,
+                cy + Math.sin(lightAngle) * R * 0.2,
+                0, cx, cy, R
+            );
+            sssGrad.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
+            sssGrad.addColorStop(0.3, 'rgba(240, 250, 255, 0.03)');
+            sssGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = sssGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        /*
+         * FRESNEL RIM
+         * ───────────
+         * CRR: Grazing angle reflection = partial rupture at boundary.
+         */
+        function renderFresnelRim(points, lightAngle) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            points.forEach((p, i) => {
+                const angleDiff = Math.abs(p.angle - lightAngle);
+                const normalizedDiff = angleDiff > Math.PI ? Math.PI * 2 - angleDiff : angleDiff;
+                const lightFacing = Math.pow(Math.cos(normalizedDiff * 0.5), 1.5);
+                const intensity = lightFacing * 0.7 * p.coherence;
+                
+                if (intensity > 0.04) {
+                    const rimGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 7);
+                    rimGrad.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.65})`);
+                    rimGrad.addColorStop(0.25, `rgba(255, 252, 245, ${intensity * 0.4})`);
+                    rimGrad.addColorStop(0.5, `rgba(255, 248, 235, ${intensity * 0.2})`);
+                    rimGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = rimGrad;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            ctx.restore();
+        }
+        
+        function renderSpecularHighlights(cx, cy, R, lightAngle, points) {
+            // Find main specular point
+            let mainSpecPoint = points[0];
+            let minDiff = Math.PI;
+            
+            points.forEach(p => {
+                let diff = Math.abs(p.angle - lightAngle);
+                if (diff > Math.PI) diff = Math.PI * 2 - diff;
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    mainSpecPoint = p;
+                }
+            });
+            
+            const specX = mainSpecPoint.x * 0.82 + cx * 0.18;
+            const specY = mainSpecPoint.y * 0.82 + cy * 0.18;
+            
+            // Outer glow
+            const outerGlow = ctx.createRadialGradient(specX, specY, 0, specX, specY, R * 0.4);
+            outerGlow.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+            outerGlow.addColorStop(0.15, 'rgba(255, 255, 255, 0.2)');
+            outerGlow.addColorStop(0.35, 'rgba(255, 255, 255, 0.08)');
+            outerGlow.addColorStop(0.6, 'rgba(255, 255, 255, 0.02)');
+            outerGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = outerGlow;
+            ctx.beginPath();
+            ctx.arc(specX, specY, R * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main highlight
+            ctx.save();
+            ctx.translate(specX, specY);
+            ctx.rotate(lightAngle);
+            ctx.scale(1.15, 0.7);
+            
+            const mainSpec = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 0.12);
+            mainSpec.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            mainSpec.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)');
+            mainSpec.addColorStop(0.4, 'rgba(255, 255, 255, 0.45)');
+            mainSpec.addColorStop(0.7, 'rgba(255, 255, 255, 0.12)');
+            mainSpec.addColorStop(1, 'transparent');
+            ctx.fillStyle = mainSpec;
+            ctx.beginPath();
+            ctx.arc(0, 0, R * 0.12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // Star burst
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            
+            for (let i = 0; i < 6; i++) {
+                const rayAngle = (i / 6) * Math.PI + lightAngle * 0.5;
+                const rayLen = R * (0.12 + Math.random() * 0.08);
+                
+                const rayGrad = ctx.createLinearGradient(
+                    specX, specY,
+                    specX + Math.cos(rayAngle) * rayLen,
+                    specY + Math.sin(rayAngle) * rayLen
+                );
+                rayGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+                rayGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.25)');
+                rayGrad.addColorStop(1, 'transparent');
+                
+                ctx.strokeStyle = rayGrad;
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                
+                ctx.beginPath();
+                ctx.moveTo(specX, specY);
+                ctx.lineTo(specX + Math.cos(rayAngle) * rayLen, specY + Math.sin(rayAngle) * rayLen);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(specX, specY);
+                ctx.lineTo(specX + Math.cos(rayAngle + Math.PI) * rayLen * 0.8, 
+                          specY + Math.sin(rayAngle + Math.PI) * rayLen * 0.8);
+                ctx.stroke();
+            }
+            ctx.restore();
+            
+            // Secondary specular
+            const sec2Angle = lightAngle + Math.PI * 0.88;
+            const sec2Dist = R * 0.58;
+            const sec2X = cx + Math.cos(sec2Angle) * sec2Dist;
+            const sec2Y = cy + Math.sin(sec2Angle) * sec2Dist;
+            
+            const sec2Grad = ctx.createRadialGradient(sec2X, sec2Y, 0, sec2X, sec2Y, R * 0.1);
+            sec2Grad.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+            sec2Grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.12)');
+            sec2Grad.addColorStop(0.6, 'rgba(255, 255, 255, 0.03)');
+            sec2Grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = sec2Grad;
+            ctx.beginPath();
+            ctx.arc(sec2X, sec2Y, R * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function renderEdge(points, lightAngle) {
+            ctx.save();
+            
+            ctx.globalCompositeOperation = 'screen';
+            drawSmoothPath(points);
+            
+            const cx = droplet.cx;
+            const cy = droplet.cy;
+            const R = droplet.baseRadius;
+            
+            const edgeGrad = ctx.createLinearGradient(
+                cx + Math.cos(lightAngle) * R,
+                cy + Math.sin(lightAngle) * R,
+                cx + Math.cos(lightAngle + Math.PI) * R,
+                cy + Math.sin(lightAngle + Math.PI) * R
+            );
+            edgeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+            edgeGrad.addColorStop(0.25, 'rgba(230, 245, 255, 0.1)');
+            edgeGrad.addColorStop(0.5, 'rgba(200, 225, 250, 0.04)');
+            edgeGrad.addColorStop(1, 'rgba(180, 210, 240, 0.01)');
+            
+            ctx.strokeStyle = edgeGrad;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            ctx.globalCompositeOperation = 'source-over';
+            drawSmoothPath(points);
+            ctx.strokeStyle = 'rgba(60, 90, 130, 0.12)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        /*
+         * CRR STATE OVERLAY
+         * ─────────────────
+         */
+        function renderCRROverlay() {
+            const panelX = 20;
+            const panelY = window.innerHeight - 215;
+            const panelW = 200;
+            const panelH = 185;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.beginPath();
+            ctx.roundRect(panelX, panelY, panelW, panelH, 10);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(255, 200, 120, 0.18)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            ctx.font = '9px SF Mono, monospace';
+            ctx.fillStyle = 'rgba(255, 200, 120, 0.75)';
+            ctx.textAlign = 'left';
+            ctx.fillText('CRR CASCADE', panelX + 14, panelY + 20);
+            
+            const scales = [
+                { name: 'Solar', data: CRR.solar, color: '#ffb347' },
+                { name: 'Photon', data: CRR.photon, color: '#ff6b6b' },
+                { name: 'Atmos', data: CRR.atmosphere, color: '#74b9ff' },
+                { name: 'Surface', data: CRR.surface, color: '#55efc4' },
+                { name: 'Molecular', data: CRR.molecular, color: '#ffeaa7' },
+                { name: 'Cluster', data: CRR.cluster, color: '#dfe6e9' }
+            ];
+            
+            scales.forEach((scale, i) => {
+                const y = panelY + 40 + i * 17;
+                const barW = 80;
+                const barH = 5;
+                const barX = panelX + 80;
+                
+                ctx.font = '8px SF Mono, monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.textAlign = 'right';
+                ctx.fillText(scale.name, barX - 8, y + 4);
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath();
+                ctx.roundRect(barX, y, barW, barH, 2);
+                ctx.fill();
+                
+                const ratio = Math.min(scale.data.C / scale.data.omega, 1);
+                ctx.fillStyle = scale.color;
+                ctx.beginPath();
+                ctx.roundRect(barX, y, barW * ratio, barH, 2);
+                ctx.fill();
+                
+                if (scale.data.rupture > 0.2) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${scale.data.rupture * 0.35})`;
+                    ctx.beginPath();
+                    ctx.roundRect(barX, y, barW, barH, 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Weber number
+            const v = droplet.velocity;
+            const D = PHYSICS.nominalRadius * 2;
+            const We = PHYSICS.density * v * v * D / PHYSICS.surfaceTension;
+            
+            ctx.font = '8px SF Mono, monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.textAlign = 'left';
+            ctx.fillText(`We = ${We.toFixed(2)}`, panelX + 14, panelY + 160);
+            
+            ctx.fillStyle = 'rgba(255, 200, 120, 0.6)';
+            ctx.textAlign = 'right';
+            ctx.fillText(We < 3 ? 'Spherical' : We < 10 ? 'Oblate' : 'Unstable', 
+                        panelX + panelW - 14, panelY + 160);
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.textAlign = 'left';
+            ctx.fillText(`v = ${v.toFixed(1)} m/s`, panelX + 14, panelY + 175);
+        }
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * SECTION 10: ANIMATION LOOP
+         * ═══════════════════════════
+         */
+        
+        let lastTime = 0;
+        
+        function animate(timestamp) {
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            updateCRR(dt);
+            updatePhysics(dt);
+            render();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start!
+        requestAnimationFrame(animate);
+        
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         * 
+         * END OF SIMULATION
+         * 
+         * This implementation demonstrates how the Coherence-Rupture-Regeneration framework
+         * can unify physical phenomena across scales — from stellar fusion to molecular
+         * vibration — under a single mathematical formalism.
+         * 
+         * The key insight is that the same C → δ → R dynamics operate at every scale,
+         * with the threshold Ω determining the characteristic timescale. This scale-
+         * invariance suggests that CRR captures something fundamental about how systems
+         * evolve through time.
+         * 
+         * For more information on the CRR framework:
+         * www.temporalgrammar.ai
+         * 
+         * A. Sabine (2024-2025)
+         * 
+         * ═══════════════════════════════════════════════════════════════════════════════════
+         */
+        
+    </script>
+</body>
+</html>
