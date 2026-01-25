@@ -371,15 +371,15 @@ const RainbowCRR = {
 // Outer edge (red) to inner edge (violet)
 for (let nm = 700; nm >= 380; nm -= 8) {
     let r, g, b;
-    // Red to Orange (700-620nm) - vibrant red/orange like photo
+    // Red to Orange (700-620nm) - more saturated red/orange
     if (nm >= 620) {
         r = 255;
-        g = Math.floor(180 * (1 - (nm - 620) / 80)); // More orange tint
+        g = Math.floor(140 * (1 - (nm - 620) / 80)); // Reduced green for more saturation
         b = 0;
-    // Orange to Yellow (620-580nm)
+    // Orange to Yellow (620-580nm) - punchy orange-yellow
     } else if (nm >= 580) {
         r = 255;
-        g = Math.floor(180 + 75 * (1 - (nm - 580) / 40)); // Bright yellow
+        g = Math.floor(140 + 90 * (1 - (nm - 580) / 40)); // Richer orange to yellow
         b = 0;
     // Yellow to Green (580-530nm) - vibrant lime green like photo
     } else if (nm >= 530) {
@@ -605,9 +605,13 @@ const weather = {
             const trace = traceRayCRR(color.nm, 0.85, 1);
             const intensity = trace ? trace.intensity * 4 : 0.6;
             
+            // Red/orange more visible (higher wavelengths), blue/violet more subtle
+            const warmBoost = color.nm > 550 ? 1 + (color.nm - 550) / 300 : 1;
+            const coolFade = color.nm < 480 ? 0.6 + (color.nm - 380) / 250 : 1;
+            
             ctx.beginPath();
             ctx.arc(antiSolarX, antiSolarY, r, arcStart, arcEnd);
-            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${this.rainbowVisible * intensity * 0.06})`;
+            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${this.rainbowVisible * intensity * 0.06 * warmBoost * coolFade})`;
             ctx.lineWidth = bandWidth / RainbowCRR.spectrum.length * 2;
             ctx.stroke();
         }
@@ -621,9 +625,13 @@ const weather = {
             const trace = traceRayCRR(color.nm, 0.95, 2);
             const intensity = trace ? trace.intensity * 2.5 : 0.35;
             
+            // Same warm boost for secondary
+            const warmBoost = color.nm > 550 ? 1 + (color.nm - 550) / 300 : 1;
+            const coolFade = color.nm < 480 ? 0.6 + (color.nm - 380) / 250 : 1;
+            
             ctx.beginPath();
             ctx.arc(antiSolarX, antiSolarY, r, arcStart + 0.05, arcEnd - 0.05);
-            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${this.rainbowVisible * intensity * 0.03})`;
+            ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${this.rainbowVisible * intensity * 0.03 * warmBoost * coolFade})`;
             ctx.lineWidth = bandWidth / RainbowCRR.spectrum.length * 1.5;
             ctx.stroke();
         }
