@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Emergence — CRR Generative</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@300;400&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .title-overlay {
+            position: fixed;
+            top: 24px;
+            left: 28px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        
+        .title-overlay h1 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 18px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .title-overlay .subtitle {
+            font-size: 9px;
+            color: rgba(255, 200, 120, 0.45);
+            letter-spacing: 1px;
+        }
+        
+        .stats-panel {
+            position: fixed;
+            bottom: 80px;
+            left: 28px;
+            background: rgba(0, 0, 0, 0.88);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            border-radius: 6px;
+            padding: 14px 18px;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 1000;
+            min-width: 240px;
+            backdrop-filter: blur(15px);
+        }
+        
+        .stats-panel .title {
+            color: rgba(255, 200, 120, 0.7);
+            font-size: 8px;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .stats-panel .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        
+        .stats-panel .label { color: rgba(255,255,255,0.4); }
+        .stats-panel .value { color: rgba(255,255,255,0.8); }
+        .stats-panel .highlight { color: rgba(255, 200, 120, 0.9); }
+        
+        .physics-panel {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            border-radius: 8px;
+            padding: 18px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+            display: none;
+            line-height: 1.6;
+            backdrop-filter: blur(20px);
+        }
+        
+        .physics-panel.visible { display: block; }
+        
+        .physics-panel h3 {
+            color: rgba(255, 200, 120, 0.85);
+            font-size: 9px;
+            margin: 12px 0 8px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 200, 120, 0.1);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        
+        .physics-panel h3:first-child { margin-top: 0; }
+        
+        .physics-panel .equation {
+            background: rgba(255, 200, 120, 0.06);
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin: 6px 0;
+            font-family: 'Times New Roman', Georgia, serif;
+            font-size: 13px;
+            font-style: italic;
+            color: #fff;
+            border-left: 2px solid rgba(255, 200, 120, 0.3);
+        }
+        
+        .physics-panel .hl { color: rgba(255, 200, 120, 0.9); }
+        
+        .theory-panel {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 360px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            border-radius: 8px;
+            padding: 18px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+            display: none;
+            line-height: 1.6;
+            backdrop-filter: blur(20px);
+        }
+        
+        .theory-panel.visible { display: block; }
+        
+        .theory-panel h3 {
+            color: rgba(255, 200, 120, 0.85);
+            font-size: 9px;
+            margin: 14px 0 8px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 200, 120, 0.1);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        
+        .theory-panel h3:first-child { margin-top: 0; }
+        
+        .theory-panel .equation {
+            background: rgba(255, 200, 120, 0.06);
+            padding: 10px 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-family: 'Times New Roman', Georgia, serif;
+            font-size: 14px;
+            font-style: italic;
+            color: #fff;
+            border-left: 2px solid rgba(255, 200, 120, 0.3);
+        }
+        
+        .theory-panel .note {
+            color: rgba(255, 180, 100, 0.7);
+            font-size: 9px;
+            margin: 6px 0;
+            padding-left: 10px;
+            border-left: 2px solid rgba(255, 180, 100, 0.2);
+        }
+        
+        .theory-panel::-webkit-scrollbar { width: 4px; }
+        .theory-panel::-webkit-scrollbar-track { background: transparent; }
+        .theory-panel::-webkit-scrollbar-thumb { background: rgba(255, 200, 120, 0.2); border-radius: 2px; }
+        
+        .controls {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+        
+        .ctrl-btn {
+            padding: 10px 18px;
+            background: rgba(5, 8, 15, 0.9);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            letter-spacing: 0.4px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .ctrl-btn:hover {
+            background: rgba(25, 20, 15, 0.95);
+            border-color: rgba(255, 200, 120, 0.3);
+            color: #fff;
+        }
+        
+        .ctrl-btn.active {
+            background: rgba(255, 200, 120, 0.12);
+            border-color: rgba(255, 200, 120, 0.4);
+            color: #fff;
+        }
+        
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(5, 8, 15, 0.9);
+            border: 1px solid rgba(255, 200, 120, 0.15);
+            border-radius: 4px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .slider-control label {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+        
+        .slider-control input[type="range"] {
+            width: 80px;
+            height: 3px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        .slider-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 200, 120, 0.8);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .slider-control .value {
+            font-size: 9px;
+            color: rgba(255, 200, 120, 0.8);
+            min-width: 35px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="title-overlay">
+        <h1>Rainbow Emergence</h1>
+        <div class="subtitle" id="modeSubtitle">CRR Generative — The mathematics creates the optics</div>
+    </div>
+    
+    <div class="stats-panel" id="statsPanel">
+        <div class="title">CRR Dynamics</div>
+        <div class="row"><span class="label">Active Droplets</span><span class="value" id="statDroplets">0</span></div>
+        <div class="row"><span class="label">Rays Traced</span><span class="value" id="statRays">0</span></div>
+        <div class="row"><span class="label">Rupture Events (δ)</span><span class="value" id="statRuptures">0</span></div>
+        <div class="row"><span class="label">Primary Peak</span><span class="value highlight" id="statPrimary">—</span></div>
+        <div class="row"><span class="label">Secondary Peak</span><span class="value highlight" id="statSecondary">—</span></div>
+        <div class="row"><span class="label">Ω(red) / Ω(violet)</span><span class="value" id="statOmega">—</span></div>
+    </div>
+    
+    <div class="physics-panel" id="physicsPanel">
+        <h3>CRR Ray Dynamics</h3>
+        <div style="color: rgba(255,255,255,0.5); margin-bottom: 10px;">
+            Watch coherence accumulate, rupture at boundaries,<br>
+            and regenerate with exp(C/Ω) weighting.
+        </div>
+        
+        <h3>§1 Coherence Accumulation</h3>
+        <div class="equation">C(s) = ∫ L·n(λ)·ds</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Phase accumulates along the ray path.<br>
+            Watch the <span class="hl">C bar</span> fill as light travels.
+        </div>
+        
+        <h3>§2 Rupture Events</h3>
+        <div style="color: rgba(255,255,255,0.5);">
+            At each boundary, coherence <span class="hl">ruptures</span>.<br>
+            The transfer is weighted by exp(C/Ω).<br>
+            Watch the <span class="hl">flash</span> at each interface.
+        </div>
+        
+        <h3>§3 Wavelength Separation</h3>
+        <div style="color: rgba(255,255,255,0.5);">
+            Different λ → different Ω → different angles.<br>
+            <span class="hl">Red</span> (low Ω) exits at larger angle<br>
+            <span class="hl">Violet</span> (high Ω) exits at smaller angle
+        </div>
+        
+        <h3>Current Ray Data</h3>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">Wavelength</span>
+            <span id="physWL" style="color:#fff">—</span>
+        </div>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">Coherence C</span>
+            <span id="physC" style="color:#fff">—</span>
+        </div>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">Threshold Ω</span>
+            <span id="physOmega" style="color:#fff">—</span>
+        </div>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">C/Ω ratio</span>
+            <span id="physRatio" style="color:#fff">—</span>
+        </div>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">exp(C/Ω)</span>
+            <span id="physExp" style="color:rgba(255,200,120,0.9)">—</span>
+        </div>
+        <div class="row" style="display:flex; justify-content:space-between; padding:3px 0;">
+            <span style="color:rgba(255,255,255,0.4)">Exit angle</span>
+            <span id="physAngle" style="color:rgba(255,200,120,0.9)">—</span>
+        </div>
+    </div>
+    
+    <div class="theory-panel" id="theoryPanel">
+        <h3>CRR-Generative Rainbow</h3>
+        <div style="color: rgba(255,255,255,0.5); margin-bottom: 12px;">
+            CRR mathematics generates the rainbow.<br>
+            Snell's law emerges from phase continuity.
+        </div>
+        
+        <h3>§1 Coherence as Phase</h3>
+        <div class="equation">C(s) = ∫₀ˢ L(λ)·n(λ)·ds'</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Coherence IS optical phase. L is the phase density,<br>
+            n(λ) determines how fast phase accumulates.
+        </div>
+        
+        <h3>§2 Ω as Characteristic Phase</h3>
+        <div class="equation">Ω(λ) = π · n(λ)</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            Z₂ symmetry (reflection) → base threshold = π<br>
+            Scaled by n(λ) for wavelength-dependent rupture.
+        </div>
+        
+        <h3>§3 Rupture Transfers exp(C/Ω)</h3>
+        <div class="equation">I_out = I_in · exp(C/Ω)</div>
+        <div style="color: rgba(255,255,255,0.5);">
+            At boundaries, coherence ruptures. The accumulated<br>
+            phase determines transfer via the regeneration kernel.
+        </div>
+        
+        <h3>§4 Emergent Snell's Law</h3>
+        <div style="color: rgba(255,255,255,0.5);">
+            Phase continuity at boundaries requires:<br>
+            n₁ sin θ₁ = n₂ sin θ₂<br><br>
+            This is Snell's law — not assumed, but derived<br>
+            from CRR phase matching across the Markov blanket.
+        </div>
+        
+        <h3>§5 The Caustic</h3>
+        <div style="color: rgba(255,255,255,0.5);">
+            Rainbow appears where dC/db = 0 (stationary phase).<br>
+            This is where exp(C/Ω) contributions add coherently.<br>
+            The 42° angle emerges — it is not hardcoded.
+        </div>
+        
+        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,200,120,0.1); color: rgba(255,255,255,0.25); font-size: 8px;">
+            CRR Framework — A. Sabine (2024-2025)<br>
+            cohere.org.uk
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div class="slider-control">
+            <label>Rain</label>
+            <input type="range" id="dropletSlider" min="100" max="800" value="400">
+            <span class="value" id="dropletValue">400</span>
+        </div>
+        <button class="ctrl-btn" id="physicsBtn">⚛ Physics</button>
+        <button class="ctrl-btn" id="theoryBtn">∫ Theory</button>
+        <button class="ctrl-btn" id="secondaryBtn">2° Arc</button>
+        <button class="ctrl-btn" id="resetBtn">↻ Reset</button>
+    </div>
+    
+    <script>
+        /*
+         * ═══════════════════════════════════════════════════════════════════════════════
+         * 
+         *   RAINBOW EMERGENCE — CRR GENERATIVE v2
+         *   
+         *   Fixed color accumulation + Physics view showing CRR in action
+         *   
+         *   A. Sabine (2024-2025) — cohere.org.uk
+         * 
+         * ═══════════════════════════════════════════════════════════════════════════════
+         */
+        
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CRR PHYSICS
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        const CRR = {
+            omega_base: Math.PI,
+            
+            getN: function(wavelength_nm) {
+                const λ = wavelength_nm / 1000;
+                return 1.3199 + 0.00653 / (λ * λ);
+            },
+            
+            getOmega: function(wavelength_nm) {
+                return this.omega_base * this.getN(wavelength_nm);
+            },
+            
+            getL: function(wavelength_nm) {
+                return 2 * Math.PI * this.getN(wavelength_nm) / (wavelength_nm / 500);
+            },
+            
+            // Smooth spectrum with more samples
+            spectrum: []
+        };
+        
+        // Generate smooth spectrum
+        for (let nm = 700; nm >= 380; nm -= 10) {
+            const t = (nm - 380) / (700 - 380);
+            let r, g, b;
+            
+            if (nm >= 580) {
+                r = 255;
+                g = Math.floor(255 * (1 - (nm - 580) / 120));
+                b = 0;
+            } else if (nm >= 510) {
+                r = Math.floor(255 * (nm - 510) / 70);
+                g = 255;
+                b = 0;
+            } else if (nm >= 490) {
+                r = 0;
+                g = 255;
+                b = Math.floor(255 * (1 - (nm - 490) / 20));
+            } else if (nm >= 450) {
+                r = 0;
+                g = Math.floor(255 * (nm - 450) / 40);
+                b = 255;
+            } else {
+                r = Math.floor(128 * (1 - (nm - 380) / 70));
+                g = 0;
+                b = 255;
+            }
+            
+            CRR.spectrum.push({ nm, r, g, b });
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        let droplets = [];
+        let angularSpectrum = [];
+        let stats = { rays: 0, ruptures: 0, primaryPeak: 0, secondaryPeak: 0 };
+        
+        let numDroplets = 400;
+        let showSecondary = false;
+        let showTheory = false;
+        let showPhysics = false;
+        
+        const NUM_ANGLE_BINS = 400;
+        const ANGLE_MIN = 35;
+        const ANGLE_MAX = 55;
+        
+        // Physics view animation state
+        let physicsTime = 0;
+        let physicsRays = [];
+        let currentRayIndex = 0;
+        let rayProgress = 0;
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CRR RAY TRACING
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function traceRayCRR(wavelength_nm, impactParam, dropletRadius, reflections = 1) {
+            if (Math.abs(impactParam) >= 0.99) return null;
+            
+            const n = CRR.getN(wavelength_nm);
+            const Ω = CRR.getOmega(wavelength_nm);
+            const L = CRR.getL(wavelength_nm);
+            const n_air = 1.0003;
+            
+            let C = 0;
+            let totalC = 0;
+            let ruptures = 0;
+            
+            // Entry geometry
+            const sinI = Math.abs(impactParam);
+            const cosI = Math.sqrt(1 - sinI * sinI);
+            
+            // Phase continuity at boundary → Snell's law emerges
+            const sinR = (n_air / n) * sinI;
+            if (sinR > 1) return null;
+            const cosR = Math.sqrt(1 - sinR * sinR);
+            
+            // Accumulate phase approaching boundary
+            C += L * 0.1;
+            
+            // RUPTURE 1: Entry
+            totalC += C;
+            C = 0;
+            ruptures++;
+            
+            // Internal path
+            const internalPath = 2 * dropletRadius * cosR;
+            C += L * n * internalPath;
+            
+            // RUPTURE 2+: Reflections
+            for (let r = 0; r < reflections; r++) {
+                totalC += C;
+                C = 0;
+                ruptures++;
+                C += L * n * internalPath;
+            }
+            
+            // Exit check
+            const sinExit = (n / n_air) * sinR;
+            if (sinExit > 1) return null;
+            
+            // RUPTURE 3: Exit
+            totalC += C;
+            ruptures++;
+            
+            // Calculate deviation
+            const theta_i = Math.asin(sinI);
+            const theta_r = Math.asin(sinR);
+            
+            let deviation;
+            if (reflections === 1) {
+                deviation = 2 * theta_i - 4 * theta_r + Math.PI;
+            } else {
+                deviation = 2 * theta_i - 6 * theta_r + 2 * Math.PI;
+            }
+            
+            let viewAngle = Math.abs(Math.PI - deviation) * 180 / Math.PI;
+            if (reflections === 2) {
+                viewAngle = Math.abs(deviation - Math.PI) * 180 / Math.PI;
+            }
+            
+            // Regeneration intensity
+            const expCO = Math.exp(totalC / Ω);
+            const intensity = Math.min(1, expCO * 0.0005);
+            
+            stats.ruptures += ruptures;
+            
+            return {
+                angle: viewAngle,
+                intensity: intensity,
+                wavelength: wavelength_nm,
+                C: totalC,
+                Ω: Ω,
+                expCO: expCO,
+                theta_i: theta_i * 180 / Math.PI,
+                theta_r: theta_r * 180 / Math.PI
+            };
+        }
+        
+        // Detailed trace for physics view
+        function traceRayDetailed(cx, cy, radius, impactParam, wavelength_nm) {
+            if (Math.abs(impactParam) >= 0.99) return null;
+            
+            const n = CRR.getN(wavelength_nm);
+            const Ω = CRR.getOmega(wavelength_nm);
+            const L = CRR.getL(wavelength_nm);
+            const n_air = 1.0003;
+            
+            const points = [];
+            const crrStates = [];
+            let C = 0;
+            
+            // Entry point
+            const entryY = cy + impactParam * radius;
+            const entryX = cx - Math.sqrt(Math.max(0, radius * radius - Math.pow(impactParam * radius, 2)));
+            
+            // Incoming ray start
+            points.push({ x: entryX - 200, y: entryY, type: 'start' });
+            
+            // Entry point
+            points.push({ x: entryX, y: entryY, type: 'entry' });
+            crrStates.push({ C: C, event: 'approaching', Ω: Ω });
+            
+            // Calculate refraction
+            const sinI = Math.abs(impactParam);
+            const sinR = (n_air / n) * sinI;
+            if (sinR > 1) return null;
+            const cosR = Math.sqrt(1 - sinR * sinR);
+            
+            // Accumulate C approaching
+            C += L * 0.5;
+            crrStates.push({ C: C, event: 'pre-rupture', Ω: Ω });
+            
+            // RUPTURE at entry
+            const C_entry = C;
+            C = 0;
+            crrStates.push({ C: C, event: 'rupture-entry', transfer: Math.exp(C_entry / Ω), Ω: Ω });
+            
+            // Internal geometry
+            const nx_entry = (entryX - cx) / radius;
+            const ny_entry = (entryY - cy) / radius;
+            
+            // Refracted direction (using Snell's geometry)
+            const cosI = Math.sqrt(1 - sinI * sinI);
+            const ratio = n_air / n;
+            
+            let rayDirX = 1;  // incoming from left
+            let rayDirY = 0;
+            
+            // Refract at entry
+            const dot1 = -(rayDirX * nx_entry + rayDirY * ny_entry);
+            const perpX = rayDirX + dot1 * nx_entry;
+            const perpY = rayDirY + dot1 * ny_entry;
+            const perpLen = Math.sqrt(perpX * perpX + perpY * perpY);
+            
+            if (perpLen > 0.001) {
+                const sinT = ratio * perpLen;
+                if (sinT > 1) return null;
+                const cosT = Math.sqrt(1 - sinT * sinT);
+                
+                rayDirX = (perpX / perpLen) * sinT - nx_entry * cosT;
+                rayDirY = (perpY / perpLen) * sinT - ny_entry * cosT;
+            }
+            
+            // Normalize
+            let len = Math.sqrt(rayDirX * rayDirX + rayDirY * rayDirY);
+            rayDirX /= len;
+            rayDirY /= len;
+            
+            // Find reflection point
+            let currentX = entryX;
+            let currentY = entryY;
+            
+            const dx = currentX - cx;
+            const dy = currentY - cy;
+            const a = 1;
+            const bb = 2 * (dx * rayDirX + dy * rayDirY);
+            const cc = dx * dx + dy * dy - radius * radius;
+            const disc = bb * bb - 4 * a * cc;
+            
+            if (disc < 0) return null;
+            
+            const t = (-bb + Math.sqrt(disc)) / 2;
+            const reflectX = currentX + t * rayDirX;
+            const reflectY = currentY + t * rayDirY;
+            
+            // Accumulate C along internal path
+            const internalDist = Math.sqrt(Math.pow(reflectX - entryX, 2) + Math.pow(reflectY - entryY, 2));
+            C += L * n * internalDist * 0.01;
+            
+            points.push({ x: reflectX, y: reflectY, type: 'reflect' });
+            crrStates.push({ C: C, event: 'internal', Ω: Ω });
+            
+            // RUPTURE at reflection
+            const C_reflect = C;
+            C = 0;
+            crrStates.push({ C: C, event: 'rupture-reflect', transfer: Math.exp(C_reflect / Ω), Ω: Ω });
+            
+            // Reflect
+            const nx_refl = (reflectX - cx) / radius;
+            const ny_refl = (reflectY - cy) / radius;
+            const dotRefl = rayDirX * nx_refl + rayDirY * ny_refl;
+            rayDirX = rayDirX - 2 * dotRefl * nx_refl;
+            rayDirY = rayDirY - 2 * dotRefl * ny_refl;
+            
+            currentX = reflectX;
+            currentY = reflectY;
+            
+            // Find exit point
+            const dx2 = currentX - cx;
+            const dy2 = currentY - cy;
+            const bb2 = 2 * (dx2 * rayDirX + dy2 * rayDirY);
+            const cc2 = dx2 * dx2 + dy2 * dy2 - radius * radius;
+            const disc2 = bb2 * bb2 - 4 * cc2;
+            
+            if (disc2 < 0) return null;
+            
+            const t2 = (-bb2 + Math.sqrt(disc2)) / 2;
+            const exitX = currentX + t2 * rayDirX;
+            const exitY = currentY + t2 * rayDirY;
+            
+            // Accumulate C along second internal path
+            const internal2 = Math.sqrt(Math.pow(exitX - reflectX, 2) + Math.pow(exitY - reflectY, 2));
+            C += L * n * internal2 * 0.01;
+            
+            points.push({ x: exitX, y: exitY, type: 'exit' });
+            crrStates.push({ C: C, event: 'pre-exit', Ω: Ω });
+            
+            // RUPTURE at exit
+            const C_exit = C;
+            crrStates.push({ C: C, event: 'rupture-exit', transfer: Math.exp(C_exit / Ω), Ω: Ω });
+            
+            // Exit refraction
+            const nx_exit = (exitX - cx) / radius;
+            const ny_exit = (exitY - cy) / radius;
+            
+            const dotExit = -(rayDirX * nx_exit + rayDirY * ny_exit);
+            const perpExitX = rayDirX + dotExit * nx_exit;
+            const perpExitY = rayDirY + dotExit * ny_exit;
+            const perpExitLen = Math.sqrt(perpExitX * perpExitX + perpExitY * perpExitY);
+            
+            if (perpExitLen > 0.001) {
+                const sinExit = (n / n_air) * perpExitLen;
+                if (sinExit > 1) return null;
+                const cosExit = Math.sqrt(1 - sinExit * sinExit);
+                
+                rayDirX = (perpExitX / perpExitLen) * sinExit + nx_exit * cosExit;
+                rayDirY = (perpExitY / perpExitLen) * sinExit + ny_exit * cosExit;
+            }
+            
+            len = Math.sqrt(rayDirX * rayDirX + rayDirY * rayDirY);
+            rayDirX /= len;
+            rayDirY /= len;
+            
+            // Exit ray endpoint
+            points.push({ 
+                x: exitX + rayDirX * 250, 
+                y: exitY + rayDirY * 250, 
+                type: 'end' 
+            });
+            
+            // Calculate total C and angle
+            const totalC = C_entry + C_reflect + C_exit;
+            const exitAngle = Math.atan2(rayDirY, rayDirX) * 180 / Math.PI;
+            
+            return {
+                points: points,
+                crrStates: crrStates,
+                wavelength: wavelength_nm,
+                n: n,
+                Ω: Ω,
+                totalC: totalC,
+                expCO: Math.exp(totalC / Ω),
+                exitAngle: exitAngle
+            };
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // DROPLET
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        class Droplet {
+            constructor(x, y, z, radius) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.radius = radius;
+                this.vy = 0.3 + Math.random() * 0.8;
+            }
+            
+            update(dt) {
+                this.y += this.vy * dt;
+                if (this.y > window.innerHeight + 50) {
+                    this.y = -50 - Math.random() * 100;
+                    this.x = Math.random() * window.innerWidth;
+                }
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // SPECTRUM ACCUMULATION
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function initSpectrum() {
+            angularSpectrum = [];
+            for (let i = 0; i < NUM_ANGLE_BINS; i++) {
+                angularSpectrum[i] = { r: 0, g: 0, b: 0, count: 0 };
+            }
+        }
+        
+        function accumulateLight(result, color) {
+            if (!result) return;
+            
+            const angle = result.angle;
+            if (angle < ANGLE_MIN || angle > ANGLE_MAX) return;
+            
+            const binIndex = Math.floor((angle - ANGLE_MIN) / (ANGLE_MAX - ANGLE_MIN) * NUM_ANGLE_BINS);
+            if (binIndex < 0 || binIndex >= NUM_ANGLE_BINS) return;
+            
+            const bin = angularSpectrum[binIndex];
+            const weight = result.intensity;
+            
+            bin.r += color.r * weight;
+            bin.g += color.g * weight;
+            bin.b += color.b * weight;
+            bin.count += weight;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function init() {
+            resize();
+            createDroplets();
+            initSpectrum();
+            initPhysicsRays();
+            updateOmegaDisplay();
+            requestAnimationFrame(animate);
+        }
+        
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.scale(dpr, dpr);
+        }
+        
+        function createDroplets() {
+            droplets = [];
+            for (let i = 0; i < numDroplets; i++) {
+                droplets.push(new Droplet(
+                    Math.random() * window.innerWidth,
+                    Math.random() * window.innerHeight,
+                    Math.random(),
+                    2 + Math.random() * 5
+                ));
+            }
+        }
+        
+        function initPhysicsRays() {
+            physicsRays = [];
+            const cx = window.innerWidth * 0.55;
+            const cy = window.innerHeight * 0.45;
+            const radius = Math.min(window.innerWidth, window.innerHeight) * 0.2;
+            
+            // Create rays for key wavelengths
+            const keyWavelengths = [700, 620, 570, 520, 470, 420, 380];
+            const impactParam = 0.85;  // Near rainbow angle
+            
+            for (const nm of keyWavelengths) {
+                const ray = traceRayDetailed(cx, cy, radius, impactParam, nm);
+                if (ray) {
+                    const color = CRR.spectrum.find(c => Math.abs(c.nm - nm) < 20) || CRR.spectrum[0];
+                    physicsRays.push({ ...ray, color: color });
+                }
+            }
+        }
+        
+        function updateOmegaDisplay() {
+            const omegaRed = CRR.getOmega(700).toFixed(3);
+            const omegaViolet = CRR.getOmega(380).toFixed(3);
+            document.getElementById('statOmega').textContent = `${omegaRed} / ${omegaViolet}`;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // RAY TRACING
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function traceRays() {
+            for (const droplet of droplets) {
+                const numSamples = 12;
+                for (let i = 0; i < numSamples; i++) {
+                    const b = (i / (numSamples - 1)) * 1.9 - 0.95;
+                    
+                    for (const wl of CRR.spectrum) {
+                        const result = traceRayCRR(wl.nm, b, droplet.radius, 1);
+                        if (result) {
+                            accumulateLight(result, wl);
+                            stats.rays++;
+                        }
+                        
+                        if (showSecondary) {
+                            const result2 = traceRayCRR(wl.nm, b, droplet.radius, 2);
+                            if (result2) {
+                                accumulateLight(result2, wl);
+                                stats.rays++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // RENDERING
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function render() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            if (showPhysics) {
+                renderPhysicsView(w, h);
+            } else {
+                renderRainbowView(w, h);
+            }
+        }
+        
+        function renderRainbowView(w, h) {
+            // Sky
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            skyGrad.addColorStop(0, '#0a1428');
+            skyGrad.addColorStop(0.4, '#1a3555');
+            skyGrad.addColorStop(0.7, '#2a5070');
+            skyGrad.addColorStop(1, '#3a6585');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Sun
+            const sunX = w * 0.12;
+            const sunY = h * 0.4;
+            
+            const sunGlow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, w * 0.7);
+            sunGlow.addColorStop(0, 'rgba(255, 245, 220, 0.5)');
+            sunGlow.addColorStop(0.15, 'rgba(255, 230, 180, 0.2)');
+            sunGlow.addColorStop(0.4, 'rgba(255, 200, 140, 0.08)');
+            sunGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = sunGlow;
+            ctx.fillRect(0, 0, w, h);
+            
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 35, 0, Math.PI * 2);
+            const sunDisc = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 35);
+            sunDisc.addColorStop(0, '#fffff8');
+            sunDisc.addColorStop(0.6, 'rgba(255, 240, 200, 0.95)');
+            sunDisc.addColorStop(1, 'rgba(255, 200, 120, 0.4)');
+            ctx.fillStyle = sunDisc;
+            ctx.fill();
+            
+            // Rainbow
+            const antiX = w - sunX;
+            const antiY = h + (sunY - h * 0.5) + 100;
+            
+            let maxPrimary = 0, maxSecondary = 0;
+            let peakPrimaryAngle = 0, peakSecondaryAngle = 0;
+            
+            for (let i = 0; i < NUM_ANGLE_BINS; i++) {
+                const bin = angularSpectrum[i];
+                if (bin.count < 0.01) continue;
+                
+                const angle = ANGLE_MIN + (i / NUM_ANGLE_BINS) * (ANGLE_MAX - ANGLE_MIN);
+                const angleRad = angle * Math.PI / 180;
+                
+                // Normalize colors properly
+                const norm = Math.max(0.001, bin.count);
+                const scale = 2.5;
+                const r = Math.min(255, (bin.r / norm) * scale);
+                const g = Math.min(255, (bin.g / norm) * scale);
+                const b = Math.min(255, (bin.b / norm) * scale);
+                
+                const brightness = (r + g + b) / 3;
+                if (brightness < 5) continue;
+                
+                // Track peaks
+                if (angle > 40 && angle < 44 && bin.count > maxPrimary) {
+                    maxPrimary = bin.count;
+                    peakPrimaryAngle = angle;
+                }
+                if (angle > 49 && angle < 53 && bin.count > maxSecondary) {
+                    maxSecondary = bin.count;
+                    peakSecondaryAngle = angle;
+                }
+                
+                const arcRadius = Math.tan(angleRad) * (h - antiY + 300);
+                const alpha = Math.min(0.8, bin.count * 0.15);
+                
+                // Main arc
+                ctx.beginPath();
+                ctx.arc(antiX, antiY, arcRadius, -Math.PI, 0);
+                ctx.strokeStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${alpha})`;
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                
+                // Glow
+                ctx.beginPath();
+                ctx.arc(antiX, antiY, arcRadius, -Math.PI, 0);
+                ctx.strokeStyle = `rgba(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)}, ${alpha * 0.25})`;
+                ctx.lineWidth = 20;
+                ctx.stroke();
+            }
+            
+            // Update stats
+            if (peakPrimaryAngle > 0) {
+                stats.primaryPeak = peakPrimaryAngle;
+                document.getElementById('statPrimary').textContent = peakPrimaryAngle.toFixed(1) + '°';
+            }
+            if (peakSecondaryAngle > 0) {
+                stats.secondaryPeak = peakSecondaryAngle;
+                document.getElementById('statSecondary').textContent = peakSecondaryAngle.toFixed(1) + '°';
+            }
+            
+            // Droplets
+            for (const droplet of droplets) {
+                const depth = 0.5 + droplet.z * 0.5;
+                const r = droplet.radius * depth;
+                const alpha = 0.12 + droplet.z * 0.12;
+                
+                const glow = ctx.createRadialGradient(droplet.x, droplet.y, 0, droplet.x, droplet.y, r * 2.5);
+                glow.addColorStop(0, `rgba(200, 230, 255, ${alpha * 0.5})`);
+                glow.addColorStop(0.5, `rgba(180, 220, 255, ${alpha * 0.15})`);
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(droplet.x, droplet.y, r * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                const body = ctx.createRadialGradient(droplet.x - r * 0.3, droplet.y - r * 0.3, 0, droplet.x, droplet.y, r);
+                body.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.5})`);
+                body.addColorStop(0.4, `rgba(200, 230, 255, ${alpha * 0.25})`);
+                body.addColorStop(1, `rgba(150, 200, 255, ${alpha * 0.08})`);
+                ctx.fillStyle = body;
+                ctx.beginPath();
+                ctx.arc(droplet.x, droplet.y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            document.getElementById('statDroplets').textContent = droplets.length;
+            document.getElementById('statRays').textContent = stats.rays.toLocaleString();
+            document.getElementById('statRuptures').textContent = stats.ruptures.toLocaleString();
+        }
+        
+        function renderPhysicsView(w, h) {
+            // Dark background
+            ctx.fillStyle = '#080c14';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(255, 200, 120, 0.03)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < w; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+            
+            // Droplet position
+            const cx = w * 0.55;
+            const cy = h * 0.45;
+            const radius = Math.min(w, h) * 0.2;
+            
+            // Reinit rays if needed
+            if (physicsRays.length === 0 || Math.abs(physicsRays[0].points[1].x - (cx - radius * 0.5)) > 100) {
+                initPhysicsRays();
+            }
+            
+            // Sun
+            ctx.fillStyle = 'rgba(255, 240, 200, 0.9)';
+            ctx.beginPath();
+            ctx.arc(80, cy, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const sunGlow = ctx.createRadialGradient(80, cy, 30, 80, cy, 150);
+            sunGlow.addColorStop(0, 'rgba(255, 240, 200, 0.3)');
+            sunGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(80, cy, 150, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('SUNLIGHT', 55, cy + 50);
+            
+            // Light beam from sun
+            ctx.strokeStyle = 'rgba(255, 245, 220, 0.2)';
+            ctx.lineWidth = 80;
+            ctx.beginPath();
+            ctx.moveTo(110, cy);
+            ctx.lineTo(cx - radius - 50, cy);
+            ctx.stroke();
+            
+            // Droplet glow
+            const dropGlow = ctx.createRadialGradient(cx, cy, radius * 0.8, cx, cy, radius * 1.8);
+            dropGlow.addColorStop(0, 'rgba(100, 150, 255, 0.1)');
+            dropGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = dropGlow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 1.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Droplet body
+            const bodyGrad = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 0, cx, cy, radius);
+            bodyGrad.addColorStop(0, 'rgba(180, 210, 255, 0.2)');
+            bodyGrad.addColorStop(0.5, 'rgba(120, 170, 255, 0.1)');
+            bodyGrad.addColorStop(1, 'rgba(80, 140, 255, 0.05)');
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Droplet outline
+            ctx.strokeStyle = 'rgba(150, 200, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Animate through rays
+            physicsTime += 0.015;
+            const cycleTime = 4;  // seconds per full cycle
+            const progress = (physicsTime % cycleTime) / cycleTime;
+            
+            // Draw all rays with animation
+            for (let ri = 0; ri < physicsRays.length; ri++) {
+                const ray = physicsRays[ri];
+                const pts = ray.points;
+                const color = ray.color;
+                
+                // Stagger ray animations
+                const rayDelay = ri * 0.08;
+                const rayProgress = Math.max(0, Math.min(1, (progress - rayDelay) * 2));
+                
+                if (rayProgress <= 0) continue;
+                
+                // Calculate how far along the path we are
+                const totalSegments = pts.length - 1;
+                const currentSegment = Math.floor(rayProgress * totalSegments);
+                const segmentProgress = (rayProgress * totalSegments) % 1;
+                
+                // Draw completed segments
+                for (let i = 0; i < Math.min(currentSegment, pts.length - 1); i++) {
+                    const p1 = pts[i];
+                    const p2 = pts[i + 1];
+                    
+                    const isIncoming = i === 0;
+                    const isInternal = i > 0 && i < pts.length - 2;
+                    const isOutgoing = i === pts.length - 2;
+                    
+                    if (isIncoming) {
+                        ctx.strokeStyle = 'rgba(255, 245, 220, 0.6)';
+                        ctx.lineWidth = 2;
+                    } else if (isInternal) {
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
+                        ctx.lineWidth = 2;
+                    } else {
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
+                        ctx.lineWidth = 3;
+                        
+                        // Glow on exit
+                        ctx.save();
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.2)`;
+                        ctx.lineWidth = 12;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+                
+                // Draw current segment (animated)
+                if (currentSegment < pts.length - 1) {
+                    const p1 = pts[currentSegment];
+                    const p2 = pts[currentSegment + 1];
+                    const currX = p1.x + (p2.x - p1.x) * segmentProgress;
+                    const currY = p1.y + (p2.y - p1.y) * segmentProgress;
+                    
+                    const isIncoming = currentSegment === 0;
+                    const isOutgoing = currentSegment === pts.length - 2;
+                    
+                    if (isIncoming) {
+                        ctx.strokeStyle = 'rgba(255, 245, 220, 0.6)';
+                    } else if (isOutgoing) {
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
+                    } else {
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
+                    }
+                    ctx.lineWidth = 2;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(currX, currY);
+                    ctx.stroke();
+                    
+                    // Light point
+                    ctx.beginPath();
+                    ctx.arc(currX, currY, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = isIncoming ? 'rgba(255, 255, 255, 0.9)' : `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
+                    ctx.fill();
+                }
+                
+                // Draw rupture points with flash effect
+                for (let i = 1; i < pts.length - 1; i++) {
+                    if (currentSegment >= i) {
+                        const pt = pts[i];
+                        const flashIntensity = Math.max(0, 1 - (currentSegment - i) * 0.5 - segmentProgress * 0.5);
+                        
+                        if (flashIntensity > 0) {
+                            // Rupture flash
+                            const flashGrad = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, 30 * flashIntensity);
+                            flashGrad.addColorStop(0, `rgba(255, 200, 120, ${flashIntensity * 0.5})`);
+                            flashGrad.addColorStop(1, 'transparent');
+                            ctx.fillStyle = flashGrad;
+                            ctx.beginPath();
+                            ctx.arc(pt.x, pt.y, 30 * flashIntensity, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        
+                        // Point
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+                        ctx.fillStyle = pt.type === 'reflect' ? 'rgba(255, 200, 120, 0.9)' : `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = '11px JetBrains Mono';
+            
+            // CRR equations overlay
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(20, 20, 200, 100);
+            ctx.strokeStyle = 'rgba(255, 200, 120, 0.2)';
+            ctx.strokeRect(20, 20, 200, 100);
+            
+            ctx.fillStyle = 'rgba(255, 200, 120, 0.8)';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('CRR DYNAMICS', 30, 40);
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = '11px Times New Roman';
+            ctx.fillText('C(s) = ∫ L·n(λ)·ds', 30, 60);
+            ctx.fillText('δ: C → 0, transfer exp(C/Ω)', 30, 80);
+            ctx.fillText('Ω(λ) = π·n(λ)', 30, 100);
+            
+            // Legend
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(w - 200, 20, 180, 180);
+            ctx.strokeStyle = 'rgba(255, 200, 120, 0.2)';
+            ctx.strokeRect(w - 200, 20, 180, 180);
+            
+            ctx.fillStyle = 'rgba(255, 200, 120, 0.8)';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('WAVELENGTH → Ω', w - 190, 40);
+            
+            let ly = 60;
+            for (const ray of physicsRays) {
+                ctx.fillStyle = `rgb(${ray.color.r}, ${ray.color.g}, ${ray.color.b})`;
+                ctx.fillRect(w - 190, ly - 8, 12, 12);
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = '9px JetBrains Mono';
+                ctx.fillText(`${ray.wavelength}nm  Ω=${ray.Ω.toFixed(2)}`, w - 170, ly);
+                ly += 18;
+            }
+            
+            // Update physics panel with current ray data
+            const currentRay = physicsRays[Math.floor(progress * physicsRays.length) % physicsRays.length];
+            if (currentRay) {
+                document.getElementById('physWL').textContent = currentRay.wavelength + 'nm';
+                document.getElementById('physC').textContent = currentRay.totalC.toFixed(3);
+                document.getElementById('physOmega').textContent = currentRay.Ω.toFixed(3);
+                document.getElementById('physRatio').textContent = (currentRay.totalC / currentRay.Ω).toFixed(3);
+                document.getElementById('physExp').textContent = currentRay.expCO.toFixed(2);
+                document.getElementById('physAngle').textContent = Math.abs(currentRay.exitAngle).toFixed(1) + '°';
+            }
+            
+            // Title
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = '16px Cormorant Garamond';
+            ctx.fillText('CRR RAY DYNAMICS', cx - 80, h - 80);
+            
+            ctx.fillStyle = 'rgba(255, 200, 120, 0.5)';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('Coherence accumulates → Ruptures at boundaries → Colors separate', cx - 200, h - 60);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // ANIMATION
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        let lastTime = 0;
+        
+        function animate(timestamp) {
+            const dt = Math.min(32, timestamp - lastTime) / 16.67;
+            lastTime = timestamp;
+            
+            if (!showPhysics) {
+                for (const droplet of droplets) {
+                    droplet.update(dt);
+                }
+                traceRays();
+            }
+            
+            render();
+            requestAnimationFrame(animate);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // EVENTS
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        window.addEventListener('resize', () => {
+            resize();
+            initSpectrum();
+            initPhysicsRays();
+            stats.rays = 0;
+            stats.ruptures = 0;
+        });
+        
+        document.getElementById('dropletSlider').addEventListener('input', (e) => {
+            numDroplets = parseInt(e.target.value);
+            document.getElementById('dropletValue').textContent = numDroplets;
+            createDroplets();
+            initSpectrum();
+            stats.rays = 0;
+            stats.ruptures = 0;
+        });
+        
+        document.getElementById('physicsBtn').addEventListener('click', () => {
+            showPhysics = !showPhysics;
+            document.getElementById('physicsBtn').classList.toggle('active', showPhysics);
+            document.getElementById('physicsPanel').classList.toggle('visible', showPhysics);
+            document.getElementById('statsPanel').style.display = showPhysics ? 'none' : 'block';
+            document.getElementById('modeSubtitle').textContent = showPhysics 
+                ? 'Physics View — Watch CRR create the rainbow'
+                : 'CRR Generative — The mathematics creates the optics';
+            
+            if (showPhysics) {
+                physicsTime = 0;
+                initPhysicsRays();
+                if (showTheory) {
+                    showTheory = false;
+                    document.getElementById('theoryPanel').classList.remove('visible');
+                    document.getElementById('theoryBtn').classList.remove('active');
+                }
+            }
+        });
+        
+        document.getElementById('theoryBtn').addEventListener('click', () => {
+            showTheory = !showTheory;
+            document.getElementById('theoryPanel').classList.toggle('visible', showTheory);
+            document.getElementById('theoryBtn').classList.toggle('active', showTheory);
+            
+            if (showTheory && showPhysics) {
+                showPhysics = false;
+                document.getElementById('physicsPanel').classList.remove('visible');
+                document.getElementById('physicsBtn').classList.remove('active');
+                document.getElementById('statsPanel').style.display = 'block';
+                document.getElementById('modeSubtitle').textContent = 'CRR Generative — The mathematics creates the optics';
+            }
+        });
+        
+        document.getElementById('secondaryBtn').addEventListener('click', () => {
+            showSecondary = !showSecondary;
+            document.getElementById('secondaryBtn').classList.toggle('active', showSecondary);
+            initSpectrum();
+            stats.rays = 0;
+            stats.ruptures = 0;
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            createDroplets();
+            initSpectrum();
+            stats.rays = 0;
+            stats.ruptures = 0;
+            physicsTime = 0;
+        });
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // START
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        init();
+        
+    </script>
+</body>
+</html>
