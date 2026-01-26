@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-        canvas { display: block; touch-action: none; }
+        canvas { display: block; touch-action: none; position: fixed; top: 0; left: 0; z-index: 1; }
         
         /* FPS Counter */
         .fps { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #4ade80; font: 12px monospace; padding: 5px 10px; border-radius: 4px; z-index: 100; }
@@ -15,7 +15,7 @@
         .fps.bad { color: #f87171; }
         
         /* Debug Panel */
-        .debug { position: fixed; bottom: 70px; left: 10px; background: rgba(0,0,0,0.85); color: #fff; font: 10px monospace; padding: 8px 12px; border-radius: 4px; opacity: 0; transition: opacity 0.3s; line-height: 1.6; max-width: calc(100vw - 20px); max-height: 40vh; overflow-y: auto; z-index: 90; }
+        .debug { position: fixed; bottom: 80px; left: 10px; background: rgba(0,0,0,0.85); color: #fff; font: 10px monospace; padding: 8px 12px; border-radius: 4px; opacity: 0; transition: opacity 0.3s; line-height: 1.6; max-width: calc(100vw - 20px); max-height: 35vh; overflow-y: auto; z-index: 90; }
         .debug.show { opacity: 1; }
         .debug .t { color: #fcd34d; }
         .debug .v { color: #a78bfa; }
@@ -65,8 +65,11 @@
             display: flex; align-items: center; justify-content: center;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
         }
-        .ctrl-btn:active, .ctrl-btn.active {
+        .ctrl-btn:active, .ctrl-btn.active, .ctrl-btn:focus {
             background: rgba(255,200,100,0.3);
             border-color: rgba(255,200,100,0.6);
         }
@@ -178,12 +181,12 @@
 </div>
 <div class="hint">m = math | c = debug | r = rain | s = sound | n = night | d = day | +/- = zoom Sirius</div>
 <div class="mobile-controls" id="mobileControls">
-    <button class="ctrl-btn" id="btnMath" title="Math Panel"><span class="icon">∑</span>Math</button>
-    <button class="ctrl-btn" id="btnDebug" title="Debug Info"><span class="icon">⚙</span>Debug</button>
-    <button class="ctrl-btn" id="btnRain" title="Toggle Rain"><span class="icon">🌧</span>Rain</button>
-    <button class="ctrl-btn" id="btnSound" title="Toggle Sound"><span class="icon">🔇</span>Sound</button>
-    <button class="ctrl-btn" id="btnNight" title="Skip to Night"><span class="icon">🌙</span>Night</button>
-    <button class="ctrl-btn" id="btnDay" title="Skip to Day"><span class="icon">☀</span>Day</button>
+    <button class="ctrl-btn" id="btnMath" ontouchstart="" title="Math Panel"><span class="icon">∑</span>Math</button>
+    <button class="ctrl-btn" id="btnDebug" ontouchstart="" title="Debug Info"><span class="icon">⚙</span>Debug</button>
+    <button class="ctrl-btn" id="btnRain" ontouchstart="" title="Toggle Rain"><span class="icon">🌧</span>Rain</button>
+    <button class="ctrl-btn" id="btnSound" ontouchstart="" title="Toggle Sound"><span class="icon">🔇</span>Sound</button>
+    <button class="ctrl-btn" id="btnNight" ontouchstart="" title="Skip to Night"><span class="icon">🌙</span>Night</button>
+    <button class="ctrl-btn" id="btnDay" ontouchstart="" title="Skip to Day"><span class="icon">☀</span>Day</button>
 </div>
 <div class="sirius-hint" id="siriusHint">Pinch or double-tap on SIRIUS to zoom</div>
 <canvas id="c"></canvas>
@@ -4054,7 +4057,9 @@ let tree, grass, birds = [], flock, pred, scare = null;
 
 function resize() {
     W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    // Leave room for mobile control bar (60px + safe area)
+    const controlBarHeight = 60;
+    H = canvas.height = window.innerHeight - controlBarHeight;
 }
 
 function init() {
@@ -4410,6 +4415,8 @@ function showSiriusHint() {
 }
 
 canvas.addEventListener('touchstart', (e) => {
+    // Only prevent default for touches on canvas, not bubbled from other elements
+    if (e.target !== canvas) return;
     e.preventDefault();
     touchStartTime = performance.now();
     
@@ -4430,6 +4437,7 @@ canvas.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
+    if (e.target !== canvas) return;
     e.preventDefault();
     
     if (e.touches.length === 2 && isPinching) {
@@ -4451,6 +4459,8 @@ canvas.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
+    if (e.target !== canvas) return;
+    
     const touchDuration = performance.now() - touchStartTime;
     
     if (!isPinching && touchDuration < 300 && e.changedTouches.length === 1) {
@@ -4498,14 +4508,27 @@ canvas.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MOBILE CONTROL BUTTONS - Using pointerup for reliable touch/mouse handling
+// MOBILE CONTROL BUTTONS - Using touchend + click for cross-device support
 // ═══════════════════════════════════════════════════════════════════════════════
 function addButtonHandler(id, handler) {
     const btn = document.getElementById(id);
     if (!btn) return;
     
-    // Use pointerup for unified touch/mouse handling
-    btn.addEventListener('pointerup', (e) => {
+    let touchHandled = false;
+    
+    // Touch handler
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        touchHandled = true;
+        handler();
+        // Reset flag after a short delay
+        setTimeout(() => { touchHandled = false; }, 300);
+    }, { passive: false });
+    
+    // Click handler for desktop (only fires if touch didn't handle it)
+    btn.addEventListener('click', (e) => {
+        if (touchHandled) return;
         e.preventDefault();
         e.stopPropagation();
         handler();
