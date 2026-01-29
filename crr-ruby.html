@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRR Ruby - Interactive Physics Simulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(180deg, #0a0406 0%, #120608 50%, #0a0405 100%);
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #d0b0b8;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    h1 {
+      font-size: 26px;
+      font-weight: 200;
+      letter-spacing: 5px;
+      background: linear-gradient(90deg, rgba(255,200,200,0.5), #ff6666, rgba(255,100,100,1), #ff6666, rgba(255,200,200,0.5));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    
+    .subtitle {
+      font-size: 10px;
+      color: rgba(190,130,140,0.7);
+      letter-spacing: 2px;
+    }
+    
+    .main-content {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    canvas {
+      border-radius: 8px;
+      cursor: grab;
+      display: block;
+    }
+    
+    canvas:active {
+      cursor: grabbing;
+    }
+    
+    .panel {
+      background: rgba(12,4,6,0.95);
+      border: 1px solid rgba(140,70,80,0.3);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 10px;
+    }
+    
+    .panel-title {
+      color: rgba(210,120,130,0.9);
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(140,70,80,0.2);
+    }
+    
+    .physics-panel {
+      width: 280px;
+    }
+    
+    .toggle-group {
+      margin-bottom: 12px;
+    }
+    
+    .toggle-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .toggle-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    
+    .toggle-item.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    
+    .toggle-item input[type="checkbox"] {
+      margin-right: 10px;
+      margin-top: 2px;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      accent-color: #cc4444;
+    }
+    
+    .toggle-label {
+      flex: 1;
+      cursor: pointer;
+    }
+    
+    .toggle-name {
+      color: rgba(230,200,210,0.95);
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+    
+    .toggle-equation {
+      font-family: 'Times New Roman', serif;
+      font-style: italic;
+      color: rgba(220,150,160,0.8);
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    
+    .toggle-desc {
+      color: rgba(180,120,140,0.7);
+      font-size: 9px;
+      line-height: 1.4;
+    }
+    
+    .color-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-left: 8px;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    
+    .info-panel {
+      width: 220px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    
+    .info-label {
+      color: rgba(150,90,100,0.7);
+    }
+    
+    .info-value {
+      color: #fff;
+      font-weight: 500;
+    }
+    
+    .info-value.highlight {
+      color: rgba(200,100,100,0.9);
+    }
+    
+    .divider {
+      height: 1px;
+      background: rgba(140,70,80,0.2);
+      margin: 12px 0;
+    }
+    
+    .equation-box {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 6px;
+      font-family: 'Times New Roman', serif;
+      font-size: 12px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    
+    .equation-box .label {
+      color: rgba(180,100,110,0.7);
+      font-family: system-ui, sans-serif;
+      font-size: 9px;
+      margin-bottom: 4px;
+    }
+    
+    .scale-indicator {
+      text-align: center;
+      padding: 10px;
+      background: rgba(120,40,50,0.2);
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .scale-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(210,120,130,0.9);
+      letter-spacing: 1px;
+    }
+    
+    .scale-zoom {
+      font-size: 22px;
+      color: #fff;
+      margin: 5px 0;
+    }
+    
+    .zoom-hint {
+      font-size: 9px;
+      color: rgba(160,100,110,0.5);
+    }
+    
+    .atomic-hint {
+      background: rgba(255,150,100,0.1);
+      border: 1px solid rgba(255,150,100,0.3);
+      border-radius: 4px;
+      padding: 8px;
+      margin-bottom: 12px;
+      color: rgba(255,180,150,0.8);
+      font-size: 9px;
+      text-align: center;
+    }
+    
+    .controls-hint {
+      text-align: center;
+      color: rgba(170,110,130,0.4);
+      font-size: 9px;
+      margin-top: 10px;
+    }
+    
+    .legend {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(140,70,80,0.2);
+    }
+    
+    .legend-title {
+      font-size: 9px;
+      color: rgba(160,100,110,0.6);
+      margin-bottom: 6px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 9px;
+    }
+    
+    .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 8px;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(140,70,80,0.3);
+      border-radius: 2px;
+      outline: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #cc6666;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #cc6666;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .cr-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, #ff3333, #aa0000);
+      border-radius: 50%;
+      margin-right: 4px;
+      box-shadow: 0 0 4px #ff3333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>CRR RUBY</h1>
+      <p class="subtitle">COHERENCE-RUPTURE-REGENERATION • α-Al₂O₃:Cr³⁺ CORUNDUM</p>
+    </header>
+    
+    <div class="main-content">
+      <!-- Physics Controls Panel -->
+      <div class="panel physics-panel">
+        <div class="panel-title">CRR PHYSICS OVERLAYS</div>
+        
+        <div id="atomicHint" class="atomic-hint" style="display: block;">
+          ⚠ Zoom in (3×+) to enable atomic physics
+        </div>
+        
+        <div class="toggle-group" id="toggleGroup">
+          
+          <!-- Thermal Micro-Ruptures -->
+          <div class="toggle-item" id="toggle-thermal">
+            <input type="checkbox" id="thermalRuptures">
+            <label class="toggle-label" for="thermalRuptures">
+              <div class="toggle-name">Thermal Micro-Ruptures</div>
+              <div class="toggle-equation">⟨u²⟩^½ ≈ 0.06 Å (at 300K)</div>
+              <div class="toggle-desc">
+                <strong>Phonon vibrations in corundum.</strong> Ruby's Debye temperature Θ_D≈1040K 
+                (vs diamond's 2230K) gives ~50% larger thermal displacements.
+                Still imperceptible at visual scales.
+                <br><br>
+                <strong>CRR insight:</strong> Ω_ruby ≈ 0.025 > Ω_diamond ≈ 0.01
+                → Mohs 9 vs Mohs 10.
+              </div>
+              <div class="amplification-control" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(140,70,80,0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="color: rgba(200,150,160,0.8); font-size: 9px;">Visualization Amplification:</span>
+                  <span id="ampValue" style="color: #cc6666; font-size: 10px; font-weight: 600;">1×</span>
+                </div>
+                <input type="range" id="amplificationSlider" min="1" max="100" value="1" 
+                       style="width: 100%; height: 4px; cursor: pointer;">
+                <div style="display: flex; justify-content: space-between; font-size: 8px; color: rgba(160,100,110,0.5); margin-top: 2px;">
+                  <span>1× (realistic)</span>
+                  <span>100× (exaggerated)</span>
+                </div>
+              </div>
+            </label>
+            <div class="color-indicator" style="background: #ff9966;"></div>
+          </div>
+          
+          <!-- Chromium Dopants -->
+          <div class="toggle-item" id="toggle-chromium">
+            <input type="checkbox" id="chromiumDopants">
+            <label class="toggle-label" for="chromiumDopants">
+              <div class="toggle-name"><span class="cr-indicator"></span>Chromium Dopants (Cr³⁺)</div>
+              <div class="toggle-equation">~1.5% Cr³⁺ replacing Al³⁺</div>
+              <div class="toggle-desc">
+                <strong>The origin of ruby's red color!</strong> Chromium ions substitute 
+                for aluminum, creating <em>local coherence perturbations</em>.
+                <br><br>
+                <strong>CRR interpretation:</strong> Cr³⁺ has different d-orbital structure,
+                modifying the local electronic coherence field. This perturbation
+                creates the absorption spectrum that gives ruby its color.
+              </div>
+            </label>
+            <div class="color-indicator" style="background: #ff2222;"></div>
+          </div>
+          
+          <!-- Electronic Transitions -->
+          <div class="toggle-item" id="toggle-electronic">
+            <input type="checkbox" id="electronicTransitions">
+            <label class="toggle-label" for="electronicTransitions">
+              <div class="toggle-name">Electronic Coherence (Color)</div>
+              <div class="toggle-equation">⁴A₂ → ⁴T₂, ⁴T₁ (d-d transitions)</div>
+              <div class="toggle-desc">
+                <strong>Why ruby is RED:</strong> Cr³⁺ d³ electrons in octahedral field.
+                Absorbs green (~550nm) + violet (~400nm), transmits RED (~700nm).
+                <br><br>
+                <strong>Coherence at electronic scale:</strong> Absorption = electronic rupture;
+                Fluorescence at 694nm = electronic regeneration.
+              </div>
+            </label>
+            <div class="color-indicator" style="background: linear-gradient(90deg, #ff0000, #ff6666, #ff0000);"></div>
+          </div>
+          
+          <!-- Coherence Field -->
+          <div class="toggle-item" id="toggle-coherence">
+            <input type="checkbox" id="coherenceField">
+            <label class="toggle-label" for="coherenceField">
+              <div class="toggle-name">Coherence Field C(x)</div>
+              <div class="toggle-equation">C(x,t) = ∫₀ᵗ L(x,τ) dτ</div>
+              <div class="toggle-desc">
+                <strong>Lattice coherence in trigonal symmetry.</strong> Corundum's R3̄c structure
+                creates hexagonally-arranged coherence basins.
+                Al in octahedral sites, O in HCP arrangement.
+              </div>
+            </label>
+            <div class="color-indicator" style="background: #ff6688;"></div>
+          </div>
+          
+          <!-- Bond Network -->
+          <div class="toggle-item" id="toggle-bonds">
+            <input type="checkbox" id="bonds">
+            <label class="toggle-label" for="bonds">
+              <div class="toggle-name">Al-O Bond Network</div>
+              <div class="toggle-equation">Al-O: 1.86-1.97 Å (octahedral)</div>
+              <div class="toggle-desc">
+                <strong>Ionic-covalent bonding.</strong> Each Al³⁺ coordinated by 6 O²⁻ atoms.
+                Distorted octahedral geometry (two bond lengths) creates
+                the optical anisotropy. Cr-O bonds shown in red.
+              </div>
+            </label>
+            <div class="color-indicator" style="background: #88aaff;"></div>
+          </div>
+          
+          <!-- Regeneration Forces -->
+          <div class="toggle-item" id="toggle-regen">
+            <input type="checkbox" id="regenerationForces">
+            <label class="toggle-label" for="regenerationForces">
+              <div class="toggle-name">Regeneration Forces</div>
+              <div class="toggle-equation">F = -(∂C/∂x)·exp(C/Ω)/Ω</div>
+              <div class="toggle-desc">
+                <strong>Restoring forces.</strong> Larger Ω than diamond = slightly weaker
+                regeneration, but still enormous! Explains Mohs 9 hardness.
+                <em>Requires Thermal Micro-Ruptures enabled.</em>
+              </div>
+            </label>
+            <div class="color-indicator" style="background: #ffaa44;"></div>
+          </div>
+          
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="equation-box">
+          <div class="label">CRR Parameters: Ruby vs Diamond</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10px;">
+            <div>Ω_ruby = 0.025</div>
+            <div>Ω_diamond = 0.01</div>
+            <div>Θ_D = 1040 K</div>
+            <div>Θ_D = 2230 K</div>
+            <div>Mohs 9</div>
+            <div>Mohs 10</div>
+          </div>
+          <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(140,70,80,0.2); font-size: 9px; color: rgba(200,150,160,0.6);">
+            Same CRR equations, different Ω<br>
+            → Different emergent properties
+          </div>
+        </div>
+      </div>
+      
+      <!-- Canvas -->
+      <canvas id="ruby" width="700" height="580"></canvas>
+      
+      <!-- Info Panel -->
+      <div class="panel info-panel">
+        <div class="panel-title">RUBY CRYSTALLOGRAPHY</div>
+        
+        <div class="scale-indicator">
+          <div class="scale-name" id="scaleName">MACROSCOPIC</div>
+          <div class="scale-zoom"><span id="zoomLevel">1.0</span>×</div>
+          <div class="zoom-hint">Scroll to zoom</div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row">
+          <span class="info-label">Formula:</span>
+          <span class="info-value">α-Al₂O₃:Cr³⁺</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Structure:</span>
+          <span class="info-value">Trigonal (R3̄c)</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Cr³⁺ content:</span>
+          <span class="info-value highlight">~1.5%</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row">
+          <span class="info-label">a (hex):</span>
+          <span class="info-value">4.76 Å</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">c (hex):</span>
+          <span class="info-value">12.99 Å</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Al-O bonds:</span>
+          <span class="info-value">1.86, 1.97 Å</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">n (refractive):</span>
+          <span class="info-value">1.76-1.77</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Hardness:</span>
+          <span class="info-value">9 (Mohs)</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row">
+          <span class="info-label">Rendered:</span>
+          <span class="info-value" id="renderedAtoms">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Compression:</span>
+          <span class="info-value highlight" id="compression">—</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="equation-box">
+          <div class="label">Color Origin (Cr³⁺ Crystal Field)</div>
+          <div style="font-size: 10px;">
+            Absorbs: <span style="color: #88ff88;">~550nm</span>, <span style="color: #8888ff;">~400nm</span><br>
+            Transmits: <span style="color: #ff4444; font-weight: bold;">~700nm (RED)</span><br>
+            Fluorescence: 694nm (R-lines)
+          </div>
+        </div>
+        
+        <div id="activeLegend" class="legend" style="display: none;">
+          <div class="legend-title">ACTIVE OVERLAYS</div>
+          <div id="legendItems"></div>
+        </div>
+        
+        <div class="controls-hint">
+          Drag to rotate • Scroll to zoom
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * CRR RUBY SIMULATION
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Ruby: α-Al₂O₃ (corundum) with ~1-2% Cr³⁺ substituting for Al³⁺
+ * 
+ * CRR FRAMEWORK COMPARISON:
+ * ─────────────────────────
+ *                    DIAMOND          RUBY
+ * Crystal system     Cubic (Fd3̄m)    Trigonal (R3̄c)
+ * Bonding            Pure covalent    Ionic-covalent
+ * Ω parameter        ~0.01            ~0.025
+ * Debye temp         2230 K           1040 K
+ * Hardness           10               9
+ * 
+ * The LARGER Ω for ruby means:
+ * - Wider coherence basins (less rigid)
+ * - Larger thermal displacements
+ * - Slightly weaker regeneration forces
+ * - Lower hardness (but still exceptional!)
+ * 
+ * COLOR MECHANISM (Electronic Coherence):
+ * ───────────────────────────────────────
+ * Cr³⁺ d³ configuration in octahedral O²⁻ field:
+ * - Ground state: ⁴A₂ (t₂g³)
+ * - Excited states: ⁴T₂, ⁴T₁
+ * - Absorption: ~400nm (⁴A₂→⁴T₁) and ~550nm (⁴A₂→⁴T₂)
+ * - Transmission window: ~700nm = RED
+ * - Fluorescence: 694nm (R-lines) — used in first laser!
+ * 
+ * CRR interpretation: Cr³⁺ creates LOCAL COHERENCE PERTURBATION.
+ * The d-orbitals have different symmetry than the lattice,
+ * creating discrete electronic energy levels within the band gap.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
+const CRR = {
+  omega: 0.025,         // Ruby (larger = softer coherence basins)
+  omega_diamond: 0.01,  // For comparison
+  C0: 1.0,
+  chromiumFraction: 0.015,
+};
+
+const THERMAL = {
+  temperature: 300,
+  debyeTemperature: 1040,
+  baseAmplitude: 0.0015,
+  amplification: 1,
+  get amplitude() { return this.baseAmplitude * this.amplification; },
+  frequencies: { acoustic: 6, optical: 10, high: 8 }
+};
+
+const RUBY = {
+  a: 4.76e-10, c: 12.99e-10,
+  a_ang: 4.76, c_ang: 12.99,
+  bondShort: 1.86, bondLong: 1.97,
+  n_o: 1.768, n_e: 1.760,
+  density: 3980, hardness: 9,
+};
+
+const GEM_CUT = {
+  crownHeight: 0.12,
+  pavilionDepth: 0.45,
+  tableRatio: 0.58,
+  girdleRX: 1.0,
+  girdleRZ: 0.78,
+};
+
+// Corundum basis (simplified)
+const CORUNDUM_BASIS = {
+  aluminum: [
+    [0, 0, 0.35], [0, 0, 0.65], [0.33, 0.67, 0.02],
+    [0.33, 0.67, 0.31], [0.67, 0.33, 0.19], [0.67, 0.33, 0.48],
+  ],
+  oxygen: [
+    [0.31, 0, 0.25], [0, 0.31, 0.25], [0.69, 0.69, 0.25],
+    [0.36, 0.03, 0.58], [0.03, 0.36, 0.58], [0.64, 0.97, 0.58],
+  ]
+};
+
+// CRR Physics Functions
+function coherenceField(x, y, z, surfaceDist, isChromium) {
+  const r = Math.sqrt(x*x + y*y + z*z);
+  const C_bulk = Math.exp(-CRR.omega * r * 4);
+  const C_surface = 1 - Math.exp(-surfaceDist * 8);
+  const C_cr = isChromium ? 0.92 : 1.0;
+  return CRR.C0 * C_bulk * C_surface * C_cr;
+}
+
+function memoryWeight(C) {
+  return Math.exp(Math.min(C / CRR.omega, 8));
+}
+
+function thermalDisplacement(time, atomIndex) {
+  const p1 = time * THERMAL.frequencies.acoustic + atomIndex * 1.618;
+  const p2 = time * THERMAL.frequencies.optical + atomIndex * 2.414;
+  const p3 = time * THERMAL.frequencies.high + atomIndex * 3.732;
+  const amp = THERMAL.amplitude;
+  return {
+    dx: amp * (Math.sin(p1) * 0.6 + Math.sin(p2 * 1.3) * 0.4),
+    dy: amp * (Math.sin(p2) * 0.6 + Math.sin(p3 * 1.1) * 0.4),
+    dz: amp * (Math.sin(p3) * 0.6 + Math.sin(p1 * 0.9) * 0.4)
+  };
+}
+
+function regenerationForce(displacement, coherence) {
+  const k = memoryWeight(coherence) * 0.1 / CRR.omega;
+  const mag = Math.sqrt(displacement.dx**2 + displacement.dy**2 + displacement.dz**2) || 0.0001;
+  const fMag = k * mag;
+  return {
+    fx: -displacement.dx / mag * fMag,
+    fy: -displacement.dy / mag * fMag,
+    fz: -displacement.dz / mag * fMag,
+    magnitude: Math.min(fMag, 1)
+  };
+}
+
+function electronicCoherence(atom, time) {
+  if (!atom.isChromium) return null;
+  const phase = time * 5 + atom.index * 0.7;
+  const fluorescence = Math.pow(Math.max(0, Math.sin(time * 8 + atom.index)), 4);
+  return { excitation: (Math.sin(phase) + 1) / 2, fluorescence };
+}
+
+// Geometry
+function isInsideGem(x, y, z) {
+  const r = Math.sqrt((x/GEM_CUT.girdleRX)**2 + (z/GEM_CUT.girdleRZ)**2);
+  if (y > GEM_CUT.crownHeight || y < -GEM_CUT.pavilionDepth) return false;
+  if (y > 0) return r <= 1 - (y / GEM_CUT.crownHeight) * (1 - GEM_CUT.tableRatio);
+  return r <= 1 + y / GEM_CUT.pavilionDepth;
+}
+
+function getSurfaceDistance(x, y, z) {
+  const r = Math.sqrt((x/GEM_CUT.girdleRX)**2 + (z/GEM_CUT.girdleRZ)**2);
+  let minD = Infinity;
+  if (y > 0) {
+    const maxR = 1 - (y / GEM_CUT.crownHeight) * (1 - GEM_CUT.tableRatio);
+    minD = Math.min(minD, Math.abs(r - maxR), GEM_CUT.crownHeight - y);
+  } else {
+    const maxR = 1 + y / GEM_CUT.pavilionDepth;
+    minD = Math.min(minD, Math.abs(r - maxR), y + GEM_CUT.pavilionDepth);
+  }
+  return Math.max(0, minD);
+}
+
+function generateLattice(zoom) {
+  const atoms = [], bonds = [];
+  const detail = Math.min(35, Math.max(3, Math.floor(zoom * 2.2)));
+  const a = 1 / detail;
+  const cRatio = RUBY.c_ang / RUBY.a_ang;
+  const range = Math.ceil(1.4 / a);
+  const regionSize = Math.min(2.2, 3 / zoom);
+
+  for (let i = -range; i <= range; i++) {
+    for (let j = -range; j <= range; j++) {
+      for (let k = -range; k <= range; k++) {
+        // Aluminum/Chromium
+        for (const b of CORUNDUM_BASIS.aluminum) {
+          const hx = (i + b[0]) * a + (j % 2) * a * 0.5;
+          const hy = (k + b[2]) * a * cRatio * 0.28 - 0.12;
+          const hz = (j + b[1]) * a * 0.866;
+          
+          if (zoom > 5 && Math.sqrt(hx*hx + hy*hy + hz*hz) > regionSize) continue;
+          if (!isInsideGem(hx, hy, hz)) continue;
+          
+          const surfD = getSurfaceDistance(hx, hy, hz);
+          const isCr = Math.random() < CRR.chromiumFraction;
+          const C = coherenceField(hx, hy, hz, surfD, isCr);
+          
+          atoms.push({
+            x: hx, y: hy, z: hz,
+            type: isCr ? 'Cr' : 'Al',
+            isChromium: isCr,
+            coherence: C,
+            memoryWeight: memoryWeight(C),
+            isSurface: surfD < a * 1.5,
+            index: atoms.length
+          });
+        }
+        
+        // Oxygen
+        for (const b of CORUNDUM_BASIS.oxygen) {
+          const hx = (i + b[0]) * a + (j % 2) * a * 0.5;
+          const hy = (k + b[2]) * a * cRatio * 0.28 - 0.12;
+          const hz = (j + b[1]) * a * 0.866;
+          
+          if (zoom > 5 && Math.sqrt(hx*hx + hy*hy + hz*hz) > regionSize) continue;
+          if (!isInsideGem(hx, hy, hz)) continue;
+          
+          const surfD = getSurfaceDistance(hx, hy, hz);
+          const C = coherenceField(hx, hy, hz, surfD, false);
+          
+          atoms.push({
+            x: hx, y: hy, z: hz,
+            type: 'O',
+            isChromium: false,
+            coherence: C,
+            memoryWeight: memoryWeight(C),
+            isSurface: surfD < a * 1.5,
+            index: atoms.length
+          });
+        }
+      }
+    }
+  }
+  
+  // Generate bonds
+  const bondMax = a * 0.55, bondMin = a * 0.15;
+  for (let i = 0; i < atoms.length; i++) {
+    if (atoms[i].type === 'O') continue;
+    for (let j = 0; j < atoms.length; j++) {
+      if (atoms[j].type !== 'O') continue;
+      const dx = atoms[i].x - atoms[j].x;
+      const dy = atoms[i].y - atoms[j].y;
+      const dz = atoms[i].z - atoms[j].z;
+      const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      if (d > bondMin && d < bondMax) {
+        bonds.push({ i, j, atomI: atoms[i], atomJ: atoms[j], 
+                     coherence: (atoms[i].coherence + atoms[j].coherence) / 2,
+                     isChromiumBond: atoms[i].isChromium });
+      }
+    }
+  }
+  
+  return { atoms, bonds };
+}
+
+function generateFacets() {
+  const facets = [];
+  const { crownHeight, pavilionDepth, tableRatio, girdleRX, girdleRZ } = GEM_CUT;
+  const segs = 16;
+  
+  // Table
+  const tableV = [];
+  for (let i = 0; i < segs; i++) {
+    const ang = (i / segs) * Math.PI * 2;
+    tableV.push([tableRatio * girdleRX * Math.cos(ang), crownHeight, tableRatio * girdleRZ * Math.sin(ang)]);
+  }
+  facets.push({ verts: tableV, type: 'table' });
+  
+  // Crown
+  for (let i = 0; i < segs; i++) {
+    const a1 = (i / segs) * Math.PI * 2;
+    const a2 = ((i + 1) / segs) * Math.PI * 2;
+    const aM = ((i + 0.5) / segs) * Math.PI * 2;
+    const mR = 0.75;
+    
+    facets.push({ verts: [
+      [tableRatio * girdleRX * Math.cos(a1), crownHeight, tableRatio * girdleRZ * Math.sin(a1)],
+      [mR * girdleRX * Math.cos(aM), crownHeight * 0.4, mR * girdleRZ * Math.sin(aM)],
+      [tableRatio * girdleRX * Math.cos(a2), crownHeight, tableRatio * girdleRZ * Math.sin(a2)]
+    ], type: 'crown' });
+    
+    facets.push({ verts: [
+      [mR * girdleRX * Math.cos(aM), crownHeight * 0.4, mR * girdleRZ * Math.sin(aM)],
+      [girdleRX * Math.cos(a1), 0, girdleRZ * Math.sin(a1)],
+      [girdleRX * Math.cos(a2), 0, girdleRZ * Math.sin(a2)]
+    ], type: 'crown' });
+  }
+  
+  // Pavilion
+  for (let i = 0; i < segs; i++) {
+    const a1 = (i / segs) * Math.PI * 2;
+    const a2 = ((i + 1) / segs) * Math.PI * 2;
+    facets.push({ verts: [
+      [girdleRX * Math.cos(a1), 0, girdleRZ * Math.sin(a1)],
+      [0, -pavilionDepth, 0],
+      [girdleRX * Math.cos(a2), 0, girdleRZ * Math.sin(a2)]
+    ], type: 'pavilion' });
+  }
+  
+  // Normals
+  facets.forEach(f => {
+    const v1 = [f.verts[1][0]-f.verts[0][0], f.verts[1][1]-f.verts[0][1], f.verts[1][2]-f.verts[0][2]];
+    const v2 = [f.verts[2][0]-f.verts[0][0], f.verts[2][1]-f.verts[0][1], f.verts[2][2]-f.verts[0][2]];
+    const nx = v1[1]*v2[2] - v1[2]*v2[1];
+    const ny = v1[2]*v2[0] - v1[0]*v2[2];
+    const nz = v1[0]*v2[1] - v1[1]*v2[0];
+    const len = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+    f.normal = [nx/len, ny/len, nz/len];
+    f.center = [
+      f.verts.reduce((s,v) => s+v[0], 0) / f.verts.length,
+      f.verts.reduce((s,v) => s+v[1], 0) / f.verts.length,
+      f.verts.reduce((s,v) => s+v[2], 0) / f.verts.length
+    ];
+  });
+  
+  return facets;
+}
+
+// Rendering
+const LIGHTS = [
+  { x: 0.5, y: 0.8, z: 0.6, r: 255, g: 250, b: 245, intensity: 1.0 },
+  { x: -0.5, y: 0.4, z: 0.5, r: 255, g: 220, b: 220, intensity: 0.5 },
+  { x: 0.2, y: -0.6, z: 0.4, r: 255, g: 240, b: 230, intensity: 0.35 }
+].map(l => { const len = Math.sqrt(l.x*l.x+l.y*l.y+l.z*l.z); return {...l, x:l.x/len, y:l.y/len, z:l.z/len}; });
+
+const canvas = document.getElementById('ruby');
+const ctx = canvas.getContext('2d');
+
+let rotation = { x: 0.2, y: 0 };
+let targetRotation = { x: 0.2, y: 0 };
+let zoom = 1;
+let isDragging = false;
+let lastMouse = { x: 0, y: 0 };
+let facets = generateFacets();
+let lattice = { atoms: [], bonds: [] };
+let lastZoomLevel = 0;
+
+const physics = {
+  thermalRuptures: false,
+  chromiumDopants: false,
+  electronicTransitions: false,
+  coherenceField: false,
+  bonds: false,
+  regenerationForces: false
+};
+
+const checkboxes = {
+  thermalRuptures: document.getElementById('thermalRuptures'),
+  chromiumDopants: document.getElementById('chromiumDopants'),
+  electronicTransitions: document.getElementById('electronicTransitions'),
+  coherenceField: document.getElementById('coherenceField'),
+  bonds: document.getElementById('bonds'),
+  regenerationForces: document.getElementById('regenerationForces')
+};
+
+Object.keys(checkboxes).forEach(key => {
+  checkboxes[key].checked = physics[key];
+  checkboxes[key].addEventListener('change', e => { physics[key] = e.target.checked; updateLegend(); });
+});
+
+const ampSlider = document.getElementById('amplificationSlider');
+const ampValue = document.getElementById('ampValue');
+ampSlider.addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  THERMAL.amplification = v;
+  ampValue.textContent = v + '×';
+  ampValue.style.color = v <= 5 ? '#88cc88' : v <= 30 ? '#cccc44' : '#cc6666';
+});
+
+function formatNum(n) {
+  if (n >= 1e21) return (n/1e21).toFixed(1) + '×10²¹';
+  if (n >= 1e18) return (n/1e18).toFixed(1) + '×10¹⁸';
+  if (n >= 1e15) return (n/1e15).toFixed(1) + '×10¹⁵';
+  if (n >= 1e12) return (n/1e12).toFixed(1) + '×10¹²';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + '×10⁹';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + '×10⁶';
+  return n.toLocaleString();
+}
+
+function updateUI(visAtoms) {
+  const isAtomic = zoom >= 3;
+  const scale = zoom < 3 ? 'MACROSCOPIC' : zoom < 10 ? 'MESOSCOPIC' : zoom < 50 ? 'NANOSCALE' : 'ATOMIC';
+  document.getElementById('scaleName').textContent = scale;
+  document.getElementById('zoomLevel').textContent = zoom.toFixed(1);
+  document.getElementById('renderedAtoms').textContent = visAtoms.toLocaleString();
+  document.getElementById('compression').textContent = formatNum(Math.round(2e22 / Math.max(1, visAtoms))) + ':1';
+  document.querySelectorAll('.toggle-item').forEach(item => {
+    item.classList.toggle('disabled', !isAtomic);
+  });
+  document.getElementById('atomicHint').style.display = isAtomic ? 'none' : 'block';
+}
+
+function updateLegend() {
+  const legend = document.getElementById('activeLegend');
+  const items = document.getElementById('legendItems');
+  const active = [];
+  if (physics.chromiumDopants) active.push({ name: 'Cr³⁺ dopants', color: '#ff2222' });
+  if (physics.electronicTransitions) active.push({ name: 'Electronic coherence', color: '#ff4444' });
+  if (physics.coherenceField) active.push({ name: 'C(x) field', color: '#ff6688' });
+  if (physics.bonds) active.push({ name: 'Al-O bonds', color: '#88aaff' });
+  if (physics.regenerationForces) active.push({ name: 'Regen. forces', color: '#ffaa44' });
+  
+  if (active.length > 0 && zoom >= 3) {
+    legend.style.display = 'block';
+    items.innerHTML = active.map(o => `<div class="legend-item"><div class="legend-color" style="background:${o.color}"></div>${o.name}</div>`).join('');
+  } else {
+    legend.style.display = 'none';
+  }
+}
+
+canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('mousemove', e => {
+  if (isDragging) {
+    targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x + (e.clientY - lastMouse.y) * 0.006));
+    targetRotation.y += (e.clientX - lastMouse.x) * 0.006;
+    lastMouse = { x: e.clientX, y: e.clientY };
+  }
+});
+canvas.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('mouseleave', () => isDragging = false);
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(0.5, Math.min(100, zoom * (e.deltaY > 0 ? 0.9 : 1.1))); }, { passive: false });
+
+function render(time) {
+  const t = time * 0.001;
+  
+  rotation.x += (targetRotation.x - rotation.x) * 0.08;
+  rotation.y += (targetRotation.y - rotation.y) * 0.08;
+  if (!isDragging) targetRotation.y += 0.002;
+  
+  const cosX = Math.cos(rotation.x), sinX = Math.sin(rotation.x);
+  const cosY = Math.cos(rotation.y), sinY = Math.sin(rotation.y);
+  const width = canvas.width, height = canvas.height;
+  const cx = width / 2, cy = height / 2;
+  const scale = 200 * zoom, perspective = 4;
+  
+  const zoomLvl = Math.floor(Math.log2(zoom + 1) * 2);
+  if (zoomLvl !== lastZoomLevel) { lastZoomLevel = zoomLvl; lattice = generateLattice(zoom); }
+  
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, height);
+  grad.addColorStop(0, '#0a0406'); grad.addColorStop(0.5, '#100608'); grad.addColorStop(1, '#0a0405');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+  
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(280, 140 * zoom));
+  glow.addColorStop(0, 'rgba(180,60,80,0.2)'); glow.addColorStop(0.6, 'rgba(140,40,60,0.08)'); glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  
+  const atomThresh = 3, blendZone = 2;
+  const atomOpacity = zoom < atomThresh ? 0 : zoom < atomThresh + blendZone ? (zoom - atomThresh) / blendZone : 1;
+  const facetOpacity = zoom > atomThresh + blendZone ? 0 : zoom > atomThresh ? 1 - (zoom - atomThresh) / blendZone : 1;
+  
+  const project = (x, y, z) => {
+    const y1 = y * cosX - z * sinX, z1 = y * sinX + z * cosX;
+    const x2 = x * cosY + z1 * sinY, z2 = -x * sinY + z1 * cosY;
+    const f = perspective / (perspective + z2 + 1);
+    return { x: x2 * scale * f + cx, y: y1 * scale * f + cy, z: z2, factor: f };
+  };
+  
+  const rotNorm = (nx, ny, nz) => {
+    const ny1 = ny * cosX - nz * sinX, nz1 = ny * sinX + nz * cosX;
+    const nx2 = nx * cosY + nz1 * sinY, nz2 = -nx * sinY + nz1 * cosY;
+    return { nx: nx2, ny: ny1, nz: nz2 };
+  };
+  
+  // Render facets
+  if (facetOpacity > 0) {
+    ctx.globalAlpha = facetOpacity;
+    
+    const projF = facets.map((f, idx) => {
+      const projV = f.verts.map(v => project(v[0], v[1], v[2]));
+      const projC = project(f.center[0], f.center[1], f.center[2]);
+      const { nx, ny, nz } = rotNorm(f.normal[0], f.normal[1], f.normal[2]);
+      
+      let spec = 0;
+      let cR = 120, cG = 20, cB = 30;
+      
+      for (const light of LIGHTS) {
+        const diff = Math.max(0, nx*light.x + ny*light.y + nz*light.z);
+        const hx = light.x, hy = light.y, hz = light.z + 1;
+        const hLen = Math.sqrt(hx*hx + hy*hy + hz*hz);
+        spec += Math.pow(Math.max(0, (nx*hx + ny*hy + nz*hz) / hLen), 50) * light.intensity;
+        cR += diff * 180 * light.intensity * 0.4;
+        cG += diff * 40 * light.intensity * 0.2;
+        cB += diff * 50 * light.intensity * 0.2;
+      }
+      
+      const fres = Math.pow(1 - Math.abs(nz), 3) * 0.5 + 0.5;
+      cR += spec * 200 * fres; cG += spec * 80 * fres; cB += spec * 100 * fres;
+      cR += 40 * fres;
+      
+      return { verts: projV, z: projC.z, color: `rgb(${Math.min(255,cR)|0},${Math.min(255,cG)|0},${Math.min(255,cB)|0})`, spec, fres };
+    });
+    
+    projF.sort((a, b) => a.z - b.z);
+    
+    for (const f of projF) {
+      ctx.beginPath();
+      ctx.moveTo(f.verts[0].x, f.verts[0].y);
+      for (let i = 1; i < f.verts.length; i++) ctx.lineTo(f.verts[i].x, f.verts[i].y);
+      ctx.closePath();
+      ctx.fillStyle = f.color;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,200,200,${0.1 + f.spec * 0.15})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+    
+    ctx.globalCompositeOperation = 'lighter';
+    for (const f of projF) {
+      if (f.spec > 0.25) {
+        const centerX = f.verts.reduce((s, v) => s + v.x, 0) / f.verts.length;
+        const centerY = f.verts.reduce((s, v) => s + v.y, 0) / f.verts.length;
+        const g = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 25);
+        g.addColorStop(0, `rgba(255,220,230,${f.spec * 0.5})`);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(f.verts[0].x, f.verts[0].y);
+        for (let i = 1; i < f.verts.length; i++) ctx.lineTo(f.verts[i].x, f.verts[i].y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  
+  // Render atoms
+  if (atomOpacity > 0 && lattice.atoms.length > 0) {
+    ctx.globalAlpha = atomOpacity;
+    const { atoms, bonds } = lattice;
+    const projected = [];
+    
+    for (const atom of atoms) {
+      let ax = atom.x, ay = atom.y, az = atom.z;
+      let disp = { dx: 0, dy: 0, dz: 0 };
+      
+      if (physics.thermalRuptures) {
+        disp = thermalDisplacement(t, atom.index);
+        ax += disp.dx; ay += disp.dy; az += disp.dz;
+      }
+      
+      const p = project(ax, ay, az);
+      if (p.x < -50 || p.x > width + 50 || p.y < -50 || p.y > height + 50) continue;
+      
+      let cR, cG, cB;
+      if (atom.type === 'O') { cR = 60; cG = 80; cB = 140; }
+      else if (atom.isChromium) { cR = 200; cG = 40; cB = 60; }
+      else { cR = 140; cG = 140; cB = 150; }
+      
+      let spec = 0.3;
+      
+      if (physics.chromiumDopants && atom.isChromium) {
+        cR = 255; cG = 50 + Math.sin(t * 3 + atom.index) * 30; cB = 50;
+      }
+      
+      if (physics.electronicTransitions && atom.isChromium) {
+        const elec = electronicCoherence(atom, t);
+        if (elec) { cR = 255; cG = 50 + elec.fluorescence * 100; cB = 50; spec += elec.fluorescence * 0.5; }
+      }
+      
+      if (physics.coherenceField) {
+        const cI = atom.coherence;
+        cR = cR * 0.4 + cI * 200 * 0.6;
+        cG = cG * 0.4 + cI * 80 * 0.6;
+        cB = cB * 0.4 + cI * 100 * 0.6;
+      }
+      
+      const baseSize = atom.type === 'O' ? 2.8 : atom.isChromium ? 3.2 : 2.5;
+      const size = baseSize * p.factor * Math.min(zoom * 0.35, 3.5);
+      const regen = physics.regenerationForces && physics.thermalRuptures ? regenerationForce(disp, atom.coherence) : null;
+      
+      projected.push({
+        x: p.x, y: p.y, z: p.z,
+        size: Math.max(1.5, size),
+        r: Math.min(255, Math.max(0, cR)),
+        g: Math.min(255, Math.max(0, cG)),
+        b: Math.min(255, Math.max(0, cB)),
+        spec, alpha: 0.75 + atom.coherence * 0.25,
+        isChromium: atom.isChromium, type: atom.type,
+        disp, regen, factor: p.factor
+      });
+    }
+    
+    projected.sort((a, b) => a.z - b.z);
+    
+    // Bonds
+    if (physics.bonds && bonds.length > 0) {
+      ctx.globalAlpha = atomOpacity * 0.6;
+      
+      const projB = bonds.map(bond => {
+        let x1 = bond.atomI.x, y1 = bond.atomI.y, z1 = bond.atomI.z;
+        let x2 = bond.atomJ.x, y2 = bond.atomJ.y, z2 = bond.atomJ.z;
+        if (physics.thermalRuptures) {
+          const d1 = thermalDisplacement(t, bond.atomI.index);
+          const d2 = thermalDisplacement(t, bond.atomJ.index);
+          x1 += d1.dx; y1 += d1.dy; z1 += d1.dz;
+          x2 += d2.dx; y2 += d2.dy; z2 += d2.dz;
+        }
+        const p1 = project(x1, y1, z1), p2 = project(x2, y2, z2);
+        return { p1, p2, avgZ: (p1.z + p2.z) / 2, isCr: bond.isChromiumBond, coh: bond.coherence };
+      });
+      
+      projB.sort((a, b) => a.avgZ - b.avgZ);
+      
+      for (const b of projB) {
+        ctx.strokeStyle = b.isCr && physics.chromiumDopants ? 
+          `rgba(255,100,100,${0.4 + b.coh * 0.4})` : 
+          `rgba(100,150,220,${0.3 + b.coh * 0.4})`;
+        ctx.lineWidth = 1.5 * b.p1.factor;
+        ctx.beginPath();
+        ctx.moveTo(b.p1.x, b.p1.y);
+        ctx.lineTo(b.p2.x, b.p2.y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = atomOpacity;
+    }
+    
+    // Atoms glow
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of projected) {
+      if (p.spec > 0.15 || (p.isChromium && physics.chromiumDopants)) {
+        const glowCol = p.isChromium && physics.chromiumDopants ?
+          `rgba(255,80,80,${p.spec * 0.4 + 0.2})` :
+          `rgba(${p.r|0},${p.g|0},${p.b|0},${p.spec * 0.25})`;
+        ctx.fillStyle = glowCol;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (p.isChromium && physics.chromiumDopants ? 4 : 2.5), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Atoms solid
+    ctx.globalCompositeOperation = 'source-over';
+    for (const p of projected) {
+      ctx.fillStyle = `rgba(${p.r|0},${p.g|0},${p.b|0},${p.alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Highlights
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of projected) {
+      if (p.spec > 0.2) {
+        ctx.fillStyle = `rgba(255,240,240,${p.spec * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(p.x - p.size * 0.25, p.y - p.size * 0.25, p.size * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Regeneration forces
+    if (physics.regenerationForces && physics.thermalRuptures) {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = atomOpacity * 0.9;
+      
+      for (const p of projected) {
+        if (p.regen && p.regen.magnitude > 0.02) {
+          const fx = p.regen.fx, fy = p.regen.fy, fz = p.regen.fz;
+          const fy1 = fy * cosX - fz * sinX;
+          const fx2 = fx * cosY + (fy * sinX + fz * cosX) * sinY;
+          
+          const arrLen = p.regen.magnitude * 70 * p.factor;
+          const endX = p.x + fx2 * arrLen, endY = p.y + fy1 * arrLen;
+          const alpha = Math.min(1, p.regen.magnitude * 3);
+          
+          ctx.strokeStyle = `rgba(255,160,80,${alpha})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+          
+          const ang = Math.atan2(endY - p.y, endX - p.x);
+          ctx.fillStyle = `rgba(255,160,80,${alpha})`;
+          ctx.beginPath();
+          ctx.moveTo(endX, endY);
+          ctx.lineTo(endX - 5 * Math.cos(ang - 0.4), endY - 5 * Math.sin(ang - 0.4));
+          ctx.lineTo(endX - 5 * Math.cos(ang + 0.4), endY - 5 * Math.sin(ang + 0.4));
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    }
+    
+    updateUI(projected.length);
+    updateLegend();
+  } else {
+    updateUI(0);
+  }
+  
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  
+  // Caustics
+  if (facetOpacity > 0.5) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2 + t * 0.3;
+      const len = (40 + Math.sin(t * 1.2 + i) * 20) * Math.min(zoom, 2);
+      const g = ctx.createLinearGradient(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len * 0.5);
+      g.addColorStop(0, `rgba(255,100,120,${0.08 * facetOpacity})`);
+      g.addColorStop(1, 'transparent');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len * 0.5);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  
+  requestAnimationFrame(render);
+}
+
+updateLegend();
+requestAnimationFrame(render);
+  </script>
+</body>
+</html>
