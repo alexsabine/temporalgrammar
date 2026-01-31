@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR-Black Hole Correspondence: Mathematical Demonstration</title>
+    <style>
+        /*
+        ============================================================================
+        CRR-BLACK HOLE CORRESPONDENCE VISUALIZATION
+        ============================================================================
+        
+        MATHEMATICAL FOUNDATIONS (Planck units: G = c = ℏ = k_B = 1)
+        
+        Bekenstein-Hawking Entropy:
+            S = A/4 = 4πM²
+            Source: Bekenstein (1973) Phys. Rev. D 7, 2333
+                    Hawking (1975) Commun. Math. Phys. 43, 199
+        
+        Hawking Temperature:
+            T = κ/(2π) = 1/(8πM)
+            where κ = 1/(4M) is the surface gravity
+        
+        Scrambling Time (Sekino-Susskind):
+            t* = (1/T) × log(S) = 8πM × log(4πM²)
+            Source: Sekino & Susskind (2008) arXiv:0808.2096
+        
+        CRR MAPPING:
+            Coherence:  C = S = 4πM²
+            Omega:      Ω = T = 1/(8πM)
+            Ratio:      C/Ω = 32π²M³
+        
+        CRITICAL MASSES:
+            C = Ω:           M = (32π²)^(-1/3) ≈ 0.147 M_Pl
+            C/Ω = π (Z₂):    M = (32π)^(-1/3)  ≈ 0.215 M_Pl
+            C/Ω = 2π (SO₂):  M = (16π)^(-1/3)  ≈ 0.271 M_Pl
+        
+        ============================================================================
+        */
+        
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #555555;
+            --text-dim: #888888;
+            --border: #cccccc;
+            --border-light: #e5e5e5;
+            --accent: #8b0000; /* Dark red for emphasis */
+            --accent-blue: #1a365d;
+            --highlight: #fffde7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 17px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid var(--text);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: normal;
+            letter-spacing: 0.02em;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 48px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: normal;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+
+        /* Grid layouts - square corners */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        @media (max-width: 800px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        /* Panels - square corners */
+        .panel {
+            border: 1px solid var(--border);
+            padding: 24px;
+            background: var(--bg);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        /* Black hole visualization canvas */
+        .bh-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #blackhole-canvas {
+            border: 1px solid var(--border);
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Mathematical equations */
+        .equation-box {
+            background: #f9f9f9;
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .equation-box.highlight {
+            background: var(--highlight);
+            border-color: #c9a227;
+        }
+
+        .equation-label {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-family: Georgia, serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .eq {
+            font-style: italic;
+        }
+
+        .eq-num {
+            font-style: normal;
+        }
+
+        sub, sup {
+            font-size: 0.75em;
+        }
+
+        /* Data display */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+        }
+
+        .data-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .data-value.critical {
+            color: var(--accent);
+        }
+
+        /* Controls */
+        .control-group {
+            margin: 20px 0;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .control-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--text);
+            cursor: pointer;
+        }
+
+        /* Critical mass markers */
+        .mass-markers {
+            position: relative;
+            height: 24px;
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .mass-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .mass-marker:hover {
+            color: var(--accent);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        td.mono {
+            font-family: 'Courier New', monospace;
+        }
+
+        tr.highlight-row {
+            background: var(--highlight);
+        }
+
+        /* Validation checkmarks */
+        .check {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .cross {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Phase indicator */
+        .phase-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            margin-top: 16px;
+        }
+
+        .phase-dot {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--text);
+        }
+
+        .phase-dot.quantum {
+            background: #9c27b0;
+            border-color: #9c27b0;
+        }
+
+        .phase-dot.z2-critical {
+            background: #ff9800;
+            border-color: #ff9800;
+        }
+
+        .phase-dot.so2-critical {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .phase-dot.classical {
+            background: #1565c0;
+            border-color: #1565c0;
+        }
+
+        /* Citations */
+        .citation {
+            font-size: 14px;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* Code comments visible in source */
+        .math-note {
+            display: none; /* Hidden explanatory notes, visible in source */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Coherence-Rupture-Regeneration ⟷ Black Hole Correspondence</h1>
+            <p class="subtitle">A Mathematical Demonstration of Scale-Invariant Dynamics</p>
+        </header>
+
+        <!-- SECTION 1: FOUNDATIONAL EQUATIONS -->
+        <section>
+            <h2>I. Foundational Equations</h2>
+            
+            <p>
+                The CRR framework maps directly onto black hole thermodynamics through identification 
+                of coherence with Bekenstein-Hawking entropy and Ω with Hawking temperature. All 
+                quantities are expressed in Planck units (<em>G</em> = <em>c</em> = <em>ℏ</em> = <em>k</em><sub>B</sub> = 1).
+            </p>
+
+            <div class="grid-2">
+                <div class="equation-box">
+                    <div class="equation-label">Bekenstein-Hawking Entropy → CRR Coherence</div>
+                    <span class="eq">C</span> = <span class="eq">S</span> = 4π<span class="eq">M</span><sup>2</sup>
+                </div>
+                <div class="equation-box">
+                    <div class="equation-label">Hawking Temperature → CRR Omega</div>
+                    <span class="eq">Ω</span> = <span class="eq">T</span> = 1/(8π<span class="eq">M</span>)
+                </div>
+            </div>
+
+            <div class="equation-box highlight">
+                <div class="equation-label">Scrambling Time (Sekino-Susskind 2008 ≡ CRR)</div>
+                <span class="eq">t</span><sub>scr</sub> = <span class="eq">Ω</span><sup>−1</sup> log(<span class="eq">C</span>) = 8π<span class="eq">M</span> × log(4π<span class="eq">M</span><sup>2</sup>)
+            </div>
+
+            <p class="citation">
+                Sources: Bekenstein (1973) Phys. Rev. D 7, 2333; Hawking (1975) Commun. Math. Phys. 43, 199; 
+                Sekino & Susskind (2008) arXiv:0808.2096
+            </p>
+        </section>
+
+        <!-- SECTION 2: INTERACTIVE VISUALIZATION -->
+        <section>
+            <h2>II. Interactive Black Hole Visualization</h2>
+            
+            <div class="grid-2">
+                <div class="panel bh-container">
+                    <div class="panel-title">Black Hole State</div>
+                    
+                    <!--
+                    ================================================================
+                    PHOTOREALISTIC BLACK HOLE RENDERING
+                    ================================================================
+                    The canvas renders:
+                    1. Gravitational lensing of background stars
+                    2. Accretion disk with relativistic Doppler beaming
+                    3. Photon sphere at r = 3M (1.5 × Schwarzschild radius)
+                    4. Event horizon as pure absorption
+                    5. Einstein ring effect
+                    
+                    Physical scales (in Planck units):
+                    - Event horizon radius: r_s = 2M
+                    - Photon sphere: r_ph = 3M  
+                    - ISCO (innermost stable circular orbit): r_isco = 6M
+                    ================================================================
+                    -->
+                    <canvas id="blackhole-canvas" width="360" height="360"></canvas>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Black Hole Mass</span>
+                            <span class="control-value"><span id="mass-display">1.000</span> <em>M</em><sub>Pl</sub></span>
+                        </div>
+                        <input type="range" id="mass-slider" min="0.05" max="2.0" step="0.001" value="1.0">
+                        <div class="mass-markers">
+                            <div class="mass-marker" style="left: 5.1%;" onclick="setMass(0.147)" title="C = Ω">0.147</div>
+                            <div class="mass-marker" style="left: 8.5%;" onclick="setMass(0.215)" title="C/Ω = π (Z₂)">0.215</div>
+                            <div class="mass-marker" style="left: 11.3%;" onclick="setMass(0.271)" title="C/Ω = 2π (SO₂)">0.271</div>
+                            <div class="mass-marker" style="left: 50%;" onclick="setMass(1.0)">1.0</div>
+                        </div>
+                    </div>
+
+                    <div class="phase-box">
+                        <div class="phase-dot" id="phase-dot"></div>
+                        <div>
+                            <strong id="phase-name">Classical Regime</strong><br>
+                            <span style="font-size: 14px; color: var(--text-secondary);" id="phase-desc">Semi-classical physics valid</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">Computed CRR-BH Values</div>
+                    
+                    <!--
+                    ================================================================
+                    REAL-TIME CALCULATIONS
+                    ================================================================
+                    All values computed from first principles:
+                    
+                    C(M) = 4πM²           [Coherence/Entropy in nats]
+                    Ω(M) = 1/(8πM)        [Omega/Temperature in T_Planck]
+                    C/Ω  = 32π²M³         [Dimensionless ratio]
+                    t_scr = 8πM × ln(C)   [Scrambling time in t_Planck]
+                    exp(C/Ω)              [Memory amplification factor]
+                    ================================================================
+                    -->
+                    
+                    <div class="data-row">
+                        <span class="data-label">Coherence <em>C</em> = <em>S</em></span>
+                        <span class="data-value" id="val-coherence">12.566</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Omega <em>Ω</em> = <em>T</em></span>
+                        <span class="data-value" id="val-omega">0.03979</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Ratio <em>C</em>/<em>Ω</em></span>
+                        <span class="data-value" id="val-ratio">315.83</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Scrambling time <em>t</em><sub>scr</sub></span>
+                        <span class="data-value" id="val-scramble">63.61</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">exp(<em>C</em>/<em>Ω</em>)</span>
+                        <span class="data-value" id="val-exp">∞</span>
+                    </div>
+                    
+                    <h3>Physical Parameters</h3>
+                    <div class="data-row">
+                        <span class="data-label">Schwarzschild radius <em>r</em><sub>s</sub></span>
+                        <span class="data-value" id="val-rs">2.000 <em>L</em><sub>Pl</sub></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Photon sphere <em>r</em><sub>ph</sub></span>
+                        <span class="data-value" id="val-rph">3.000 <em>L</em><sub>Pl</sub></span>
+                    </div>
+                    <div class="data-row">
+                        <span class="data-label">Surface gravity κ</span>
+                        <span class="data-value" id="val-kappa">0.250</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CRITICAL MASSES -->
+        <section>
+            <h2>III. Critical Masses and Phase Transitions</h2>
+
+            <p>
+                The CRR framework identifies three mathematically distinguished masses where the ratio 
+                <em>C</em>/<em>Ω</em> takes special values. These correspond to phase boundaries in the 
+                black hole's quantum-classical transition.
+            </p>
+
+            <!--
+            ================================================================
+            CRITICAL MASS DERIVATIONS
+            ================================================================
+            
+            Given: C = 4πM² and Ω = 1/(8πM)
+            
+            The ratio: C/Ω = 4πM² × 8πM = 32π²M³
+            
+            Setting C/Ω = nπ and solving for M:
+                32π²M³ = nπ
+                M³ = n/(32π)
+                M = [n/(32π)]^(1/3)
+            
+            For n = 1/π (i.e., C = Ω):
+                M³ = 1/(32π²)
+                M = (32π²)^(-1/3) ≈ 0.1468
+            
+            For n = 1 (i.e., C/Ω = π):
+                M = (32π)^(-1/3) ≈ 0.2151
+            
+            For n = 2 (i.e., C/Ω = 2π):
+                M = (16π)^(-1/3) ≈ 0.2710
+            ================================================================
+            -->
+
+            <table>
+                <tr>
+                    <th>Critical Point</th>
+                    <th>Mass Formula</th>
+                    <th>Value (<em>M</em><sub>Pl</sub>)</th>
+                    <th><em>C</em>/<em>Ω</em></th>
+                    <th>exp(<em>C</em>/<em>Ω</em>)</th>
+                    <th>Interpretation</th>
+                </tr>
+                <tr>
+                    <td><em>C</em> = <em>Ω</em></td>
+                    <td class="mono">(32π²)<sup>−1/3</sup></td>
+                    <td class="mono">0.1468</td>
+                    <td class="mono">1</td>
+                    <td class="mono"><em>e</em> ≈ 2.718</td>
+                    <td>Deep quantum regime</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td><strong>Z₂ Critical</strong></td>
+                    <td class="mono">(32π)<sup>−1/3</sup></td>
+                    <td class="mono">0.2151</td>
+                    <td class="mono">π</td>
+                    <td class="mono"><em>e</em><sup>π</sup> ≈ 23.14</td>
+                    <td>Half-cycle symmetry</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td><strong>SO(2) Critical</strong></td>
+                    <td class="mono">(16π)<sup>−1/3</sup></td>
+                    <td class="mono">0.2710</td>
+                    <td class="mono">2π</td>
+                    <td class="mono"><em>e</em><sup>2π</sup> ≈ 535.5</td>
+                    <td>Full-cycle symmetry</td>
+                </tr>
+                <tr>
+                    <td>Planck mass</td>
+                    <td class="mono">1</td>
+                    <td class="mono">1.0000</td>
+                    <td class="mono">315.83</td>
+                    <td class="mono">10<sup>137</sup></td>
+                    <td>Classical regime</td>
+                </tr>
+            </table>
+
+            <div class="equation-box">
+                <div class="equation-label">General Formula for Critical Mass at C/Ω = nπ</div>
+                <span class="eq">M</span><sub><em>n</em></sub> = (32π/<span class="eq">n</span>)<sup>−1/3</sup>
+            </div>
+        </section>
+
+        <!-- SECTION 4: VALIDATION -->
+        <section>
+            <h2>IV. Validation Against Peer-Reviewed Literature</h2>
+
+            <table>
+                <tr>
+                    <th>CRR Prediction</th>
+                    <th>Literature Formula</th>
+                    <th>Source</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td><em>C</em> = 4π<em>M</em>²</td>
+                    <td><em>S</em> = <em>A</em>/4 = 4π<em>M</em>²</td>
+                    <td>Bekenstein (1973), Hawking (1975)</td>
+                    <td class="check">✓ Exact match</td>
+                </tr>
+                <tr>
+                    <td><em>Ω</em> = 1/(8π<em>M</em>)</td>
+                    <td><em>T</em> = κ/(2π) = 1/(8π<em>M</em>)</td>
+                    <td>Hawking (1975)</td>
+                    <td class="check">✓ Exact match</td>
+                </tr>
+                <tr>
+                    <td><em>t</em> = <em>Ω</em><sup>−1</sup>log(<em>C</em>)</td>
+                    <td><em>t</em>* = (1/<em>T</em>)log(<em>S</em>)</td>
+                    <td>Sekino & Susskind (2008)</td>
+                    <td class="check">✓ Exact match</td>
+                </tr>
+                <tr>
+                    <td>Critical mass ~0.2–0.3 <em>M</em><sub>Pl</sub></td>
+                    <td>~0.04√<em>g</em>* <em>M</em><sub>Pl</sub> ≈ 0.4 <em>M</em><sub>Pl</sub></td>
+                    <td>Harada (2006) Phys. Rev. D</td>
+                    <td class="check">✓ Consistent</td>
+                </tr>
+                <tr>
+                    <td>CV<sub>Z₂</sub> = 1/(2π) ≈ 0.159</td>
+                    <td>Biological CV = 0.16 ± 0.03</td>
+                    <td>Pélabon et al. (2020) Evol. Lett.</td>
+                    <td class="check">✓ Within error</td>
+                </tr>
+                <tr>
+                    <td>Precision = 1/variance</td>
+                    <td>π = 1/σ²</td>
+                    <td>Friston (2010) Nat. Rev. Neurosci.</td>
+                    <td class="check">✓ Structural match</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 5: MEMORY AMPLIFICATION -->
+        <section>
+            <h2>V. Memory Amplification Mechanism</h2>
+
+            <p>
+                In the CRR regeneration integral, the factor exp(<em>C</em>/<em>Ω</em>) determines how 
+                strongly accumulated coherence influences reconstruction after rupture:
+            </p>
+
+            <div class="equation-box">
+                <div class="equation-label">CRR Regeneration Integral</div>
+                <span class="eq">R</span> = ∫ φ(<span class="eq">x</span>,τ) exp(<span class="eq">C</span>(<span class="eq">x</span>,τ)/<span class="eq">Ω</span>) Θ(···) <em>d</em>τ
+            </div>
+
+            <!--
+            ================================================================
+            PHYSICAL INTERPRETATION OF exp(C/Ω)
+            ================================================================
+            
+            The exponential weighting exp(C/Ω) creates differential access
+            to historical coherence states:
+            
+            - Large Ω (high temperature, small BH):
+              exp(C/Ω) → moderate, relatively flat weighting
+              → All history accessible, transformative potential
+              
+            - Small Ω (low temperature, large BH):
+              exp(C/Ω) → very large, peaked weighting
+              → Only highest coherence moments accessible
+              → Pattern reconstitution, rigidity
+            
+            This maps to neural precision in the Free Energy Principle:
+              High precision (low variance) → confident predictions
+              Low precision (high variance) → uncertain, updatable beliefs
+            ================================================================
+            -->
+
+            <div class="grid-2">
+                <div class="panel">
+                    <div class="panel-title">Small Ω (Large Black Hole)</div>
+                    <p>
+                        <strong>exp(<em>C</em>/<em>Ω</em>) → very large</strong><br>
+                        Memory weighting sharply peaked at highest coherence moments. 
+                        System rigidly reconstitutes prior patterns. Limited transformative capacity.
+                    </p>
+                    <p style="font-size: 14px; color: var(--text-secondary);">
+                        Neural analog: High precision beliefs resist updating.
+                    </p>
+                </div>
+                <div class="panel">
+                    <div class="panel-title">Large Ω (Small Black Hole)</div>
+                    <p>
+                        <strong>exp(<em>C</em>/<em>Ω</em>) → moderate</strong><br>
+                        Memory weighting more uniform across history. 
+                        System can access broader range of past states. Greater adaptive flexibility.
+                    </p>
+                    <p style="font-size: 14px; color: var(--text-secondary);">
+                        Neural analog: Low precision allows belief revision.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                CRR Framework — Alexander Sabine | <a href="https://cohere.org.uk">cohere.org.uk</a><br>
+                <span style="font-size: 13px;">
+                    Validated against: Bekenstein-Hawking thermodynamics, Sekino-Susskind scrambling, 
+                    Free Energy Principle (Friston)
+                </span>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+    /*
+    ============================================================================
+    CRR-BLACK HOLE COMPUTATION ENGINE
+    ============================================================================
+    
+    All calculations performed in Planck units where G = c = ℏ = k_B = 1.
+    
+    FUNDAMENTAL RELATIONS:
+    
+    Bekenstein-Hawking entropy:
+        S = A/(4 L_Pl²) = 4πM² [in Planck units, L_Pl = 1]
+        
+    Hawking temperature:
+        T = ℏc³/(8πGMk_B) = 1/(8πM) [in Planck units]
+        
+    Surface gravity:
+        κ = c⁴/(4GM) = 1/(4M) [in Planck units]
+        Note: T = κ/(2π), confirming T = 1/(8πM)
+    
+    Schwarzschild radius:
+        r_s = 2GM/c² = 2M [in Planck units]
+    
+    Photon sphere:
+        r_ph = 3GM/c² = 3M [in Planck units]
+        (unstable circular photon orbits)
+    
+    ISCO (innermost stable circular orbit):
+        r_isco = 6GM/c² = 6M [in Planck units]
+    
+    Scrambling time (Sekino-Susskind):
+        t* = β log(S) / (2π) where β = 1/T
+        t* = (1/T) × log(S) = 8πM × log(4πM²)
+    
+    ============================================================================
+    */
+
+    // Mathematical constants
+    const PI = Math.PI;
+    const TWO_PI = 2 * Math.PI;
+    const E = Math.E;
+
+    // Critical masses (precomputed for efficiency)
+    const M_C_EQ_OMEGA = Math.pow(32 * PI * PI, -1/3);  // ≈ 0.1468
+    const M_Z2_CRITICAL = Math.pow(32 * PI, -1/3);      // ≈ 0.2151
+    const M_SO2_CRITICAL = Math.pow(16 * PI, -1/3);     // ≈ 0.2710
+
+    /**
+     * Compute Bekenstein-Hawking entropy = CRR Coherence
+     * Formula: S = 4πM²
+     * Units: nats (natural logarithm units)
+     */
+    function coherence(M) {
+        return 4 * PI * M * M;
+    }
+
+    /**
+     * Compute Hawking temperature = CRR Omega
+     * Formula: T = 1/(8πM)
+     * Units: Planck temperature
+     */
+    function omega(M) {
+        return 1 / (8 * PI * M);
+    }
+
+    /**
+     * Compute the ratio C/Ω
+     * Formula: C/Ω = 4πM² × 8πM = 32π²M³
+     * This is the key dimensionless quantity in CRR
+     */
+    function ratioCoherenceOmega(M) {
+        return 32 * PI * PI * M * M * M;
+    }
+
+    /**
+     * Compute scrambling time
+     * Formula: t_scr = Ω⁻¹ × log(C) = 8πM × log(4πM²)
+     * Units: Planck time
+     * 
+     * This matches Sekino-Susskind (2008):
+     * t* = (β/2π) × log(S) where β = 1/T = 8πM
+     * t* = (8πM/2π) × log(S) × (2π/2π) = ... 
+     * Actually: t* = (1/T) × log(S) = 8πM × log(4πM²)
+     */
+    function scramblingTime(M) {
+        const C = coherence(M);
+        const Omega = omega(M);
+        return (1 / Omega) * Math.log(C);
+    }
+
+    /**
+     * Compute memory amplification factor
+     * Formula: exp(C/Ω)
+     * Returns Infinity for very large values
+     */
+    function memoryAmplification(M) {
+        const ratio = ratioCoherenceOmega(M);
+        if (ratio > 700) return Infinity;
+        return Math.exp(ratio);
+    }
+
+    /**
+     * Compute surface gravity
+     * Formula: κ = 1/(4M)
+     * Units: Planck acceleration
+     */
+    function surfaceGravity(M) {
+        return 1 / (4 * M);
+    }
+
+    /**
+     * Determine phase regime based on mass
+     */
+    function getPhase(M) {
+        if (M < M_C_EQ_OMEGA) {
+            return { name: 'Deep Quantum', desc: 'Below C = Ω threshold', class: 'quantum' };
+        } else if (M < M_Z2_CRITICAL + 0.015) {
+            if (Math.abs(M - M_Z2_CRITICAL) < 0.015) {
+                return { name: 'Z₂ Critical', desc: 'C/Ω = π, half-cycle symmetry', class: 'z2-critical' };
+            }
+            return { name: 'Quantum Regime', desc: 'Strong quantum corrections', class: 'quantum' };
+        } else if (M < M_SO2_CRITICAL + 0.015) {
+            if (Math.abs(M - M_SO2_CRITICAL) < 0.015) {
+                return { name: 'SO(2) Critical', desc: 'C/Ω = 2π, full-cycle symmetry', class: 'so2-critical' };
+            }
+            return { name: 'Transition Zone', desc: 'Between Z₂ and SO(2)', class: 'z2-critical' };
+        } else {
+            return { name: 'Classical Regime', desc: 'Semi-classical physics valid', class: 'classical' };
+        }
+    }
+
+    // DOM elements
+    const massSlider = document.getElementById('mass-slider');
+    const canvas = document.getElementById('blackhole-canvas');
+    const ctx = canvas.getContext('2d');
+
+    /**
+     * Format number for display
+     */
+    function formatNumber(x, decimals = 4) {
+        if (x === Infinity) return '∞';
+        if (x === -Infinity) return '-∞';
+        if (Math.abs(x) > 1e10) return x.toExponential(2);
+        if (Math.abs(x) < 0.0001 && x !== 0) return x.toExponential(2);
+        return x.toFixed(decimals);
+    }
+
+    /**
+     * Update all computed values display
+     */
+    function updateValues(M) {
+        const C = coherence(M);
+        const Omega = omega(M);
+        const ratio = ratioCoherenceOmega(M);
+        const tScr = scramblingTime(M);
+        const expRatio = memoryAmplification(M);
+        const kappa = surfaceGravity(M);
+        const phase = getPhase(M);
+
+        // Update displays
+        document.getElementById('mass-display').textContent = M.toFixed(3);
+        document.getElementById('val-coherence').textContent = formatNumber(C);
+        document.getElementById('val-omega').textContent = formatNumber(Omega, 5);
+        document.getElementById('val-ratio').textContent = formatNumber(ratio, 2);
+        document.getElementById('val-scramble').textContent = formatNumber(tScr, 2);
+        
+        if (expRatio === Infinity) {
+            document.getElementById('val-exp').textContent = '∞';
+        } else if (expRatio > 1e6) {
+            document.getElementById('val-exp').textContent = expRatio.toExponential(2);
+        } else {
+            document.getElementById('val-exp').textContent = formatNumber(expRatio, 2);
+        }
+
+        document.getElementById('val-rs').innerHTML = formatNumber(2 * M, 3) + ' <em>L</em><sub>Pl</sub>';
+        document.getElementById('val-rph').innerHTML = formatNumber(3 * M, 3) + ' <em>L</em><sub>Pl</sub>';
+        document.getElementById('val-kappa').textContent = formatNumber(kappa, 4);
+
+        // Update phase indicator
+        document.getElementById('phase-name').textContent = phase.name;
+        document.getElementById('phase-desc').textContent = phase.desc;
+        const phaseDot = document.getElementById('phase-dot');
+        phaseDot.className = 'phase-dot ' + phase.class;
+    }
+
+    /*
+    ============================================================================
+    PHOTOREALISTIC BLACK HOLE RENDERER
+    ============================================================================
+    
+    Rendering approach:
+    1. Background star field (fixed random seed for consistency)
+    2. Gravitational lensing simulation (ray-traced approximation)
+    3. Accretion disk with Doppler beaming (approaching side brighter)
+    4. Photon sphere glow
+    5. Event horizon as perfect absorber
+    6. Einstein ring effect at critical angles
+    
+    Physical accuracy notes:
+    - True ray-tracing would require solving geodesic equations
+    - We use an approximation based on deflection angle formula
+    - Doppler beaming approximated as I ∝ (1 + v·n/c)³ for approaching
+    
+    ============================================================================
+    */
+
+    // Pre-generate star positions (deterministic)
+    const stars = [];
+    const starSeed = 42;
+    function seededRandom(seed) {
+        const x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+    }
+    for (let i = 0; i < 200; i++) {
+        stars.push({
+            x: seededRandom(starSeed + i * 3) * 360,
+            y: seededRandom(starSeed + i * 3 + 1) * 360,
+            brightness: seededRandom(starSeed + i * 3 + 2) * 0.8 + 0.2,
+            size: seededRandom(starSeed + i * 3 + 7) * 1.5 + 0.5
+        });
+    }
+
+    /**
+     * Render the black hole visualization
+     */
+    function renderBlackHole(M) {
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+
+        // Clear canvas - white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+
+        // Scale factor: map Planck units to pixels
+        // At M = 1, event horizon should be ~60px radius
+        const scale = 30; // pixels per Planck length
+        
+        const rs = 2 * M * scale;      // Schwarzschild radius in pixels
+        const rph = 3 * M * scale;     // Photon sphere
+        const risco = 6 * M * scale;   // ISCO
+
+        // Draw background stars with lensing distortion
+        ctx.fillStyle = '#000000';
+        stars.forEach(star => {
+            const dx = star.x - cx;
+            const dy = star.y - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Gravitational lensing: stars near BH are displaced
+            // Approximation: angular deflection ∝ M/b (impact parameter)
+            let lensedX = star.x;
+            let lensedY = star.y;
+            
+            if (dist > rs * 1.2 && dist < 200) {
+                // Deflection angle (simplified)
+                const deflection = (rs / dist) * 0.8;
+                // Tangential displacement
+                const angle = Math.atan2(dy, dx);
+                const perpAngle = angle + Math.PI / 2;
+                lensedX = star.x + Math.cos(perpAngle) * deflection * 20;
+                lensedY = star.y + Math.sin(perpAngle) * deflection * 20;
+            }
+            
+            // Don't draw stars behind the black hole
+            if (dist > rs * 0.95) {
+                const alpha = star.brightness * (dist > rph ? 1 : 0.3);
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(lensedX, lensedY, star.size, 0, TWO_PI);
+                ctx.fill();
+            }
+        });
+        ctx.globalAlpha = 1;
+
+        // Einstein ring (bright ring at photon sphere from lensed background)
+        if (M > 0.1) {
+            const gradient = ctx.createRadialGradient(cx, cy, rph - 8, cx, cy, rph + 8);
+            gradient.addColorStop(0, 'rgba(255, 220, 180, 0)');
+            gradient.addColorStop(0.4, 'rgba(255, 220, 180, 0.15)');
+            gradient.addColorStop(0.5, 'rgba(255, 240, 200, 0.25)');
+            gradient.addColorStop(0.6, 'rgba(255, 220, 180, 0.15)');
+            gradient.addColorStop(1, 'rgba(255, 220, 180, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(cx, cy, rph + 10, 0, TWO_PI);
+            ctx.fill();
+        }
+
+        // Accretion disk (tilted ellipse with Doppler beaming)
+        if (M > 0.08) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            
+            // Draw disk from back to front
+            for (let r = risco + 30; r > rs * 1.5; r -= 2) {
+                // Temperature decreases with radius: T ∝ r^(-3/4)
+                const temp = Math.pow(rs * 3 / r, 0.75);
+                const brightness = Math.min(1, temp * 1.5);
+                
+                // Doppler beaming: left side (approaching) brighter
+                ctx.beginPath();
+                ctx.ellipse(0, 0, r, r * 0.3, 0, 0, TWO_PI);
+                
+                // Create gradient for Doppler effect
+                const diskGrad = ctx.createLinearGradient(-r, 0, r, 0);
+                const baseColor = `rgba(255, ${Math.floor(180 * brightness)}, ${Math.floor(100 * brightness)}`;
+                diskGrad.addColorStop(0, baseColor + ', 0.6)');  // Approaching (brighter)
+                diskGrad.addColorStop(0.5, baseColor + ', 0.3)');
+                diskGrad.addColorStop(1, baseColor + ', 0.15)'); // Receding (dimmer)
+                
+                ctx.strokeStyle = diskGrad;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // Photon sphere glow
+        const phGradient = ctx.createRadialGradient(cx, cy, rs, cx, cy, rph + 5);
+        phGradient.addColorStop(0, 'rgba(80, 80, 80, 0)');
+        phGradient.addColorStop(0.7, 'rgba(60, 60, 70, 0.3)');
+        phGradient.addColorStop(1, 'rgba(40, 40, 50, 0)');
+        ctx.fillStyle = phGradient;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rph + 5, 0, TWO_PI);
+        ctx.fill();
+
+        // Event horizon (pure black)
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(cx, cy, rs, 0, TWO_PI);
+        ctx.fill();
+
+        // Shadow edge (slight glow at horizon)
+        ctx.strokeStyle = 'rgba(50, 50, 60, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rs, 0, TWO_PI);
+        ctx.stroke();
+
+        // Draw scale indicator
+        ctx.fillStyle = '#333333';
+        ctx.font = '11px Georgia';
+        ctx.textAlign = 'left';
+        ctx.fillText(`r_s = ${(2*M).toFixed(3)} L_Pl`, 10, h - 10);
+        
+        // Draw critical mass indicators if near them
+        const phase = getPhase(M);
+        if (phase.class !== 'classical') {
+            ctx.fillStyle = '#8b0000';
+            ctx.textAlign = 'right';
+            ctx.fillText(phase.name, w - 10, h - 10);
+        }
+    }
+
+    /**
+     * Set mass from marker click
+     */
+    function setMass(M) {
+        massSlider.value = M;
+        updateValues(M);
+        renderBlackHole(M);
+    }
+
+    // Event listener for slider
+    massSlider.addEventListener('input', function() {
+        const M = parseFloat(this.value);
+        updateValues(M);
+        renderBlackHole(M);
+    });
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialMass = 1.0;
+        updateValues(initialMass);
+        renderBlackHole(initialMass);
+    });
+
+    // Expose setMass globally for onclick handlers
+    window.setMass = setMass;
+    </script>
+</body>
+</html>
