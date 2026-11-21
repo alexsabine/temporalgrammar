@@ -60,6 +60,13 @@ function verdict(k, ok, msg) { res[k] = ok; out((ok ? 'PASS ' : 'FAIL ') + k + '
 // B9a
 { const mk = () => { const S = M.makeSim({ events: [{ event: 'breach', at: 300 }] }); for (let f = 0; f < 1800; f++) S.step(); let h = 0; const add = v => { h = (h * 31 + Math.round(v * 1e6)) | 0; }; for (const w of S.whales) [w.x, w.y, w.z, w.yaw, w.pitch, w.roll, w.v, w.ph, w.C].forEach(add); for (let i = 0; i < S.NF; i++) { add(S.fish.x[i]); add(S.fish.y[i]); add(S.fish.z[i]); } for (let i = 0; i < 200; i++) add(S.spray.x[i]); return h; };
   const a = mk(), b = mk(); verdict('B9a', a === b, 'state hashes ' + a + ' and ' + b); }
+// B12
+{ const S = M.makeSim({ auto: false }); const F = S.fish; let ok = true, mx = 0, far = 0, flee = true, links = 0;
+  for (let f = 0; f < 3000; f++) { S.step(); if (f % 300 === 299) for (let i = 0; i < S.NF; i++) { mx = Math.max(mx, F.nc[i]); for (let k = 0; k < F.nc[i]; k++) { const j = F.nb[i * 10 + k], d = Math.hypot(F.x[i] - F.x[j], F.y[i] - F.y[j], F.z[i] - F.z[j]); links++; far = Math.max(far, d); if (d > 1.9) ok = false; }
+    if (F.fw[i] >= 0) { const o = F.fw[i] * 5, d = Math.hypot(F.x[i] - S.wp[o], F.y[i] - S.wp[o + 1], F.z[i] - S.wp[o + 2]); if (d > S.wp[o + 3] + 0.2) flee = false; } } }
+  verdict('B12', ok && mx <= 10 && flee, links + ' recorded links sampled, longest ' + far.toFixed(2) + ' m, most per fish ' + mx + ', fleeing fish inside the whale radius: ' + flee); }
+// B13 (model half): travel time along the level ray in the channel
+{ const ch = M.channel(18, 35), r = M.rays(18, 35, ch.depth, [0], 150000, 60)[0]; verdict('B13a', r.time >= 99 && r.time <= 102, 'level ray from ' + ch.depth + ' m takes ' + r.time.toFixed(1) + ' s over 150 km'); }
 // speed
 { const S = M.makeSim({}); const t0 = Date.now(); for (let f = 0; f < 3600; f++) S.step(); out('   3600 steps with 420 fish took ' + (Date.now() - t0) + ' ms in node'); }
 out(JSON.stringify(res));

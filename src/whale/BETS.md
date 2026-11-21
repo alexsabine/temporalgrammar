@@ -63,3 +63,25 @@ Zero page errors and zero console errors at 1280×800 and at 390 px wide. No sid
 Film scheduling, measured: a breach asked to show at frame 640 left the water at 640 exactly; a blow asked for at 1200 came at 1201.
 
 Not bet on, so not claimed: frame rate on a real phone (tests ran on software WebGL only), how the sound sounds (no test listened to it), and whether the whale reads as a humpback to a specialist.
+
+---
+
+# Second round: layers and the look above water. Bets written before the code was run
+
+**B11. Layers change the picture, and "none" does not.**
+In film mode at frame 600, view `follow`: (a) `layer:'none'`, no `layer` field, and any layer with `layerAmt:0` all give identical pixels, twice over; (b) each of `links`, `sound` (target the singer), `warmth`, `count` differs from "none"; (c) `layerAmt:0.5` differs from both 0 and 1 for `warmth`; (d) a layer frame taken twice is identical.
+
+**B12. The lines are the model's links.**
+In the model, at ten sampled frames, every neighbour recorded for a fish (the ones the links layer draws) was within √2.6 m of it when the fish steered (so under 1.9 m apart after both have moved one step), and the count of recorded neighbours never exceeds 10. A fish recorded as fleeing a whale is inside that whale point's radius.
+
+**B13. The sound layer uses the same numbers as the panel.**
+The channel depth and speed written in the layer's label equal `WHALE.channel(T,S)` for two slider settings (18 °C and 26 °C), and the travel time along the level ray from the channel depth over 150 km is between 99 s and 102 s (150 km at about 1480 to 1500 m/s).
+
+**B14. Earlier bets still hold** after the splash and mist changes: B4, B5, B6, B8 and B9a pass unchanged in threshold.
+
+**Second-round log (`test_output_v3.txt`, `test_page_output_v3.txt`).** Nothing failed on the first run of these bets.
+B11 pass: no layer, `layer:'none'`, a layer at amount 0, and "none" again after all four layers gave identical pixels; each of the four layers changed the picture; warmth at 0.5 differed from both 0 and 1; warmth twice was identical.
+B12 pass: 41,993 recorded links sampled, longest 1.62 m, never more than 10 a fish; every fleeing fish was inside its whale point's radius.
+B13 pass: level ray in the channel takes 101.3 s over 150 km; the label in the scene read "slowest at 975 m: 1,481 m/s" at 18 °C and "slowest at 1,140 m: 1,483 m/s" at 26 °C, equal to `WHALE.channel`.
+B14 pass: B4, B5, B6 (3.86 m high, 3.32 m wide), B8 and B9a unchanged in threshold and passing. B9b and B10 pass again; the radio labels are 44 px high on the phone profile.
+Not bet on: whether glints, crown and mist look right in motion (judged from stills only).

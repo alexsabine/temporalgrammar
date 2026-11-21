@@ -30,16 +30,16 @@ function channel(Ts, S) {
 function rays(Ts, S, src, angles, range, ds) {
   ds = ds || 50; range = range || 150000; const out = [];
   for (const a0 of angles) {
-    let r = 0, z = src, th = a0 * Math.PI / 180, top = 0, bot = 0; const pts = [0, z];
+    let r = 0, z = src, th = a0 * Math.PI / 180, top = 0, bot = 0, time = 0; const pts = [0, z], tt = [0];
     for (let n = 0; r < range && n < 20000; n++) {
       const c = speedAt(z, Ts, S), g = (speedAt(z + 1, Ts, S) - speedAt(z - 1, Ts, S)) / 2;
-      th -= Math.cos(th) / c * g * ds;
+      th -= Math.cos(th) / c * g * ds; time += ds / c;
       r += Math.cos(th) * ds; z += Math.sin(th) * ds;
       if (z < 0) { z = -z; th = -th; top++; }
-      if (z > SEA.bottom) { bot++; pts.push(r, SEA.bottom); break; }
-      if (n % 4 === 3) pts.push(r, z);
+      if (z > SEA.bottom) { bot++; pts.push(r, SEA.bottom); tt.push(time); break; }
+      if (n % 4 === 3) { pts.push(r, z); tt.push(time); }
     }
-    out.push({ angle: a0, pts, top, bot });
+    out.push({ angle: a0, pts, tt, top, bot, time });
   }
   return out;
 }
@@ -96,7 +96,7 @@ SONG.at = function (frame) { const f = ((frame % SEQ.frames) + SEQ.frames) % SEQ
   const e = SEQ.seq[lo]; return { entry: e, sounding: f - e.frame < Math.round(e.dur * 60), into: (f - e.frame) / 60 }; };
 
 /* ---------- the sea with whales and fish in it ---------- */
-const MAXSPRAY = 2600, MAXBUB = 2600, MAXFOAM = 8;
+const MAXSPRAY = 4200, MAXBUB = 2600, MAXFOAM = 8;
 function makeSim(opts) {
   opts = opts || {};
   const seed = opts.seed === undefined ? 7 : opts.seed;
@@ -120,7 +120,7 @@ function makeSim(opts) {
   S.singer = newSinger(); S.unit = null; S.unitFrame = -1;
 
   /* fish */
-  const F = { x: new Float32Array(NF), y: new Float32Array(NF), z: new Float32Array(NF), vx: new Float32Array(NF), vy: new Float32Array(NF), vz: new Float32Array(NF), gone: new Uint8Array(NF), fear: new Float32Array(NF) };
+  const F = { x: new Float32Array(NF), y: new Float32Array(NF), z: new Float32Array(NF), vx: new Float32Array(NF), vy: new Float32Array(NF), vz: new Float32Array(NF), gone: new Uint8Array(NF), fear: new Float32Array(NF), nb: new Int16Array(NF * 10), nc: new Uint8Array(NF), fw: new Int8Array(NF) };
   for (let i = 0; i < NF; i++) { const a = R() * TAU, r = 4.5 * Math.cbrt(R()), u = R() * 2 - 1, q = Math.sqrt(1 - u * u);
     F.x[i] = 12 + r * q * Math.cos(a); F.y[i] = -8 + r * u * 0.6; F.z[i] = r * q * Math.sin(a); F.vx[i] = 0.2 * (R() - 0.5); F.vy[i] = 0; F.vz[i] = 1.1 + 0.2 * (R() - 0.5); }
   S.fish = F;
@@ -134,7 +134,7 @@ function makeSim(opts) {
   S.spray = P; S.bubbles = Bb;
   function spray(kind, x, y, z, vx, vy, vz, life, size) { const i = P.at; P.at = (P.at + 1) % MAXSPRAY; P.kind[i] = kind; P.x[i] = x; P.y[i] = y; P.z[i] = z; P.vx[i] = vx; P.vy[i] = vy; P.vz[i] = vz; P.life[i] = life; P.max[i] = life; P.size[i] = size; }
   function bubble(x, y, z, vy, size, net) { const i = Bb.at; Bb.at = (Bb.at + 1) % MAXBUB; Bb.x[i] = x; Bb.y[i] = y; Bb.z[i] = z; Bb.vy[i] = vy; Bb.ph[i] = RP() * TAU; Bb.life[i] = 40; Bb.size[i] = size; Bb.net[i] = net ? 1 : 0; }
-  function foam(x, z, r, grow, life, ring, s) { if (S.foam.length >= MAXFOAM) S.foam.shift(); const f = { x, z, r, grow, age: 0, life, ring: ring ? 1 : 0, s }; S.foam.push(f); return f; }
+  function foam(x, z, r, grow, life, ring, s) { if (S.foam.length >= MAXFOAM) S.foam.shift(); const f = { x, z, r, grow, age: 0, life, ring: ring | 0, s }; S.foam.push(f); return f; }
   function log(type, w, extra) { const e = Object.assign({ frame: S.frame, type, whale: w ? w.role : null }, extra || {}); S.log.push(e); S.ev.push(e); }
 
   const fwd = w => { const cp = Math.cos(w.pitch); return [cp * Math.cos(w.yaw), Math.sin(w.pitch), cp * Math.sin(w.yaw)]; };
@@ -188,8 +188,13 @@ function makeSim(opts) {
       const vx = rx * Math.sin(a) * side * sp + (RP() - 0.5) * j - Math.cos(w.yaw) * 0.6, vz = rz * Math.sin(a) * side * sp + (RP() - 0.5) * j - Math.sin(w.yaw) * 0.6;
       spray(1, b[0] + rx * side * 0.12, Math.max(b[1], 0.05), b[2] + rz * side * 0.12, vx, Math.cos(a) * sp, vz, 2.6 + 2.2 * RP(), (0.5 + 0.7 * RP()) * k);
     }
+    for (let n = 0; n < 5; n++) { const side = n & 1 ? 1 : -1, a = 0.3 + 0.5 * (RP() - 0.5), sp = (3 + 6.5 * RP()) * k;
+      spray(3, b[0], Math.max(b[1], 0.05), b[2], rx * Math.sin(a) * side * sp + (RP() - 0.5) * 1.6, Math.cos(a) * sp, rz * Math.sin(a) * side * sp + (RP() - 0.5) * 1.6, 4.5 + 4 * RP(), (0.16 + 0.22 * RP()) * k); }
   }
-  function splash(x, z, n, power, plume, mistK) { mistK = mistK === undefined ? 0.5 : mistK;
+  function splash(x, z, n, power, plume, mistK, crown) { mistK = mistK === undefined ? 0.5 : mistK;
+    /* a crown: spokes of thrown water, each a stack of heavy drops leaving at the same angle */
+    for (let sp = 0; sp < (crown || 0); sp++) { const a = (sp + RP() * 0.6) / crown * TAU, c = Math.cos(a), sn = Math.sin(a), r0 = (1.6 + 1.2 * RP()) * power, top = (6.5 + 4.5 * RP()) * power, out = (1.6 + 2.6 * RP()) * power;
+      for (let q = 0; q < 7; q++) { const f = 0.35 + 0.65 * (q + RP()) / 7; spray(2, x + c * r0, 0.1, z + sn * r0, c * out * (0.6 + 0.6 * f), top * f, sn * out * (0.6 + 0.6 * f), 6, (0.55 + 0.5 * RP()) * (1.15 - 0.5 * f)); } }
     for (let i = 0; i < n; i++) { const a = RP() * TAU, r = RP() * 2.5 * power, out = (2 + 7 * RP()) * power, up = (3 + 8 * RP() * RP()) * power;
       spray(0, x + Math.cos(a) * r, 0.1, z + Math.sin(a) * r, Math.cos(a) * out, up, Math.sin(a) * out, 6, 0.16 + 0.34 * RP()); }
     for (let i = 0; i < n * mistK; i++) { const a = RP() * TAU, r = RP() * 3.5 * power; spray(1, x + Math.cos(a) * r, 0.3, z + Math.sin(a) * r, Math.cos(a) * 3 * RP(), (1 + 7 * RP()) * power, Math.sin(a) * 3 * RP(), 2.5 + 2.5 * RP(), 0.8 + RP()); }
@@ -233,13 +238,13 @@ function makeSim(opts) {
       case 'br_dive': roam(w, o); o.yT = -19; o.vT = 3; o.gain = 0.1; o.pmax = 0.6; if (w.y < -16.5 || w.st > 12) { w.state = 'br_run'; w.st = 0; } break;
       case 'br_run': o.pitchT = 1.12; o.pr = 1.0; o.vT = 8.6; o.acc = 0.95; o.rollT = 0;
         if (w.y > -1.2 && w.st > 0.5) { const f = fwd(w); w.vx = f[0] * w.v; w.vy = f[1] * w.v; w.vz = f[2] * w.v; w.state = 'air'; w.st = 0; w.splashed = false; w.exitV = w.v; log('exit', w, { v: w.v, x: w.x, z: w.z });
-          const s = snout(w); splash(s[0], s[2], 160, 0.7, 0); foam(s[0], s[2], 2, 1.6, 12, 0, 0.9); }
+          const s = snout(w); splash(s[0], s[2], 160, 0.7, 0, 0.2, 18); foam(s[0], s[2], 2, 1.6, 12, 0, 0.9); }
         break;
       case 'air': {
         o.free = false; w.vy -= 9.81 * DT; w.x += w.vx * DT; w.y += w.vy * DT; w.z += w.vz * DT;
         w.pitch -= 0.72 * DT; w.roll = Math.min(1.35, w.roll + 1.0 * DT); if (!w.splashed || w.y > -1) waterline(w, 7, 1); w.amp = lerp(w.amp, 0.15, 0.05); w.arch = lerp(w.arch, 0.25, 0.04);
         const s = snout(w); if (s[1] > w.peak) w.peak = s[1];
-        if (w.vy < 0 && w.y < 0.4 && !w.splashed) { w.splashed = true; log('splash', w, { x: w.x, z: w.z }); const m = at(w, 0.1, 0); splash(m[0], m[2], 900, 1.25, 420, 0.14); foam(m[0], m[2], 3, 2.6, 16, 0, 1); }
+        if (w.vy < 0 && w.y < 0.4 && !w.splashed) { w.splashed = true; log('splash', w, { x: w.x, z: w.z }); const m = at(w, 0.1, 0); splash(m[0], m[2], 900, 1.25, 420, 0.10, 46); foam(m[0], m[2], 3, 2.6, 16, 0, 1); foam(m[0], m[2], 3.5, 5.5, 13, 2, 0.9); }
         if (w.vy < 0 && w.y < -1.6) { w.state = 'br_in'; w.st = 0; w.v = Math.hypot(w.vx, w.vz) * 0.6 + 0.5; }
         break; }
       case 'br_in': o.pitchT = clamp((-5 - w.y) * 0.08, -0.3, 0.3); o.pr = 0.5; o.vT = 1.3; o.acc = 1.4; o.rollT = 0;
@@ -325,7 +330,7 @@ function makeSim(opts) {
     for (let i = 0; i < NF; i++) { if (F.gone[i]) continue; const h = hsh(Math.floor(F.x[i] / CELL), Math.floor(F.y[i] / CELL), Math.floor(F.z[i] / CELL)); next[i] = head[h]; head[h] = i; }
     /* whale points the fish watch: head and mid-body */
     const WP = []; for (const w of S.whales) { const a = at(w, 0.3, 0), b = at(w, -0.05, 0), c = at(w, -0.4, 0), g = w.state === 'bn_lunge' ? 0.22 : 1; WP.push(a[0], a[1], a[2], 0.6 * w.L, g, b[0], b[1], b[2], 0.5 * w.L, g, c[0], c[1], c[2], 0.3 * w.L, g); }
-    let cx = 0, cy = 0, cz = 0, hx = 0, hy = 0, hz = 0, cnt = 0;
+    S.wp = WP; let cx = 0, cy = 0, cz = 0, hx = 0, hy = 0, hz = 0, cnt = 0;
     const lungeMouths = []; if (N && N.phase === 'lunge') for (const w of [mum, male]) if (w.gape > 0.4) { const m = at(w, 0.36, -0.04); lungeMouths.push(m[0], m[1], m[2], 0.16 * w.L); }
     for (let i = 0; i < NF; i++) {
       if (F.gone[i]) continue;
@@ -337,7 +342,7 @@ function makeSim(opts) {
         for (let j = head[hsh(ix + ox, iy + oy, iz + oz)]; j >= 0; j = next[j]) {
           if (j === i) continue; const dx = F.x[j] - x, dy = F.y[j] - y, dz = F.z[j] - z, d2 = dx * dx + dy * dy + dz * dz;
           if (d2 > 2.6 || d2 < 1e-8) continue;
-          n++; mx += F.vx[j]; my += F.vy[j]; mz += F.vz[j]; sx += dx; sy += dy; sz += dz;
+          F.nb[i * 10 + n] = j; n++; mx += F.vx[j]; my += F.vy[j]; mz += F.vz[j]; sx += dx; sy += dy; sz += dz;
           if (d2 < 0.3) { const q = (0.3 - d2) / (0.3 * Math.sqrt(d2)); wx -= dx * q; wy -= dy * q; wz -= dz * q; }
           if (n >= 10) break scan;
         }
@@ -346,9 +351,9 @@ function makeSim(opts) {
       let dx = H.x - x, dy = H.y - y, dz = H.z - z, d = Math.hypot(dx, dy, dz);
       if (d > 5) { const q = Math.min(3, (d - 5) * 0.3) / d; ax += dx * q; ay += dy * q; az += dz * q; }
       if (y > -1.0) ay -= (y + 1.0) * 8; if (y < -40) ay += (-40 - y) * 2;
-      let fear = 0;
+      let fear = 0; F.nc[i] = n; F.fw[i] = -1;
       for (let k = 0; k < WP.length; k += 5) { dx = x - WP[k]; dy = y - WP[k + 1]; dz = z - WP[k + 2]; d = Math.hypot(dx, dy, dz); const rad = WP[k + 3];
-        if (d < rad) { const q = (1 - d / rad); fear = Math.max(fear, q); const g = q * q * 34 * WP[k + 4] / (d + 0.01); ax += dx * g; ay += dy * g * 0.6; az += dz * g; } }
+        if (d < rad) { const q = (1 - d / rad); if (q > fear) F.fw[i] = k / 5; fear = Math.max(fear, q); const g = q * q * 34 * WP[k + 4] / (d + 0.01); ax += dx * g; ay += dy * g * 0.6; az += dz * g; } }
       if (netOn) { dx = x - N.cx; dz = z - N.cz; d = Math.hypot(dx, dz); const lim = N.R - 2.6;
         if (d > lim && d < N.R + 3) { const q = (d - lim) * 4 / (d + 0.01); ax -= dx * q; az -= dz * q; fear = Math.max(fear, 0.4); }
         if (N.phase !== 'spin') { ay += 1.5; } }
@@ -365,8 +370,9 @@ function makeSim(opts) {
 
   function stepParticles() {
     for (let i = 0; i < MAXSPRAY; i++) { if (P.life[i] <= 0) continue; P.life[i] -= DT;
-      if (P.kind[i] === 0) { P.vy[i] -= 9.81 * DT; const k = 1 - 0.35 * DT; P.vx[i] *= k; P.vy[i] *= k; P.vz[i] *= k; }
-      else { P.vy[i] -= 1.1 * DT; const k = 1 - 2.3 * DT; P.vx[i] = P.vx[i] * k + 0.9 * DT; P.vy[i] *= k; P.vz[i] *= k; P.size[i] += 0.5 * DT; }
+      const kd = P.kind[i]; if (kd === 0 || kd === 2) { P.vy[i] -= 9.81 * DT; const k = 1 - (kd === 2 ? 0.7 : 0.35) * DT; P.vx[i] *= k; P.vy[i] *= k; P.vz[i] *= k; }
+      else if (kd === 1) { P.vy[i] -= 1.1 * DT; const k = 1 - 2.3 * DT; P.vx[i] = P.vx[i] * k + 0.9 * DT; P.vy[i] *= k; P.vz[i] *= k; P.size[i] += 0.5 * DT; }
+      else { P.vy[i] -= 0.25 * DT; const k = 1 - 1.6 * DT; P.vx[i] = P.vx[i] * k + 1.5 * DT; P.vy[i] *= k; P.vz[i] *= k; P.size[i] += 0.22 * DT; }
       P.x[i] += P.vx[i] * DT; P.y[i] += P.vy[i] * DT; P.z[i] += P.vz[i] * DT; if (P.y[i] < 0) P.life[i] = 0; }
     const N = S.net;
     for (let i = 0; i < MAXBUB; i++) { if (Bb.life[i] <= 0) continue; Bb.life[i] -= DT; Bb.ph[i] += 4 * DT;

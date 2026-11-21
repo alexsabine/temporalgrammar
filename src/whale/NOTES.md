@@ -49,9 +49,20 @@ Set `window.__TEST = true` before load. No loop runs, the page chrome is hidden,
 - `WHALE.state()` gives frame, each whale's position, depth, state, breath count, the song position, fish, net, dive statistics, sound speeds, the log and the camera.
 - `WHALE.song` is an array of the nine units (`id, name, dur, loud, contour [[s, Hz]...], timbre, vib, form, pulse`). On it: `.themes`, `.order`, `.sequence` (every onset of one song: `frame, t, unit, theme, phrase, of, k, dur, loud`), `.frames`, `.duration`, `.pitchAt(unit, t)`, `.at(frame)`. The singer starts at frame 0 and repeats every `.frames` frames, unless a bubble net interrupts him (he is silent while netting and then carries on from where he stopped, so the table is offset after a net).
 
+## Layers (second round)
+
+A radio group "Show" under the plate; in film mode `view.layer` = `'none' | 'links' | 'sound' | 'warmth' | 'count'` and `view.layerAmt` 0..1 (default 1). All are drawn in the WebGL scene, labels included (canvas textures), so a canvas grab contains them.
+
+- **links**: every neighbour each fish used in its last steering step (recorded by the model in `fish.nb`, at most 10), a red line from a fleeing fish to the whale point it is fleeing (`fish.fw`), mother to calf while the calf is keeping station, and each netting whale to the net centre (which was set from the school's centre when the net began).
+- **sound**: two things at two scales, both stated in the caption. Rings from the singer at each unit onset, radius 12 m per second (true speed is about 1,500 m/s, so slowed about 125 times); at scene scale real bending is invisible (radius of curvature about 90 km), so the rings are round. The bending is shown on a hanging section through the singer: 150 km each way, depth 1 to 100, the same `rays()` as the side panel, the dashed line and faint disc at the channel depth, dots for each unit running along the paths at five times life using travel times integrated with the same formula.
+- **warmth**: the same miniature section placed 20 m behind what the camera is looking at. Colour is the page's temperature profile in one-degree bands; dotted lines every 500 m carry the salinity label. Salinity is uniform in the model, so the lines are evenly spaced and all read the same; the slider changes the label and the dot pitch. This is an honest picture of a dull fact, not contours.
+- **count**: outer ring = breath count over its current threshold (1 on a dive, the smaller series threshold between breaths); inner ring = the mother's breach count, or the singer's count between units; a flash at a blow or a unit onset.
+
+In portrait the warmth sheet is wider than the picture, so its depth and temperature labels fall off the sides; the salt labels and title remain.
+
 ## Weaker than intended
 
-- Views from above the water. The sea surface is plain, whales seen through it from a boat look pale and glassy, and the breach splash is a soft white cloud with droplets, not sheets of water.
+- Views from above the water are better than in the first round (wind patches, glints, haze, darker whales under the surface, a crown of streaks and a foam ring at a breach, a drifting fine mist on the blow) but still the weakest part. The crown is elongated sprites, not sheets; glints only show where the view faces the sun; the surface has no real swell.
 - The open mouth in a lunge is a hinged lower jaw with a dark fringe for baleen; it reads at a distance, not close up.
 - Tubercles are modelled but small on screen; the dorsal fin is a simple blade.
 - The calf is a scaled-down adult.
