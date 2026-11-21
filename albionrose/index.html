@@ -39,6 +39,7 @@ p{margin:0 0 1em;max-width:58ch;text-wrap:pretty}
 .dawn .wrap{pointer-events:none;position:relative;z-index:2}.dawn .wrap>div{pointer-events:auto}
 .dawn .wrap{width:100%;padding-top:clamp(150px,24vh,230px);padding-bottom:clamp(34px,6vw,64px);display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(20px,5vw,60px);align-items:end}
 .dawn .lead{margin-bottom:0}
+.fount{font:italic 400 17px/1.3 var(--fell);color:var(--soft);margin:14px 0 0;max-width:none}.fount span{font:400 12.5px/1 var(--caps);letter-spacing:.09em;font-style:normal;margin-left:10px}
 .dawn .say{background:rgba(255,253,248,.9);border:1px solid var(--hair);padding:clamp(16px,2.4vw,24px)}
 .btn{display:inline-flex;align-items:center;min-height:46px;font:400 15px/1.2 var(--caps);letter-spacing:.09em;text-decoration:none;padding:12px 20px;border:1px solid var(--ink);color:var(--ink);background:rgba(255,253,248,.7)}
 .btn:hover{background:var(--ink);color:var(--paper)}
@@ -107,11 +108,12 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
 <main id="top">
 <div class="dawn">
   <div id="ball" tabindex="0" role="img" aria-label="The sphere. Drag it to spin it, or use the arrow keys. It has weight, and keeps turning after you let go."></div>
-  <canvas id="sky" aria-label="A burst of light in the colours of William Blake's print: cream at its heart, gold, red to one side and blue to the other, fading into the paper. In front of it a sphere turns slowly. Its surface is a skin of soft cells, some of them holding finer cells of their own, and the light gathers along the edges where the cells meet."></canvas>
+  <canvas id="sky" aria-label="A burst of light in the colours of William Blake's print: cream at its heart, gold, red to one side and blue to the other, fading into the paper. The colour rises from behind a sphere like a fountain, in faint rings that travel outward, and the sphere rides on it, turning slowly. Its surface is a skin of soft cells, some of them holding finer cells of their own, and the light gathers along the edges where the cells meet."></canvas>
   <div class="wrap">
     <div>
       <p class="caps">In preparation</p>
       <h1>Albion <em>Rose</em></h1>
+      <p class="fount">The cistern contains: the fountain overflows.<span>William Blake</span></p>
     </div>
     <div class="say">
       <p class="lead">An international platform for teaching and learning at the frontiers of knowledge. Built with scientists and thinkers, checked by them, and open to schools.</p>
@@ -276,7 +278,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
   if (!gl) { plain(); return; }
   var VS = 'attribute vec2 p;varying vec2 v;void main(){v=p;gl_Position=vec4(p,0.,1.);}';
   /* The light behind Albion, made quiet: rising from a low centre in rays of uneven strength, through cream, rosé and a grey-green mist, into the paper. */
-  var FS = 'precision highp float;varying vec2 v;uniform vec2 R,P;uniform float T;uniform mat3 M;' +
+  var FS = 'precision highp float;varying vec2 v;uniform vec2 R,P,Q;uniform float T;uniform mat3 M;' +
     'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}' +
     /* the colours of the print, by direction, as Blake laid them, with more of his pink let in between: blue to the upper right, lilac overhead, coral then red to the left, rose and a pale fan below, peach and amber to the lower right */
     'vec3 side(float a){vec3 blue=vec3(.15,.29,.60),sky=vec3(.42,.52,.74),lilac=vec3(.66,.52,.66),coral=vec3(.90,.50,.36),red=vec3(.72,.28,.24),rose=vec3(.93,.60,.62),fan=vec3(.98,.84,.78),peach=vec3(.97,.72,.56),amber=vec3(.80,.54,.24),blush=vec3(.95,.66,.70);' +
@@ -288,9 +290,11 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
     'vec3 c=mix(heart,gold,smoothstep(.09,.22,rr));c=mix(c,blushc,smoothstep(.17,.30,rr)*.85);c=mix(c,mix(blushc,s,.7),smoothstep(.27,.42,rr));c=mix(c,s,smoothstep(.38,.56,rr));' +
     /* pigment pools at the edge of each front, as wet colour does, and thins between */
     'float pool=smoothstep(.0,.12,abs(fract(rr*4.+p1*.3)-.5)-.34);c*=1.-.035*pool;c=mix(c,s*(.84+.2*ray),smoothstep(.52,.82,rr));c=mix(c,pa,smoothstep(.5,.98,rr));c=mix(c,pa,.16);return c;}' +
-    'void main(){float asp=R.x/R.y;vec2 q=vec2(v.x*asp,v.y);vec2 c0=vec2(mix(-.10,0.,step(asp,1.))*asp+P.x*.03,mix(.34,.5,step(asp,1.))+P.y*.02);vec2 d=q-c0;float r=length(d)/max(asp,1.25)*1.25,a=atan(d.y,d.x);' +
+    'void main(){float asp=R.x/R.y;vec2 q=vec2(v.x*asp,v.y);vec2 c0=vec2(mix(-.10,0.,step(asp,1.))*asp+P.x*.03,mix(.34,.5,step(asp,1.))+P.y*.02);vec2 d=q-c0;c0.y+=.0045*sin(T*.8)+.002*sin(T*1.7+1.);float r=length(d)/max(asp,1.25)*1.25,a=atan(d.y,d.x);' +
+    /* the colour is a fountain and the sphere rides on it. Faint rings travel outward from behind the ball, faster when it is spun, and the colour nearest it is drawn a little way round with it. */
+    'float near=exp(-r*5.5);a+=Q.y*near;float wave=sin(r*46.-Q.x*2.2+n(vec2(a*3.,2.))*4.)*smoothstep(.62,.08,r)*smoothstep(.0,.07,r);r+=wave*.0065;' +
     'float ray=n(vec2(a*5.+T*.03,1.))*.6+n(vec2(a*17.-T*.02,4.))*.4;float grain=(n(q*90.)-.5)*.05+(n(q*7.+3.)-.5)*.07;vec3 col=burst(r+grain,ray,a+grain*.6);' +
-    'col=mix(col,vec3(1.,.992,.973),.08*smoothstep(.3,.9,r)*(1.-ray));float gran=n(q*260.)*n(q*131.+7.);col*=1.-.10*(gran-.25)*smoothstep(.95,.2,r);col+=vec3(1.,.90,.80)*exp(-r*r*16.)*.16;' +
+    'col=mix(col,vec3(1.,.992,.973),.08*smoothstep(.3,.9,r)*(1.-ray));float gran=n(q*260.)*n(q*131.+7.);col*=1.-.10*(gran-.25)*smoothstep(.95,.2,r);col+=vec3(1.,.90,.80)*exp(-r*r*16.)*.16;col*=1.+wave*.028;' +
     /* the sphere: a skin of soft cells, like a seed head or a honeycomb grown by hand. Each cell is a way of knowing.
        The light is not in the cells. It gathers along the edges where two of them meet, and moves there. */
     'float G=.27*min(1.,asp*.9);vec2 g=(q-c0)/G;float gr=length(g);if(gr<1.){float z=sqrt(1.-gr*gr);vec3 s=vec3(g,z);s=M*s;' +
@@ -302,12 +306,12 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
     'vec3 k1=vec3(.95,.89,.70),k2=vec3(.88,.72,.38),k3=vec3(.90,.72,.66),k4=vec3(.70,.32,.25),k5=vec3(.16,.30,.58),k6=vec3(.36,.46,.60),k7=vec3(.72,.50,.24);vec3 cell=id.x<.22?k1:id.x<.38?k2:id.x<.56?k3:id.x<.70?k4:id.x<.82?k5:id.x<.92?k6:k7;cell=mix(cell,vec3(1.,.96,.84),.10+.12*id.y)*(.88+.12*z);cell*=1.+inner*(sid-.5)*.22;' +
     'float run=.5+.5*sin(T*.7+id.z*9.+e*18.+s.y*3.);vec3 glow=mix(vec3(1.,.95,.84),vec3(1.,.99,.95),run);' +
     'vec3 sc=mix(cell,glow,edge*(.45+.4*run));sc=mix(sc,vec3(1.,.99,.95),line*(.35+.5*run));sc=mix(sc,vec3(1.,.98,.92),fine*(.38+.2*run));sc+=vec3(1.,.95,.86)*pow(1.-z,2.5)*.22;' +
-    'col=mix(col,sc,rim);col+=vec3(1.,.96,.88)*smoothstep(.9,1.,gr)*rim*.12;}else{col+=vec3(1.,.96,.86)*exp(-(gr-1.)*9.)*.2;}' +
+    'col=mix(col,sc,rim);col+=vec3(1.,.96,.88)*smoothstep(.9,1.,gr)*rim*.12;}else{col+=vec3(1.,.96,.86)*exp(-(gr-1.)*9.)*.2;float lip=smoothstep(.035,.0,abs(gr-1.05-.014*sin(atan(g.y,g.x)*3.+Q.x*1.3)-.008*sin(atan(g.y,g.x)*7.-Q.x*2.)));col+=vec3(1.,.985,.94)*lip*.13;}' +
     'col+=(h(v*R+T)-.5)*.014;gl_FragColor=vec4(col,1.);}';
   function sh(t, s) { var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { if (window.console) console.warn(gl.getShaderInfoLog(o)); return null; } return o; }
   var a = sh(gl.VERTEX_SHADER, VS), b = sh(gl.FRAGMENT_SHADER, FS); if (!a || !b) { plain(); return; } var pr = gl.createProgram(); gl.attachShader(pr, a); gl.attachShader(pr, b); gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { plain(); return; } gl.useProgram(pr);
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW); var loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  var uR = gl.getUniformLocation(pr, 'R'), uP = gl.getUniformLocation(pr, 'P'), uT = gl.getUniformLocation(pr, 'T'), uM = gl.getUniformLocation(pr, 'M'), px = 0, py = 0, tx = 0, ty = 0, t = 20, last = 0, raf = 0, vis = true;
+  var uR = gl.getUniformLocation(pr, 'R'), uP = gl.getUniformLocation(pr, 'P'), uT = gl.getUniformLocation(pr, 'T'), uM = gl.getUniformLocation(pr, 'M'), uQ = gl.getUniformLocation(pr, 'Q'), flow = 0, drag = 0, px = 0, py = 0, tx = 0, ty = 0, t = 20, last = 0, raf = 0, vis = true;
   function size() { var r = box.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, innerWidth < 700 ? 1.5 : 2); cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); gl.viewport(0, 0, cv.width, cv.height); gl.uniform2f(uR, cv.width, cv.height); place(); }
   /* The sphere can be spun by hand. It has weight: it takes a moment to follow the hand, and once let go it turns on for a long while, as a stone ball does on a film of water.
      O is its orientation; w is how fast it is turning, about the screen's x, y and z, in radians a second. */
@@ -331,7 +335,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
   function drop() { if (!hold) return; hold = null; ball.classList.remove('held'); kick(); }
   ball.addEventListener('pointerup', drop); ball.addEventListener('pointercancel', drop); ball.addEventListener('lostpointercapture', drop);
   ball.addEventListener('keydown', function (e) { var m = { ArrowLeft: [0, -2.4, 0], ArrowRight: [0, 2.4, 0], ArrowUp: [-2.4, 0, 0], ArrowDown: [2.4, 0, 0] }[e.key]; if (!m) return; e.preventDefault(); if (still) turn(m[0] * .12, m[1] * .12, 0); else for (var i = 0; i < 3; i++) w[i] += m[i]; kick(); });
-  function frame(now) { raf = 0; var dt = Math.min(.05, (now - last) / 1000 || 0); last = now; if (!still) t += dt; spin(dt); px += (tx - px) * .05; py += (ty - py) * .05; gl.uniform2f(uP, 0, 0); gl.uniform1f(uT, t); gl.uniformMatrix3fv(uM, false, [O[0], O[1], O[2], O[3], O[4], O[5], O[6], O[7], O[8]]); gl.drawArrays(gl.TRIANGLES, 0, 3); if (vis && !still && !document.hidden) raf = requestAnimationFrame(frame); }
+  function frame(now) { raf = 0; var dt = Math.min(.05, (now - last) / 1000 || 0); last = now; if (!still) t += dt; spin(dt); var spd = Math.hypot(w[0], w[1], w[2]); if (!still) flow += dt * (.55 + 2.4 * Math.min(1, spd / 5)); drag += ((Math.max(-.5, Math.min(.5, w[2] * .09 + w[1] * .03))) - drag) * Math.min(1, dt * 1.5); gl.uniform2f(uQ, flow, drag); px += (tx - px) * .05; py += (ty - py) * .05; gl.uniform2f(uP, 0, 0); gl.uniform1f(uT, t); gl.uniformMatrix3fv(uM, false, [O[0], O[1], O[2], O[3], O[4], O[5], O[6], O[7], O[8]]); gl.drawArrays(gl.TRIANGLES, 0, 3); if (vis && !still && !document.hidden) raf = requestAnimationFrame(frame); }
   function kick() { if (!raf) raf = requestAnimationFrame(frame); }
   addEventListener('pointermove', function (e) { if (e.pointerType === 'touch') return; tx = (e.clientX / innerWidth - .5) * 2; ty = -(e.clientY / innerHeight - .5) * 2; kick(); }, { passive: true });
   addEventListener('resize', function () { size(); kick(); }); document.addEventListener('visibilitychange', kick);
