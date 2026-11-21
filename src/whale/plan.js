@@ -1,0 +1,1 @@
+const M=require('./model.js'); const ev=JSON.parse(process.argv[2]); const S=M.makeSim({auto:false,events:ev}); const n=+(process.argv[3]||7200); const o=[]; for(let f=0;f<n;f++){S.step(); for(const e of S.ev) if(e.type!=='unit') o.push(e.frame+':'+e.type+'('+(e.whale||'')[0]+')');} console.log(o.join(' '));
