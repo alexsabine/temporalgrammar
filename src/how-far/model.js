@@ -299,10 +299,142 @@ const EV = (() => {
     { const ev = [COSMO.zEq, RECOMB.zHalf, COSMO.zAccel].map(z => -Math.log(1 + z)), gaps = [ev[1] - ev[0], ev[2] - ev[1]]; out.F = { events: ev, gaps, n: gaps.length, cv: cvOf(gaps).cv }; }
     return out; })();
 
+  /* ════ 10. Time on this page: the calculations of the section "Time on this page: a CRR reading" ════
+     Everything here is standard physics or standard geometry of probability, relabelled. The bets (T1 to T12) are in BETS.md
+     and were written before this section was run. Angles are Fisher–Rao lengths in radians (σ = 1 rad); a half-turn is π. */
+  const TIME = (() => { const T = {}, H0 = COSMO.H0, Om = COSMO.P.Om, Or = COSMO.Or, OL = COSMO.OL;
+    /* the Gudermannian and its inverse: sin(gd x) = tanh x */
+    const gd = x => 2 * Math.atan(Math.tanh(x / 2)), gdInv = y => Math.log(Math.tan(PI / 4 + y / 2));
+    T.gd = gd; T.gdInv = gdInv;
+
+    /* ── A. energy ↔ time. Radiation era: H² = (8πG/3) ρ, ρ = (π²/30) g* (kT)⁴/(ħc)³, a ∝ t^(1/2), so t = 1/(2H):
+       t = sqrt(90/(32π³ g*)) ħ E_P/(kT)²  ≈  2.42 g*^(−1/2) (T/MeV)^(−2) s   (Kolb & Turner 1990; Olive & Peacock in the Review of
+       Particle Physics 2024, eq. 22.43–22.44, who write 2.4). g*: the Review's table of degrees of freedom, as steps at each mass
+       (a crude setting: a species really fades over a range of temperature). Below the electron mass the Review's 7.25 counts
+       neutrinos at the photons' temperature; they are cooler by (4/11)^(1/3) after the electrons go, which gives 3.38, used here. */
+    const gLate = 2 + 7 / 8 * 2 * PLANCK18.Neff * Math.pow(4 / 11, 4 / 3);
+    const GSTEPS = [[0.51099895e-3, gLate, 'photons and neutrinos'], [0.1056584, 10.75, 'and electrons'], [0.13957, 14.25, 'and muons'], [0.155 /* setting: the quark–hadron transition, about 155 MeV */, 17.25, 'and pions'],
+      [1.27, 61.75, 'quarks u, d, s and gluons'], [1.77686, 72.25, 'and charm'], [4.18, 75.75, 'and tau'], [80.377, 86.25, 'and bottom'], [125.25, 95.25, 'and W, Z'], [172.69, 96.25, 'and the Higgs'], [Infinity, 106.75, 'and top: all known particles']];   /* upper edge (GeV), g* below it */
+    T.gLate = gLate; T.GSTEPS = GSTEPS;
+    T.gStar = kTGeV => { for (const g of GSTEPS) if (kTGeV < g[0]) return g[1]; return 106.75; };
+    T.tRad = (kTJ, g) => Math.sqrt(90 / (32 * PI * PI * PI * g)) * K.hbar * planck.E / (kTJ * kTJ);
+    T.coeff = T.tRad(1e6 * K.eV, 1);                                        /* the "2.42 s" */
+    T.kTswitch = 1e4 * K.eV;                                                /* below 10 keV the page's own Friedmann integral is used (it knows about matter and dark energy) */
+    /* the time at which kT = E. Convention: a typical particle then carried E; the mean energy is about 3 kT. */
+    T.timeOfEnergy = EJ => { const Tk = EJ / K.kB, zz = Tk / K.Tcmb - 1; if (EJ >= T.kTswitch) { const g = T.gStar(EJ / K.GeV); return { t: T.tRad(EJ, g), g, z: zz, how: 'radiation', future: false }; }
+      return { t: COSMO.tOfA(1 / (1 + zz)), g: gLate, z: zz, how: 'Friedmann', future: zz < 0 }; };
+    T.timeOfLength = l => T.timeOfEnergy(K.h * K.c / l);
+    T.lambdaNow = K.h * K.c / (K.kB * K.Tcmb);                              /* the wavelength at which kT₀ = hc/λ today: where the two branches meet */
+    T.ENERGIES = [['the Planck energy', planck.E], ['35.8 TeV, the first hard line', 35.8 * K.TeV], ['13.6 TeV, the LHC', 13.6 * K.TeV], ['1 GeV', K.GeV], ['1 MeV', 1e6 * K.eV], ['10 keV', 1e4 * K.eV], ['13.6 eV', RYD_EV * K.eV]]
+      .map(e => Object.assign({ name: e[0], E: e[1] }, T.timeOfEnergy(e[1])));
+    T.planckRatio = T.tRad(planck.E, 106.75) / planck.t;
+    T.crossCheck = (() => { const E = T.kTswitch, a = T.tRad(E, gLate), b = COSMO.tOfA(K.kB * K.Tcmb / E); return { rad: a, friedmann: b, rel: Math.abs(a - b) / b }; })();
+    /* every stop, both branches. Outward: when the light now arriving from the frame's edge set out. Inward: when kT = hc/(frame width). */
+    T.STOPS = LEVELS.map(L => { const half = L.fov / 2; if (L.id < HOME) { const beyond = half >= COSMO.horizon, lb = beyond ? COSMO.age : COSMO.lookbackOfChi(half), z = beyond ? Infinity : COSMO.zOfChi(half); return { id: L.id, name: L.name, short: L.short, branch: 'out', fov: L.fov, t: Math.max(0, COSMO.age - lb), z, beyond, kind: L.kind }; }
+      if (L.id === HOME) return { id: L.id, name: L.name, short: L.short, branch: 'here', fov: L.fov, t: COSMO.age, z: 0, kind: L.kind };
+      const r = T.timeOfLength(L.fov); return { id: L.id, name: L.name, short: L.short, branch: 'in', fov: L.fov, t: r.t, z: r.z, E: K.h * K.c / L.fov, g: r.g, future: r.future, how: r.how, kind: L.kind }; });
+    T.seenIn = T.timeOfEnergy(LIMITS.leptonQuarkCI * K.TeV).t; T.seenOut = LAST.t;        /* the two hard lines, as times after the beginning */
+    T.geoMean = Math.sqrt(planck.l * COSMO.horizon);                        /* B′. the geometric mean of the Planck length and the horizon radius */
+
+    /* ── B. the contents as one path. p = (radiation, matter, dark energy) shares; the point 2 sqrt(p) lies on an octant of a
+       sphere of radius 2. Distance: 2 acos(Σ sqrt(p_i q_i)), written with the chord, 4 asin(|sqrt p − sqrt q| / 2), which keeps its
+       accuracy for neighbouring points. */
+    const fisherRao3 = (p, q) => { let s = 0; for (let i = 0; i < p.length; i++) { const d = Math.sqrt(p[i]) - Math.sqrt(q[i]); s += d * d; } return 4 * Math.asin(Math.min(1, Math.sqrt(s) / 2)); };
+    const fisherRao3acos = (p, q) => { let s = 0; for (let i = 0; i < p.length; i++) s += Math.sqrt(p[i] * q[i]); return 2 * Math.acos(Math.min(1, s)); };
+    const sharesOf = C => a => { const r = C.Or / (a * a * a * a), m = C.P.Om / (a * a * a), l = C.OL * C.de(a), s = r + m + l; return [r / s, m / s, l / s]; };
+    const shares = sharesOf(COSMO), CORNER = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    /* arc length of any path u ↦ shares(e^u) between u0 and u1, as a polyline of chords; the two ends beyond are closed with the
+       geodesic to the corner the path starts from and the one it ends at */
+    const arc = (sh, u0, u1, n, from, to) => { const U = new Float64Array(n + 1), Cc = new Float64Array(n + 1); let prev = sh(Math.exp(u0)); Cc[0] = from ? fisherRao3(from, prev) : 0; U[0] = u0;
+      for (let i = 1; i <= n; i++) { const u = u0 + (u1 - u0) * i / n, p = sh(Math.exp(u)); U[i] = u; Cc[i] = Cc[i - 1] + fisherRao3(prev, p); prev = p; } return { U, C: Cc, total: Cc[n] + (to ? fisherRao3(prev, to) : 0), u0, u1, n }; };
+    const PATH = arc(shares, -34, 16, 25000, CORNER[0], CORNER[2]);
+    const lerpTab = (xs, ys, x) => { const n = xs.length - 1, f = (x - xs[0]) / (xs[n] - xs[0]) * n, i = Math.max(0, Math.min(n - 1, Math.floor(f))); return ys[i] + (ys[i + 1] - ys[i]) * (f - i); };
+    T.fisherRao3 = fisherRao3; T.fisherRao3acos = fisherRao3acos; T.shares = shares; T.sharesOf = sharesOf; T.arc = arc; T.CORNER = CORNER; T.PATH = PATH;
+    /* the state of the path when the universe was a times its present size. Lengths in radians and in half-turns (÷π, that is ×Ω). */
+    T.pathAt = a => { const u = clamp(Math.log(a), PATH.u0, PATH.u1), p = shares(a), C = u <= PATH.u0 ? fisherRao3(CORNER[0], p) : lerpTab(PATH.U, PATH.C, u), Cs = fisherRao3(CORNER[0], p);
+      return { a, z: 1 / a - 1, p, C, Cstar: Cs, S: C - Cs, Ch: C / PI, CsOmega: Cs / PI, Sh: (C - Cs) / PI, walked: C / PATH.total }; };
+    T.shortfall = a => 2 * Math.asin(Math.sqrt(shares(a)[0]));              /* π − C*: what is left before the cut, exactly; it never reaches 0 */
+    T.speed = a => { const p = shares(a), nb = 4 * p[0] + 3 * p[1]; return Math.sqrt(Math.max(0, p[0] * (4 - nb) * (4 - nb) + p[1] * (3 - nb) * (3 - nb) + p[2] * nb * nb)); };   /* per e-fold: the s.d. of n = 3(1 + w) over the contents */
+    T.q = a => { const p = shares(a); return (4 * p[0] + 3 * p[1]) / 2 - 1; };   /* the deceleration parameter: q = n̄/2 − 1 */
+    T.whole = { C: PATH.total, Ch: PATH.total / PI, CsOmega: 1, Sh: PATH.total / PI - 1 };
+    T.now = T.pathAt(1);
+    /* matter's largest share: found numerically (a search in ln a) and by the formula a⁴ = Ω_r/(3Ω_Λ) */
+    T.peak = (() => { let lo = Math.log(1e-3), hi = 0; for (let i = 0; i < 200; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (shares(Math.exp(m1))[1] < shares(Math.exp(m2))[1]) lo = m1; else hi = m2; }
+      const a = Math.exp((lo + hi) / 2), an = Math.pow(Or / (3 * OL), 0.25); return Object.assign(T.pathAt(a), { share: shares(a)[1], analyticA: an }); })();
+    T.EVENTS = [{ key: 'eq', name: 'matter overtakes radiation', z: COSMO.zEq }, { key: 'peak', name: 'matter’s largest share', z: T.peak.z }, { key: 'accel', name: 'slowing turns to speeding', z: COSMO.zAccel }, { key: 'lambda', name: 'dark energy overtakes matter', z: COSMO.zLambda }, { key: 'now', name: 'now', z: 0 }]
+      .map(e => Object.assign(e, T.pathAt(1 / (1 + e.z)), { t: COSMO.t(e.z) }));
+    /* the same construction for any list of fluids (exponents n = 3(1+w), amplitudes today): the whole path in half-turns, and the
+       largest share the middle one reaches. Used to show that the pattern is geometry. */
+    T.generic = (ns, amps, u0 = -60, u1 = 60, n = 60000) => { const sh = a => { const v = ns.map((k, i) => amps[i] * Math.pow(a, -k)), s = v[0] + v[1] + v[2]; return v.map(x => x / s); }, A = arc(sh, u0, u1, n, CORNER[0], CORNER[2]); let mid = 0; for (let i = 0; i <= 2000; i++) mid = Math.max(mid, sh(Math.exp(u0 + (u1 - u0) * i / 2000))[1]); return { Ch: A.total / PI, mid }; };
+    T.GENERIC = { stiff: T.generic([6, 3, 2], [1e-6, 1, 1e-3]), thirds: T.generic([4, 3, 0], [1, 1, 1]) };
+
+    /* ── C. the last leg alone: matter and dark energy, no radiation. Ω_Λ(a) = Ω_Λ a³/(Ω_m + Ω_Λ a³), φ = 2 asin sqrt(Ω_Λ(a)).
+       The textbook solution a(t) = (Ω_m/Ω_Λ)^(1/3) sinh^(2/3)(t/t_Λ) (e.g. Ryden 2016) gives Ω_Λ(a) = tanh²(t/t_Λ), so sin(φ/2) = tanh(t/t_Λ):
+       φ/2 = gd(t/t_Λ). */
+    const OLn = 1 - Om, tL = 2 / (3 * H0 * Math.sqrt(OLn));
+    const LEG = { Om, OL: OLn, tLambda: tL };
+    LEG.share = a => OLn * a * a * a / (Om + OLn * a * a * a);
+    LEG.phiOfA = a => 2 * Math.asin(Math.sqrt(LEG.share(a)));
+    LEG.aOfT = t => Math.cbrt(Om / OLn) * Math.pow(Math.sinh(t / tL), 2 / 3);
+    LEG.phiOfT = t => 2 * gd(t / tL);
+    LEG.tOfPhi = phi => tL * gdInv(phi / 2);
+    LEG.tOfA = a => LEG.tOfPhi(LEG.phiOfA(a));
+    LEG.logOdds = a => Math.log(OLn / Om) + 3 * Math.log(a);
+    LEG.accel = (() => { const phi = 2 * Math.asin(Math.sqrt(1 / 3)); return { phi, frac: phi / PI, t: LEG.tOfPhi(phi), z: Math.cbrt(2 * OLn / Om) - 1 }; })();
+    LEG.equal = { phi: PI / 2, frac: 0.5, t: tL * Math.log(1 + Math.SQRT2), tGd: LEG.tOfPhi(PI / 2), z: Math.cbrt(OLn / Om) - 1 }; LEG.equal.efoldsAgo = Math.log(1 + LEG.equal.z);
+    LEG.now = { phi: LEG.phiOfA(1), frac: LEG.phiOfA(1) / PI, t: LEG.tOfA(1) };
+    /* with a resolution σ (radians) the cut comes when φ ≥ π − σ:  t = t_Λ gd⁻¹(π/2 − σ/2) = t_Λ ln cot(σ/4) ≈ t_Λ ln(4/σ) */
+    LEG.cutTime = s => tL * -Math.log(Math.tan(s / 4)); LEG.cutApprox = s => tL * Math.log(4 / s);
+    /* the error of the relation when radiation is put back: the true cosmic time of the page's cosmology goes into the formula */
+    LEG.errWithRadiation = a => { const p = shares(a); return (2 / PI) * (gd(COSMO.tOfA(a) / tL) - Math.asin(Math.sqrt(p[2] / (p[1] + p[2])))); };
+    T.LEG = LEG;
+    /* the resolution at which a Z₂ occasion that stopped with a share x left over counts as complete: 2 asin sqrt(x) */
+    T.sigmaNeeded = x => 2 * Math.asin(Math.sqrt(x));
+    T.RESIDUALS = [1e-4, RECOMB.xResidual, 5e-4].map(x => ({ x, sigma: T.sigmaNeeded(x), stopsAt: fisherRao(1, x) / PI }));
+    /* the three-way path of B at resolution σ: its cut is where 2 asin sqrt(radiation's share) = σ */
+    T.threeWayCut = s => { if (s >= PI) return null; const a = Math.exp(solve(u => T.shortfall(Math.exp(u)) - s, -40, 40, 100)); return { a, z: 1 / a - 1, t: COSMO.tOfA(a), past: a <= 1 }; };
+
+    /* ── D. conformal time: the comoving distance light has covered (the horizon) and all it can still cover, c ∫ da/(a²H) from 1 to ∞ */
+    T.CONFORMAL = (() => { const n = 4000, hh = 1 / n; let s = 0; for (let i = 0; i <= n; i++) { const v = i * hh, f = v === 0 ? 1 / Math.sqrt(OL) : 1 / COSMO.E(1 / v); s += f * (i === 0 || i === n ? 1 : i & 1 ? 4 : 2); } const future = s * hh / 3 * K.c / H0; return { past: COSMO.horizon, future, frac: COSMO.horizon / (COSMO.horizon + future) }; })();
+
+    /* ── E. the growth of structure. Linear growth of matter inside the horizon, radiation taken as smooth:
+       D″ + (2 + d ln H/d ln a) D′ − (3/2) Ω_m(a) D = 0, primes in ln a; d ln H/d ln a = −(4 p_r + 3 p_m)/2.
+       Started deep in the radiation era on the growing solution for matter and radiation alone, D = 1 + (3/2) a/a_eq (Mészáros 1974).
+       Fourth-order Runge–Kutta. f = D′/D is the growth rate; Linder (2005) gave the rule f ≈ Ω_m(a)^0.55. */
+    T.GROWTH = (() => { const u0 = Math.log(1e-7), u1 = 12, n = 28000, hh = (u1 - u0) / n, U = new Float64Array(n + 1), D = new Float64Array(n + 1), F = new Float64Array(n + 1), aeq = Or / Om;
+      const acc = (u, d, v) => { const p = shares(Math.exp(u)); return -(2 - (4 * p[0] + 3 * p[1]) / 2) * v + 1.5 * p[1] * d; };
+      let d = 1 + 1.5 * Math.exp(u0) / aeq, v = 1.5 * Math.exp(u0) / aeq; U[0] = u0; D[0] = d; F[0] = v / d;
+      for (let i = 1; i <= n; i++) { const u = u0 + (i - 1) * hh, k1d = v, k1v = acc(u, d, v), k2d = v + hh / 2 * k1v, k2v = acc(u + hh / 2, d + hh / 2 * k1d, v + hh / 2 * k1v), k3d = v + hh / 2 * k2v, k3v = acc(u + hh / 2, d + hh / 2 * k2d, v + hh / 2 * k2v), k4d = v + hh * k3v, k4v = acc(u + hh, d + hh * k3d, v + hh * k3v);
+        d += hh / 6 * (k1d + 2 * k2d + 2 * k3d + k4d); v += hh / 6 * (k1v + 2 * k2v + 2 * k3v + k4v); U[i] = u + hh; D[i] = d; F[i] = v / d; }
+      const Dof = a => lerpTab(U, D, clamp(Math.log(a), u0, u1)), fOf = a => lerpTab(U, F, clamp(Math.log(a), u0, u1)), rule = a => Math.pow(shares(a)[1], 0.55);
+      /* the same ratio by the rule alone: exp ∫ Ω_m^0.55 d ln a from now on (Simpson) */
+      let s = 0; const m = 6000, h2 = 12 / m; for (let i = 0; i <= m; i++) s += rule(Math.exp(i * h2)) * (i === 0 || i === m ? 1 : i & 1 ? 4 : 2);
+      let worst = 0, worstZ = 0; for (let z = 0; z <= 5.0001; z += 0.01) { const a = 1 / (1 + z), e = Math.abs(fOf(a) - rule(a)); if (e > worst) { worst = e; worstZ = z; } }
+      return { D: Dof, f: fOf, rule, fNow: fOf(1), ruleNow: rule(1), DinfOverNow: D[n] / Dof(1), ruleInfOverNow: Math.exp(s * h2 / 3), D10OverInf: Dof(10) / D[n], worst, worstZ, sinceEq: Dof(1) / Dof(aeq), U, Dtab: D, Ftab: F }; })();
+
+    /* ── F. hydrogen, there and back. x: the share ionised. Down by Saha to the residual; back up by the tanh step in (1+z)^(3/2)
+       that Planck 2018 uses for its mid-point redshift z_re = 7.67 ± 0.73 (width 0.5 in redshift). Helium is left out, and the model
+       takes hydrogen back to fully ionised. */
+    T.REION = { z: 7.67, err: 0.73, dz: 0.5 };
+    T.xH = (z, xres = RECOMB.xResidual) => { const xr = Math.max(saha(z), xres), y = Math.pow(1 + z, 1.5), yre = Math.pow(1 + T.REION.z, 1.5), dy = 1.5 * Math.sqrt(1 + T.REION.z) * T.REION.dz; return xr + (1 - xr) * 0.5 * (1 + Math.tanh((yre - y) / dy)); };
+    T.roundTrip = (xres = RECOMB.xResidual, n = 6000) => { const l0 = Math.log(1 + 3000), Z = new Float64Array(n + 1), X = new Float64Array(n + 1), Cc = new Float64Array(n + 1), Cs = new Float64Array(n + 1); let prev = T.xH(3000, xres), c = fisherRao(1, prev), maxCs = 0;
+      for (let i = 0; i <= n; i++) { const z = Math.exp(l0 * (1 - i / n)) - 1, x = T.xH(z, xres); c += fisherRao(prev, x); prev = x; Z[i] = z; X[i] = x; Cc[i] = c / PI; Cs[i] = fisherRao(1, x) / PI; maxCs = Math.max(maxCs, Cs[i]); }
+      const S = Cc[n] - Cs[n]; return { Z, X, C: Cc, Cs, n, Ch: Cc[n], CsEnd: Cs[n], maxCs, Sh: S, salience: Math.exp(S) }; };   /* e^(SΩ) with S in radians and Ω = 1/π is e^(S in half-turns) */
+    T.HYDROGEN = T.roundTrip();
+
+    /* ── G. if DESI's hinted w(a) = w0 + wa(1 − a) and Ω_m are taken literally and run into the future, which the formula was not made for */
+    T.DESI = (() => { const C = Cosmo({ Om: DESI2.Om, w0: DESI2.w0, wa: DESI2.wa }), sh = sharesOf(C), two = a => { const p = sh(a); return p[2] / (p[1] + p[2]); };
+      let lo = 1, hi = 6; for (let i = 0; i < 200; i++) { const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3; if (two(m1) < two(m2)) lo = m1; else hi = m2; } const aPeak = (lo + hi) / 2;
+      return { aPeak, share: two(aPeak), share3: sh(aPeak)[2], maxFrac: 2 * Math.asin(Math.sqrt(two(aPeak))) / PI, aOnePercent: solve(a => two(a) - 0.01, aPeak, 40), nowFrac: 2 * Math.asin(Math.sqrt(two(1))) / PI, rateNow: -3 * (DESI2.w0), two }; })();
+
+    /* ── H. four clocks for "how far through are we?" */
+    T.CLOCKS = { years: COSMO.age, conformal: T.CONFORMAL.frac, path: T.now.walked, leg: LEG.now.frac };
+    return T; })();
+
   return { K, planck, compton, schwarzschild, crossing, bohr, R0_FM, nuclearRadius, closestApproach, rutherford, KION, lambdaOfE, energyOfLambda, LHC, bendRadius, ringFor, LIMITS, ACCEL, INFL,
     PLANCK18, SH0ES, DESI2, Cosmo, COSMO, COSMO_SH0ES, LAST, RYD_EV, saha, RECOMB, solve, lightTime, VOY, voyager, PLANETS, planetAt, STARS, starsWithin, SGRA, MILKYWAY, LANIAKEA, JWST,
     cmbDl, cmbCl, cmbSky, W0, W1, LN0, LN1, DECADES, lnFovOf, fovOf, zoomOfLn, zoomOf, SPAN, HUMAN, SEEN, UNITS, unitOf, fmtLen, scaleBar, fmtTime, fmtBig, sup, sci, sig, group,
-    LEVELS, NU, LV, IDMIN, IDMAX, HOME, levelMix, levelAt, zone, fisherRao, fisherRaoNumeric, OMEGA_Z2, CV_CANDIDATE, cvOf, CRR, clamp, smooth, rng, HFD };
+    LEVELS, NU, LV, IDMIN, IDMAX, HOME, levelMix, levelAt, zone, fisherRao, fisherRaoNumeric, OMEGA_Z2, CV_CANDIDATE, cvOf, CRR, TIME, clamp, smooth, rng, HFD };
 })();
 if (typeof window !== 'undefined') { window.HFD = HFD; window.EV = EV; }
 if (typeof module !== 'undefined') module.exports = EV;

@@ -286,4 +286,5 @@ function maths() { const lv = st.level; if (lv >= 0 && lv <= 6 || !maths.done) m
   setLive('crD', 'Ω<sub>m</sub> = ' + R.D.Om + ' ± ' + EV.PLANCK18.OmErr + ' (Planck) &nbsp; 1/π = ' + fmt(R.D.target, 4) + ' &nbsp; ' + fmt(R.D.sigmaPlanck, 2) + 'σ apart &nbsp; DESI DR2: ' + EV.DESI2.Om + ' ± ' + EV.DESI2.OmErr + ', ' + fmt(R.D.sigmaDesi, 1) + 'σ apart &nbsp; Ω<sub>m</sub>(z) = 1/π only at z = ' + fmt(R.D.zEqual, 3) + '; at z = 1 it is ' + fmt(R.D.OmAt1, 3));
   setLive('crE', 'crossing: ' + fmt(R.D.crossOverPlanck, 5) + ' m<sub>P</sub> with h &nbsp; ' + fmt(R.D.reducedOverPlanck, 5) + ' m<sub>P</sub> with ħ');
   setLive('crF', 'w₀ = ' + EV.DESI2.w0 + ', w<sub>a</sub> = ' + EV.DESI2.wa + ' &nbsp; w = −1 at z = ' + fmt(R.E.zCross, 4) + ' &nbsp; density peaks at z = ' + fmt(R.E.zPeak, 4) + ' &nbsp; an unrelated model, w = −1.3 + 0.9a²: ' + fmt(R.E.otherCross, 4) + ' and ' + fmt(R.E.otherPeak, 4));
-  setLive('crG', 'ln a at the three events: ' + R.F.events.map(v => fmt(v, 2)).join(', ') + ' &nbsp; gaps ' + R.F.gaps.map(v => fmt(v, 2)).join(' and ')); }
+  setLive('crG', 'ln a at the three events: ' + R.F.events.map(v => fmt(v, 2)).join(', ') + ' &nbsp; gaps ' + R.F.gaps.map(v => fmt(v, 2)).join(' and '));
+  timeSync(); }   /* the section on time follows the zoom (view_d.js) */
