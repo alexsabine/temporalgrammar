@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Fireflies · Alexander Sabine</title>
+<meta name="description" content="A June night in the Great Smoky Mountains. Hundreds of fireflies flash in bursts, then go dark together. Hide them from one another, or shine a torch, and watch the rhythm come apart.">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fffdf8;--wash:#f8f3e4;--ink:#14202a;--soft:#4d5a61;--hair:#d9cfae;--gold:#b98619;--leaf:#e0ae35;--viridian:#0d7a70;--deep:#0a5651;
+  --fell:"IM Fell English",Georgia,serif;--caps:"IM Fell English SC","IM Fell English",Georgia,serif;--body:"Source Serif 4",Georgia,serif}
+*{box-sizing:border-box;border-radius:0}
+html{overflow-x:hidden}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(16px,4vw,32px)}
+a{color:var(--deep);text-decoration-color:var(--leaf);text-underline-offset:4px}
+:focus-visible{outline:2px solid var(--viridian);outline-offset:3px}
+header{padding:18px 0 6px}
+.home{display:inline-block;font:400 14.5px/1 var(--caps);letter-spacing:.08em;color:var(--ink);text-decoration:none;border:1px solid var(--ink);padding:14px 14px;min-height:44px}
+.home:hover{background:var(--ink);color:var(--paper)}
+h1{font:400 clamp(40px,7vw,76px)/1 var(--fell);margin:22px 0 8px}
+h1 em{color:var(--viridian)}
+.sub{font:italic 400 clamp(18px,2.2vw,22px)/1.4 var(--fell);color:var(--soft);max-width:46ch;margin:0 0 18px}
+.plate{position:relative;padding:9px;border:1px solid var(--hair);background:var(--paper);box-shadow:0 26px 50px -34px rgba(20,32,42,.55)}
+.plate::before{content:"";position:absolute;inset:4px;border:1px solid var(--leaf);opacity:.7;pointer-events:none}
+canvas{display:block;width:100%}
+#wood{aspect-ratio:16/9;background:#070b12;touch-action:pan-y;cursor:crosshair}
+#fail{display:none;padding:40px 20px;text-align:center;font:italic 400 19px/1.4 var(--fell);color:var(--soft)}
+.dock{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin:18px 0 4px}
+.btn{font:400 14.5px/1.2 var(--caps);letter-spacing:.08em;min-height:44px;padding:11px 16px;border:1px solid var(--ink);background:none;color:var(--ink);cursor:pointer}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn[aria-pressed="true"]{background:var(--viridian);border-color:var(--viridian);color:#fff}
+.quiet{border-color:var(--hair);color:var(--soft)}
+.slide{display:flex;align-items:center;gap:10px;min-height:44px;font:400 14.5px/1.2 var(--caps);letter-spacing:.08em;color:var(--ink)}
+.slide output{display:inline-block;min-width:2.2em;text-align:right;color:var(--deep)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:44px;background:none;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--ink)}
+input[type=range]::-moz-range-track{height:1px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:22px;margin-top:-11px;background:var(--paper);border:1px solid var(--ink)}
+input[type=range]::-moz-range-thumb{width:13px;height:21px;background:var(--paper);border:1px solid var(--ink);border-radius:0}
+.read{display:flex;flex-wrap:wrap;gap:6px 26px;margin:10px 0 0;padding:12px 0 0;border-top:1px solid var(--hair);font:400 14.5px/1.3 var(--caps);letter-spacing:.07em;color:var(--soft)}
+.read div{white-space:nowrap}
+.read b{font:400 16px/1.3 var(--body);letter-spacing:0;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:5px}
+.chart{margin-top:26px}
+.chart h2{font:400 26px/1.15 var(--fell);margin:0 0 4px}
+.chart p{margin:0 0 12px;color:var(--soft);max-width:70ch;font-size:15.5px}
+.key{display:inline-block;width:12px;height:10px;margin:0 5px 0 2px;vertical-align:baseline}
+#rhythm{height:190px}
+section{padding:26px 0 60px}
+.notes{display:grid;grid-template-columns:1fr 1fr;gap:26px 34px;margin-top:30px;border-top:1px solid var(--hair);padding-top:24px}
+.notes h2{font:400 26px/1.15 var(--fell);margin:0 0 8px}
+.notes p{margin:0 0 .8em;max-width:60ch}
+.notes .src{font-size:14.5px;line-height:1.45;color:var(--soft)}
+.notes .wide{grid-column:1/-1}
+@media (max-width:760px){.notes{grid-template-columns:1fr}#wood{aspect-ratio:4/5}.slide{width:100%}.slide input{flex:1;width:auto}.read div{white-space:normal}#rhythm{height:330px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="home" href="workshop.html">&larr; The workshop</a>
+<h1>The <em>Fireflies</em></h1>
+<p class="sub">A June night in the Great Smoky Mountains. Each firefly flashes when it is ready, and joins in when it sees another.</p></header>
+
+<div class="plate"><canvas id="wood" role="img" aria-label="A clearing in a dark wood at night, seen from a path. Tall trunks and rhododendron stand against a deep blue sky with a few stars. Hundreds of small yellow-green lights flash among the trees, several times in quick succession and nearly all at once, lighting the leaves around them. Then the wood goes dark for several seconds, and the bursts of light begin again."></canvas>
+<p id="fail">This wood needs WebGL 2, which this browser has switched off.</p></div>
+
+<div class="dock">
+  <button class="btn" id="snd" type="button" aria-pressed="false">Sound</button>
+  <label class="slide">Fireflies <input id="n" type="range" min="1" max="600" step="1" value="300" aria-label="How many fireflies are in the clearing"><output id="nv" for="n">300</output></label>
+  <button class="btn" id="hide" type="button" aria-pressed="false">Hide them from each other</button>
+  <button class="btn quiet" id="torch" type="button" aria-pressed="false">Torch off</button>
+  <button class="btn quiet" id="pause" type="button" aria-pressed="false">Pause</button>
+</div>
+<div class="read" aria-live="off">
+  <div>Fireflies<b id="r1">–</b></div>
+  <div>Flashing now<b id="r2">–</b></div>
+  <div>Between bursts<b id="r3">–</b></div>
+  <div>Joining each burst<b id="r4">–</b></div>
+  <div>Bursts begun unprompted<b id="r5">–</b></div>
+</div>
+
+<div class="chart">
+  <h2>The rhythm</h2>
+  <p>Gold: every flash in the clearing over the last minute. Right: how long each firefly waits between one burst and its next, <span class="key" style="background:var(--viridian)"></span>for the fireflies here as they run, and <span class="key" style="border:1px solid var(--ink)"></span>for one firefly alone, from a run of the same rules.</p>
+  <canvas id="rhythm" role="img" aria-label="Two charts. On the left, a minute of flashes: tall gold spikes in clusters of four to eight, with long empty gaps between the clusters. On the right, how long each firefly waits between its bursts: in the swarm the waits bunch into a narrow peak near fourteen seconds, with a smaller one at twice that for bursts it missed; a lone firefly's waits are spread thinly from about twelve to sixty seconds."></canvas>
+</div>
+
+<section>
+<div class="notes">
+  <div>
+    <h2>What is known</h2>
+    <p><i>Photinus carolinus</i> is a firefly of the southern Appalachians. For about two weeks in late May and June the males fly low over the forest floor and flash in bursts of several flashes about half a second apart. Then they go dark for several seconds. Where there are many of them, the bursts come together and the whole wood flashes and goes dark at once (Copeland and Moiseff 1995). The females answer from the ground, and they answer better when the males around them are in step (Moiseff and Copeland 2010).</p>
+    <p>Filming swarms in three dimensions showed that synchrony appears only once the fireflies are dense enough, and that a burst often starts in one place and spreads (Sarfati and colleagues 2020, 2021). A firefly kept on its own in a tent flashes at irregular, widely spread intervals. In a swarm the interval becomes regular, and close to the shortest that a lone firefly ever waits (Sarfati and colleagues 2023).</p>
+  </div>
+  <div>
+    <h2>The rule used here</h2>
+    <p>After a burst, each firefly needs a spell of darkness to recover, about nine seconds. A flash seen while it is recovering starts the spell again. Once recovered it may begin a burst on its own at any moment, but rarely: on average after 26 seconds. If it sees a flash first, it joins on the next beat. Within a burst, a flash seen nudges its next flash into step. The flash itself and the recovery follow the shape of Sarfati and colleagues’ model (2023). The nudge is the pulse coupling studied by Mirollo and Strogatz (1990).</p>
+    <p>Nobody sets the swarm’s rhythm. In a crowd, someone is always ready, so the wait for the first unprompted burst shrinks to almost nothing, and the interval falls to the recovery time and the length of a burst. In test runs a lone firefly waited 43.6 seconds on average, with a spread (coefficient of variation) of 0.69. A swarm of 300 flashed every 14.4 seconds with a spread of 0.05 to 0.07.</p>
+    <p>The timing rule here is a count, a threshold and a restart: count the dark, burst when the count is full, start the count again. This is the timing grammar of Alexander’s work on coherence, rupture and regeneration, which is under investigation. It is used here as a way to build a firefly, not as a claim about how fireflies decide.</p>
+  </div>
+  <div>
+    <h2>What to try</h2>
+    <p>Press “Hide them from each other”. Each firefly is now in its own tent. The gold spikes smear into a steady drizzle, and the waits on the right spread out until they match the lone firefly’s. Press it again and watch them find each other.</p>
+    <p>Take “Fireflies” down to one, then bring it back up slowly. Turn on the white torch and sweep it across the clearing: the fireflies it lights stop flashing. Visitors to Elkmont are asked to cover their torches with red cellophane. The red torch here does nothing to the fireflies.</p>
+    <p>Turn the sound on. Fireflies are silent. Each flash of the swarm is played as a soft note, rising through the burst, over the sound of a stream and a tree cricket.</p>
+  </div>
+  <div>
+    <h2>Where it falls short</h2>
+    <p>Real swarms do not synchronise when they are sparse. This one does. In test runs, fifteen fireflies in the same clearing joined each other’s bursts about as often as three hundred did, around seven in ten each time. Something that makes a sparse swarm fall apart is missing: perhaps how far a flash can really be seen through the leaves, or how often a recovered firefly starts by itself.</p>
+    <p>Left out: the females on the ground and their answers; how a male’s flight dips as it flashes; the darkening of the evening and the end of the night’s display; differences between fireflies. Sight is a single falling-off with distance, and a leaf in the way stays in the way for four seconds. The white torch silences every firefly it touches. Real light at night affects fireflies more subtly than that (Owens and Lewis 2018). Every number here was chosen to give a lone firefly widely spread intervals. None was fitted to recordings. The numbers under the picture are measured from this run as it goes.</p>
+  </div>
+  <div class="wide src">
+    <p><b>Sources.</b> All cited from memory; check. Copeland J. and Moiseff A. (1995) The occurrence of synchrony in the North American firefly <i>Photinus carolinus</i> (Coleoptera: Lampyridae). <i>Journal of Insect Behavior</i> 8, 381–394. Moiseff A. and Copeland J. (2010) Firefly synchrony: a behavioral strategy to minimize visual clutter. <i>Science</i> 329, 181. Sarfati R., Hayes J. C., Sarfati É. and Peleg O. (2020) Spatio-temporal reconstruction of emergent flash synchronization in firefly swarms via stereoscopic 360-degree cameras. <i>Journal of the Royal Society Interface</i> 17, 20200179. Sarfati R., Hayes J. C. and Peleg O. (2021) Self-organization in natural swarms of <i>Photinus carolinus</i> synchronous fireflies. <i>Science Advances</i> 7, eabg9259. Sarfati R., Joshi K., Martin O., Hayes J. C., Iyer-Biswas S. and Peleg O. (2023) Emergent periodicity in the collective synchronous flashing of fireflies. <i>eLife</i> 12, e78908. Buck J. (1988) Synchronous rhythmic flashing of fireflies. II. <i>Quarterly Review of Biology</i> 63, 265–289. Mirollo R. E. and Strogatz S. H. (1990) Synchronization of pulse-coupled biological oscillators. <i>SIAM Journal on Applied Mathematics</i> 50, 1645–1662. Owens A. C. S. and Lewis S. M. (2018) The impact of artificial light at night on nocturnal insects: a review and synthesis. <i>Ecology and Evolution</i> 8, 11337–11358. Dolbear A. E. (1897) The cricket as a thermometer. <i>The American Naturalist</i> 31, 970–971.</p>
+  </div>
+</div>
+</section>
+</div>
+
+<script>
+/* The firefly model. No drawing in here. Runs in a browser or in node.
+   Units are metres and seconds.
+
+   What comes from the literature:
+   - Photinus carolinus males flash in bursts of several flashes about half a second apart, then go dark for several
+     seconds; in a swarm the bursts come together and the dark gaps become regular (Copeland and Moiseff 1995;
+     Sarfati, Hayes and Peleg 2021)
+   - a firefly kept alone flashes in bursts at irregular, widely spread intervals; in a group the interval shortens and
+     narrows, and is close to the shortest a firefly ever waits on its own (Sarfati et al. 2023). The model used here
+     follows the shape of theirs: a recovery time after each burst with a sharp lower edge, then a chance each moment
+     of starting a burst unprompted, and joining on the next beat on seeing another's flash once recovered
+   - a firefly sees another's flash less often the further away it is, because leaves are in the way
+   - within a burst, a flash seen nudges the next flash of one's own toward it (pulse coupling: Buck 1988;
+     Mirollo and Strogatz 1990)
+   - artificial light suppresses flashing (Owens and Lewis 2018)
+   What is this page's own choice:
+   - every number below. The recovery time, the chance of an unprompted start, the sight distance and the size of the
+     nudge are settings, chosen so that a lone firefly's intervals spread widely. They are not fitted to data.
+   - the count is of dark time: a flash seen while recovering starts it again (hold). Without this the swarm never went
+     dark between bursts (see BETS.md, v1 and the explorations after v2).
+   The timing grammar is a count, a threshold and a restart: each firefly counts dark time since its last burst; once
+   past its threshold it is ready; the burst is the cut; the count restarts at zero and a new threshold is drawn. */
+(function (root) {
+'use strict';
+const DEFAULTS = {
+  W: 40, D: 40, z0: 8, yLo: .3, yHi: 4,           /* the clearing: x from -W/2 to W/2, z from z0 to z0+D (distance from the path), height */
+  Tc: 9.0, TcSd: .3, TcMin: 6,                     /* recovery: dark time needed after a burst, drawn afresh each time (v1, v2: sd 0.9) */
+  tauS: 26,                                        /* mean wait for an unprompted start, once recovered */
+  kLo: 4, kHi: 8,                                  /* flashes in a burst */
+  Tf: .52, TfSd: .03, flashJit: .02,               /* time between flashes in a burst, and its jitter */
+  react: .52, reactSd: .02,                        /* from seeing a flash to one's own first: the next beat (v1, v2: 0.22 s) */
+  lambda: 6,                                       /* sight: probability exp(-d/lambda) */
+  see: true, nudge: .45, hold: true, occl: 4,       /* hold: a flash seen while recovering restarts the count; occl: seconds a line of sight lasts */
+  speed: .45, flyShare: .7,                        /* drifting flight */
+  torch: 0, torchX: 0, torchY: .02, torchHalf: .2, torchHalfV: .17, torchH: 1.2,   /* 0 off, 1 white, 2 red; beam centre (bearing, elevation, radians), half-widths, height held */
+};
+function rng(seed) { let s = (seed || 7) % 2147483647; if (s <= 0) s += 2147483646; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function gauss(r) { let u = 0, v = 0; while (u === 0) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283185307 * v); }
+
+const CHARGE = 0, READY = 1, BURST = 2;
+
+function make(n, opt) {
+  const P = Object.assign({}, DEFAULTS, opt || {}), r = rng(P.seed || 7), N = Math.max(n, P.nMax || n);
+  const f = () => new Float32Array(N);
+  const S = { n, nMax: N, P, r, t: 0, flashes: [], log: [], logOn: P.log !== false,
+    x: f(), y: f(), z: f(), vx: f(), vy: f(), vz: f(), hx: f(), hy: f(), hz: f(),
+    st: new Uint8Array(N), c: f(), thr: f(), left: new Uint8Array(N), next: new Float64Array(N), Tf: f(),
+    seen: new Float64Array(N).fill(-1e9), glow: f(), lastFlash: new Float64Array(N), lastBurst: new Float64Array(N), lit: new Uint8Array(N), id: new Uint32Array(N),
+    nFlash: 0, nBurst: 0, nSpont: 0, due: [], qd: new Uint32Array(N), qs: 1, t1: 0 };
+  for (let i = 0; i < N; i++) place(S, i, true);
+  return S;
+}
+function place(S, i, fresh) {
+  const P = S.P, r = S.r;
+  S.x[i] = (r() - .5) * P.W; S.z[i] = P.z0 + r() * P.D; S.y[i] = P.yLo + Math.pow(r(), 1.6) * (P.yHi - P.yLo);
+  S.hx[i] = gauss(r); S.hy[i] = gauss(r) * .3; S.hz[i] = gauss(r);
+  S.vx[i] = S.vy[i] = S.vz[i] = 0;
+  S.Tf[i] = P.Tf + gauss(r) * P.TfSd;
+  S.st[i] = CHARGE; S.thr[i] = drawThr(S); S.c[i] = fresh ? r() * (S.thr[i] + P.tauS * .6) : 0;
+  S.lastFlash[i] = S.lastBurst[i] = -1e9; S.glow[i] = 0; S.id[i] = (S.id[i] || i) + (fresh ? 0 : S.nMax);
+}
+function drawThr(S) { const P = S.P; return Math.max(P.TcMin, P.Tc + gauss(S.r) * P.TcSd); }
+
+function setCount(S, n) { n = Math.max(1, Math.min(S.nMax, Math.round(n))); for (let i = S.n; i < n; i++) place(S, i, true); S.n = n; }
+
+/* is firefly i lit by the torch? The torch is held on the path at the origin; its beam is an ellipse of directions. */
+function inBeam(S, i) { const P = S.P; if (!P.torch) return false; const a = (Math.atan2(S.x[i], S.z[i]) - P.torchX) / P.torchHalf, e = (Math.atan2(S.y[i] - P.torchH, Math.hypot(S.x[i], S.z[i])) - P.torchY) / P.torchHalfV; return a * a + e * e < 1; }
+
+function startBurst(S, i, t0) {
+  const P = S.P; S.st[i] = BURST; S.left[i] = P.kLo + Math.floor(S.r() * (P.kHi - P.kLo + 1)); S.next[i] = t0; S.nBurst++;
+}
+
+/* whether a leaf is in the way between i and j: the same for a few seconds at a time, not drawn afresh each flash */
+function sight(S, i, j, t) {
+  let a = S.id[i], b = S.id[j]; if (a > b) { const q = a; a = b; b = q; }
+  let h = Math.imul(a, 73856093) ^ Math.imul(b, 19349663); const ph = ((h >>> 0) % 1000) / 1000;
+  h ^= Math.imul(Math.floor(t / S.P.occl + ph) | 0, 83492791); h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+/* one flash, by firefly i at time t: everyone who sees it may respond */
+function flash(S, i, t) {
+  const P = S.P; S.nFlash++; S.lastFlash[i] = t; S.glow[i] = 1;
+  if (S.logOn) S.flashes.push(t, i); if (S.onFlash) S.onFlash(i, t);
+  if (!P.see) return;
+  const xi = S.x[i], yi = S.y[i], zi = S.z[i], n = S.n, inv = 1 / P.lambda, r = S.r;
+  for (let j = 0; j < n; j++) {
+    if (j === i || S.lit[j]) continue; const s = S.st[j];
+    const dx = S.x[j] - xi, dy = S.y[j] - yi, dz = S.z[j] - zi, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (sight(S, i, j, t) > Math.exp(-d * inv)) continue;
+    S.seen[j] = t;
+    if (s === CHARGE) { if (P.hold) S.c[j] = 0; continue; }   /* still recovering: the count is of dark time, so it starts again */
+    if (s === READY) startBurst(S, j, t + Math.max(.05, P.react + gauss(r) * P.reactSd));   /* join, on the next beat */
+    else if (P.nudge > 0) {                          /* in a burst: pull my next flash toward this one's rhythm */
+      const want = t + S.Tf[j], gap = want - S.next[j];
+      if (Math.abs(gap) < S.Tf[j] * .5 && S.next[j] > t + .04) S.next[j] += gap * P.nudge; else continue;
+    } else continue;
+    if (S.next[j] < S.t1 && S.qd[j] !== S.qs) { S.qd[j] = S.qs; S.due.push(j); }
+  }
+}
+
+/* one step for every firefly */
+function step(S, dt) {
+  const P = S.P, n = S.n, r = S.r, t0 = S.t, t1 = S.t + dt, pS = dt / P.tauS;
+  /* flashes due in this step are taken in time order, so that one flash can bring on another within the step */
+  const due = S.due; due.length = 0; S.t1 = t1; S.qs++;
+  for (let i = 0; i < n; i++) {
+    S.lit[i] = P.torch === 1 && inBeam(S, i) ? 1 : 0;
+    const s = S.st[i];
+    if (s === BURST) { if (S.lit[i]) { endBurst(S, i); continue; } if (S.next[i] < t1) { S.qd[i] = S.qs; due.push(i); } continue; }
+    S.c[i] += dt;                                    /* the count: time since the last burst */
+    if (s === CHARGE && S.c[i] >= S.thr[i]) S.st[i] = READY;
+    if (S.st[i] === READY && !S.lit[i] && r() < pS) { startBurst(S, i, t0 + r() * dt); S.nSpont++; if (S.next[i] < t1) { S.qd[i] = S.qs; due.push(i); } }
+  }
+  /* a small queue: process due flashes in time order, adding any that become due */
+  let guard = 0;
+  while (due.length && guard++ < 20000) {
+    let k = 0; for (let q = 1; q < due.length; q++) if (S.next[due[q]] < S.next[due[k]]) k = q;
+    const i = due[k]; due[k] = due[due.length - 1]; due.pop();
+    S.qd[i] = 0; if (S.st[i] !== BURST || S.next[i] >= t1) continue;
+    const tf = S.next[i]; flash(S, i, tf);
+    if (--S.left[i] <= 0) endBurst(S, i);
+    else { S.next[i] = tf + S.Tf[i] + gauss(r) * P.flashJit; if (S.next[i] < t1) { S.qd[i] = S.qs; due.push(i); } }
+  }
+  /* flight: a slow drift that wanders, kept inside the clearing */
+  for (let i = 0; i < n; i++) {
+    S.hx[i] += gauss(r) * .9 * Math.sqrt(dt) - S.hx[i] * .25 * dt; S.hy[i] += gauss(r) * .5 * Math.sqrt(dt) - S.hy[i] * .5 * dt; S.hz[i] += gauss(r) * .9 * Math.sqrt(dt) - S.hz[i] * .25 * dt;
+    const fly = S.st[i] === BURST ? 1 : P.flyShare, h = Math.hypot(S.hx[i], S.hy[i], S.hz[i]) || 1, sp = P.speed * fly;
+    let tx = S.hx[i] / h * sp, ty = S.hy[i] / h * sp * .6, tz = S.hz[i] / h * sp;
+    const hx = P.W / 2; if (S.x[i] > hx) tx -= (S.x[i] - hx); if (S.x[i] < -hx) tx -= (S.x[i] + hx);
+    if (S.z[i] < P.z0) tz += P.z0 - S.z[i]; if (S.z[i] > P.z0 + P.D) tz -= S.z[i] - P.z0 - P.D;
+    if (S.y[i] < P.yLo) ty += (P.yLo - S.y[i]) * 2; if (S.y[i] > P.yHi) ty -= (S.y[i] - P.yHi) * 2;
+    const a = Math.min(1, dt * 1.5); S.vx[i] += (tx - S.vx[i]) * a; S.vy[i] += (ty - S.vy[i]) * a; S.vz[i] += (tz - S.vz[i]) * a;
+    S.x[i] += S.vx[i] * dt; S.y[i] += S.vy[i] * dt; S.z[i] += S.vz[i] * dt;
+  }
+  S.t = t1;
+  if (S.logOn && S.flashes.length > 400000) S.flashes.splice(0, 200000);
+}
+function endBurst(S, i) { S.st[i] = CHARGE; S.c[i] = 0; S.thr[i] = drawThr(S); S.lastBurst[i] = S.t; }
+
+/* ─── measurements, all from the record of flashes ─── */
+/* collective bursts: runs of flashes with no gap longer than gap seconds */
+function collective(fl, from, to, gap) {
+  gap = gap || 1.5; const out = []; let cur = null;
+  for (let q = 0; q < fl.length; q += 2) { const t = fl[q], i = fl[q + 1]; if (t < from || t > to) continue;
+    if (!cur || t - cur.end > gap) { cur = { start: t, end: t, n: 0, who: new Set() }; out.push(cur); }
+    cur.end = t; cur.n++; cur.who.add(i); }
+  return out;
+}
+/* each firefly's own burst starts: a flash more than 1.5 s after its previous flash */
+function ownStarts(fl, from, to) {
+  const last = new Map(), starts = new Map();
+  for (let q = 0; q < fl.length; q += 2) { const t = fl[q], i = fl[q + 1]; const l = last.get(i); last.set(i, t);
+    if (t < from || t > to) continue; if (l === undefined || t - l > 1.5) { if (!starts.has(i)) starts.set(i, []); starts.get(i).push(t); } }
+  return starts;
+}
+function stats(a) { const n = a.length; if (!n) return { n: 0, mean: NaN, sd: NaN, cv: NaN }; let m = 0; for (const v of a) m += v; m /= n; let s = 0; for (const v of a) s += (v - m) * (v - m); const sd = Math.sqrt(s / Math.max(1, n - 1)); return { n, mean: m, sd, cv: sd / m }; }
+function intervals(ts) { const o = []; for (let k = 1; k < ts.length; k++) o.push(ts[k] - ts[k - 1]); return o; }
+/* peaks: flashes grouped with gaps under 0.2 s; the spread of each peak */
+function peaks(fl, from, to, gap) {
+  gap = gap || .2; const out = []; let cur = null;
+  for (let q = 0; q < fl.length; q += 2) { const t = fl[q]; if (t < from || t > to) continue;
+    if (!cur || t - cur.last > gap) { cur = { ts: [], last: t }; out.push(cur); } cur.ts.push(t); cur.last = t; }
+  return out.map(p => ({ n: p.ts.length, t: p.ts[0], sd: stats(p.ts).sd }));
+}
+
+function run(n, sec, opt, dt) { const S = make(n, opt); dt = dt || 1 / 120; const k = Math.round(sec / dt); for (let s = 0; s < k; s++) step(S, dt); return S; }
+
+const API = { DEFAULTS, make, step, setCount, inBeam, collective, ownStarts, stats, intervals, peaks, run, CHARGE, READY, BURST };
+if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.FIREFLY = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+/* The wood, the fireflies, the torch, the rhythm, the sound and the controls. The fireflies themselves are in the model above. */
+(function () {
+'use strict';
+const M = window.FIREFLY, $ = id => document.getElementById(id);
+const canvas = $('wood');
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: true, powerPreference: 'high-performance' });
+if (!gl) { canvas.style.display = 'none'; $('fail').style.display = 'block'; }
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = Math.min(innerWidth, innerHeight) < 620 || (matchMedia('(pointer: coarse)').matches && innerWidth < 900);
+const NMAX = 600, N0 = 300;
+const S = M.make(N0, { seed: 7 + (Date.now() % 97), nMax: NMAX });
+const FAR = 160, CAMH = 1.55;
+
+/* ─── what is measured, as the run goes: collective bursts, who joins them, and flashes per tenth of a second ─── */
+const BIN = .1, NB = 600, bins = new Uint16Array(NB);
+let ownIv = [], prevF = new Float64Array(NMAX).fill(-1e9), ownStart = new Float64Array(NMAX).fill(-1e9), binT = Math.floor(S.t / BIN), lastAny = -1e9, cur = null, starts = [], shares = [], ivAll = [], stamp = new Uint32Array(NMAX), stampN = 1, beat = 0, beatT = -1e9, flashesThisFrame = 0;
+S.logOn = false;
+S.onFlash = (i, t) => {
+  const b = Math.floor(t / BIN); while (binT < b) { binT++; bins[binT % NB] = 0; } bins[b % NB]++;
+  flashesThisFrame++;
+  /* each firefly's own bursts: a flash more than 1.5 s after its last one starts a new burst */
+  if (t - prevF[i] > 1.5) { if (ownStart[i] > -1e8) { ownIv.push(t - ownStart[i]); if (ownIv.length > 2000) ownIv.splice(0, 500); } ownStart[i] = t; } prevF[i] = t;
+  if (t - lastAny > 1.5) { if (cur) closeBurst(); cur = { start: t, who: 0 }; stampN++; beat = 0; beatT = t; starts.push(t); if (starts.length > 1) { ivAll.push(t - starts[starts.length - 2]); if (ivAll.length > 400) ivAll.shift(); } if (starts.length > 60) starts.shift(); }
+  lastAny = t; if (!cur) return;                    /* measures were reset mid-burst: wait for the next start */
+  if (t - beatT > .26) { beat++; beatT = t; }
+  if (stamp[i] !== stampN) { stamp[i] = stampN; cur.who++; }
+};
+function closeBurst() { shares.push(cur.who / S.n); if (shares.length > 30) shares.shift(); cur = null; }
+function resetMeasures() { starts = []; shares = []; ivAll = []; cur = null; ownIv = []; ownStart.fill(-1e9); }
+
+/* a lone firefly, run once with no pictures, for comparison in the chart */
+const lone = (() => { const L = M.run(1, 3000, { seed: 5 }, 1 / 60); const st = M.ownStarts(L.flashes, 0, 3000).get(0) || []; return M.intervals(st); })();
+
+/* ─── shaders ─── */
+function prog(vs, fs) { const p = gl.createProgram(); for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) { const s = gl.createShader(t); gl.shaderSource(s, '#version 300 es\nprecision highp float;\n' + src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s)); gl.attachShader(p, s); }
+  gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p)); const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); } return { p, u }; }
+
+const NOISE = `
+float h1(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h1(i),h1(i+vec2(1,0)),f.x),mix(h1(i+vec2(0,1)),h1(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n2(p);p=p*2.07+vec2(17.3,9.1);a*=.5;}return s;}
+float fbm3(vec2 p){float a=.5,s=0.;for(int i=0;i<3;i++){s+=a*n2(p);p=p*2.11+vec2(5.3,11.7);a*=.5;}return s;}`;
+
+const BG_V = `layout(location=0) in vec2 aP;out vec2 vUv;void main(){vUv=aP*.5+.5;gl_Position=vec4(aP,0.,1.);}`;
+/* The wood is drawn as a few upright layers at set distances, each cut out by rule: trunks, a canopy with gaps, an
+   understory of rhododendron, ferns close to the path. For each pixel the nearest layer that covers it decides the
+   colour and the depth, so fireflies behind a trunk are hidden by it. Leaves near a flash are lit by it: the light
+   buffer holds, for each part of the screen, how much yellow-green light is nearby and at roughly what distance. */
+const BG_F = `in vec2 vUv;out vec4 o;
+uniform vec3 uFwd,uRight,uUp;uniform vec2 uTan;uniform float uT,uPix,uTorch,uTorchX,uTorchY,uTorchHalf,uTorchHalfV,uCamH,uFar;uniform sampler2D uGlow;uniform vec2 uGlowScale;
+${NOISE}
+const vec3 LC=vec3(.62,1.,.20);
+/* coverage of one layer at distance D; X is across, Y is height, both in metres */
+float trunk(float X,float Y,float cx,float r,float lean,float seed,float aa,out float sh){
+  float xx=X-cx-Y*lean;r*=1.+.6*exp(-Y*1.8);xx+=(n2(vec2(Y*1.1,seed))-.5)*r*.3;sh=clamp(xx/r,-1.,1.);return smoothstep(r+aa,r-aa,abs(xx));}
+vec4 layer(vec3 d,float D,int kind,float aa){
+  float s=D/d.z;float X=d.x*s,Y=uCamH+d.y*s;float pix=aa*s;
+  float cover=0.,sh=0.,leafy=0.,sh2;
+  if(kind==0){ /* beside the path: two trunks at the edges, leaves hanging into the top corners, ferns at the foot */
+    float t1=trunk(X,Y,-2.75,.34,.02,1.,pix,sh2);if(t1>cover){cover=t1;sh=sh2;}
+    float t2=trunk(X,Y,2.55,.42,-.035,2.,pix,sh2);if(t2>cover){cover=t2;sh=sh2;}
+    float hang=fbm(vec2(X,Y)*1.1+3.)+.32*n2(vec2(X,Y)*9.)+(Y-3.2)*.17+(abs(X)-1.5)*.13;float lv=smoothstep(.83,.8,1.-hang+.5);
+    if(lv>cover){cover=lv;leafy=1.;sh=0.;}
+    float fv=fbm(vec2(X*2.4,Y*3.2)+vec2(sin(uT*.6+X)*.02,0.))+.3*n2(vec2(X,Y)*14.)+.4*smoothstep(.9,2.4,abs(X))-.2;
+    float fern=smoothstep(.5+.55*Y-.015,.5+.55*Y+.015,fv);if(Y<.9&&fern>cover){cover=fern;leafy=1.;sh=0.;}
+  } else if(kind==1){ /* the clearing: a few tall trees standing in it, each with a crown against the sky, and low rhododendron */
+    float cw=14.,ci=floor(X/cw);
+    for(int k=-1;k<=1;k++){float cc=ci+float(k);float hs=h1(vec2(cc,D));if(hs>.42)continue;
+      float cx=(cc+.25+.5*h1(vec2(cc,D+3.)))*cw,r=mix(.22,.42,h1(vec2(cc,D+7.))),lean=(h1(vec2(cc,D+9.))-.5)*.04;
+      float top=mix(9.,15.,h1(vec2(cc,D+5.)));
+      float tt=trunk(X,Y,cx,r,lean,cc,pix,sh2)*step(Y,top);if(tt>cover){cover=tt;sh=sh2;leafy=0.;}
+      vec2 q=vec2((X-cx-top*lean)/mix(3.,5.,hs*2.),(Y-top)/3.6);float cr=length(q)+(fbm(vec2(X,Y)*.45+cc)-.5)*1.1+(n2(vec2(X,Y)*3.5)-.5)*.35;
+      float crown=smoothstep(1.+pix*.3,1.-pix*.3,cr);if(crown>cover){cover=crown;leafy=1.;sh=0.;}}
+    float bush=smoothstep(.5,.47,fbm(vec2(X*.45,Y*.8)+D)+Y*.33-.18-.25*smoothstep(.3,.7,n2(vec2(X*.07,D))));if(bush>cover){cover=bush;leafy=1.;sh=0.;}
+  } else { /* the wall of the wood across the clearing */
+    float top=9.+6.*fbm3(vec2(X*.035,D))+2.2*fbm(vec2(X*.25,D));
+    float cw=3.6,ci=floor(X/cw);
+    for(int k=-1;k<=1;k++){float cc=ci+float(k);if(h1(vec2(cc,D))>.75)continue;float cx=(cc+.2+.6*h1(vec2(cc,D+3.)))*cw;
+      float tt=trunk(X,Y,cx,mix(.2,.45,h1(vec2(cc,D+7.))),0.,cc,pix,sh2)*step(Y,top-3.);if(tt>cover){cover=tt;sh=sh2;}}float cn=smoothstep(.55,.5,fbm(vec2(X,Y)*.35+D)-.25*smoothstep(top-6.,top,Y)+.25);
+    float can=step(Y,top+1.5*fbm(vec2(X*.8,D)))*smoothstep(top-8.,top-4.,Y)*cn;if(can>cover){cover=can;leafy=1.;sh=0.;}
+    float under=smoothstep(.55,.5,fbm(vec2(X*.3,Y*.5)+D*.3)+(Y-3.)*.12);if(under>cover){cover=under;leafy=1.;sh=0.;}
+    if(Y<top-4.&&cover<.5&&D>60.){cover=1.;leafy=1.;}
+  }
+  return vec4(cover,leafy,sh,Y);}
+vec3 sky(vec3 d){float e=max(d.y,0.);
+  vec3 c=mix(vec3(.10,.135,.18),vec3(.018,.03,.07),pow(e,.45));
+  float az=atan(d.x,d.z);c+=vec3(.05,.07,.05)*exp(-e*9.)*smoothstep(.2,-.6,az);
+  vec2 sp=d.xz/(d.y+.03)*260.;vec2 cell=floor(sp);float st=h1(cell);float tw=.65+.35*sin(uT*2.3+st*50.);
+  vec2 f=fract(sp)-.5;c+=vec3(.8,.85,1.)*smoothstep(.9965,1.,st)*tw*smoothstep(.06,.25,d.y)*smoothstep(.25,.0,length(f))*1.3;
+  return c;}
+void main(){
+  vec2 ndc=vUv*2.-1.;vec3 d=normalize(uFwd+ndc.x*uTan.x*uRight+ndc.y*uTan.y*uUp);
+  float aa=uPix*1.2;
+  /* the light from the fireflies near this part of the picture, and at what distance */
+  vec4 g=texture(uGlow,vUv);float L=g.r*uGlowScale.x;float zL=g.r>1e-5?g.g/g.r*uGlowScale.y:50.;
+  float bearing=atan(d.x,d.z);vec2 bq=vec2((bearing-uTorchX)/uTorchHalf,(atan(d.y,length(d.xz))-uTorchY)/uTorchHalfV);float beam=uTorch>.5?smoothstep(1.,.55,length(bq)):0.;
+  vec3 tcol=uTorch>1.5?vec3(.85,.05,.02):vec3(1.,.93,.8);
+  float Ds[6];Ds[0]=4.2;Ds[1]=17.;Ds[2]=29.;Ds[3]=42.;Ds[4]=56.;Ds[5]=78.;
+  vec3 col=vec3(0.);float depth=uFar;bool hit=false;
+  /* ground, if the ray reaches it before the layers */
+  float tg=d.y<-.001?uCamH/(-d.y):1e9;float zg=tg*d.z;
+  for(int k=0;k<6;k++){float D=Ds[k];if(zg<D)break;
+    int kind=k==0?0:(k<4?1:2);vec4 ly=layer(d,D,kind,aa);
+    if(ly.x>.5){
+      float Y=ly.w;
+      float bark=.75+.5*n2(vec2(ly.z*6.,Y*.7+D));vec3 alb=ly.y>.5?mix(vec3(.10,.15,.06),vec3(.17,.22,.09),n2(vec2(Y*3.,D))):mix(vec3(.13,.11,.09),vec3(.2,.17,.14),.5+.5*ly.z)*bark;
+      float amb=.05*smoothstep(-1.,12.,Y)+.016;
+      vec3 c=alb*amb*vec3(.55,.7,1.)*(1.-.4*abs(ly.z));if(ly.y<.5)c+=vec3(.05,.07,.1)*.25*smoothstep(.6,1.,abs(ly.z))*smoothstep(0.,8.,Y);
+      float near=max(exp(-abs(D-zL)/4.),D<6.?.06:0.)*(1.-smoothstep(1.,7.,abs(Y-1.8)-1.));
+      c+=alb*LC*L*near*2.4;
+      c+=alb*tcol*beam*min(2.,70./(D*D+8.));
+      float haze=1.-exp(-D/45.);c=mix(c,vec3(.04,.055,.08),haze*.8);
+      col=c;depth=D;hit=true;break;}
+  }
+  if(!hit){
+    if(tg<1e8){vec2 w=d.xz*tg;
+      /* the meadow: grass in tufts, darker hollows, catching the sky from above */
+      float lit=fbm(w*.9);float tuft=n2(w*vec2(7.,2.3))*.6+n2(w*vec2(23.,6.))*.4;
+      vec3 alb=mix(vec3(.08,.10,.045),vec3(.19,.23,.10),lit)*(.55+.8*tuft);
+      vec3 c=alb*.085*vec3(.55,.7,1.)*(.6+.4*smoothstep(.3,.7,lit))*(1.+.8*exp(-zg/5.));
+      c+=alb*LC*L*exp(-abs(zg-zL)/5.)*2.6;
+      c+=alb*tcol*beam*min(2.,70./(zg*zg+8.));
+      c=mix(c,vec3(.04,.055,.08),(1.-exp(-zg/45.))*.8);col=c;depth=zg;
+    } else {col=sky(d);depth=uFar;}
+  }
+  /* low mist in the hollow, faintly lit by the flashes and the torch */
+  float mist=fbm(vec2(bearing*5.+uT*.008,d.y*7.))*exp(-abs(d.y-.01)*22.)*smoothstep(8.,40.,depth);
+  col+=vec3(.05,.07,.095)*mist*.9+LC*L*.035+tcol*beam*(.09*mist+.012);
+  vec2 v=vUv-.5;col*=1.-.35*dot(v,v);
+  col+=(h1(gl_FragCoord.xy+fract(uT)*61.)-.5)/255.*1.4;
+  o=vec4(pow(col,vec3(1./1.12)),1.);
+  gl_FragDepth=depth/uFar;}`;
+
+/* a firefly is a point. Its own light is a hard bright core and a soft halo; the light buffer gets a much wider, dim
+   version so that it falls on the leaves around it. */
+const FF_V = `layout(location=0) in vec4 aP;
+uniform vec3 uCam,uFwd,uRight,uUp;uniform vec2 uTan;uniform float uFocal,uFar,uMode,uDpr;out float vI;out float vCore;out float vZ;
+void main(){vec3 q=aP.xyz-uCam;float z=dot(q,uFwd);vI=aP.w;vZ=z;
+  float x=dot(q,uRight)/uTan.x,y=dot(q,uUp)/uTan.y;gl_Position=vec4(x,y,(z/uFar*2.-1.)*z,z);
+  if(aP.w<.003||z<.5){gl_PointSize=0.;gl_Position=vec4(2.,2.,2.,1.);return;}
+  float px=uFocal/z;
+  if(uMode<.5){float halo=max(18.*uDpr,1.1*px);float core=max(2.3*uDpr,.03*px);gl_PointSize=min(halo,128.);vCore=core/gl_PointSize;}
+  else{gl_PointSize=clamp(2.2*px,4.,96.);vCore=0.;}}`;
+const FF_F = `in float vI;in float vCore;in float vZ;out vec4 o;uniform float uMode,uZs;
+void main(){vec2 p=gl_PointCoord*2.-1.;float r2=dot(p,p);if(r2>1.)discard;
+  if(uMode<.5){float core=exp(-r2/(vCore*vCore)*1.4);float halo=exp(-r2*4.)*.16+exp(-r2*26.)*.5+exp(-r2*120.)*.6;
+    vec3 c=vec3(.62,1.,.2)*halo*vI*1.3+vec3(1.,1.,.72)*core*vI*1.8;o=vec4(c,1.);}
+  else{float w=exp(-r2*3.)*vI;o=vec4(w,w*vZ/uZs,0.,1.);}}`;
+
+let bgP, ffP;
+if (gl) { bgP = prog(BG_V, BG_F); ffP = prog(FF_V, FF_F); }
+
+/* ─── buffers ─── */
+let quad, ffVAO, ffBuf, ffData = new Float32Array(NMAX * 4);
+const glow = { fb: null, tex: null, w: 0, h: 0, float: false };
+if (gl) {
+  quad = gl.createVertexArray(); gl.bindVertexArray(quad); { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); }
+  ffVAO = gl.createVertexArray(); gl.bindVertexArray(ffVAO); ffBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ffBuf); gl.bufferData(gl.ARRAY_BUFFER, ffData.byteLength, gl.DYNAMIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+  glow.float = !!gl.getExtension('EXT_color_buffer_float') || !!gl.getExtension('EXT_color_buffer_half_float');
+  glow.fb = gl.createFramebuffer(); glow.tex = gl.createTexture();
+}
+const GLOW_K = glow.float ? 1 : 1 / 6, ZS = glow.float ? 1 : 60;   /* without float targets, store small values and scale them back */
+
+/* ─── the camera: someone standing on the path ─── */
+const cam = { pos: [0, CAMH, 0], yaw: 0, tyaw: 0, pitch: .02, tanX: .62, tanY: .35, fwd: [0, 0, 1], right: [1, 0, 0], up: [0, 1, 0], focal: 900 };
+let dpr = 1, quality = 1;
+function size() { const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return; dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 2) * quality;
+  const W = Math.round(w * dpr), H = Math.round(h * dpr); if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+  const asp = W / H; cam.tanY = asp >= 1 ? .36 : .44; cam.tanX = cam.tanY * asp; cam.focal = H / 2 / cam.tanY;
+  const gw = Math.max(64, W >> 2), gh = Math.max(36, H >> 2);
+  if (gl && (glow.w !== gw || glow.h !== gh)) { glow.w = gw; glow.h = gh; gl.bindTexture(gl.TEXTURE_2D, glow.tex);
+    if (glow.float) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, gw, gh, 0, gl.RGBA, gl.HALF_FLOAT, null); else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gw, gh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, glow.fb); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glow.tex, 0); gl.bindFramebuffer(gl.FRAMEBUFFER, null); } }
+function aim() { const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  cam.fwd = [sy * cp, sp, cy * cp]; cam.right = [cy, 0, -sy]; cam.up = [-sy * sp, cp, -cy * sp]; }
+
+/* how bright a firefly is, a moment after it flashed: a quick rise and a slower fade, about a fifth of a second in all */
+function lightOf(i, t) { const a = t - S.lastFlash[i]; if (a < 0 || a > .5) return 0; return a < .045 ? a / .045 : Math.exp(-(a - .045) / .085); }
+
+function fill() { const n = S.n, t = S.t; let m = 0;
+  for (let i = 0; i < n; i++) { const I = lightOf(i, t); if (I < .003) continue; ffData[m * 4] = S.x[i]; ffData[m * 4 + 1] = S.y[i]; ffData[m * 4 + 2] = S.z[i]; ffData[m * 4 + 3] = I; m++; }
+  gl.bindBuffer(gl.ARRAY_BUFFER, ffBuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, ffData, 0, m * 4); return m; }
+function ffUniforms(mode, focal) { const u = ffP.u; gl.useProgram(ffP.p); gl.uniform3fv(u.uCam, cam.pos); gl.uniform3fv(u.uFwd, cam.fwd); gl.uniform3fv(u.uRight, cam.right); gl.uniform3fv(u.uUp, cam.up);
+  gl.uniform2f(u.uTan, cam.tanX, cam.tanY); gl.uniform1f(u.uFocal, focal); gl.uniform1f(u.uFar, FAR); gl.uniform1f(u.uMode, mode); gl.uniform1f(u.uDpr, dpr); gl.uniform1f(u.uZs, ZS); }
+
+let tDraw = 0;
+function draw() { if (!gl) return; size(); cam.yaw += (cam.tyaw - cam.yaw) * .05; aim(); const W = canvas.width, H = canvas.height, m = fill();
+  /* 1. the light that falls on the leaves */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, glow.fb); gl.viewport(0, 0, glow.w, glow.h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  ffUniforms(1, cam.focal * glow.h / H); gl.uniform1f(ffP.u.uZs, ZS); gl.bindVertexArray(ffVAO);
+  if (!glow.float) { /* scale into range for an 8-bit target */ gl.blendColor(GLOW_K, GLOW_K, GLOW_K, 1); gl.blendFunc(gl.CONSTANT_COLOR, gl.ONE); }
+  if (m) gl.drawArrays(gl.POINTS, 0, m);
+  /* 2. the wood, with its depth */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H); gl.disable(gl.BLEND);
+  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.ALWAYS); gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT);
+  const u = bgP.u; gl.useProgram(bgP.p); gl.uniform3fv(u.uFwd, cam.fwd); gl.uniform3fv(u.uRight, cam.right); gl.uniform3fv(u.uUp, cam.up); gl.uniform2f(u.uTan, cam.tanX, cam.tanY);
+  gl.uniform1f(u.uT, tDraw); gl.uniform1f(u.uPix, 2 * cam.tanY / H); gl.uniform1f(u.uTorch, S.P.torch); gl.uniform1f(u.uTorchX, S.P.torchX - cam.yaw); gl.uniform1f(u.uTorchHalf, S.P.torchHalf); gl.uniform1f(u.uTorchY, S.P.torchY); gl.uniform1f(u.uTorchHalfV, S.P.torchHalfV);
+  gl.uniform1f(u.uCamH, CAMH); gl.uniform1f(u.uFar, FAR); gl.uniform2f(u.uGlowScale, 1 / GLOW_K * .5, ZS);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, glow.tex); gl.uniform1i(u.uGlow, 0);
+  gl.bindVertexArray(quad); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  /* 3. the fireflies, hidden where the wood is nearer */
+  gl.depthFunc(gl.LEQUAL); gl.depthMask(false); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  ffUniforms(0, cam.focal); gl.bindVertexArray(ffVAO); if (m) gl.drawArrays(gl.POINTS, 0, m);
+  gl.bindVertexArray(null); gl.depthMask(true); gl.disable(gl.BLEND); }
+
+/* ─── the rhythm: flashes in each tenth of a second over the last minute, and how long the dark gaps last ─── */
+const rc = $('rhythm'), rx = rc.getContext('2d');
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const INK = css('--ink') || '#14202a', SOFT = css('--soft') || '#4d5a61', HAIR = css('--hair') || '#d9cfae', GOLD = css('--gold') || '#b98619', VIR = css('--viridian') || '#0d7a70';
+function drawRhythm() {
+  const w = rc.clientWidth, h = rc.clientHeight, r = Math.min(devicePixelRatio || 1, 2); if (!w) return;
+  if (rc.width !== Math.round(w * r)) { rc.width = Math.round(w * r); rc.height = Math.round(h * r); }
+  rx.setTransform(r, 0, 0, r, 0, 0); rx.clearRect(0, 0, w, h);
+  const narrow = w < 560, gap = 26, lw = narrow ? w : Math.round(w * .62), hw = narrow ? w : w - lw - gap, top = 22, lh = narrow ? (h - 2 * top - 64) / 2 : h - top - 26;
+  rx.font = '13px "IM Fell English SC", Georgia, serif'; rx.fillStyle = SOFT; rx.textBaseline = 'alphabetic';
+  /* left: the last 60 s */
+  rx.fillText('flashes, each tenth of a second, the last minute', 0, 13);
+  const n = S.n, tNow = S.t, b1 = Math.floor(tNow / BIN), y0 = top + lh; let peak = 0;
+  for (let k = 0; k < NB; k++) { const b = b1 - k; if (b > binT || b < 0) continue; peak = Math.max(peak, bins[b % NB]); }
+  const sc = lh / Math.max(8, Math.min(n, peak * 1.1));
+  rx.strokeStyle = HAIR; rx.lineWidth = 1; rx.beginPath(); rx.moveTo(0, y0 + .5); rx.lineTo(lw, y0 + .5); rx.stroke();
+  rx.fillStyle = GOLD;
+  for (let k = 0; k < NB; k++) { const b = b1 - k; if (b > binT || b < 0) continue; const v = bins[b % NB]; if (!v) continue; const x = lw - (k + 1) * lw / NB; rx.fillRect(x, y0 - v * sc, Math.max(1, lw / NB), v * sc); }
+  rx.fillStyle = SOFT; rx.textAlign = 'right'; rx.fillText('now', lw, y0 + 16); rx.textAlign = 'left'; rx.fillText('a minute ago', 0, y0 + 16);
+  /* right: how long between bursts. The swarm (viridian) against one firefly alone (outline). */
+  const ox = narrow ? 0 : lw + gap, oy = narrow ? y0 + 46 : top, hh = narrow ? lh : lh, maxS = 60, nb = 30, bw = hw / nb;
+  rx.fillStyle = SOFT; rx.fillText('seconds each firefly waits between its bursts', ox, oy - 9);
+  const hist = (arr) => { const hh2 = new Float32Array(nb); for (const v of arr) { const k = Math.floor(v / maxS * nb); if (k >= 0 && k < nb) hh2[k]++; } let s = 0; for (const v of hh2) s += v; if (s) for (let k = 0; k < nb; k++) hh2[k] /= s; return hh2; };
+  const A = hist(ownIv), B = hist(lone); let mx = .05; for (let k = 0; k < nb; k++) mx = Math.max(mx, A[k], B[k]);
+  const by = oy + hh; rx.strokeStyle = HAIR; rx.beginPath(); rx.moveTo(ox, by + .5); rx.lineTo(ox + hw, by + .5); rx.stroke();
+  rx.fillStyle = VIR; for (let k = 0; k < nb; k++) if (A[k]) rx.fillRect(ox + k * bw + .5, by - A[k] / mx * hh, bw - 1, A[k] / mx * hh);
+  rx.strokeStyle = INK; rx.lineWidth = 1; rx.beginPath(); let started = false;
+  for (let k = 0; k < nb; k++) { const y = by - B[k] / mx * hh; if (!started) { rx.moveTo(ox + k * bw, by); started = true; } rx.lineTo(ox + k * bw, y); rx.lineTo(ox + (k + 1) * bw, y); } rx.lineTo(ox + hw, by); rx.stroke();
+  rx.fillStyle = SOFT; for (const s of [0, 20, 40, 60]) { rx.textAlign = s === 0 ? 'left' : s === 60 ? 'right' : 'center'; rx.fillText(String(s), ox + s / maxS * hw, by + 16); } rx.textAlign = 'left';
+}
+
+/* ─── readouts: all measured from this run ─── */
+function sample() {
+  let now = 0; const t = S.t; for (let i = 0; i < S.n; i++) if (t - S.lastFlash[i] < .25) now++;
+  $('r1').textContent = S.n.toLocaleString('en-GB');
+  $('r2').textContent = now.toLocaleString('en-GB');
+  const iv = ivAll.slice(-10), st = M.stats(iv);
+  $('r3').textContent = iv.length >= 3 ? `${st.mean.toFixed(1)} s, give or take ${st.sd.toFixed(1)}` : (S.t - lastAny < 1.5 && ownIv.length > 30 ? 'never dark' : 'not yet measured');
+  const sh = shares.slice(-6); $('r4').textContent = sh.length ? Math.round(100 * sh.reduce((a, b) => a + b, 0) / sh.length) + '%' : '–';
+  $('r5').textContent = (S.nSpont).toLocaleString('en-GB');
+}
+
+/* ─── sound: a stream, a tree cricket, and the flashes made audible as soft notes (fireflies are silent) ─── */
+let ac = null, soundOn = false, master = null, noteGain = null, lastNote = 0, beatSeen = 0;
+const SCALE = [0, 2, 4, 7, 9, 12, 14, 16];
+function startSound() {
+  if (ac) { ac.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; ac = new AC();
+  master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+  const verb = ac.createConvolver(); { const len = ac.sampleRate * 2.6, b = ac.createBuffer(2, len, ac.sampleRate); for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); } verb.buffer = b; }
+  const wet = ac.createGain(); wet.gain.value = .5; verb.connect(wet); wet.connect(master);
+  noteGain = ac.createGain(); noteGain.gain.value = .9; noteGain.connect(master); noteGain.connect(verb);
+  /* the Little River over stones: brown noise, two bands, slowly breathing */
+  const len = ac.sampleRate * 4, nb = ac.createBuffer(2, len, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = nb.getChannelData(c); let last = 0; for (let i = 0; i < len; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; } }
+  for (const [f, q, g] of [[380, .7, .22], [1900, 1.2, .045]]) { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .9 + Math.random() * .2;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q; const gg = ac.createGain(); gg.gain.value = g;
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07 + Math.random() * .05; lg.gain.value = g * .35; lfo.connect(lg); lg.connect(gg.gain); lfo.start();
+    s.connect(bp); bp.connect(gg); gg.connect(master); s.start(); }
+  /* a tree cricket in the distance: at 20 °C, Dolbear's rule gives about two chirps a second */
+  const cr = ac.createOscillator(), cg = ac.createGain(), am = ac.createOscillator(), amg = ac.createGain(); cr.frequency.value = 2950; cg.gain.value = 0;
+  am.type = 'square'; am.frequency.value = 1.87; amg.gain.value = .006; am.connect(amg); amg.connect(cg.gain); cr.connect(cg); const cp = ac.createStereoPanner ? ac.createStereoPanner() : null;
+  if (cp) { cp.pan.value = .55; cg.connect(cp); cp.connect(master); cp.connect(verb); } else cg.connect(master); cr.start(); am.start();
+  master.gain.setTargetAtTime(.8, ac.currentTime, .6);
+}
+function note(k, amt) { if (!ac || !soundOn) return; const t = ac.currentTime; if (t - lastNote < .07) return; lastNote = t;
+  const f = 880 * Math.pow(2, SCALE[Math.min(SCALE.length - 1, k)] / 12), o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2.76; const g2 = ac.createGain(); g2.gain.value = .18;
+  const a = Math.min(.09, .012 + .08 * Math.sqrt(amt)); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + .012); g.gain.exponentialRampToValueAtTime(.0005, t + 1.4);
+  o.connect(g); o2.connect(g2); g2.connect(g); g.connect(noteGain); o.start(t); o2.start(t); o.stop(t + 1.5); o2.stop(t + 1.5); }
+
+/* ─── controls ─── */
+let paused = false, visible = true, last = 0, frames = 0, slow = 0;
+$('snd').onclick = () => { soundOn = !soundOn; $('snd').setAttribute('aria-pressed', String(soundOn)); if (soundOn) startSound(); else if (ac) master.gain.setTargetAtTime(0, ac.currentTime, .2); if (soundOn && master) master.gain.setTargetAtTime(.8, ac.currentTime, .4); };
+$('n').oninput = e => { M.setCount(S, +e.target.value); $('nv').textContent = e.target.value; resetMeasures(); };
+const TORCH = ['Torch off', 'White torch', 'Red torch'];
+$('torch').onclick = () => { S.P.torch = (S.P.torch + 1) % 3; $('torch').textContent = TORCH[S.P.torch]; $('torch').setAttribute('aria-pressed', S.P.torch ? 'true' : 'false'); };
+$('hide').onclick = () => { S.P.see = !S.P.see; $('hide').setAttribute('aria-pressed', S.P.see ? 'false' : 'true'); resetMeasures(); };
+function setPaused(p) { paused = p; $('pause').setAttribute('aria-pressed', p ? 'true' : 'false'); $('pause').textContent = p ? 'Paused' : 'Pause'; last = 0; }
+$('pause').onclick = () => setPaused(!paused);
+/* the torch follows the pointer across the picture; without a torch the view leans a little toward it */
+function aimAt(e) { const r = canvas.getBoundingClientRect(), fx = ((e.clientX - r.left) / r.width - .5) * 2; const fy = -((e.clientY - r.top) / r.height - .5) * 2; S.P.torchX = Math.atan(fx * cam.tanX) + cam.yaw; S.P.torchY = Math.max(-.25, Math.min(.35, Math.atan(fy * cam.tanY) + cam.pitch)); cam.tyaw = S.P.torch ? 0 : fx * .05; }
+canvas.addEventListener('pointermove', aimAt); canvas.addEventListener('pointerdown', aimAt);
+canvas.addEventListener('pointerleave', () => { cam.tyaw = 0; });
+addEventListener('resize', () => { size(); if (paused) { draw(); drawRhythm(); } });
+if ('IntersectionObserver' in window) new IntersectionObserver(e => { visible = e[0].isIntersecting; }, { threshold: .02 }).observe(canvas);
+document.addEventListener('visibilitychange', () => { if (ac && soundOn) { if (document.hidden) ac.suspend(); else ac.resume(); } last = 0; });
+
+function advance(sec) { const dt = 1 / 120, k = Math.round(sec / dt); for (let s = 0; s < k; s++) M.step(S, dt); }
+let sampleAt = 0;
+function frame(ts) {
+  requestAnimationFrame(frame);
+  if (document.hidden || !visible) { last = 0; return; }
+  const dt = last ? Math.min(.05, (ts - last) / 1000) : 1 / 60; last = ts;
+  if (!paused) {
+    flashesThisFrame = 0; const b0 = beat, s0 = stampN; advance(dt); tDraw += dt;
+    if (flashesThisFrame && (beat !== beatSeen || stampN !== s0)) { beatSeen = beat; note(Math.max(0, beat - 1), flashesThisFrame / Math.max(1, S.n * .4)); }
+    frames++; if (dt > .03) slow++; if (frames % 120 === 0) { if (slow > 70 && quality > .55) { quality *= .8; size(); } slow = 0; }
+  }
+  draw();
+  if (ts > sampleAt) { sampleAt = ts + 400; sample(); drawRhythm(); }
+}
+
+/* start a little way in, so that the swarm has found its rhythm */
+advance(20); resetMeasures(); advance(still ? 50 : 40); setPaused(still); sample(); drawRhythm();
+window.FIREFLIES = { S, cam, advance, draw, setPaused, state: () => ({ n: S.n, t: S.t, paused, frames, quality, sound: soundOn, ac: ac ? ac.state : 'none', iv: ivAll.slice(-10), own: M.stats(ownIv), shares: shares.slice(-6), glowFloat: glow.float }) };
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
