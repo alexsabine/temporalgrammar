@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sim harness</title>
+<style>body{margin:0;background:#222;color:#eee;font:14px system-ui;display:flex;flex-direction:column;align-items:center}
+#c{display:block;background:#000;touch-action:none}#bar{padding:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}</style>
+<canvas id="c"></canvas><div id="bar"><span id="fps"></span></div>
+<script src="_lib.js"></script>
+<script>
+/* harness.html?sim=cells&w=390&h=520[&a=0.8][&on=1][&t=12 to freeze at a time] */
+var q=new URLSearchParams(location.search),key=q.get('sim'),w=+q.get('w')||390,h=+q.get('h')||520,freeze=q.get('t');
+var s=document.createElement('script');s.src=key+'.js';s.onload=go;document.head.appendChild(s);
+function go(){var def=HSM.sims[key],c=document.getElementById('c'),dpr=Math.min(2,devicePixelRatio||1);c.style.width=w+'px';c.style.height=h+'px';c.width=w*dpr;c.height=h*dpr;
+ var g=c.getContext('2d'),ui={a:q.has('a')?+q.get('a'):(def.slider?def.slider.value:undefined),on:q.get('on')==='1',px:-1,py:-1,down:false},bar=document.getElementById('bar');
+ if(def.slider){var r=document.createElement('input');r.type='range';r.min=0;r.max=1;r.step=.01;r.value=ui.a;r.oninput=function(){ui.a=+r.value};bar.append(def.slider.label+' ',r)}
+ if(def.toggle){var b=document.createElement('button');b.textContent=ui.on?def.toggle.on:def.toggle.off;b.onclick=function(){ui.on=!ui.on;b.textContent=ui.on?def.toggle.on:def.toggle.off};bar.append(b)}
+ c.onpointermove=function(e){var k=c.getBoundingClientRect();ui.px=e.clientX-k.left;ui.py=e.clientY-k.top};c.onpointerdown=function(e){ui.down=true;c.onpointermove(e)};c.onpointerup=c.onpointerleave=function(){ui.down=false;ui.px=ui.py=-1};
+ var st=def.setup(w,h,HSM.rnd(7)),t=0,last=performance.now(),acc=0,n=0,cost=0;
+ if(freeze!=null){var T=+freeze;for(t=0;t<T;t+=1/30){g.setTransform(dpr,0,0,dpr,0,0);def.frame(st,g,w,h,t,1/30,ui)}document.title='done';return}
+ (function loop(now){var dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;var t0=performance.now();g.setTransform(dpr,0,0,dpr,0,0);def.frame(st,g,w,h,t,dt,ui);cost+=performance.now()-t0;acc+=dt;n++;
+  if(acc>1){document.getElementById('fps').textContent=(cost/n).toFixed(1)+' ms/frame';window.__ms=cost/n;acc=0;n=0;cost=0}requestAnimationFrame(loop)})(last)}
+</script>
