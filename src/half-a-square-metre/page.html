@@ -74,7 +74,7 @@ section>p+p{margin-top:.7em}
 .simctl input{flex:1 1 90px;min-width:80px;height:44px;accent-color:var(--leaf)}
 .deepctl #simTg{display:none}
 .stage.insim .simctl{display:flex}.stage.insim .deepctl #simTg{display:inline-block}
-#deep canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+#deep canvas{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;background:#000}
 .deepcap b{font-weight:600;color:var(--leaf)}
 .stage.deep #pins{display:none}
 .stage.deep{cursor:zoom-in}
@@ -600,9 +600,10 @@ function loadChain(id){
   if($('simA'))$('simA').addEventListener('input',function(){simUI.a=+this.value;simStale=true;dirty=true});
   if($('simTg'))$('simTg').addEventListener('click',function(){simUI.on=!simUI.on;this.textContent=simUI.on?simDef.toggle.on:simDef.toggle.off;simStale=true;dirty=true});
 }
-function simSetup(){if(!simDef)return;simC.width=Math.round(sw*dpr);simC.height=Math.round(sh*dpr);
-  try{simSt=simDef.setup(sw,sh,HSM.rnd(7));simT=0;if(!state.playing){for(var k=0;k<120;k++){simT+=1/30;simDraw(1/30)}}}catch(err){if(window.console)console.warn(err);simSt=null}simStale=true}
-function simDraw(dt){if(!simSt)return;var g=simC.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);try{simDef.frame(simSt,g,sw,sh,simT,dt,simUI)}catch(err){if(window.console)console.warn(err);simSt=null}}
+var simH=0;
+function simSetup(){if(!simDef)return;simH=Math.max(160,Math.round(sh-$('deepcap').offsetHeight));simC.style.height=simH+'px';simC.width=Math.round(sw*dpr);simC.height=Math.round(simH*dpr);
+  try{simSt=simDef.setup(sw,simH,HSM.rnd(7));simT=0;if(!state.playing){for(var k=0;k<120;k++){simT+=1/30;simDraw(1/30)}}}catch(err){if(window.console)console.warn(err);simSt=null}simStale=true}
+function simDraw(dt){if(!simSt)return;var g=simC.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);try{simDef.frame(simSt,g,sw,simH,simT,dt,simUI)}catch(err){if(window.console)console.warn(err);simSt=null}}
 function exitDeep(){if(!deepZ)return;deepZ=0;deepFly=null;simOn=0;stage.classList.remove('deep','insim');glc.style.transform='';els.forEach(function(e){e.style.opacity=0});if(simC)simC.style.opacity=0;$('deepcap').hidden=true}
 function setDeep(Z){
   if(Z<=ZMAX||!chain){exitDeep();state.z=Math.max(1,Math.min(ZMAX,Z));clampView();return}
@@ -615,8 +616,9 @@ function setDeep(Z){
   stage.classList.toggle('insim',cur===n);
   var cap=$('deepcap'),k=String(cur);
   if(cap.getAttribute('data-k')!==k){cap.setAttribute('data-k',k);
+    var fit=function(){if(simSt&&Math.abs(simH-(sh-$('deepcap').offsetHeight))>2)simSetup()};
     $('deeptxt').innerHTML=cur<0?'<b>Your photograph</b>, enlarged past what it recorded.':cur<n?'<b>A real photograph, from another place.</b> '+PH[chain.L[cur]].what+' Photo: '+PH[chain.L[cur]].by+'.':'<b>A simulation</b> ('+chain.scale+'). '+chain.cap}
-  cap.hidden=false;deepField=cur<0?M.sceneWcm/deepZ:cur<n?PH[chain.L[cur]].f/Math.max(1,deepZ/Zc(cur)):0;
+  cap.hidden=false;if(cur===n&&typeof fit==='function')fit();deepField=cur<0?M.sceneWcm/deepZ:cur<n?PH[chain.L[cur]].f/Math.max(1,deepZ/Zc(cur)):0;
   $('zin').disabled=deepZ>=ZDEEP-.001;$('zout').disabled=$('zfit').disabled=false;dirty=true}
 var deepField=0;
 function dive(i){var h=H[i];loadChain(h.id);

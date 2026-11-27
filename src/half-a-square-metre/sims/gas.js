@@ -41,14 +41,14 @@ HSM.sim('gas',{
   /* things in the water */
   var N=Math.ceil(w/6)+3,co=[],ox=[],sp=[],ed=[],tu=[];
   function dep(x,f){return y0+(bedY(x)-y0)*f}
-  for(i=0;i<66;i++){x=R()*w;co.push(i<7?{x:x,y:y0-10-R()*y0*.7,vx:8,vy:-9,wx:0,wy:0,st:1,life:.1+R()*.6,cr:0}:{x:x,y:dep(x,.06+.9*Math.sqrt(R())),vx:0,vy:0,wx:0,wy:0,st:0,life:0,cr:0})}
-  for(i=0;i<38;i++){x=R()*w;ox.push(i<10?{x:x,y:dep(x,.05+.6*R()*R()),vx:0,vy:0,wx:0,wy:0,st:1,cr:0}:{x:x,y:R()*(y0-12),vx:0,vy:0,wx:0,wy:0,st:0,cr:0})}
+  for(i=0;i<66;i++){x=R()*w;co.push(i<7?{x:x,y:y0-10-R()*y0*.7,vx:8,vy:-9,wx:0,wy:0,st:1,life:.1+R()*.6,cr:0}:{x:x,y:dep(x,.04+.92*R()),vx:0,vy:0,wx:0,wy:0,st:0,life:0,cr:0})}
+  for(i=0;i<46;i++){x=R()*w;ox.push(i<10?{x:x,y:dep(x,.05+.6*R()*R()),vx:0,vy:0,wx:0,wy:0,st:1,cr:0}:{x:x,y:R()*(y0-12),vx:0,vy:0,wx:0,wy:0,st:0,cr:0})}
   for(i=0;i<90;i++){x=R()*w;sp.push({x:x,y:dep(x,.04+.94*R()),vx:0,vy:0,z:.4+R()*.6})}
   for(i=0;i<9;i++)ed.push({x:R()*(w+120)-60,d:.2+R()*.62,r:(15+R()*20)*h/520,s:i%4==3?-1:1,y:0,r2:0});
   for(i=0;i<34;i++){x=R()*w;tu.push({x:x,l:6+R()*13,ph:R()*6.28,f:1.5+R()*2,c:i%3})}
   return{R:R,bedY:bedY,y0:y0,yb:yb,air:air,ah:ah,bed:bed,top:top,bh:bh,ray:ray,N:N,ys:new Float32Array(N),fo:new Float32Array(N),co:co,ox:ox,sp:sp,ed:ed,tu:tu,ph:R()*50,f:-1}},
  frame:function(s,g,w,h,t,dt,ui){
-  var F=ui.a==null?.45:ui.a,C=HSM.clamp,R=s.R,i,j,m,x,y,e,N=s.N,ys=s.ys,fo=s.fo,y0=s.y0,bedY=s.bedY;
+  if(!(dt>0))dt=0;var F=ui.a==null?.45:ui.a,C=HSM.clamp,R=s.R,i,j,m,x,y,e,N=s.N,ys=s.ys,fo=s.fo,y0=s.y0,bedY=s.bedY;
   if(s.f<0)s.f=F;s.f+=(F-s.f)*Math.min(1,dt*3);F=s.f;
   /* the surface: long swells always, short ripples as the flow quickens. Where it bulges it works as a lens. */
   s.ph+=dt*(.45+1.5*F);
@@ -57,7 +57,7 @@ HSM.sim('gas',{
    ys[i]=y0+A*(s1+.55*s2+.3*s3+a4*s4);var f=-(.000784*s1+.00205*s2+.0041*s3+a4*.0529*s4)/nk;f=C(.5+.95*f,0,1);fo[i]=f*f}
   function surf(x){var k=x/6+1;if(k<0)k=0;if(k>N-1.001)k=N-1.001;var a=k|0;return ys[a]+(ys[a+1]-ys[a])*(k-a)}
   /* the flow: fast at the top, held back by the bed, with eddies shed from the bed tumbling through it */
-  var U=13+150*F,G=3+62*Math.pow(F,1.15),sig=3+34*F,VX=0,VY=0,E=s.ed;
+  var U=13+150*F,G=5+105*Math.pow(F,1.15),sig=7+85*F,VX=0,VY=0,E=s.ed;
   for(j=0;j<E.length;j++){e=E[j];e.x+=U*(.1+.9*Math.pow(1-e.d,.45))*.7*dt;if(e.x>w+70){e.x=-70;e.d=.2+R()*.62}var sy=surf(e.x);e.y=sy+(bedY(e.x)-sy)*e.d;e.r2=e.r*e.r}
   function vel(x,y){var sy=surf(x),by=bedY(x),d=C((by-y)/(by-sy),0,1),u=U*(.1+.9*Math.pow(d,.45)),v=0,j,e,dx,dy,rr,q;
    for(j=0;j<E.length;j++){e=E[j];dx=x-e.x;dy=y-e.y;rr=dx*dx+dy*dy;if(rr>e.r2*8)continue;q=G*e.s*Math.exp(.5-rr/(2*e.r2))/e.r;u-=dy*q;v+=dx*q}
@@ -65,7 +65,7 @@ HSM.sim('gas',{
   var ou=Math.sqrt(12*4*dt);
   function swim(m){vel(m.x,m.y);m.wx+=-m.wx*2*dt+(R()-.5)*ou*sig*.5;m.wy+=-m.wy*2*dt+(R()-.5)*ou*sig;m.vx=VX+m.wx;m.vy=VY+m.wy;m.x+=m.vx*dt;m.y+=m.vy*dt;
    var sy=surf(m.x),by=bedY(m.x);if(m.y<sy+3.5){m.y=sy+3.5;if(m.wy<0)m.wy*=-.4}if(m.y>by-7){m.y=by-7;if(m.wy>0)m.wy*=-.4}}
-  var kx=.09+2.3*Math.pow(F,1.3),wind=5+9*F;
+  var kx=.1+1.9*Math.pow(F,1.3),wind=5+9*F;
   /* air, then the far edge of the water's skin, then the water itself */
   g.drawImage(s.air,0,0,w,s.ah);
   g.beginPath();g.moveTo(-6,ys[0]);for(i=1;i<N;i++)g.lineTo((i-1)*6,ys[i]);for(i=N-1;i>=0;i--)g.lineTo((i-1)*6,y0+(ys[Math.min(N-1,i+5)]-y0)*.6-8);g.closePath();
@@ -74,10 +74,10 @@ HSM.sim('gas',{
   q=g.createLinearGradient(0,y0-8,0,s.yb+16);q.addColorStop(0,'rgb(126,204,186)');q.addColorStop(.1,'rgb(66,156,150)');q.addColorStop(.55,'rgb(27,100,106)');q.addColorStop(1,'rgb(12,56,64)');g.fillStyle=q;g.fill();
   /* sunlight, focused and scattered by the surface, slanting down to the bed */
   var sl=.34,con=.45+.55*F;
-  g.globalCompositeOperation='lighter';g.save();g.transform(1,0,0,1,0,0);
+  g.globalCompositeOperation='lighter';
   for(i=0;i<N;i++){x=(i-1)*6;var I=(1-con)*.3+con*fo[i],dp=bedY(x+sl*(s.yb-y0))-ys[i]+3;g.globalAlpha=.05+.3*I;
-   g.setTransform?0:0;g.save();g.transform(1,0,sl,1,x-sl*ys[i],0);g.drawImage(s.ray,-8,ys[i],16,dp);g.restore()}
-  g.restore();g.globalAlpha=1;g.globalCompositeOperation='source-over';
+   g.save();g.transform(1,0,sl,1,x-sl*ys[i],0);g.drawImage(s.ray,-8,ys[i],16,dp);g.restore()}
+  g.globalAlpha=1;g.globalCompositeOperation='source-over';
   /* fine drifting specks show the current */
   g.lineCap='round';g.lineWidth=1.15;g.strokeStyle='rgba(222,246,236,.34)';g.beginPath();
   for(i=0;i<s.sp.length;i++){m=s.sp[i];vel(m.x,m.y);m.x+=VX*m.z*dt;m.y+=VY*dt;if(m.x>w+8){m.x=-8;m.y=surf(0)+(bedY(0)-surf(0))*(.04+.94*R())}
@@ -95,19 +95,19 @@ HSM.sim('gas',{
   /* the gases. CO2 leaves from the top few moments of water; oxygen enters the same way */
   var co=s.co,ox=s.ox;
   for(i=0;i<co.length;i++){m=co[i];if(m.cr>0)m.cr-=dt*1.4;
-   if(m.st==0){swim(m);if(m.x>w+10||m.x<-14){m.x=-10;m.y=surf(0)+(bedY(0)-surf(0))*(.06+.9*Math.sqrt(R()))}
-    else if(m.y<surf(m.x)+10&&R()<kx*dt){m.st=1;m.cr=1;m.life=0;m.vy=-34;m.vx=m.vx*.25}}
-   else{m.life+=dt/4.6;m.vy+=(-10-m.vy)*dt*1.6+(R()-.5)*ou*5;m.vx+=(wind-m.vx)*dt+(R()-.5)*ou*6;m.x+=m.vx*dt;m.y+=m.vy*dt;
-    if(m.life>1||m.y<-12){m.st=0;m.x=-10;m.wx=m.wy=0;m.y=surf(0)+(bedY(0)-surf(0))*(.06+.9*Math.sqrt(R()))}}}
+   if(m.st==0){swim(m);if(m.x>w+10||m.x<-14){m.x=-10;m.y=surf(0)+(bedY(0)-surf(0))*(.04+.92*R())}
+    else if(m.y<surf(m.x)+14&&R()<kx*dt){m.st=1;m.cr=1;m.life=0;m.vy=-40;m.vx=m.vx*.25}}
+   else{m.life+=dt/6;m.vy+=(-17-m.vy)*dt*1.6+(R()-.5)*ou*5;m.vx+=(wind-m.vx)*dt+(R()-.5)*ou*6;m.x+=m.vx*dt;m.y+=m.vy*dt;
+    if(m.life>1||m.y<-12){m.st=0;m.x=-10;m.wx=m.wy=0;m.y=surf(0)+(bedY(0)-surf(0))*(.04+.92*R())}}}
   for(i=0;i<ox.length;i++){m=ox[i];if(m.cr>0)m.cr-=dt*1.4;
    if(m.st==1){swim(m);if(m.x>w+10){m.st=0;m.x=R()*w;m.y=-10;m.vx=wind;m.vy=10}}
-   else{m.vx+=(wind-m.vx)*dt+(R()-.5)*ou*9;m.vy+=(1.5-m.vy)*dt*.8+(R()-.5)*ou*9;m.x+=m.vx*dt;m.y+=m.vy*dt;
+   else{m.vx+=(wind-m.vx)*dt+(R()-.5)*ou*6;m.vy+=(3+5*F-m.vy)*dt+(R()-.5)*ou*6;m.x+=m.vx*dt;m.y+=m.vy*dt;
     if(m.x>w+10)m.x=-10;if(m.x<-12)m.x=w+8;if(m.y<-12){m.y=-12;m.vy=Math.abs(m.vy)}
-    sy=surf(m.x);if(m.y>sy-4){if(m.y>sy-12&&R()<kx*.9*dt*8||0){}m.y=sy-4;m.vy=-Math.abs(m.vy)*.5}
-    if(m.y>sy-11&&R()<kx*.9*dt){m.st=1;m.cr=1;m.y=sy+4;m.wy=24;m.wx=0}}}
+    sy=surf(m.x);if(m.y>sy-22&&R()<kx*dt){m.st=1;m.cr=1;m.y=sy+4;m.wy=30;m.wx=0}
+    else if(m.y>sy-4){m.y=sy-4;m.vy=-Math.abs(m.vy)*.5}}}
   var set=[co,ox],col=['rgba(255,196,120,1)','rgba(150,225,255,1)'],ring=['rgba(110,60,10,.6)','rgba(20,60,90,.55)'],trail=['rgba(255,200,130,.4)','rgba(160,228,255,.4)'],k;
   for(k=0;k<2;k++){var L=set[k],b=HSM.blob(col[k],16,.3),r=k?5:4.5;
-   g.lineWidth=2.2;g.strokeStyle=trail[k];g.beginPath();for(i=0;i<L.length;i++){m=L[i];g.moveTo(m.x,m.y);g.lineTo(m.x-m.vx*.075,m.y-m.vy*.075)}g.stroke();
+   g.lineWidth=2.2;g.strokeStyle=trail[k];g.beginPath();for(i=0;i<L.length;i++){m=L[i];if(k==0&&m.st==1&&m.life>.5)continue;g.moveTo(m.x,m.y);g.lineTo(m.x-m.vx*.075,m.y-m.vy*.075)}g.stroke();
    for(i=0;i<L.length;i++){m=L[i];var al=1;if(k==0&&m.st==1)al=1-HSM.smooth(.55,1,m.life);
     if(m.cr>0){g.globalCompositeOperation='lighter';g.globalAlpha=m.cr*.55*al;g.drawImage(b,m.x-r*3,m.y-r*3,r*6,r*6);g.globalCompositeOperation='source-over'}
     g.globalAlpha=.92*al;g.drawImage(b,m.x-r,m.y-r,r*2,r*2);m.al=al}
@@ -116,7 +116,7 @@ HSM.sim('gas',{
   g.lineJoin='round';g.beginPath();g.moveTo(-6,ys[0]);for(i=1;i<N;i++)g.lineTo((i-1)*6,ys[i]);
   g.lineWidth=9;g.strokeStyle='rgba(190,250,232,.16)';g.stroke();g.lineWidth=1.8;g.strokeStyle='rgba(240,255,248,.82)';g.stroke();
   g.globalCompositeOperation='lighter';var gb=HSM.blob('rgba(255,252,225,1)',16);
-  for(i=1;i<N;i+=2){I=fo[i];if(I<.3)continue;var gs=5+13*I;g.globalAlpha=(I-.3)*.9;g.drawImage(gb,(i-1)*6-gs*1.6,ys[i]-gs*.5-1,gs*3.2,gs)}
+  for(i=1;i<N;i+=2){I=fo[i];if(I<.3)continue;var gs=3+7*I;g.globalAlpha=(I-.3)*(.35+.6*F);g.drawImage(gb,(i-1)*6-gs*1.5,ys[i]-gs*.5-1,gs*3,gs)}
   g.globalAlpha=1;g.globalCompositeOperation='source-over';
   HSM.vignette(g,w,h,.38);
   g.drawImage(HSM.blob(col[0],16,.3),10,13,10,10);HSM.label(g,25,18,'CO₂ leaving the water');
